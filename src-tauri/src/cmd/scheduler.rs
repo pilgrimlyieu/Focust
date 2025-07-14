@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use tauri::{State, command};
 use tokio::sync::mpsc::Sender;
 
@@ -5,10 +7,17 @@ use crate::scheduler::models::{Command, PauseReason};
 
 pub struct SchedulerCmd(pub Sender<Command>);
 
+impl Deref for SchedulerCmd {
+    type Target = Sender<Command>; 
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 #[command]
 pub async fn pause_scheduler(state: State<'_, SchedulerCmd>) -> Result<(), String> {
     state
-        .0
         .send(Command::Pause(PauseReason::Manual))
         .await
         .map_err(|e| e.to_string())
@@ -17,7 +26,6 @@ pub async fn pause_scheduler(state: State<'_, SchedulerCmd>) -> Result<(), Strin
 #[command]
 pub async fn resume_scheduler(state: State<'_, SchedulerCmd>) -> Result<(), String> {
     state
-        .0
         .send(Command::Resume(PauseReason::Manual))
         .await
         .map_err(|e| e.to_string())
@@ -26,7 +34,6 @@ pub async fn resume_scheduler(state: State<'_, SchedulerCmd>) -> Result<(), Stri
 #[command]
 pub async fn postpone_break(state: State<'_, SchedulerCmd>) -> Result<(), String> {
     state
-        .0
         .send(Command::Postpone)
         .await
         .map_err(|e| e.to_string())

@@ -27,7 +27,6 @@ pub async fn save_config(
 
     // Update the scheduler with the new config
     if let Err(e) = scheduler_cmd
-        .0
         .send(Command::UpdateConfig(config.clone()))
         .await
     {
