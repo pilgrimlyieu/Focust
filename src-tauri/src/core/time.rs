@@ -1,7 +1,8 @@
 use chrono::NaiveTime;
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default, TS)]
 pub struct ShortTimes(Vec<NaiveTime>);
 
 impl ShortTimes {
@@ -20,7 +21,8 @@ impl ShortTimes {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
+#[ts(rename_all = "camelCase")]
 pub struct TimeRange {
     pub start: NaiveTime,
     pub end: NaiveTime,

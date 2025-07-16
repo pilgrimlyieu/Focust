@@ -8,11 +8,13 @@ use tauri::AppHandle;
 use tauri::Manager;
 use tokio::fs as a_fs;
 use tokio::sync::RwLock;
+use ts_rs::TS;
 
 use crate::core::schedule::{AttentionSettings, ScheduleSettings};
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
 #[serde(default)]
+#[ts(export, rename_all = "camelCase")]
 pub struct AppConfig {
     pub check_for_updates: bool,   // If auto check for updates on startup
     pub monitor_dnd: bool,         // If monitor DND status and pause breaks
@@ -20,9 +22,7 @@ pub struct AppConfig {
     pub all_screens: bool,         // If breaks should be shown on all screens
     pub language: String,          // Language code, e.g., "en-US"
     pub postpone_shortcut: String, // Shortcut to postpone breaks, e.g., "Ctrl+X"
-    #[serde(rename = "schedules")]
     pub schedules: Vec<ScheduleSettings>, // List of schedules
-    #[serde(rename = "attentions")]
     pub attentions: Vec<AttentionSettings>, // List of attention reminders
 }
 

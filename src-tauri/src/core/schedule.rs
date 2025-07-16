@@ -8,11 +8,12 @@ use crate::core::{
 };
 use chrono::Weekday;
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 static NEXT_SCHEDULE_ID: AtomicUsize = AtomicUsize::new(0);
 static NEXT_ATTENTION_ID: AtomicUsize = AtomicUsize::new(0);
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, TS)]
 pub struct BreakId(usize);
 
 impl Display for BreakId {
@@ -27,7 +28,8 @@ impl BreakId {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
+#[ts(rename_all = "camelCase")]
 pub struct BaseBreakSettings {
     pub id: BreakId,                 // Unique identifier for the break settings
     pub enabled: bool,               // If the break is enabled
@@ -56,7 +58,8 @@ impl Default for BaseBreakSettings {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
+#[ts(rename_all = "camelCase")]
 pub struct MiniBreakSettings {
     #[serde(flatten)]
     pub base: BaseBreakSettings,
@@ -72,7 +75,8 @@ impl Default for MiniBreakSettings {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
+#[ts(rename_all = "camelCase")]
 pub struct LongBreakSettings {
     #[serde(flatten)]
     pub base: BaseBreakSettings,
@@ -91,7 +95,8 @@ impl Default for LongBreakSettings {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
+#[ts(rename_all = "camelCase")]
 pub struct ScheduleSettings {
     pub name: String,               // Name of the schedule
     pub enabled: bool,              // If the schedule is enabled
@@ -131,7 +136,7 @@ impl ScheduleSettings {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, TS)]
 pub struct AttentionId(usize);
 
 impl Display for AttentionId {
@@ -146,7 +151,8 @@ impl AttentionId {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
+#[ts(rename_all = "camelCase")]
 pub struct AttentionSettings {
     pub id: AttentionId,            // Unique identifier for the attention reminder
     pub name: String,               // Name of the attention reminder

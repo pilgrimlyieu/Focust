@@ -2,6 +2,7 @@ use std::fmt::Display;
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 use crate::config::AppConfig;
 use crate::core::schedule::{AttentionId, BreakId};
@@ -14,7 +15,8 @@ pub struct ScheduledEvent {
 
 /// Defines the different kinds of events the scheduler can handle.
 /// The order of variants defines their priority (lower discriminant = higher priority).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub enum EventKind {
     Attention(AttentionId),
     LongBreak(BreakId),
@@ -34,7 +36,7 @@ impl Display for EventKind {
 }
 
 /// Specifies the type of break for a notification.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, TS)]
 pub enum NotificationKind {
     LongBreak(BreakId),
     MiniBreak(BreakId),

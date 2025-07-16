@@ -1,9 +1,10 @@
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
 pub struct FontFamily(String);
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
 pub struct HexColor(String);
 
 impl HexColor {
@@ -14,14 +15,15 @@ impl HexColor {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
 pub enum BackgroundSource {
     Solid(String),
     ImagePath(String),
     ImageFolder(String),
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
+#[ts(rename_all = "camelCase")]
 pub struct ThemeSettings {
     pub background: BackgroundSource, // Background source type, e.g., Solid, ImagePath, ImageFolder, ImageProvider
     pub text_color: HexColor,         // Hex color code for text, e.g., "#FFFFFF"
