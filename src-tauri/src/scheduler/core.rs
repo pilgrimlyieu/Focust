@@ -28,6 +28,14 @@ impl Display for SchedulerState {
     }
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum SchedulerError {
+    #[error("No active schedule found for the current time.")]
+    NoActiveSchedule,
+    #[error("No active event could be scheduled.")]
+    NoActiveEvent,
+}
+
 /// The main scheduler struct.
 pub struct Scheduler {
     app_handle: AppHandle,
@@ -52,45 +60,48 @@ impl Scheduler {
     }
 
     pub async fn run(&mut self) {
-        log::info!("Scheduler started in {:?} state.", self.state);
+        log::info!("Scheduler started in {} state.", self.state);
 
         loop {
             match self.state {
                 SchedulerState::Running => {
-                    let next_event = self.calculate_next_event().await;
-
-                    if let Some(event) = next_event {
-                        let duration_to_wait = event.time - Utc::now();
-                        if duration_to_wait > Duration::zero() {
-                            log::info!(
-                                "Next event: {:?} in {:.1} seconds",
-                                event.kind,
-                                duration_to_wait.num_seconds()
-                            );
-                            tokio::select! {
-                                _ = sleep(duration_to_wait.to_std().unwrap()) => {
-                                    self.handle_event(event).await; // Handle the event when the time comes
-                                    self.reset_timers(); // Reset timers after handling the event
-                                }
-                                Some(cmd) = self.cmd_rx.recv() => {
-                                    if self.handle_command(cmd).await {
-                                        break; // Shutdown command received
+                    match self.calculate_next_event().await {
+                        Ok(event) => {
+                            let duration_to_wait = event.time - Utc::now();
+                            if duration_to_wait > Duration::zero() {
+                                log::info!(
+                                    "Next event: {} in {} seconds",
+                                    event.kind,
+                                    duration_to_wait.num_seconds()
+                                );
+                                tokio::select! {
+                                    _ = sleep(duration_to_wait.to_std().unwrap()) => {
+                                        self.handle_event(event).await; // Handle the event when the time comes
+                                        self.reset_timers(); // Reset timers after handling the event
+                                    }
+                                    Some(cmd) = self.cmd_rx.recv() => {
+                                        if self.handle_command(cmd).await {
+                                            break; // Shutdown command received
+                                        }
                                     }
                                 }
+                            } else {
+                                // Event was in the past, handle immediately and recalculate
+                                log::warn!(
+                                    "Scheduled event {} was in the past. Handling immediately.",
+                                    event.kind
+                                );
+                                self.handle_event(event).await;
                             }
-                        } else {
-                            // Event was in the past, handle immediately and recalculate
-                            log::warn!(
-                                "Scheduled event {:?} was in the past. Handling immediately.",
-                                event.kind
-                            );
-                            self.handle_event(event).await;
                         }
-                    } else {
-                        log::info!("No upcoming events. Waiting for command.");
-                        // No events scheduled, wait for a command indefinitely
-                        if let Some(cmd) = self.cmd_rx.recv().await {
-                            if self.handle_command(cmd).await {
+                        Err(e) => {
+                            log::warn!(
+                                "Could not calculate next event: {e}. Waiting for command or config change."
+                            );
+                            // No events scheduled, wait for a command indefinitely
+                            if let Some(cmd) = self.cmd_rx.recv().await
+                                && self.handle_command(cmd).await
+                            {
                                 break; // Shutdown command received
                             }
                         }
@@ -98,13 +109,13 @@ impl Scheduler {
                 }
                 SchedulerState::Paused => {
                     log::info!(
-                        "Scheduler is in {:?} state. Waiting for command to resume.",
+                        "Scheduler is in {} state. Waiting for command to resume.",
                         self.state
                     );
-                    if let Some(cmd) = self.cmd_rx.recv().await {
-                        if self.handle_command(cmd).await {
-                            break; // Shutdown command received
-                        }
+                    if let Some(cmd) = self.cmd_rx.recv().await
+                        && self.handle_command(cmd).await
+                    {
+                        break; // Shutdown command received
                     }
                 }
             }
@@ -113,7 +124,7 @@ impl Scheduler {
     }
 
     async fn handle_command(&mut self, cmd: Command) -> bool {
-        log::debug!("Handling command: {cmd:?}");
+        log::debug!("Handling command: {cmd}");
         match cmd {
             Command::UpdateConfig(new_config) => {
                 let config = self.app_handle.state::<SharedConfig>();
@@ -122,7 +133,7 @@ impl Scheduler {
                 // Don't reset counters on simple updates, but a full recalculation will happen naturally.
             }
             Command::Pause(reason) => {
-                log::info!("Pausing scheduler due to: {reason:?}");
+                log::info!("Pausing scheduler due to: {reason}");
                 self.state = SchedulerState::Paused;
                 match reason {
                     PauseReason::UserIdle | PauseReason::Dnd => {
@@ -136,9 +147,8 @@ impl Scheduler {
             }
             Command::Resume(reason) => {
                 log::info!(
-                    "Resuming scheduler from {:?} state due to: {:?}",
+                    "Resuming scheduler from {} state due to: {reason}",
                     self.state,
-                    reason
                 );
                 self.state = SchedulerState::Running;
                 self.update_last_break_time(); // Update last break time on resume
@@ -172,17 +182,18 @@ impl Scheduler {
     }
 
     fn update_last_break_time(&mut self) {
+        log::debug!("Updating last break time to now.");
         self.last_break_time = Some(Utc::now());
     }
 
     async fn handle_event(&mut self, event: ScheduledEvent) {
-        log::info!("Executing event: {:?}", event.kind);
+        log::info!("Executing event: {}", event.kind);
         // Emit the event to the Tauri frontend
         self.app_handle.emit("scheduler-event", event.kind).unwrap();
 
         match event.kind {
             EventKind::MiniBreak(_) | EventKind::LongBreak(_) => {
-                self.last_break_time = Some(Utc::now());
+                self.update_last_break_time();
                 if let EventKind::MiniBreak(_) = event.kind {
                     self.mini_break_counter += 1;
                 } else {
@@ -196,14 +207,15 @@ impl Scheduler {
         }
     }
 
-    async fn calculate_next_event(&self) -> Option<ScheduledEvent> {
+    async fn calculate_next_event(&self) -> Result<ScheduledEvent, SchedulerError> {
         let config = self.app_handle.state::<SharedConfig>();
         let config_guard = config.read().await;
         let now = Utc::now();
         let local_now = now.with_timezone(&Local);
 
-        let active_schedule =
-            self.get_active_schedule(&config_guard, local_now.time(), local_now.weekday())?;
+        let active_schedule = self
+            .get_active_schedule(&config_guard, local_now.time(), local_now.weekday())
+            .ok_or(SchedulerError::NoActiveSchedule)?;
 
         let mut potential_events: Vec<ScheduledEvent> = Vec::new();
 
@@ -254,15 +266,14 @@ impl Scheduler {
 
         // 3. Calculate Attention Events
         for attention in &config_guard.attentions {
-            if attention.enabled {
-                if let Some(next_attention_time) =
+            if attention.enabled
+                && let Some(next_attention_time) =
                     self.get_next_attention_time(attention, local_now)
-                {
-                    potential_events.push(ScheduledEvent {
-                        time: next_attention_time,
-                        kind: EventKind::Attention(attention.id),
-                    });
-                }
+            {
+                potential_events.push(ScheduledEvent {
+                    time: next_attention_time,
+                    kind: EventKind::Attention(attention.id),
+                });
             }
         }
 
@@ -271,6 +282,7 @@ impl Scheduler {
             .into_iter()
             .filter(|e| e.time > now) // Only consider future events
             .min_by(|a, b| a.time.cmp(&b.time).then_with(|| a.kind.cmp(&b.kind)))
+            .ok_or(SchedulerError::NoActiveEvent)
     }
 
     fn get_active_schedule<'a>(
@@ -283,6 +295,7 @@ impl Scheduler {
             s.enabled && s.days_of_week.contains(&now_day) && s.time_range.contains(&now_time)
         })
     }
+
     fn is_long_break_due(&self, schedule: &ScheduleSettings) -> bool {
         schedule.long_breaks.base.enabled
             && self.mini_break_counter >= schedule.long_breaks.after_mini_breaks
@@ -307,35 +320,33 @@ impl Scheduler {
                 LocalResult::Single(dt) => Some(dt),
                 LocalResult::Ambiguous(dt1, _) => {
                     log::warn!(
-                        "Ambiguous local time encountered for {time:?} on {date}. Using first option."
+                        "Ambiguous local time encountered for {time} on {date}. Using the first one."
                     );
                     Some(dt1)
                 }
                 LocalResult::None => {
-                    log::error!("No valid local time found for {time:?} on {date:?}.");
+                    log::error!("No valid local time found for {time} on {date}.");
                     None
                 }
             }
         };
 
         // Check if the attention is within the current time range
-        if attention.days_of_week.contains(&now.weekday()) {
-            if let Some(next_time_today) = attention.times.earliest_after(&now_time) {
-                if let Some(dt_local) = build_datetime(now_date, next_time_today) {
-                    return to_utc(dt_local);
-                }
-            }
+        if attention.days_of_week.contains(&now.weekday())
+            && let Some(next_time_today) = attention.times.earliest_after(&now_time)
+            && let Some(dt_local) = build_datetime(now_date, next_time_today)
+        {
+            return to_utc(dt_local);
         }
 
         // Find the first occurrence in the next 7 days
         for i in 1..=7 {
             let next_date = now_date + chrono::Duration::days(i);
-            if attention.days_of_week.contains(&next_date.weekday()) {
-                if let Some(first_time) = attention.times.first() {
-                    if let Some(dt_local) = build_datetime(next_date, first_time) {
-                        return to_utc(dt_local);
-                    }
-                }
+            if attention.days_of_week.contains(&next_date.weekday())
+                && let Some(first_time) = attention.times.first()
+                && let Some(dt_local) = build_datetime(next_date, first_time)
+            {
+                return to_utc(dt_local);
             }
         }
 
@@ -354,11 +365,12 @@ impl Scheduler {
 }
 
 async fn spawn_idle_monitor_task(cmd_tx: mpsc::Sender<Command>, app_handle: AppHandle) {
-    log::info!("Spawning user idle monitor task...");
+    const CHECK_INTERVAL: std::time::Duration = std::time::Duration::from_secs(10);
+
+    log::debug!("Spawning user idle monitor task...");
     tokio::spawn(async move {
         let mut was_idle = false;
         // Check interval for user idle status
-        let check_interval = std::time::Duration::from_secs(10);
 
         loop {
             let inactive_s = {
@@ -379,9 +391,9 @@ async fn spawn_idle_monitor_task(cmd_tx: mpsc::Sender<Command>, app_handle: AppH
                         );
                         if let Err(e) = cmd_tx.send(Command::Pause(PauseReason::UserIdle)).await {
                             log::error!(
-                                "Failed to send UserIdle command: {e}. Monitor task shutting down."
+                                "Failed to send UserIdle command: {e}. Monitor task continuing."
                             );
-                            break; // Channel closed, task cannot continue, exit loop
+                            continue;
                         }
                         was_idle = true;
                     } else if !is_idle && was_idle {
@@ -389,19 +401,19 @@ async fn spawn_idle_monitor_task(cmd_tx: mpsc::Sender<Command>, app_handle: AppH
                         log::info!("User became active. Notifying scheduler.");
                         if let Err(e) = cmd_tx.send(Command::Resume(PauseReason::UserIdle)).await {
                             log::error!(
-                                "Failed to send UserActive command: {e}. Monitor task shutting down."
+                                "Failed to send UserActive command: {e}. Monitor task continuing."
                             );
-                            break; // Channel closed, task cannot continue, exit loop
+                            continue;
                         }
                         was_idle = false;
                     }
                 }
                 Err(e) => {
-                    log::error!("Failed to get user idle time: {e:?}");
+                    log::error!("Failed to get user idle time: {e}");
                 }
             }
 
-            sleep(check_interval).await;
+            sleep(CHECK_INTERVAL).await;
         }
     });
 }
