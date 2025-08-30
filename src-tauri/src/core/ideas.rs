@@ -11,7 +11,8 @@ pub enum IdeasSource {
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
 #[ts(rename_all = "camelCase")]
 pub struct IdeasSettings {
-    pub source: IdeasSource, // Source of ideas, e.g., None, Provided, Custom
+    /// Ideas source
+    pub source: IdeasSource,
 }
 
 impl Default for IdeasSettings {

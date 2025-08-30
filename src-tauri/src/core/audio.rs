@@ -3,16 +3,21 @@ use ts_rs::TS;
 
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
 pub enum AudioSource {
-    None,             // Disabled audio
-    Provided(String), // Predefined audio source
-    Custom(String),   // Custom audio file path
+    /// Disable audio
+    None,
+    /// Predefined audio source
+    Provided(String),
+    /// Custom audio file path
+    Custom(String),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
 #[ts(rename_all = "camelCase")]
 pub struct AudioSettings {
-    pub source: AudioSource, // Audio source type, e.g., Provided, Custom(Path)
-    pub volume: u8,          // Volume level from 0 to 100
+    /// Audio source
+    pub source: AudioSource,
+    /// Volume level (0-100)
+    pub volume: u8,
 }
 
 impl Default for AudioSettings {

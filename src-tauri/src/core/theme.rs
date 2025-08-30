@@ -25,12 +25,18 @@ pub enum BackgroundSource {
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
 #[ts(rename_all = "camelCase")]
 pub struct ThemeSettings {
-    pub background: BackgroundSource, // Background source type, e.g., Solid, ImagePath, ImageFolder, ImageProvider
-    pub text_color: HexColor,         // Hex color code for text, e.g., "#FFFFFF"
-    pub blur_radius: u8,              // Radius in pixels for background blur
-    pub opacity: f32,                 // Opacity level from 0.0 to 1.0
-    pub font_size: u8,                // Font size in pixels
-    pub font_family: FontFamily,      // Font family name, e.g., "Arial", "Roboto"
+    /// Unique identifier for the break settings
+    pub background: BackgroundSource, 
+    /// If the break is enabled
+    pub text_color: HexColor,         
+    /// Theme settings for the break
+    pub blur_radius: u8,              
+    /// Audio settings for the break
+    pub opacity: f32,                 
+    /// If the break should be shown in fullscreen
+    pub font_size: u8,                
+    /// Ideas settings for the break
+    pub font_family: FontFamily,      
 }
 
 impl Default for ThemeSettings {

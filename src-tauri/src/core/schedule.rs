@@ -31,15 +31,24 @@ impl BreakId {
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
 #[ts(rename_all = "camelCase")]
 pub struct BaseBreakSettings {
-    pub id: BreakId,                 // Unique identifier for the break settings
-    pub enabled: bool,               // If the break is enabled
-    pub theme: ThemeSettings,        // Theme settings for the break
-    pub audio: AudioSettings,        // Audio settings for the break
-    pub fullscreen: bool,            // If the break should be shown in fullscreen
-    pub ideas_source: IdeasSettings, // Ideas settings for the break
-    pub duration_s: u64,             // Duration of the break in seconds
-    pub postponed_s: u64,            // Postponed time in seconds
-    pub strict_mode: bool,           // If the break should be strictly followed
+    /// Unique identifier for the break settings
+    pub id: BreakId,
+    /// If the break is enabled
+    pub enabled: bool,
+    /// Theme settings for the break
+    pub theme: ThemeSettings,
+    /// Audio settings for the break
+    pub audio: AudioSettings,
+    /// If the break should be shown in fullscreen
+    pub fullscreen: bool,
+    /// Ideas settings for the break
+    pub ideas_source: IdeasSettings,
+    /// Duration of the break in seconds
+    pub duration_s: u64,
+    /// Postponed time in seconds
+    pub postponed_s: u64,
+    /// If the break should be strictly followed
+    pub strict_mode: bool,
 }
 
 impl Default for BaseBreakSettings {
@@ -98,14 +107,21 @@ impl Default for LongBreakSettings {
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
 #[ts(rename_all = "camelCase")]
 pub struct ScheduleSettings {
-    pub name: String,               // Name of the schedule
-    pub enabled: bool,              // If the schedule is enabled
-    pub time_range: TimeRange,      // Time range for the schedule
-    pub days_of_week: Vec<Weekday>, // Days of the week when the schedule is active
-    pub notification_before_s: u64, // Notification time in seconds before breaks
+    /// Unique identifier for the break settings
+    pub name: String,
+    /// If the break is enabled
+    pub enabled: bool,
+    /// Theme settings for the break
+    pub time_range: TimeRange,
+    /// Audio settings for the break
+    pub days_of_week: Vec<Weekday>,
+    /// If the break should be shown in fullscreen
+    pub notification_before_s: u64,
 
-    pub mini_breaks: MiniBreakSettings, // Settings for mini breaks
-    pub long_breaks: LongBreakSettings, // Settings for long breaks
+    /// Ideas settings for the break
+    pub mini_breaks: MiniBreakSettings,
+    /// Duration of the break in seconds
+    pub long_breaks: LongBreakSettings,
 }
 
 impl Default for ScheduleSettings {
@@ -154,15 +170,24 @@ impl AttentionId {
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
 #[ts(rename_all = "camelCase")]
 pub struct AttentionSettings {
-    pub id: AttentionId,            // Unique identifier for the attention reminder
-    pub name: String,               // Name of the attention reminder
-    pub enabled: bool,              // If the attention reminder is enabled
-    pub theme: ThemeSettings,       // Theme settings for the attention reminder
-    pub times: ShortTimes,          // Times when the attention reminder should trigger
-    pub days_of_week: Vec<Weekday>, // Days of the week when the attention reminder is active
-    pub title: String,              // Title of the attention reminder
-    pub message: String,            // Message of the attention reminder
-    pub duration_s: u64,            // Duration of the attention reminder in seconds
+    /// Unique identifier for the break settings
+    pub id: AttentionId,
+    /// If the break is enabled
+    pub name: String,
+    /// Theme settings for the break
+    pub enabled: bool,
+    /// Audio settings for the break
+    pub theme: ThemeSettings,
+    /// If the break should be shown in fullscreen
+    pub times: ShortTimes,
+    /// Ideas settings for the break
+    pub days_of_week: Vec<Weekday>,
+    /// Duration of the break in seconds
+    pub title: String,
+    /// Postponed time in seconds
+    pub message: String,
+    /// If the break should be strictly followed
+    pub duration_s: u64,
 }
 
 impl Default for AttentionSettings {

@@ -16,14 +16,22 @@ use crate::core::schedule::{AttentionSettings, ScheduleSettings};
 #[serde(default)]
 #[ts(export, rename_all = "camelCase")]
 pub struct AppConfig {
-    pub check_for_updates: bool,   // If auto check for updates on startup
-    pub monitor_dnd: bool,         // If monitor DND status and pause breaks
-    pub inactive_s: u64,           // Inactive time in seconds before pausing breaks
-    pub all_screens: bool,         // If breaks should be shown on all screens
-    pub language: String,          // Language code, e.g., "en-US"
-    pub postpone_shortcut: String, // Shortcut to postpone breaks, e.g., "Ctrl+X"
-    pub schedules: Vec<ScheduleSettings>, // List of schedules
-    pub attentions: Vec<AttentionSettings>, // List of attention reminders
+    /// If auto check for updates on startup
+    pub check_for_updates: bool,
+    /// If monitor DND status and pause breaks
+    pub monitor_dnd: bool,
+    /// Inactive time in seconds before pausing breaks
+    pub inactive_s: u64,
+    /// If breaks should be shown on all screens
+    pub all_screens: bool,
+    /// Language code, e.g., "en-US"
+    pub language: String,
+    /// Shortcut to postpone breaks, e.g., "Ctrl+X"
+    pub postpone_shortcut: String,
+    /// List of schedules
+    pub schedules: Vec<ScheduleSettings>,
+    /// List of attention reminders
+    pub attentions: Vec<AttentionSettings>,
 }
 
 impl Default for AppConfig {
