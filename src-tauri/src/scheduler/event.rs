@@ -51,7 +51,7 @@ impl EventSource for BreakEventSource {
 
         if break_settings.enabled {
             let interval = Duration::seconds(active_schedule.mini_breaks.interval_s as i64);
-            let break_time = context.last_break_time.unwrap_or_else(|| context.now_utc) + interval;
+            let break_time = context.last_break_time.unwrap_or(context.now_utc) + interval;
 
             potential_events.push(ScheduledEvent {
                 time: break_time,
@@ -77,11 +77,11 @@ impl EventSource for BreakEventSource {
     }
 }
 
-fn get_active_schedule<'a>(
-    config: &'a AppConfig,
+fn get_active_schedule(
+    config: &AppConfig,
     now_time: NaiveTime,
     now_day: Weekday,
-) -> Option<&'a ScheduleSettings> {
+) -> Option<&ScheduleSettings> {
     config.schedules.iter().find(|s| {
         s.enabled && s.days_of_week.contains(&now_day) && s.time_range.contains(&now_time)
     })

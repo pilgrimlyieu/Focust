@@ -28,6 +28,12 @@ impl BreakId {
     }
 }
 
+impl Default for BreakId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
 #[ts(rename_all = "camelCase")]
 pub struct BaseBreakSettings {
@@ -164,6 +170,12 @@ impl Display for AttentionId {
 impl AttentionId {
     pub fn new() -> Self {
         AttentionId(NEXT_ATTENTION_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed))
+    }
+}
+
+impl Default for AttentionId {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
