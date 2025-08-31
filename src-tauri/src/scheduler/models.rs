@@ -58,7 +58,6 @@ pub enum Command {
     Pause(PauseReason),
     Resume(PauseReason),
     Postpone,
-    Shutdown, // Added for completeness, if needed
 }
 
 impl Display for Command {
@@ -68,7 +67,6 @@ impl Display for Command {
             Command::Pause(reason) => write!(f, "Pause({reason:?})"),
             Command::Resume(reason) => write!(f, "Resume({reason:?})"),
             Command::Postpone => write!(f, "Postpone"),
-            Command::Shutdown => write!(f, "Shutdown"),
         }
     }
 }
