@@ -2,10 +2,10 @@ use tauri::Manager;
 
 use crate::{cmd::SchedulerCmd, scheduler::core::init_scheduler};
 
-mod cmd;
-mod config;
-mod core;
-mod scheduler;
+pub mod cmd;
+pub mod config;
+pub mod core;
+pub mod scheduler;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -17,7 +17,7 @@ pub fn run() {
                 let shared_config = config::SharedConfig::new(app_config.clone());
                 handle.manage(shared_config);
 
-                let cmd_tx = init_scheduler(handle.clone()).await;
+                let (cmd_tx, shutdown_tx) = init_scheduler(handle.clone()).await;
                 handle.manage(SchedulerCmd(cmd_tx));
             });
             Ok(())
