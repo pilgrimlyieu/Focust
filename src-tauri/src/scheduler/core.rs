@@ -9,7 +9,7 @@ use user_idle::UserIdle;
 
 use super::event::*;
 use super::models::*;
-use crate::config::SharedConfig;
+use crate::config::{AppConfig, SharedConfig};
 
 /// Represents the current state of the scheduler.
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -43,8 +43,8 @@ pub struct Scheduler {
     shutdown_rx: watch::Receiver<()>,
 
     // State related to break progression
-    mini_break_counter: u8,
-    last_break_time: Option<DateTime<Utc>>,
+    pub mini_break_counter: u8,
+    pub last_break_time: Option<DateTime<Utc>>,
 
     event_sources: Vec<Box<dyn EventSource>>,
 }
@@ -74,7 +74,12 @@ impl Scheduler {
         loop {
             match self.state {
                 SchedulerState::Running => {
-                    match self.calculate_next_event().await {
+                    let next_event_result = {
+                        let config = self.app_handle.state::<SharedConfig>();
+                        let config_guard = config.read().await;
+                        self.calculate_next_event(&config_guard)
+                    };
+                    match next_event_result {
                         Ok(event) => {
                             let duration_to_wait = event.time - Utc::now();
                             if duration_to_wait > Duration::zero() {
@@ -219,13 +224,11 @@ impl Scheduler {
         }
     }
 
-    async fn calculate_next_event(&self) -> Result<ScheduledEvent, SchedulerError> {
-        let config = self.app_handle.state::<SharedConfig>();
-        let config_guard = config.read().await;
+    fn calculate_next_event(&self, config: &AppConfig) -> Result<ScheduledEvent, SchedulerError> {
         let now = Utc::now();
 
         let context = SchedulingContext {
-            config: &config_guard,
+            config,
             now_utc: now,
             now_local: now.with_timezone(&Local),
             mini_break_counter: self.mini_break_counter,
