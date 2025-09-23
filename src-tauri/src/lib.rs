@@ -1,6 +1,6 @@
 use tauri::Manager;
 
-use crate::{cmd::SchedulerCmd, scheduler::core::init_scheduler};
+use crate::{cmd::SchedulerCmd, scheduler::init_scheduler};
 
 pub mod cmd;
 pub mod config;

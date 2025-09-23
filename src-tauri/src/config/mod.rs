@@ -1,6 +1,5 @@
 pub mod core;
 pub mod models;
-pub mod event;
 
-pub use models::*;
 pub use core::*;
+pub use models::*;

@@ -1,9 +1,9 @@
 use focust_lib::config::AppConfig;
-use focust_lib::scheduler::core::Scheduler;
+use focust_lib::scheduler::Scheduler;
 use focust_lib::scheduler::event::{
     AttentionEventSource, BreakEventSource, EventSource, SchedulingContext,
 };
-use focust_lib::scheduler::models::EventKind;
+use focust_lib::scheduler::EventKind;
 
 use chrono::{Duration, TimeZone, Utc};
 use tauri::Listener;

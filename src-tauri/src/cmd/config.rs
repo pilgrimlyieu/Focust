@@ -4,7 +4,7 @@ use crate::{
     cmd::SchedulerCmd,
     config,
     config::{AppConfig, SharedConfig},
-    scheduler::models::Command,
+    scheduler::Command,
 };
 
 #[command]
