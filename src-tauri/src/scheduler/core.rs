@@ -93,7 +93,7 @@ impl Scheduler {
                                     _ = self.shutdown_rx.changed() => {
                                         break;
                                     }
-                                    _ = sleep(duration_to_wait.to_std().unwrap()) => {
+                                    _ = sleep(duration_to_wait.to_std().unwrap()) => { // `duration_to_wait` is guaranteed to be positive here because of the if check
                                         self.handle_event(event).await; // Handle the event when the time comes
                                         self.reset_timers(); // Reset timers after handling the event
                                     }
@@ -193,7 +193,9 @@ impl Scheduler {
                     Some(Utc::now() + Duration::seconds(postpone_duration_s as i64));
 
                 // 3. Immediately emit an event to the frontend to close the break window
-                self.app_handle.emit("break-finished", "").unwrap();
+                if let Err(e) = self.app_handle.emit("break-finished", "") {
+                    log::error!("Failed to emit break-finished event: {e}");
+                }
             }
         }
     }
@@ -206,7 +208,9 @@ impl Scheduler {
     async fn handle_event(&mut self, event: ScheduledEvent) {
         log::info!("Executing event: {}", event.kind);
         // Emit the event to the Tauri frontend
-        self.app_handle.emit("scheduler-event", event.kind).unwrap();
+        if let Err(e) = self.app_handle.emit("scheduler-event", event.kind) {
+            log::error!("Failed to emit scheduler-event: {e}");
+        }
 
         match event.kind {
             EventKind::MiniBreak(_) | EventKind::LongBreak(_) => {
@@ -218,9 +222,7 @@ impl Scheduler {
                     self.mini_break_counter = 0;
                 }
             }
-            _ => {
-                // Notifications or Attentions don't affect the break cycle timers
-            }
+            _ => {} // Notifications or Attentions doesn't affect the break cycle timers
         }
     }
 
@@ -249,7 +251,11 @@ impl Scheduler {
     }
 }
 
-async fn spawn_idle_monitor_task(cmd_tx: mpsc::Sender<Command>, app_handle: AppHandle) {
+async fn spawn_idle_monitor_task(
+    cmd_tx: mpsc::Sender<Command>,
+    shutdown_tx: watch::Sender<()>,
+    app_handle: AppHandle,
+) {
     log::debug!("Spawning user idle monitor task...");
 
     const CHECK_INTERVAL: std::time::Duration = std::time::Duration::from_secs(10);
@@ -317,7 +323,7 @@ pub async fn init_scheduler(app_handle: AppHandle) -> (mpsc::Sender<Command>, wa
         scheduler.run().await;
     });
 
-    spawn_idle_monitor_task(cmd_tx.clone(), app_handle).await;
+    spawn_idle_monitor_task(cmd_tx.clone(), shutdown_tx.clone(), app_handle).await;
 
     (cmd_tx, shutdown_tx)
 }
