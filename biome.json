@@ -12,6 +12,7 @@
       "!src-tauri/**",
       "!**/*.json",
       "!**/*.d.ts",
+      "!**/*.css",
       "!**/src/types/generated/**/*.ts"
     ]
   },
