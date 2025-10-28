@@ -12,13 +12,21 @@
   "app": {
     "windows": [
       {
-        "title": "focust",
-        "width": 800,
-        "height": 600
+        "label": "settings",
+        "title": "Focust - Settings",
+        "url": "/?view=settings",
+        "width": 1400,
+        "height": 900,
+        "visible": false,
+        "center": true
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["**"]
+      }
     }
   },
   "bundle": {
@@ -30,6 +38,9 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
+    ],
+    "resources": [
+      "assets/sounds/*"
     ]
   }
 }
