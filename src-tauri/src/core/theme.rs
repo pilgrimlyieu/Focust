@@ -165,7 +165,7 @@ mod tests {
         let theme = ThemeSettings::default();
         assert!(matches!(theme.background, BackgroundSource::Solid(_)));
         assert_eq!(theme.blur_radius, 8);
-        assert_eq!(theme.opacity, 0.92);
+        assert_eq!(theme.opacity, 0.90);
         assert_eq!(theme.font_size, 24);
     }
 
