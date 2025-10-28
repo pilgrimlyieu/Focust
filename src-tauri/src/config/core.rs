@@ -23,10 +23,10 @@ fn get_config_path(app_handle: &AppHandle) -> Result<PathBuf> {
 async fn try_load_or_create_config(app_handle: &AppHandle) -> Result<AppConfig> {
     let config_path = get_config_path(app_handle)?;
     if !config_path.exists() {
-        log::info!("No config file found at {config_path:?}. Creating a default one.");
+        tracing::info!("No config file found at {config_path:?}. Creating a default one.");
         let config = AppConfig::default();
         if let Err(e) = save_config(app_handle, &config).await {
-            log::error!("Failed to save the default config file: {e}");
+            tracing::error!("Failed to save the default config file: {e}");
         }
         return Ok(config);
     }
@@ -36,7 +36,7 @@ async fn try_load_or_create_config(app_handle: &AppHandle) -> Result<AppConfig> 
         .with_context(|| format!("Failed to read config file from {:?}", &config_path))?;
     let config = toml::from_str(&content).context("Failed to parse config file content as TOML")?;
 
-    log::info!("Config loaded successfully from {config_path:?}");
+    tracing::info!("Config loaded successfully from {config_path:?}");
     Ok(config)
 }
 
@@ -44,7 +44,7 @@ pub async fn load_config(app_handle: &AppHandle) -> AppConfig {
     try_load_or_create_config(app_handle)
         .await
         .unwrap_or_else(|e| {
-            log::error!(
+            tracing::error!(
                 "A critical error occurred during config loading: {e:?}. Using default config."
             );
             AppConfig::default()
@@ -58,6 +58,6 @@ pub async fn save_config(app_handle: &AppHandle, config: &AppConfig) -> Result<(
     a_fs::write(&config_path, toml_string)
         .await
         .context(format!("Failed to write config to {config_path:?}"))?;
-    log::info!("Config saved successfully to {config_path:?}");
+    tracing::info!("Config saved successfully to {config_path:?}");
     Ok(())
 }
