@@ -3,4 +3,31 @@ import type { BackgroundSource } from "./BackgroundSource";
 import type { FontFamily } from "./FontFamily";
 import type { HexColor } from "./HexColor";
 
-export type ThemeSettings = { background: BackgroundSource, textColor: HexColor, blurRadius: number, opacity: number, fontSize: number, fontFamily: FontFamily, };
+/**
+ * Theme settings for break windows
+ */
+export type ThemeSettings = { 
+/**
+ * Background source for the break window (solid color, image path, or image folder)
+ */
+background: BackgroundSource, 
+/**
+ * Text color in hex format
+ */
+textColor: HexColor, 
+/**
+ * Blur radius for background effect in pixels
+ */
+blurRadius: number, 
+/**
+ * Opacity of the background (0.0 - 1.0)
+ */
+opacity: number, 
+/**
+ * Font size in pixels
+ */
+fontSize: number, 
+/**
+ * Font family name
+ */
+fontFamily: FontFamily, };

@@ -3,4 +3,35 @@ import type { LongBreakSettings } from "./LongBreakSettings";
 import type { MiniBreakSettings } from "./MiniBreakSettings";
 import type { TimeRange } from "./TimeRange";
 
-export type ScheduleSettings = { name: string, enabled: boolean, timeRange: TimeRange, daysOfWeek: Array<string>, notificationBeforeS: bigint, miniBreaks: MiniBreakSettings, longBreaks: LongBreakSettings, };
+/**
+ * Settings for a break schedule
+ */
+export type ScheduleSettings = { 
+/**
+ * Unique identifier for the break settings
+ */
+name: string, 
+/**
+ * If the break is enabled
+ */
+enabled: boolean, 
+/**
+ * Time range during which the schedule is active
+ */
+timeRange: TimeRange, 
+/**
+ * Days of the week when the schedule is active
+ */
+daysOfWeek: Array<string>, 
+/**
+ * Notification time before breaks in seconds
+ */
+notificationBeforeS: number, 
+/**
+ * Mini break settings
+ */
+miniBreaks: MiniBreakSettings, 
+/**
+ * Long break settings
+ */
+longBreaks: LongBreakSettings, };

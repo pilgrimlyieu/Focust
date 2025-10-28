@@ -41,6 +41,7 @@ pub struct SuggestionsConfig {
 #[serde(rename_all = "camelCase")]
 #[ts(export, rename_all = "camelCase")]
 pub struct LanguageSuggestions {
+    /// List of suggestions
     pub suggestions: Vec<String>,
 }
 

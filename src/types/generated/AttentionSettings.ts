@@ -3,4 +3,43 @@ import type { AttentionId } from "./AttentionId";
 import type { ShortTimes } from "./ShortTimes";
 import type { ThemeSettings } from "./ThemeSettings";
 
-export type AttentionSettings = { id: AttentionId, name: string, enabled: boolean, theme: ThemeSettings, times: ShortTimes, daysOfWeek: Array<string>, title: string, message: string, durationS: bigint, };
+/**
+ * Settings for attention reminders
+ */
+export type AttentionSettings = { 
+/**
+ * Unique identifier for the attention settings
+ */
+id: AttentionId, 
+/**
+ * Name of the attention reminder
+ */
+name: string, 
+/**
+ * If the attention is enabled
+ */
+enabled: boolean, 
+/**
+ * Theme settings for the attention
+ */
+theme: ThemeSettings, 
+/**
+ * Times when the attention should trigger
+ */
+times: ShortTimes, 
+/**
+ * Days of the week when the attention should trigger
+ */
+daysOfWeek: Array<string>, 
+/**
+ * Title of the attention reminder
+ */
+title: string, 
+/**
+ * Message of the attention reminder
+ */
+message: string, 
+/**
+ * Duration of the attention reminder in seconds
+ */
+durationS: number, };

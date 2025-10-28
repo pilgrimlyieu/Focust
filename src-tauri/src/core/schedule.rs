@@ -71,13 +71,17 @@ impl Default for BaseBreakSettings {
     }
 }
 
+/// Settings for mini breaks
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(rename_all = "camelCase")]
 pub struct MiniBreakSettings {
+    /// Base break settings
     #[serde(flatten)]
     pub base: BaseBreakSettings,
-    pub interval_s: u32, // Interval between mini breaks in seconds
+
+    /// Interval between mini breaks in seconds
+    pub interval_s: u32,
 }
 
 impl Default for MiniBreakSettings {
@@ -89,13 +93,17 @@ impl Default for MiniBreakSettings {
     }
 }
 
+/// Settings for long breaks
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(rename_all = "camelCase")]
 pub struct LongBreakSettings {
+    /// Base break settings
     #[serde(flatten)]
     pub base: BaseBreakSettings,
-    pub after_mini_breaks: u8, // Number of mini breaks after which to trigger a long break
+
+    /// Number of mini breaks after which to trigger a long break
+    pub after_mini_breaks: u8,
 }
 
 impl Default for LongBreakSettings {
@@ -110,6 +118,7 @@ impl Default for LongBreakSettings {
     }
 }
 
+/// Settings for a break schedule
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(rename_all = "camelCase")]
@@ -179,6 +188,7 @@ impl Default for AttentionId {
     }
 }
 
+/// Settings for attention reminders
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(rename_all = "camelCase")]

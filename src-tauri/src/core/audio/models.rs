@@ -1,26 +1,32 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+/// Audio source configuration for break sounds
 #[derive(Serialize, Deserialize, Default, Clone, Debug, TS)]
 #[ts(export)]
 #[serde(tag = "source")]
 pub enum AudioSource {
     /// No audio
     #[default]
-    None,
+    None, // No audio source
+
     /// Builtin audio resource
     #[serde(rename = "Builtin")]
-    Builtin { name: String },
+    Builtin { name: String }, // Builtin audio resource name
+
     /// File path audio source
     #[serde(rename = "FilePath")]
-    FilePath { path: String },
+    FilePath { path: String }, // File path to audio source
 }
 
+/// Audio settings for break sounds
 #[derive(Serialize, Deserialize, Clone, Debug, TS)]
 #[ts(export)]
 pub struct AudioSettings {
+    /// Audio source configuration
     #[serde(flatten)]
     pub source: AudioSource,
+    /// Volume level (0.0 to 1.0)
     pub volume: f32,
 }
 

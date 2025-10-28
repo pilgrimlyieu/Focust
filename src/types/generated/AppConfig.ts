@@ -2,4 +2,47 @@
 import type { AttentionSettings } from "./AttentionSettings";
 import type { ScheduleSettings } from "./ScheduleSettings";
 
-export type AppConfig = { checkForUpdates: boolean, monitorDnd: boolean, inactiveS: bigint, allScreens: boolean, language: string, postponeShortcut: string, schedules: Array<ScheduleSettings>, attentions: Array<AttentionSettings>, };
+/**
+ * Application configuration structure
+ */
+export type AppConfig = { 
+/**
+ * If auto check for updates on startup
+ */
+checkForUpdates: boolean, 
+/**
+ * If monitor DND status and pause breaks
+ */
+monitorDnd: boolean, 
+/**
+ * Inactive time in seconds before pausing breaks
+ */
+inactiveS: number, 
+/**
+ * If breaks should be shown on all screens
+ */
+allScreens: boolean, 
+/**
+ * Language code, e.g., "en-US"
+ */
+language: string, 
+/**
+ * UI theme mode: "light", "dark", or "system"
+ */
+themeMode: string, 
+/**
+ * Shortcut to postpone breaks, e.g., "Ctrl+Shift+X"
+ */
+postponeShortcut: string, 
+/**
+ * Break window size percentage (0.1 to 1.0, where 1.0 is fullscreen)
+ */
+windowSize: number, 
+/**
+ * List of schedules
+ */
+schedules: Array<ScheduleSettings>, 
+/**
+ * List of attention reminders
+ */
+attentions: Array<AttentionSettings>, };

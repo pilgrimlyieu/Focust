@@ -25,6 +25,7 @@ pub enum BackgroundSource {
     ImageFolder(String),
 }
 
+/// Theme settings for break windows
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(rename_all = "camelCase")]

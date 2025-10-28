@@ -4,6 +4,7 @@ use ts_rs::TS;
 
 use crate::core::schedule::{AttentionSettings, ScheduleSettings};
 
+/// Application configuration structure
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
 #[serde(default, rename_all = "camelCase")]
 #[ts(export, rename_all = "camelCase")]
