@@ -155,9 +155,9 @@ pub async fn save_suggestions(app_handle: &AppHandle, config: &SuggestionsConfig
 
     tokio::fs::write(&suggestions_path, toml_string)
         .await
-        .with_context(|| format!("Failed to write suggestions to {:?}", suggestions_path))?;
+        .with_context(|| format!("Failed to write suggestions to {suggestions_path:?}"))?;
 
-    tracing::info!("Suggestions saved successfully to {:?}", suggestions_path);
+    tracing::info!("Suggestions saved successfully to {suggestions_path:?}");
     Ok(())
 }
 

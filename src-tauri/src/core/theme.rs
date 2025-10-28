@@ -17,8 +17,11 @@ impl HexColor {
 
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
 pub enum BackgroundSource {
+    /// Solid color background (hex color code)
     Solid(String),
+    /// Image background from a specific file path
     ImagePath(String),
+    /// Image background from a folder (randomly selected)
     ImageFolder(String),
 }
 
