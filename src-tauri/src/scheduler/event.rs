@@ -98,7 +98,7 @@ impl AttentionEventSource {
         let now_date = now.date_naive();
         let now_time = now.time();
         let to_utc = |dt_local: DateTime<Local>| -> Option<DateTime<Utc>> {
-            log::debug!(
+            tracing::debug!(
                 "Found potential attention time: {} (local)",
                 dt_local.to_rfc2822()
             );
@@ -108,13 +108,13 @@ impl AttentionEventSource {
             match date.and_time(time).and_local_timezone(Local) {
                 LocalResult::Single(dt) => Some(dt),
                 LocalResult::Ambiguous(dt1, _) => {
-                    log::warn!(
+                    tracing::warn!(
                         "Ambiguous local time encountered for {time} on {date}. Using the first one."
                     );
                     Some(dt1)
                 }
                 LocalResult::None => {
-                    log::error!("No valid local time found for {time} on {date}.");
+                    tracing::error!("No valid local time found for {time} on {date}.");
                     None
                 }
             }
@@ -136,7 +136,7 @@ impl AttentionEventSource {
                 return to_utc(dt_local);
             }
         }
-        log::warn!(
+        tracing::warn!(
             "No scheduled time found for attention '{}' in the next 7 days.",
             attention.name
         );
