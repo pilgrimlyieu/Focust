@@ -4,7 +4,7 @@ set windows-shell := ["powershell", "-NoLogo", "-Command"]
 RUST_DIR := "src-tauri"
 
 TAURI_CMD := "bun run tauri"
-RM_CMD := if os_family() == "windows" { "Remove-Item -Force -Recurse" } else { "rm -rf" }
+RM_CMD := if os_family() == "windows" { "Remove-Item -Force -Recurse -ErrorAction SilentlyContinue" } else { "rm -rf" }
 
 alias s := setup
 alias d := dev
@@ -28,8 +28,10 @@ alias c := check
 alias cf := check-front
 alias cb := check-back
 
-alias t := test
+alias ta := test-all
+alias tfa := test-front-all
 alias tf := test-front
+alias tba := test-back-all
 alias tb := test-back
 
 alias u := update
@@ -88,7 +90,7 @@ alias adb := add-dep-back
 [confirm: "Are you sure you want to clean the front-end artifacts? This will remove all build outputs."]
 @clean-front:
     echo "🧹 Cleaning front-end artifacts..."
-    {{ RM_CMD }} dist
+    -{{ RM_CMD }} dist
     echo "✅ Front-end clean complete!"
 
 # Clean back-end artifacts
@@ -178,24 +180,38 @@ alias adb := add-dep-back
 
 # Run all tests
 [group: "test"]
-@test:
+@test-all:
     echo "🧪 Running tests..."
-    -bun test
+    -bun run test:run
     cargo test --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace
     echo "✅ Tests complete!"
 
+# Run all front-end tests
+[group: "test"]
+@test-front-all:
+    echo "🧪 Running front-end tests..."
+    bun run test:run
+    echo "✅ Front-end tests complete!"
+    
 # Run front-end tests
 [group: "test"]
-@test-front:
+@test-front +tests:
     echo "🧪 Running front-end tests..."
-    bun test
+    bun run test:run {{ tests }}
     echo "✅ Front-end tests complete!"
+
+# Run all back-end tests
+[group: "test"]
+@test-back-all:
+    echo "🧪 Running back-end tests..."
+    cargo test --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace
+    echo "✅ Back-end tests complete!"
 
 # Run back-end tests
 [group: "test"]
-@test-back:
+@test-back +tests:
     echo "🧪 Running back-end tests..."
-    cargo test --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace
+    cargo test --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace {{ tests }}
     echo "✅ Back-end tests complete!"
 
 # -----------------------------------------------------------------------------
@@ -237,3 +253,15 @@ alias adb := add-dep-back
     echo "⬆️ Adding back-end dependencies..."
     cargo add {{ deps }} --manifest-path {{ RUST_DIR }}/Cargo.toml
     echo "✅ Back-end dependencies added!"
+
+# -----------------------------------------------------------------------------
+# Git
+# -----------------------------------------------------------------------------
+
+# Check before committing
+[group: "git"]
+@pre-commit:
+    echo "🔒 Running pre-commit checks..."
+    just format
+    just check
+    echo "✅ Pre-commit checks passed!"
