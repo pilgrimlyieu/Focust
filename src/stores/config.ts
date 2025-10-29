@@ -240,7 +240,7 @@ export const useConfigStore = defineStore("config", () => {
         suggestions: { show: true },
         theme: createDefaultTheme(),
       },
-      name: `New schedule (${miniId})`, // Use miniId to differentiate
+      name: `New Schedule (${miniId})`, // Use miniId to differentiate
       notificationBeforeS: 10,
       timeRange: { end: "00:00", start: "00:00" },
     });

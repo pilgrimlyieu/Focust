@@ -2,6 +2,8 @@ import { createI18n } from "vue-i18n";
 import enUS, { type LocaleStrings } from "./locales/en-US";
 import zhCN from "./locales/zh-CN";
 
+export type { LocaleStrings };
+
 const messages: Record<string, LocaleStrings> = {
   "en-US": enUS,
   "zh-CN": zhCN,
