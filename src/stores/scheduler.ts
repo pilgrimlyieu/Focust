@@ -10,7 +10,6 @@ import type { AppConfig } from "@/types/generated/AppConfig";
 import type { AudioSettings } from "@/types/generated/AudioSettings";
 import type { BackgroundSource } from "@/types/generated/BackgroundSource";
 import type { EventKind } from "@/types/generated/EventKind";
-import type { NotificationKind } from "@/types/generated/NotificationKind";
 import type { SchedulerStatus } from "@/types/generated/SchedulerStatus";
 import type { ThemeSettings } from "@/types/generated/ThemeSettings";
 
@@ -68,24 +67,22 @@ async function resolveBackground(
       console.warn("Failed to pick background image", err);
     }
   }
-  return { type: "solid", value: "#111827" }; // Default solid color
+  return { type: "solid", value: "#1f2937" }; // Default solid color
 }
 
 /**
  * Type guards for EventKind variants
  */
-function isNotificationKind(
-  payload: EventKind,
-): payload is { Notification: NotificationKind } {
+function isNotificationKind(payload: EventKind) {
   return "Notification" in payload;
 }
-function isMiniBreak(payload: EventKind): payload is { MiniBreak: number } {
+function isMiniBreak(payload: EventKind) {
   return "MiniBreak" in payload;
 }
-function isLongBreak(payload: EventKind): payload is { LongBreak: number } {
+function isLongBreak(payload: EventKind) {
   return "LongBreak" in payload;
 }
-function isAttention(payload: EventKind): payload is { Attention: number } {
+function isAttention(payload: EventKind) {
   return "Attention" in payload;
 }
 

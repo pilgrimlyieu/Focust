@@ -25,6 +25,10 @@ export function setI18nLocale(locale: string) {
   i18n.global.locale.value = locale as LocaleKey;
 }
 
+export function getI18nLocale(): LocaleKey {
+  return i18n.global.locale.value;
+}
+
 export const supportedLocales: Array<{ key: string; label: string }> = [
   { key: "en-US", label: "English" },
   { key: "zh-CN", label: "简体中文" },

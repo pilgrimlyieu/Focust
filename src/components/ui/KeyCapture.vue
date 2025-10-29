@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
 interface Props {
   modelValue: string;
@@ -18,6 +18,10 @@ const emit = defineEmits<{
 
 const inputRef = ref<HTMLInputElement | null>(null);
 const isCapturing = ref(false);
+
+const displayValue = computed(() => {
+  return props.modelValue || "";
+});
 
 /**
  * Start capturing keyboard input.
@@ -90,7 +94,7 @@ function clearShortcut() {
       <span class="label-text">{{ label }}</span>
     </label>
     <div class="relative">
-      <input ref="inputRef" type="text" :value="props.modelValue" :placeholder="placeholder"
+      <input ref="inputRef" type="text" :value="displayValue" :placeholder="placeholder"
         class="input input-bordered w-full pr-20" :class="{ 'input-warning': isCapturing }" readonly
         @focus="startCapture" @blur="stopCapture" @keydown.prevent="handleKeyDown" />
       <button v-if="modelValue" type="button" class="btn btn-ghost btn-sm absolute right-1 top-1"
