@@ -7,6 +7,8 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 use ts_rs::TS;
 
+const LANGUAGE_FALLBACK: &str = "en-US";
+
 /// Settings for displaying suggestions during breaks
 ///
 /// This controls whether suggestions are shown to the user during break windows.
@@ -52,7 +54,7 @@ impl Default for SuggestionsConfig {
 
         // English suggestions (default)
         by_language.insert(
-            "en-US".to_string(),
+            LANGUAGE_FALLBACK.to_string(),
             LanguageSuggestions {
                 suggestions: vec![
                     "Look away from your screen and focus on a distant object.".to_string(),
@@ -170,7 +172,7 @@ pub fn get_suggestions_for_language(config: &SuggestionsConfig, language: &str) 
     }
 
     // Fallback to en-US
-    if let Some(en_suggestions) = config.by_language.get("en-US") {
+    if let Some(en_suggestions) = config.by_language.get(LANGUAGE_FALLBACK) {
         return en_suggestions.suggestions.clone();
     }
 

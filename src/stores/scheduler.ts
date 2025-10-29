@@ -12,6 +12,12 @@ import type { BackgroundSource } from "@/types/generated/BackgroundSource";
 import type { EventKind } from "@/types/generated/EventKind";
 import type { SchedulerStatus } from "@/types/generated/SchedulerStatus";
 import type { ThemeSettings } from "@/types/generated/ThemeSettings";
+import {
+  isAttention,
+  isLongBreak,
+  isMiniBreak,
+  isNotificationKind,
+} from "@/types/guards";
 
 /** Break kind type */
 export type BreakKind = "mini" | "long" | "attention";
@@ -68,22 +74,6 @@ async function resolveBackground(
     }
   }
   return { type: "solid", value: "#1f2937" }; // Default solid color
-}
-
-/**
- * Type guards for EventKind variants
- */
-function isNotificationKind(payload: EventKind) {
-  return "Notification" in payload;
-}
-function isMiniBreak(payload: EventKind) {
-  return "MiniBreak" in payload;
-}
-function isLongBreak(payload: EventKind) {
-  return "LongBreak" in payload;
-}
-function isAttention(payload: EventKind) {
-  return "Attention" in payload;
 }
 
 // Helper type for break extraction result

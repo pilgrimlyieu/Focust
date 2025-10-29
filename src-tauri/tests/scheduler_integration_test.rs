@@ -1,17 +1,17 @@
 use focust_lib::config::AppConfig;
+use focust_lib::scheduler::EventKind;
 use focust_lib::scheduler::Scheduler;
 use focust_lib::scheduler::event::{
     AttentionEventSource, BreakEventSource, EventSource, SchedulingContext,
 };
-use focust_lib::scheduler::EventKind;
 
 use chrono::{Duration, TimeZone, Utc};
 use tauri::Listener;
 use tokio::sync::{mpsc, watch};
 
-const MINI_BREAK_INTERVAL_S: u64 = 600;
+const MINI_BREAK_INTERVAL_S: u32 = 600;
 const AFTER_MINI_BREAK_TIMES: u8 = 2;
-const NOTIFICATION_BEFORE_S: u64 = 10;
+const NOTIFICATION_BEFORE_S: u32 = 10;
 
 #[allow(dead_code)]
 fn create_app<R: tauri::Runtime>(builder: tauri::Builder<R>) -> tauri::App<R> {
