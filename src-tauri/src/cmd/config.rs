@@ -1,7 +1,7 @@
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
-use rand::seq::SliceRandom;
+use rand::Rng;
 use tauri::{AppHandle, State};
 use tauri_plugin_global_shortcut::GlobalShortcutExt;
 use tokio::task;
@@ -109,8 +109,8 @@ pub async fn pick_background_image(folder: String) -> Result<Option<String>, Str
         }
 
         let mut rng = rand::rng();
-        entries.shuffle(&mut rng);
-        Ok(entries.into_iter().next())
+        let index = rng.random_range(0..entries.len());
+        Ok(Some(entries.swap_remove(index)))
     })
     .await
     .map_err(|err| format!("Background picker task panicked: {err}"))?;

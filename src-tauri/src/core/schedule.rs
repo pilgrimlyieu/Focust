@@ -232,7 +232,7 @@ impl Default for AttentionSettings {
             ],
             title: "Attention Reminder".to_string(),
             message: "This is an attention reminder.".to_string(),
-            duration_s: 10, // Default to 10 seconds
+            duration_s: 5, // Default to 5 seconds
         }
     }
 }
