@@ -4,15 +4,13 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [vue()],
+  resolve: {
+    alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+    },
+  },
   test: {
-    globals: true,
-    environment: "jsdom", // jsdom has better structuredClone support than happy-dom
-    setupFiles: ["./src/test/setup.ts"],
-    include: ["src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
     coverage: {
-      provider: "v8",
-      reporter: ["text", "json", "html"],
-      include: ["src/**/*.{ts,vue}"],
       exclude: [
         "src/**/*.d.ts",
         "src/types/generated/**",
@@ -20,11 +18,13 @@ export default defineConfig({
         "src/main.ts",
         "src/vite-env.d.ts",
       ],
+      include: ["src/**/*.{ts,vue}"],
+      provider: "v8",
+      reporter: ["text", "json", "html"],
     },
-  },
-  resolve: {
-    alias: {
-      "@": fileURLToPath(new URL("./src", import.meta.url)),
-    },
+    environment: "jsdom", // jsdom has better structuredClone support than happy-dom
+    globals: true,
+    include: ["src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
+    setupFiles: ["./src/test/setup.ts"],
   },
 });

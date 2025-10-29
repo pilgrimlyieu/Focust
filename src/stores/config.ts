@@ -47,11 +47,11 @@ function createDefaultTheme(options?: {
   // See `/src-tauri/src/core/theme.rs` for defaults
   return {
     background: { Solid: options?.backgroundColor ?? "#1f2937" },
-    textColor: "#f8fafc",
     blurRadius: options?.blurRadius ?? 8,
-    opacity: options?.opacity ?? 0.9,
-    fontSize: options?.fontSize ?? 24,
     fontFamily: "Arial",
+    fontSize: options?.fontSize ?? 24,
+    opacity: options?.opacity ?? 0.9,
+    textColor: "#f8fafc",
   };
 }
 
@@ -216,33 +216,33 @@ export const useConfigStore = defineStore("config", () => {
     const miniId = nextId(cfg.schedules.map((s) => s.miniBreaks.id));
     const longId = nextId(cfg.schedules.map((s) => s.longBreaks.id));
     cfg.schedules.push({
-      name: `New schedule (${miniId})`, // Use miniId to differentiate
-      enabled: true,
-      timeRange: { start: "00:00", end: "00:00" },
       daysOfWeek: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-      notificationBeforeS: 10,
-      miniBreaks: {
-        id: miniId,
-        enabled: true,
-        theme: createDefaultTheme(),
-        audio: { source: "None", volume: 0.6 },
-        suggestions: { show: true },
-        durationS: 20,
-        postponedS: 300,
-        strictMode: false,
-        intervalS: 1200,
-      },
+      enabled: true,
       longBreaks: {
-        id: longId,
-        enabled: true,
-        theme: createDefaultTheme(),
+        afterMiniBreaks: 4,
         audio: { source: "None", volume: 0.6 },
-        suggestions: { show: true },
         durationS: 300,
+        enabled: true,
+        id: longId,
         postponedS: 300,
         strictMode: false,
-        afterMiniBreaks: 4,
+        suggestions: { show: true },
+        theme: createDefaultTheme(),
       },
+      miniBreaks: {
+        audio: { source: "None", volume: 0.6 },
+        durationS: 20,
+        enabled: true,
+        id: miniId,
+        intervalS: 1200,
+        postponedS: 300,
+        strictMode: false,
+        suggestions: { show: true },
+        theme: createDefaultTheme(),
+      },
+      name: `New schedule (${miniId})`, // Use miniId to differentiate
+      notificationBeforeS: 10,
+      timeRange: { end: "00:00", start: "00:00" },
     });
   }
 
@@ -289,15 +289,15 @@ export const useConfigStore = defineStore("config", () => {
     const cfg = ensureDraft();
     const id = nextId(cfg.attentions.map((a) => a.id));
     cfg.attentions.push({
-      id,
-      name: "New attention",
+      daysOfWeek: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+      durationS: 5,
       enabled: true,
+      id,
+      message: "This is an attention reminder.",
+      name: "New attention",
       theme: createDefaultTheme(),
       times: [],
-      daysOfWeek: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
       title: "Attention Reminder",
-      message: "This is an attention reminder.",
-      durationS: 5,
     });
   }
 
@@ -311,23 +311,23 @@ export const useConfigStore = defineStore("config", () => {
   }
 
   return {
-    loading,
-    saving,
-    error,
+    addAttention,
+    addSchedule,
+    applyConfig,
     draft,
-    original,
+    duplicateSchedule,
+    error,
+    getRawDraft,
     isDirty,
     load,
-    applyConfig,
-    save,
+    loading,
+    original,
+    removeAttention,
+    removeSchedule,
     resetDraft,
+    save,
+    saving,
     setLanguage,
     setThemeMode,
-    addSchedule,
-    removeSchedule,
-    duplicateSchedule,
-    addAttention,
-    removeAttention,
-    getRawDraft,
   };
 });

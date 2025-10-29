@@ -130,16 +130,16 @@ function extractBreakInfo(
       : undefined;
     console.log("[Scheduler] Mini break suggestion sampled:", suggestion);
     return {
+      audio: mini.audio,
+      duration: Math.round(mini.durationS),
       id: mini.id,
       kind: "mini",
-      duration: Math.round(mini.durationS),
-      strictMode: mini.strictMode,
-      theme: mini.theme,
-      suggestion: suggestion, // Single suggestion, undefined if none
-      audio: mini.audio,
-      title: schedule.name,
       messageKey: "break.miniBreakMessage",
       scheduleName: schedule.name,
+      strictMode: mini.strictMode,
+      suggestion: suggestion, // Single suggestion, undefined if none
+      theme: mini.theme,
+      title: schedule.name,
     };
   } else if (isLongBreak(payload)) {
     const id = payload.LongBreak;
@@ -156,33 +156,33 @@ function extractBreakInfo(
       ? suggestionsStore.sample(config.language)
       : undefined;
     return {
+      audio: long.audio,
+      duration: Math.round(long.durationS),
       id: long.id,
       kind: "long",
-      duration: Math.round(long.durationS),
-      strictMode: long.strictMode,
-      theme: long.theme,
-      suggestion: suggestion,
-      audio: long.audio,
-      title: schedule.name,
       messageKey: "break.longBreakMessage",
       scheduleName: schedule.name,
+      strictMode: long.strictMode,
+      suggestion: suggestion,
+      theme: long.theme,
+      title: schedule.name,
     };
   } else if (isAttention(payload)) {
     const id = payload.Attention;
     const attention = config.attentions.find((a) => a.id === id);
     if (!attention) return null;
     return {
+      audio: undefined,
+      duration: Math.round(attention.durationS),
       id: attention.id,
       kind: "attention",
-      duration: Math.round(attention.durationS),
-      strictMode: false,
-      theme: attention.theme,
-      suggestion: undefined, // Attention doesn't use suggestions
-      audio: undefined,
-      title: attention.title,
-      messageKey: "break.attentionMessage", // Fallback i18n key
       message: attention.message || undefined, // Use custom message if provided
+      messageKey: "break.attentionMessage", // Fallback i18n key
       scheduleName: undefined,
+      strictMode: false,
+      suggestion: undefined, // Attention doesn't use suggestions
+      theme: attention.theme,
+      title: attention.title,
     };
   }
   return null;
@@ -296,20 +296,20 @@ export const useSchedulerStore = defineStore("scheduler", () => {
     console.log("[Scheduler] Creating break payload...");
 
     const breakPayload: BreakPayload = {
+      allScreens: config.allScreens,
+      audio: breakInfo.audio,
+      background,
+      duration: breakInfo.duration,
       id: breakInfo.id,
       kind: breakInfo.kind,
-      title: breakInfo.title,
-      messageKey: breakInfo.messageKey,
       message: breakInfo.message,
-      duration: breakInfo.duration,
-      strictMode: breakInfo.strictMode,
-      theme: breakInfo.theme,
-      background,
-      suggestion: breakInfo.suggestion,
-      audio: breakInfo.audio,
-      allScreens: config.allScreens,
-      scheduleName: breakInfo.scheduleName,
+      messageKey: breakInfo.messageKey,
       postponeShortcut: config.postponeShortcut || "P", // Default "P" if not set
+      scheduleName: breakInfo.scheduleName,
+      strictMode: breakInfo.strictMode,
+      suggestion: breakInfo.suggestion,
+      theme: breakInfo.theme,
+      title: breakInfo.title,
     };
 
     console.log("[Scheduler] Break payload created:", breakPayload);
@@ -351,19 +351,19 @@ export const useSchedulerStore = defineStore("scheduler", () => {
       console.log("[Scheduler] Screen size:", screenWidth, "x", screenHeight);
 
       const windowOptions = {
-        url: `/index.html?view=break&label=${label}`,
+        alwaysOnTop: true,
         decorations: false,
         focus: true,
         fullscreen: isFullscreen,
-        transparent: true,
-        alwaysOnTop: true,
         skipTaskbar: !isFullscreen,
+        transparent: true,
+        url: `/index.html?view=break&label=${label}`,
         ...(isFullscreen
           ? {}
           : {
-              width: Math.floor(screenWidth * windowSize),
-              height: Math.floor(screenHeight * windowSize),
               center: true,
+              height: Math.floor(screenHeight * windowSize),
+              width: Math.floor(screenWidth * windowSize),
             }),
       };
 
@@ -394,21 +394,21 @@ export const useSchedulerStore = defineStore("scheduler", () => {
           ? monitorHeight
           : Math.floor(monitorHeight * windowSize);
         const win = new WebviewWindow(childLabel, {
-          url: `/index.html?view=break&label=${childLabel}`,
+          alwaysOnTop: true,
           decorations: false,
           focus: index === 0,
           fullscreen: isFullscreen,
-          transparent: true,
-          alwaysOnTop: true,
           skipTaskbar: !isFullscreen,
+          transparent: true,
+          url: `/index.html?view=break&label=${childLabel}`,
           ...(isFullscreen
             ? {
                 x: monitorX,
                 y: monitorY,
               }
             : {
-                width: windowWidth,
                 height: windowHeight,
+                width: windowWidth,
                 x: monitorX + Math.floor((monitorWidth - windowWidth) / 2),
                 y: monitorY + Math.floor((monitorHeight - windowHeight) / 2),
               }),
@@ -446,13 +446,13 @@ export const useSchedulerStore = defineStore("scheduler", () => {
   }
 
   return {
-    init,
-    handleSchedulerEvent,
-    openBreakWindow,
+    activePayload,
     closeActiveBreak,
-    setPaused,
+    handleSchedulerEvent,
+    init,
+    openBreakWindow,
     schedulerPaused,
     schedulerStatus,
-    activePayload,
+    setPaused,
   };
 });

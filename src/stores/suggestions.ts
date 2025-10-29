@@ -115,13 +115,13 @@ export const useSuggestionsStore = defineStore("suggestions", () => {
 
   return {
     config,
-    loading,
-    hasLoaded,
-    load,
-    save,
     getSuggestionsForLanguage,
     getSuggestionsSync,
+    hasLoaded,
+    load,
+    loading,
     sample,
     sampleMany,
+    save,
   };
 });

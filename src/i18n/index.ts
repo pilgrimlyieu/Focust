@@ -15,9 +15,9 @@ const navigatorLocale =
 export const LANGUAGE_FALLBACK = "en-US";
 
 export const i18n = createI18n({
+  fallbackLocale: LANGUAGE_FALLBACK,
   legacy: false,
   locale: navigatorLocale ?? LANGUAGE_FALLBACK,
-  fallbackLocale: LANGUAGE_FALLBACK,
   messages,
 });
 
