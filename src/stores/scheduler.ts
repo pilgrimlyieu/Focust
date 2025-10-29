@@ -1,0 +1,458 @@
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+import { emit, listen } from "@tauri-apps/api/event";
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { availableMonitors } from "@tauri-apps/api/window";
+import { defineStore } from "pinia";
+import { ref } from "vue";
+import { useConfigStore } from "@/stores/config";
+import { useSuggestionsStore } from "@/stores/suggestions";
+import type { AppConfig } from "@/types/generated/AppConfig";
+import type { AudioSettings } from "@/types/generated/AudioSettings";
+import type { BackgroundSource } from "@/types/generated/BackgroundSource";
+import type { EventKind } from "@/types/generated/EventKind";
+import type { NotificationKind } from "@/types/generated/NotificationKind";
+import type { SchedulerStatus } from "@/types/generated/SchedulerStatus";
+import type { ThemeSettings } from "@/types/generated/ThemeSettings";
+
+/** Break kind type */
+export type BreakKind = "mini" | "long" | "attention";
+
+/** Resolved background for break window */
+export interface ResolvedBackground {
+  type: "solid" | "image";
+  value: string;
+}
+
+/** Scheduler break payload sent to break window */
+export interface BreakPayload {
+  id: number;
+  kind: BreakKind;
+  title: string;
+  messageKey: string; // i18n key of break message
+  message?: string; // Custom message for Attention
+  duration: number;
+  strictMode: boolean;
+  theme: ThemeSettings;
+  background: ResolvedBackground;
+  suggestion?: string;
+  audio?: AudioSettings;
+  allScreens: boolean;
+  scheduleName?: string;
+  postponeShortcut: string;
+}
+
+/**
+ * Resolve background source to actual background for break window
+ * @param {BackgroundSource} source Background source from theme settings
+ * @returns {Promise<ResolvedBackground>} Resolved background
+ */
+async function resolveBackground(
+  source: BackgroundSource,
+): Promise<ResolvedBackground> {
+  if ("Solid" in source) {
+    return { type: "solid", value: source.Solid };
+  } else if ("ImagePath" in source) {
+    return {
+      type: "image",
+      value: convertFileSrc(source.ImagePath),
+    };
+  } else if ("ImageFolder" in source) {
+    try {
+      const image = await invoke<string | null>("pick_background_image", {
+        folder: source.ImageFolder,
+      });
+      if (image) {
+        return { type: "image", value: convertFileSrc(image) };
+      }
+    } catch (err) {
+      console.warn("Failed to pick background image", err);
+    }
+  }
+  return { type: "solid", value: "#111827" }; // Default solid color
+}
+
+/**
+ * Type guards for EventKind variants
+ */
+function isNotificationKind(
+  payload: EventKind,
+): payload is { Notification: NotificationKind } {
+  return "Notification" in payload;
+}
+function isMiniBreak(payload: EventKind): payload is { MiniBreak: number } {
+  return "MiniBreak" in payload;
+}
+function isLongBreak(payload: EventKind): payload is { LongBreak: number } {
+  return "LongBreak" in payload;
+}
+function isAttention(payload: EventKind): payload is { Attention: number } {
+  return "Attention" in payload;
+}
+
+// Helper type for break extraction result
+type BreakExtractionResult = {
+  id: number;
+  kind: BreakKind;
+  duration: number;
+  strictMode: boolean;
+  theme: ThemeSettings;
+  suggestion?: string; // Single suggestion text (changed from suggestions array)
+  audio: AudioSettings | undefined;
+  title: string;
+  messageKey: string; // i18n key
+  message?: string; // Custom message (for Attention)
+  scheduleName: string | undefined;
+};
+
+/**
+ * Extract break information from scheduler event payload
+ * @param {EventKind} payload EventKind payload
+ * @param {AppConfig} config Application configuration
+ */
+function extractBreakInfo(
+  payload: EventKind,
+  config: AppConfig,
+  suggestionsStore: ReturnType<typeof useSuggestionsStore>,
+): BreakExtractionResult | null {
+  if (isMiniBreak(payload)) {
+    const id = payload.MiniBreak;
+    console.log("[Scheduler] Looking for mini break with id:", id);
+    const schedule = config.schedules.find((s) => s.miniBreaks.id === id);
+    console.log("[Scheduler] Found schedule:", schedule);
+    if (!schedule) {
+      console.error("[Scheduler] No schedule found for mini break id:", id);
+      return null;
+    }
+    const mini = schedule.miniBreaks;
+    // Only sample suggestion if enabled
+    const suggestion = mini.suggestions.show
+      ? suggestionsStore.sample(config.language)
+      : undefined;
+    console.log("[Scheduler] Mini break suggestion sampled:", suggestion);
+    return {
+      id: mini.id,
+      kind: "mini",
+      duration: Math.round(mini.durationS),
+      strictMode: mini.strictMode,
+      theme: mini.theme,
+      suggestion: suggestion, // Single suggestion, undefined if none
+      audio: mini.audio,
+      title: schedule.name,
+      messageKey: "break.miniBreakMessage",
+      scheduleName: schedule.name,
+    };
+  } else if (isLongBreak(payload)) {
+    const id = payload.LongBreak;
+    console.log("[Scheduler] Looking for long break with id:", id);
+    const schedule = config.schedules.find((s) => s.longBreaks.id === id);
+    console.log("[Scheduler] Found schedule:", schedule);
+    if (!schedule) {
+      console.error("[Scheduler] No schedule found for long break id:", id);
+      return null;
+    }
+    const long = schedule.longBreaks;
+    // Only sample suggestion if enabled
+    const suggestion = long.suggestions.show
+      ? suggestionsStore.sample(config.language)
+      : undefined;
+    return {
+      id: long.id,
+      kind: "long",
+      duration: Math.round(long.durationS),
+      strictMode: long.strictMode,
+      theme: long.theme,
+      suggestion: suggestion,
+      audio: long.audio,
+      title: schedule.name,
+      messageKey: "break.longBreakMessage",
+      scheduleName: schedule.name,
+    };
+  } else if (isAttention(payload)) {
+    const id = payload.Attention;
+    const attention = config.attentions.find((a) => a.id === id);
+    if (!attention) return null;
+    return {
+      id: attention.id,
+      kind: "attention",
+      duration: Math.round(attention.durationS),
+      strictMode: false,
+      theme: attention.theme,
+      suggestion: undefined, // Attention doesn't use suggestions
+      audio: undefined,
+      title: attention.title,
+      messageKey: "break.attentionMessage", // Fallback i18n key
+      message: attention.message || undefined, // Use custom message if provided
+      scheduleName: undefined,
+    };
+  }
+  return null;
+}
+
+/** Scheduler store for managing break windows and events */
+export const useSchedulerStore = defineStore("scheduler", () => {
+  const initialized = ref(false); // Initialization flag
+  const activeBreakLabel = ref<string | null>(null); // Active break window label
+  const activeLabels = ref<string[]>([]); // All active break window labels
+  const activePayload = ref<BreakPayload | null>(null); // Active break payload
+  const schedulerPaused = ref(false); // Scheduler paused state
+  const schedulerStatus = ref<SchedulerStatus | null>(null); // Scheduler status
+
+  /**
+   * Initialize scheduler store and set up event listeners
+   */
+  async function init() {
+    if (initialized.value) {
+      return;
+    }
+    initialized.value = true;
+
+    await listen<EventKind>("scheduler-event", (event) => {
+      handleSchedulerEvent(event.payload);
+    });
+
+    await listen("break-finished", () => {
+      closeActiveBreak();
+    });
+
+    // Listen for scheduler status updates
+    await listen<SchedulerStatus>("scheduler-status", (event) => {
+      console.log("[Scheduler] Status update received:", event.payload);
+      schedulerStatus.value = event.payload;
+      schedulerPaused.value = event.payload.paused;
+    });
+
+    // Request initial status after listeners are set up
+    try {
+      await invoke("request_scheduler_status");
+      console.log("[Scheduler] Requested initial status");
+    } catch (err) {
+      console.error("[Scheduler] Failed to request initial status:", err);
+    }
+
+    // Listen for break window ready signal
+    await listen<{ label: string }>("break-window-ready", async (event) => {
+      console.log(
+        "[Scheduler] Break window ready signal received:",
+        event.payload,
+      );
+      const label = event.payload.label;
+
+      // Check if this is the active break window
+      if (
+        activePayload.value &&
+        (label === activeBreakLabel.value || activeLabels.value.includes(label))
+      ) {
+        console.log(
+          "[Scheduler] Sending payload to break window:",
+          activePayload.value,
+        );
+        try {
+          await emit("break-start", activePayload.value);
+          console.log("[Scheduler] Payload sent successfully");
+        } catch (err) {
+          console.error("[Scheduler] Failed to send payload:", err);
+        }
+      } else {
+        console.warn(
+          "[Scheduler] Received ready signal from unknown window:",
+          label,
+        );
+      }
+    });
+  }
+
+  /**
+   * Handle scheduler event and open break window if needed
+   * @param {EventKind} payload Scheduler event payload
+   */
+  async function handleSchedulerEvent(payload: EventKind) {
+    console.log("[Scheduler] Received scheduler event:", payload);
+
+    if (isNotificationKind(payload)) {
+      const id = Object.values(payload.Notification)[0];
+      console.info("Break notification", id);
+      return;
+    }
+
+    const configStore = useConfigStore();
+    const suggestionsStore = useSuggestionsStore();
+    const config = configStore.draft ?? configStore.original;
+    if (!config) {
+      console.warn("Config not loaded yet, ignoring scheduler event");
+      return;
+    }
+
+    console.log("[Scheduler] Config loaded, processing event...");
+    console.log("[Scheduler] Available schedules:", config.schedules);
+
+    // Extract break information based on event type
+    const breakInfo = extractBreakInfo(payload, config, suggestionsStore);
+    if (!breakInfo) {
+      return;
+    }
+
+    const background = await resolveBackground(breakInfo.theme.background);
+
+    console.log("[Scheduler] Creating break payload...");
+
+    const breakPayload: BreakPayload = {
+      id: breakInfo.id,
+      kind: breakInfo.kind,
+      title: breakInfo.title,
+      messageKey: breakInfo.messageKey,
+      message: breakInfo.message,
+      duration: breakInfo.duration,
+      strictMode: breakInfo.strictMode,
+      theme: breakInfo.theme,
+      background,
+      suggestion: breakInfo.suggestion,
+      audio: breakInfo.audio,
+      allScreens: config.allScreens,
+      scheduleName: breakInfo.scheduleName,
+      postponeShortcut: config.postponeShortcut || "P", // Default "P" if not set
+    };
+
+    console.log("[Scheduler] Break payload created:", breakPayload);
+    await openBreakWindow(breakPayload);
+  }
+
+  /**
+   * Open break window with given payload
+   * @param {BreakPayload} payload Break payload to send to window
+   */
+  async function openBreakWindow(payload: BreakPayload) {
+    console.log("[Scheduler] Opening break window with payload:", payload);
+    await closeActiveBreak();
+
+    const label = `break-${Date.now()}`;
+    activeBreakLabel.value = label;
+    activePayload.value = payload;
+    activeLabels.value = [label];
+
+    console.log("[Scheduler] Window label:", label);
+
+    // Get config for window size
+    const configStore = useConfigStore();
+    const config = configStore.draft ?? configStore.original;
+
+    // See `src-tauri/src/config/models.rs`
+    const windowSize = config?.windowSize ?? 0.8;
+    const isFullscreen = windowSize >= 1.0;
+
+    const monitors = payload.allScreens ? await availableMonitors() : [];
+
+    console.log("[Scheduler] Monitors:", monitors.length);
+
+    if (monitors.length <= 1) {
+      // Calculate window size based on config
+      const screenWidth = globalThis.screen.width;
+      const screenHeight = globalThis.screen.height;
+
+      console.log("[Scheduler] Screen size:", screenWidth, "x", screenHeight);
+
+      const windowOptions = {
+        url: `/index.html?view=break&label=${label}`,
+        decorations: false,
+        focus: true,
+        fullscreen: isFullscreen,
+        transparent: true,
+        alwaysOnTop: true,
+        skipTaskbar: !isFullscreen,
+        ...(isFullscreen
+          ? {}
+          : {
+              width: Math.floor(screenWidth * windowSize),
+              height: Math.floor(screenHeight * windowSize),
+              center: true,
+            }),
+      };
+
+      console.log("[Scheduler] Creating window with options:", windowOptions);
+
+      const breakWindow = new WebviewWindow(label, windowOptions);
+
+      breakWindow.once("tauri://error", (e) => {
+        console.error("[Scheduler] Window creation error:", e);
+      });
+
+      breakWindow.once("tauri://created", () => {
+        console.log("[Scheduler] Window created successfully");
+      });
+    } else {
+      monitors.forEach((monitor, index) => {
+        const childLabel = `${label}-${index}`;
+        const scaleFactor = monitor.scaleFactor;
+
+        const monitorWidth = monitor.size.width / scaleFactor;
+        const monitorHeight = monitor.size.height / scaleFactor;
+        const monitorX = monitor.position.x / scaleFactor;
+        const monitorY = monitor.position.y / scaleFactor;
+        const windowWidth = isFullscreen
+          ? monitorWidth
+          : Math.floor(monitorWidth * windowSize);
+        const windowHeight = isFullscreen
+          ? monitorHeight
+          : Math.floor(monitorHeight * windowSize);
+        const win = new WebviewWindow(childLabel, {
+          url: `/index.html?view=break&label=${childLabel}`,
+          decorations: false,
+          focus: index === 0,
+          fullscreen: isFullscreen,
+          transparent: true,
+          alwaysOnTop: true,
+          skipTaskbar: !isFullscreen,
+          ...(isFullscreen
+            ? {
+                x: monitorX,
+                y: monitorY,
+              }
+            : {
+                width: windowWidth,
+                height: windowHeight,
+                x: monitorX + Math.floor((monitorWidth - windowWidth) / 2),
+                y: monitorY + Math.floor((monitorHeight - windowHeight) / 2),
+              }),
+        });
+        win.once("tauri://error", (e) => {
+          console.error("[Scheduler] Multi-monitor window creation error:", e);
+        });
+        activeLabels.value.push(childLabel);
+      });
+    }
+  }
+
+  /**
+   * Close active break window(s)
+   */
+  async function closeActiveBreak() {
+    if (!activeBreakLabel.value) {
+      return;
+    }
+    for (const label of activeLabels.value) {
+      const win = await WebviewWindow.getByLabel(label);
+      await win?.close();
+    }
+    activeBreakLabel.value = null;
+    activePayload.value = null;
+    activeLabels.value = [];
+  }
+
+  /**
+   * Set scheduler paused state
+   * @param {boolean} paused Paused state
+   */
+  function setPaused(paused: boolean) {
+    schedulerPaused.value = paused;
+  }
+
+  return {
+    init,
+    handleSchedulerEvent,
+    openBreakWindow,
+    closeActiveBreak,
+    setPaused,
+    schedulerPaused,
+    schedulerStatus,
+    activePayload,
+  };
+});
