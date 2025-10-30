@@ -285,6 +285,16 @@ export const useSchedulerStore = defineStore("scheduler", () => {
     }
     initialized.value = true;
 
+    // Initialize suggestions store early to ensure it's loaded before any break events
+    const suggestionsStore = useSuggestionsStore();
+    if (!suggestionsStore.hasLoaded) {
+      try {
+        await suggestionsStore.load();
+      } catch (err) {
+        console.error("[Scheduler] Failed to load suggestions during init:", err);
+      }
+    }
+
     await listen<EventKind>("scheduler-event", (event) => {
       handleSchedulerEvent(event.payload);
     });
