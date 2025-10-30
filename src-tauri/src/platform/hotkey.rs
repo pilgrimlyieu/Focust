@@ -198,7 +198,7 @@ fn parse_key_code(s: &str) -> Result<Code, String> {
         "right" => Ok(Code::ArrowRight),
         "up" => Ok(Code::ArrowUp),
         "down" => Ok(Code::ArrowDown),
-        _ => Err(format!("Unknown key code: {}", s)),
+        _ => Err(format!("Unknown key code: {s}")),
     }
 }
 
@@ -235,11 +235,10 @@ mod tests {
     fn test_parse_shortcut_letters() {
         // Test all letters
         for letter in 'a'..='z' {
-            let shortcut = format!("Ctrl+{}", letter);
+            let shortcut = format!("Ctrl+{letter}");
             assert!(
                 parse_shortcut(&shortcut).is_ok(),
-                "Failed to parse: {}",
-                shortcut
+                "Failed to parse: {shortcut}"
             );
         }
     }
@@ -248,11 +247,10 @@ mod tests {
     fn test_parse_shortcut_numbers() {
         // Test all digits
         for num in 0..=9 {
-            let shortcut = format!("Ctrl+{}", num);
+            let shortcut = format!("Ctrl+{num}");
             assert!(
                 parse_shortcut(&shortcut).is_ok(),
-                "Failed to parse: {}",
-                shortcut
+                "Failed to parse: {shortcut}"
             );
         }
     }
@@ -260,11 +258,10 @@ mod tests {
     #[test]
     fn test_parse_shortcut_function_keys() {
         for i in 1..=12 {
-            let shortcut = format!("Ctrl+F{}", i);
+            let shortcut = format!("Ctrl+F{i}");
             assert!(
                 parse_shortcut(&shortcut).is_ok(),
-                "Failed to parse: {}",
-                shortcut
+                "Failed to parse: {shortcut}",
             );
         }
     }

@@ -21,13 +21,18 @@ pub fn run() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_notification::init())
         .setup(|app| {
-            // Initialize logging system
             let log_dir = app
                 .path()
                 .app_log_dir()
                 .expect("Failed to get app log directory");
 
-            if let Err(e) = utils::init_logging(log_dir, "info") {
+            let log_level = if cfg!(debug_assertions) {
+                "info"
+            } else {
+                "warn"
+            };
+
+            if let Err(e) = utils::init_logging(log_dir, log_level) {
                 eprintln!("Failed to initialize logging: {e}");
             }
 
@@ -89,6 +94,7 @@ pub fn run() {
             cmd::suggestions::get_suggestions_for_language,
             cmd::suggestions::save_suggestions,
             cmd::system::open_config_directory,
+            cmd::system::open_log_directory,
             cmd::window::open_settings_window,
         ])
         .build(tauri::generate_context!())

@@ -35,6 +35,19 @@ async function openConfigDirectory() {
 }
 
 /**
+ * Open the log directory in the system's file explorer.
+ */
+async function openLogDirectory() {
+  try {
+    await invoke("open_log_directory");
+    emit("notify", "success", t("toast.directoryOpened"));
+  } catch (err) {
+    console.error(err);
+    emit("notify", "error", t("toast.openFailed"));
+  }
+}
+
+/**
  * Trigger a mini break for testing purposes.
  */
 async function triggerMiniBreak() {
@@ -149,11 +162,26 @@ async function skipCurrentBreak() {
         {{ t("advanced.openConfigDir") }}
       </h3>
       <p class="text-sm text-base-content/60 mb-4">
-        {{ t("advanced.description") }}
+        {{ t("advanced.openConfigDirDescription") }}
       </p>
       <button class="btn btn-primary gap-2 shadow-md hover:shadow-lg transition-all" @click="openConfigDirectory">
         <ExternalLinkIcon class-name="h-5 w-5" />
         {{ t("advanced.openConfigDir") }}
+      </button>
+    </div>
+
+    <!-- Log Directory -->
+    <div class="rounded-2xl border border-base-300 bg-base-100/70 p-6 shadow-md">
+      <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+        <FolderIcon class-name="h-5 w-5 text-info" />
+        {{ t("advanced.openLogDir") }}
+      </h3>
+      <p class="text-sm text-base-content/60 mb-4">
+        {{ t("advanced.openLogDirDescription") }}
+      </p>
+      <button class="btn btn-info gap-2 shadow-md hover:shadow-lg transition-all" @click="openLogDirectory">
+        <ExternalLinkIcon class-name="h-5 w-5" />
+        {{ t("advanced.openLogDir") }}
       </button>
     </div>
 

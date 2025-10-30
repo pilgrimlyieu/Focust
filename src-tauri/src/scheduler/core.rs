@@ -112,7 +112,7 @@ impl Scheduler {
                                     ),
                                 };
                                 if let Err(e) = self.app_handle.emit("scheduler-status", &status) {
-                                    tracing::warn!("Failed to emit scheduler status: {}", e);
+                                    tracing::warn!("Failed to emit scheduler status: {e}");
                                 }
 
                                 // Check if we need to send a notification before the break
@@ -275,7 +275,7 @@ impl Scheduler {
                         }),
                     };
                     if let Err(e) = self.app_handle.emit("scheduler-status", &status) {
-                        tracing::warn!("Failed to emit scheduler status on resume: {}", e);
+                        tracing::warn!("Failed to emit scheduler status on resume: {e}");
                     }
                 }
             }
@@ -352,7 +352,7 @@ impl Scheduler {
                 };
 
                 if let Err(e) = self.app_handle.emit("scheduler-status", &status) {
-                    tracing::warn!("Failed to emit scheduler status: {}", e);
+                    tracing::warn!("Failed to emit scheduler status: {e}");
                 }
             }
         }

@@ -20,6 +20,7 @@ pub fn init_logging(log_dir: PathBuf, log_level: &str) -> Result<(), String> {
     let file_appender = RollingFileAppender::builder()
         .rotation(Rotation::DAILY)
         .filename_suffix("focust.log") // 2025-10-28.focust.log
+        .max_log_files(1) // Keep only 1 day of logs
         .build(&log_dir)
         .expect("Failed to create log file appender");
 
@@ -58,8 +59,8 @@ pub fn init_logging(log_dir: PathBuf, log_level: &str) -> Result<(), String> {
         .with(stdout_layer)
         .init();
 
-    tracing::info!("Logging initialized at level: {}", log_level);
-    tracing::info!("Log directory: {:?}", log_dir);
+    tracing::info!("Logging initialized at level: {log_level}");
+    tracing::info!("Log directory: {}", log_dir.display());
 
     Ok(())
 }

@@ -15,5 +15,5 @@ pub use scheduler::{SchedulerCmd, ShutdownTx, pause_scheduler, postpone_break, r
 pub use suggestions::{
     SharedSuggestions, get_suggestions, get_suggestions_for_language, save_suggestions,
 };
-pub use system::open_config_directory;
+pub use system::{open_config_directory, open_log_directory};
 pub use window::open_settings_window;

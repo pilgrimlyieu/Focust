@@ -20,6 +20,11 @@ const enUS = {
       "Break window is created on demand and forced to stay on top.",
     description: "Configuration file location and window behavior",
     openConfigDir: "Open configuration directory",
+    openConfigDirDescription:
+      "Open the application's configuration folder for manual editing or backup",
+    openLogDir: "Open log directory",
+    openLogDirDescription:
+      "Open the application's log folder for viewing or debugging",
     title: "Advanced",
     window: "Window behaviour",
   },

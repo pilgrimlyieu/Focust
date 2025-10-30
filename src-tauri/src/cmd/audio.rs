@@ -45,7 +45,7 @@ fn resolve_builtin_audio_path(app: &AppHandle, resource_name: &str) -> Result<St
         // Production: use bundled resources
         resource_dir
             .join("sounds")
-            .join(format!("{}.mp3", resource_name))
+            .join(format!("{resource_name}.mp3"))
     } else {
         // Development: use source directory
         // Get the app directory
