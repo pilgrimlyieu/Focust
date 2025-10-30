@@ -148,17 +148,24 @@ const handlePayload = async (data: BreakPayload) => {
   // Start timer after rendering
   startTimer(data.duration);
 
-  // Play audio (non-blocking)
-  console.log("[BreakApp] Playing break audio");
-  playAudio(data.audio).catch((err) => {
-    console.warn("[BreakApp] Audio playback error:", err);
-  });
+  // Only play audio in the primary window (first monitor, index 0)
+  const currentWindow = getCurrentWindow();
+  const windowLabel = currentWindow.label;
+  const isPrimaryWindow = windowLabel.endsWith("-0");
+
+  if (isPrimaryWindow) {
+    console.log("[BreakApp] Playing break audio (primary window)");
+    playAudio(data.audio).catch((err) => {
+      console.warn("[BreakApp] Audio playback error:", err);
+    });
+  } else {
+    console.log("[BreakApp] Skipping audio playback (secondary window)");
+  }
 
   // Show window after everything is ready
   console.log("[BreakApp] Content rendered, showing window...");
 
   try {
-    const currentWindow = getCurrentWindow();
     await currentWindow.show();
     await currentWindow.setFocus();
     isRendered.value = true;

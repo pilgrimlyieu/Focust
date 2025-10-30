@@ -264,4 +264,5 @@ alias adb := add-dep-back
     echo "🔒 Running pre-commit checks..."
     just format
     just check
+    just lint
     echo "✅ Pre-commit checks passed!"
