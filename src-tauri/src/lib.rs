@@ -63,6 +63,16 @@ pub fn run() {
 
             Ok(())
         })
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event
+                && window.label() == "settings"
+            {
+                api.prevent_close();
+                if let Err(e) = window.hide() {
+                    tracing::error!("Failed to hide settings window: {e}");
+                }
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             cmd::config::get_config,
             cmd::scheduler::pause_scheduler,
