@@ -300,12 +300,12 @@ defineExpose({
           <div class="space-y-2">
             <p class="text-xs uppercase tracking-[0.35em] opacity-60">
               {{
-                payload.scheduleName ??
-                (payload.kind === "attention"
-                  ? t("break.attention")
-                  : payload.kind === "long"
-                    ? t("schedule.longBreak")
-                    : t("schedule.miniBreak"))
+  payload.scheduleName ??
+  (payload.kind === "attention"
+    ? t("break.attention")
+    : payload.kind === "long"
+      ? t("schedule.longBreak")
+      : t("schedule.miniBreak"))
               }}
             </p>
             <h1 class="text-4xl font-semibold">{{ payload.title }}</h1>
@@ -319,7 +319,8 @@ defineExpose({
               aria-valuemin="0" aria-valuemax="100" :style="`--value:${elapsed}; --size:12rem; --thickness:12px`">
               {{ formatTime(remaining) }}
             </div>
-            <p class="text-xs uppercase tracking-wide opacity-60">
+            <p class="text-xs uppercase tracking-wide"
+              :class="controlsDisabled ? 'text-orange-400 font-semibold' : 'opacity-60'">
               {{ controlsDisabled ? t("break.strict") : t("break.timerLabel") }}
             </p>
           </div>
@@ -341,7 +342,8 @@ defineExpose({
             </button>
           </div>
 
-          <p v-if="!isAttention" class="text-xs opacity-50">
+          <!-- Only show shortcut hint in non-strict mode -->
+          <p v-if="!isAttention && !controlsDisabled" class="text-xs opacity-50">
             {{ t("break.shortcutHint", { postpone: payload.postponeShortcut }) }}
           </p>
         </div>
