@@ -132,6 +132,18 @@ const playAudio = async (settings?: AudioSettings | null) => {
   }
 };
 
+const preloadBackground = async (data: BreakPayload): Promise<void> => {
+  if (data.background.type === "image") {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve();
+      img.onerror = () => resolve();
+      setTimeout(() => resolve(), 1000);
+      img.src = data.background.value;
+    });
+  }
+};
+
 /**
  * Handle incoming break payload and start the break.
  * @param {BreakPayload} data The break payload data.
@@ -141,6 +153,8 @@ const handlePayload = async (data: BreakPayload) => {
   console.log("[BreakApp] Suggestion field:", data.suggestion);
   isClosing.value = false;
   payload.value = data;
+
+  await preloadBackground(data);
 
   // Wait for next tick to ensure DOM is updated
   await nextTick();
