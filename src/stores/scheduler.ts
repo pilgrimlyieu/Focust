@@ -221,11 +221,16 @@ function getWindowOptionsForMonitor(
   monitor: Monitor | null,
   windowSize: number,
 ): {
+  alwaysOnTop: boolean;
+  decorations: boolean;
+  focus: boolean;
+  fullscreen: boolean;
+  skipTaskbar: boolean;
+  transparent: boolean;
   width?: number;
   height?: number;
   x: number;
   y: number;
-  fullscreen: boolean;
 } {
   const isFullscreen = windowSize >= 1.0;
   const monitorInfo = getMonitorInfo(monitor, globalThis.screen);
@@ -241,19 +246,25 @@ function getWindowOptionsForMonitor(
   const windowHeight = isFullscreen
     ? monitorHeight
     : Math.floor(monitorHeight * windowSize);
-  return isFullscreen
-    ? {
-        fullscreen: true,
-        x: monitorX,
-        y: monitorY,
-      }
-    : {
-        fullscreen: false,
-        height: windowHeight,
-        width: windowWidth,
-        x: monitorX + Math.floor((monitorWidth - windowWidth) / 2),
-        y: monitorY + Math.floor((monitorHeight - windowHeight) / 2),
-      };
+  return {
+    alwaysOnTop: true,
+    decorations: false,
+    focus: true,
+    fullscreen: isFullscreen,
+    skipTaskbar: true,
+    transparent: true,
+    ...(isFullscreen
+      ? {
+          x: monitorX,
+          y: monitorY,
+        }
+      : {
+          height: windowHeight,
+          width: windowWidth,
+          x: monitorX + Math.floor((monitorWidth - windowWidth) / 2),
+          y: monitorY + Math.floor((monitorHeight - windowHeight) / 2),
+        }),
+  };
 }
 
 /** Scheduler store for managing break windows and events */
@@ -413,11 +424,6 @@ export const useSchedulerStore = defineStore("scheduler", () => {
     if (monitors.length <= 1) {
       const targetMonitor = await currentMonitor();
       const windowOptions = {
-        alwaysOnTop: true,
-        decorations: false,
-        focus: true,
-        skipTaskbar: true,
-        transparent: true,
         url: `/index.html?view=break&label=${label}`,
         ...getWindowOptionsForMonitor(targetMonitor, windowSize),
       };
@@ -433,11 +439,6 @@ export const useSchedulerStore = defineStore("scheduler", () => {
       monitors.forEach((monitor, index) => {
         const childLabel = `${label}-${index}`;
         const win = new WebviewWindow(childLabel, {
-          alwaysOnTop: true,
-          decorations: false,
-          focus: true,
-          skipTaskbar: true,
-          transparent: true,
           url: `/index.html?view=break&label=${childLabel}`,
           ...getWindowOptionsForMonitor(monitor, windowSize),
         });
