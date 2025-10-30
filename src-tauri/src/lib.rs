@@ -1,6 +1,9 @@
 use tauri::Manager;
 
-use crate::{cmd::SchedulerCmd, cmd::ShutdownTx, scheduler::init_scheduler};
+use crate::{
+    cmd::{BreakPayloadStore, SchedulerCmd, ShutdownTx},
+    scheduler::init_scheduler,
+};
 
 pub mod cmd;
 pub mod config;
@@ -35,6 +38,9 @@ pub fn run() {
                 if let Err(e) = core::audio::init_audio_player().await {
                     tracing::error!("Failed to initialize audio player: {e}");
                 }
+
+                // Initialize break payload store
+                handle.manage(BreakPayloadStore::new());
 
                 // Load app config first
                 let app_config = config::load_config(&handle).await;
@@ -90,6 +96,9 @@ pub fn run() {
             cmd::suggestions::get_suggestions,
             cmd::suggestions::get_suggestions_for_language,
             cmd::suggestions::save_suggestions,
+            cmd::payload::store_break_payload,
+            cmd::payload::get_break_payload,
+            cmd::payload::remove_break_payload,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

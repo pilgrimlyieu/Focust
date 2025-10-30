@@ -1,10 +1,19 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
-import { emit, listen } from "@tauri-apps/api/event";
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { emit } from "@tauri-apps/api/event";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from "vue";
 import { useI18n } from "vue-i18n";
-import type { BreakPayload } from "@/stores/scheduler";
 import type { AudioSettings } from "@/types/generated/AudioSettings";
+import type { BreakPayload } from "@/types/generated/BreakPayload";
+import { isBuiltinAudio, isFilePathAudio } from "@/types/guards";
 
 const { t } = useI18n();
 
@@ -12,8 +21,7 @@ const payload = ref<BreakPayload | null>(null);
 const remaining = ref(0);
 const intervalId = ref<number | null>(null);
 const isClosing = ref(false);
-const unlistenRef = ref<null | (() => void)>(null);
-const activeAudio = ref<HTMLAudioElement | null>(null);
+const isRendered = ref(false);
 
 /**
  * Start the countdown timer for the break.
@@ -91,41 +99,33 @@ const controlsDisabled = computed(() => payload.value?.strictMode ?? false);
 const isAttention = computed(() => payload.value?.kind === "attention");
 
 /** Stop the active audio playback */
-const stopAudio = () => {
-  if (activeAudio.value) {
-    activeAudio.value.pause();
-    activeAudio.value.currentTime = 0;
-    activeAudio.value = null;
-  }
+const stopAudio = async () => {
+  await invoke("stop_audio").catch((err) => {
+    console.warn("Failed to stop audio via backend", err);
+  });
 };
 
 /**
  * Play the break audio based on the provided settings.
  * @param {AudioSettings?} settings The audio settings.
  */
-const playAudio = async (settings?: AudioSettings) => {
-  stopAudio();
+const playAudio = async (settings?: AudioSettings | null) => {
+  await stopAudio();
   if (!settings || settings.source === "None") return;
 
   try {
-    if (settings.source === "Builtin") {
-      const audio = settings as AudioSettings & { name?: string };
-      const name = audio.name;
-      if (name) {
-        await invoke("play_builtin_audio", {
-          resourceName: name,
-          volume: settings.volume,
-        });
-      }
-    } else if (settings.source === "FilePath") {
-      const audio = settings as AudioSettings & { path?: string };
-      const path = audio.path;
-      if (path) {
-        await invoke("play_audio", {
-          path,
-          volume: settings.volume,
-        });
-      }
+    if (isBuiltinAudio(settings)) {
+      const name = settings.name;
+      await invoke("play_builtin_audio", {
+        resourceName: name,
+        volume: settings.volume,
+      });
+    } else if (isFilePathAudio(settings)) {
+      const path = settings.path;
+      await invoke("play_audio", {
+        path,
+        volume: settings.volume,
+      });
     }
   } catch (err) {
     console.warn("Failed to play break audio", err);
@@ -141,8 +141,31 @@ const handlePayload = async (data: BreakPayload) => {
   console.log("[BreakApp] Suggestion field:", data.suggestion);
   isClosing.value = false;
   payload.value = data;
+
+  // Wait for next tick to ensure DOM is updated
+  await nextTick();
+
+  // Start timer after rendering
   startTimer(data.duration);
-  await playAudio(data.audio);
+
+  // Play audio (non-blocking)
+  console.log("[BreakApp] Playing break audio");
+  playAudio(data.audio).catch((err) => {
+    console.warn("[BreakApp] Audio playback error:", err);
+  });
+
+  // Show window after everything is ready
+  console.log("[BreakApp] Content rendered, showing window...");
+
+  try {
+    const currentWindow = getCurrentWindow();
+    await currentWindow.show();
+    await currentWindow.setFocus();
+    isRendered.value = true;
+    console.log("[BreakApp] Window shown successfully");
+  } catch (err) {
+    console.error("[BreakApp] Failed to show window:", err);
+  }
 };
 
 const finishBreak = async (isAutoFinish = false) => {
@@ -229,31 +252,26 @@ onMounted(async () => {
   window.addEventListener("keydown", handleKeydown);
   window.addEventListener("contextmenu", handleContextMenu);
 
-  // Get window label from URL
+  // Get payloadId from URL
   const params = new URLSearchParams(window.location.search);
-  const label = params.get("label");
-  console.log("[BreakApp] Window label:", label);
+  const payloadId = params.get("payloadId");
+  console.log("[BreakApp] Payload ID from URL:", payloadId);
 
-  // Listen for break-start event
-  const unlisten = await listen<BreakPayload>("break-start", async (event) => {
-    console.log("[BreakApp] Received break-start event:", event.payload);
-    await handlePayload(event.payload);
-  });
-  unlistenRef.value = () => {
-    void unlisten();
-  };
+  if (!payloadId) {
+    console.error("[BreakApp] No payloadId found in URL");
+    return;
+  }
 
-  // Send ready signal to main window
-  if (label) {
-    console.log("[BreakApp] Sending ready signal with label:", label);
-    try {
-      await emit("break-window-ready", { label });
-      console.log("[BreakApp] Ready signal sent");
-    } catch (err) {
-      console.error("[BreakApp] Failed to send ready signal:", err);
-    }
-  } else {
-    console.error("[BreakApp] No label found in URL");
+  // Fetch payload from backend immediately
+  try {
+    console.log("[BreakApp] Fetching payload from backend...");
+    const fetchedPayload = await invoke<BreakPayload>("get_break_payload", {
+      payloadId,
+    });
+    console.log("[BreakApp] Payload fetched successfully:", fetchedPayload);
+    await handlePayload(fetchedPayload);
+  } catch (err) {
+    console.error("[BreakApp] Failed to fetch payload from backend:", err);
   }
 });
 
@@ -262,9 +280,6 @@ onBeforeUnmount(() => {
   window.removeEventListener("contextmenu", handleContextMenu);
   if (intervalId.value) {
     clearInterval(intervalId.value);
-  }
-  if (unlistenRef.value) {
-    unlistenRef.value();
   }
   stopAudio();
   document.title = "Focust";
@@ -285,8 +300,8 @@ defineExpose({
 </script>
 
 <template>
-  <div class="break-app flex min-h-screen flex-col overflow-hidden" :class="{ 'is-strict': controlsDisabled }"
-    :style="backgroundStyle">
+  <div class="break-app flex min-h-screen flex-col overflow-hidden"
+    :class="{ 'is-strict': controlsDisabled, 'is-rendered': isRendered }" :style="backgroundStyle">
     <div class="flex flex-1 items-center justify-center bg-slate-950/35 p-6">
       <div
         class="w-full max-w-3xl rounded-3xl border border-white/10 bg-white/10 p-10 shadow-2xl backdrop-blur-xl transition-all"
@@ -300,12 +315,12 @@ defineExpose({
           <div class="space-y-2">
             <p class="text-xs uppercase tracking-[0.35em] opacity-60">
               {{
-  payload.scheduleName ??
-  (payload.kind === "attention"
-    ? t("break.attention")
-    : payload.kind === "long"
-      ? t("schedule.longBreak")
-      : t("schedule.miniBreak"))
+              payload.scheduleName ??
+              (payload.kind === "attention"
+              ? t("break.attention")
+              : payload.kind === "long"
+              ? t("schedule.longBreak")
+              : t("schedule.miniBreak"))
               }}
             </p>
             <h1 class="text-4xl font-semibold">{{ payload.title }}</h1>

@@ -1,5 +1,5 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
-import { emit, listen } from "@tauri-apps/api/event";
+import { listen } from "@tauri-apps/api/event";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import {
   availableMonitors,
@@ -13,7 +13,9 @@ import { useSuggestionsStore } from "@/stores/suggestions";
 import type { AppConfig } from "@/types/generated/AppConfig";
 import type { AudioSettings } from "@/types/generated/AudioSettings";
 import type { BackgroundSource } from "@/types/generated/BackgroundSource";
+import type { BreakPayload } from "@/types/generated/BreakPayload";
 import type { EventKind } from "@/types/generated/EventKind";
+import type { ResolvedBackground } from "@/types/generated/ResolvedBackground";
 import type { SchedulerStatus } from "@/types/generated/SchedulerStatus";
 import type { ThemeSettings } from "@/types/generated/ThemeSettings";
 import {
@@ -25,30 +27,6 @@ import {
 
 /** Break kind type */
 export type BreakKind = "mini" | "long" | "attention";
-
-/** Resolved background for break window */
-export interface ResolvedBackground {
-  type: "solid" | "image";
-  value: string;
-}
-
-/** Scheduler break payload sent to break window */
-export interface BreakPayload {
-  id: number;
-  kind: BreakKind;
-  title: string;
-  messageKey: string; // i18n key of break message
-  message?: string; // Custom message for Attention
-  duration: number;
-  strictMode: boolean;
-  theme: ThemeSettings;
-  background: ResolvedBackground;
-  suggestion?: string;
-  audio?: AudioSettings;
-  allScreens: boolean;
-  scheduleName?: string;
-  postponeShortcut: string;
-}
 
 /**
  * Resolve background source to actual background for break window
@@ -227,6 +205,7 @@ function getWindowOptionsForMonitor(
   fullscreen: boolean;
   skipTaskbar: boolean;
   transparent: boolean;
+  visible: boolean;
   width?: number;
   height?: number;
   x: number;
@@ -253,6 +232,7 @@ function getWindowOptionsForMonitor(
     fullscreen: isFullscreen,
     skipTaskbar: true,
     transparent: true,
+    visible: false, // Start hidden, show after render
     ...(isFullscreen
       ? {
           x: monitorX,
@@ -291,7 +271,10 @@ export const useSchedulerStore = defineStore("scheduler", () => {
       try {
         await suggestionsStore.load();
       } catch (err) {
-        console.error("[Scheduler] Failed to load suggestions during init:", err);
+        console.error(
+          "[Scheduler] Failed to load suggestions during init:",
+          err,
+        );
       }
     }
 
@@ -317,37 +300,6 @@ export const useSchedulerStore = defineStore("scheduler", () => {
     } catch (err) {
       console.error("[Scheduler] Failed to request initial status:", err);
     }
-
-    // Listen for break window ready signal
-    await listen<{ label: string }>("break-window-ready", async (event) => {
-      console.log(
-        "[Scheduler] Break window ready signal received:",
-        event.payload,
-      );
-      const label = event.payload.label;
-
-      // Check if this is the active break window
-      if (
-        activePayload.value &&
-        (label === activeBreakLabel.value || activeLabels.value.includes(label))
-      ) {
-        console.log(
-          "[Scheduler] Sending payload to break window:",
-          activePayload.value,
-        );
-        try {
-          await emit("break-start", activePayload.value);
-          console.log("[Scheduler] Payload sent successfully");
-        } catch (err) {
-          console.error("[Scheduler] Failed to send payload:", err);
-        }
-      } else {
-        console.warn(
-          "[Scheduler] Received ready signal from unknown window:",
-          label,
-        );
-      }
-    });
   }
 
   /**
@@ -386,17 +338,17 @@ export const useSchedulerStore = defineStore("scheduler", () => {
 
     const breakPayload: BreakPayload = {
       allScreens: config.allScreens,
-      audio: breakInfo.audio,
+      audio: breakInfo.audio ?? null,
       background,
       duration: breakInfo.duration,
       id: breakInfo.id,
       kind: breakInfo.kind,
-      message: breakInfo.message,
+      message: breakInfo.message ?? null,
       messageKey: breakInfo.messageKey,
       postponeShortcut: config.postponeShortcut || "P", // Default "P" if not set
-      scheduleName: breakInfo.scheduleName,
+      scheduleName: breakInfo.scheduleName ?? null,
       strictMode: breakInfo.strictMode,
-      suggestion: breakInfo.suggestion,
+      suggestion: breakInfo.suggestion ?? null,
       theme: breakInfo.theme,
       title: breakInfo.title,
     };
@@ -413,12 +365,17 @@ export const useSchedulerStore = defineStore("scheduler", () => {
     console.log("[Scheduler] Opening break window with payload:", payload);
     await closeActiveBreak();
 
-    const label = `break-${Date.now()}`;
-    activeBreakLabel.value = label;
-    activePayload.value = payload;
-    activeLabels.value = [label];
+    const baseLabel = `break-${Date.now()}`;
+    const payloadId = baseLabel; // Use timestamp as unique payload ID
 
-    console.log("[Scheduler] Window label:", label);
+    // Store payload in backend for fast retrieval
+    try {
+      await invoke("store_break_payload", { payload, payloadId });
+      console.log("[Scheduler] Payload stored in backend with id:", payloadId);
+    } catch (err) {
+      console.error("[Scheduler] Failed to store payload:", err);
+      return;
+    }
 
     // Get config for window size
     const configStore = useConfigStore();
@@ -432,9 +389,13 @@ export const useSchedulerStore = defineStore("scheduler", () => {
     console.log("[Scheduler] Monitors:", monitors.length);
 
     if (monitors.length <= 1) {
+      const label = `${baseLabel}-0`;
+      activeBreakLabel.value = label;
+      activePayload.value = payload;
+      activeLabels.value = [label];
       const targetMonitor = await currentMonitor();
       const windowOptions = {
-        url: `/index.html?view=break&label=${label}`,
+        url: `/index.html?view=break&payloadId=${payloadId}`,
         ...getWindowOptionsForMonitor(targetMonitor, windowSize),
       };
       console.log("[Scheduler] Creating window with options:", windowOptions);
@@ -447,9 +408,9 @@ export const useSchedulerStore = defineStore("scheduler", () => {
       });
     } else {
       monitors.forEach((monitor, index) => {
-        const childLabel = `${label}-${index}`;
+        const childLabel = `${baseLabel}-${index}`;
         const win = new WebviewWindow(childLabel, {
-          url: `/index.html?view=break&label=${childLabel}`,
+          url: `/index.html?view=break&payloadId=${payloadId}`,
           ...getWindowOptionsForMonitor(monitor, windowSize),
         });
         win.once("tauri://error", (e) => {
@@ -461,6 +422,10 @@ export const useSchedulerStore = defineStore("scheduler", () => {
             childLabel,
           );
         });
+        if (index === 0) {
+          activeBreakLabel.value = childLabel;
+          activePayload.value = payload;
+        }
         activeLabels.value.push(childLabel);
       });
     }
