@@ -40,8 +40,8 @@ defineExpose({ preview, showSuggestions, t });
 <template>
   <div class="space-y-3">
     <div class="flex items-center justify-between">
-      <h3 class="text-lg font-semibold">{{ label }}</h3>
-      <span class="badge badge-outline">{{ t("suggestions.preview") }}</span>
+      <h3 class="text-sm font-medium">{{ label }}</h3>
+      <span class="badge badge-ghost badge-sm">{{ t("suggestions.label") }}</span>
     </div>
 
     <!-- Simple toggle: Show suggestions or not -->

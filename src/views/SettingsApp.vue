@@ -11,7 +11,13 @@ import {
 import { useI18n } from "vue-i18n";
 import AdvancedOption from "@/components/icons/AdvancedOption.vue";
 import AttentionBell from "@/components/icons/AttentionBell.vue";
+import CheckCircleIcon from "@/components/icons/CheckCircleIcon.vue";
+import CheckIcon from "@/components/icons/CheckIcon.vue";
 import CleanCalendar from "@/components/icons/CleanCalendar.vue";
+import ClockIcon from "@/components/icons/ClockIcon.vue";
+import PauseIcon from "@/components/icons/PauseIcon.vue";
+import PlayIcon from "@/components/icons/PlayIcon.vue";
+import RefreshIcon from "@/components/icons/RefreshIcon.vue";
 import SettingGear from "@/components/icons/SettingGear.vue";
 import SuggestionBulb from "@/components/icons/SuggestionBulb.vue";
 import ToastHost from "@/components/ui/ToastHost.vue";
@@ -32,6 +38,8 @@ const SuggestionsPanel = defineAsyncComponent(
   () => import("@/components/settings/SuggestionsPanel.vue"),
 );
 
+import BellIcon from "@/components/icons/BellIcon.vue";
+import SlidersIcon from "@/components/icons/SlidersIcon.vue";
 import type { ToastKind } from "@/composables/useToast";
 import { useToast } from "@/composables/useToast";
 import { useConfigStore } from "@/stores/config";
@@ -269,40 +277,21 @@ defineExpose({
         <div class="flex items-center gap-3">
           <div
             class="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-primary to-secondary shadow-lg">
-            <!-- TODO: Use icon instead -->
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <ClockIcon class-name="h-6 w-6 text-white" />
           </div>
           <div>
             <h1 class="text-lg font-bold text-base-content sm:text-xl">{{ t("app.name") }}</h1>
             <p class="text-xs text-base-content/60 sm:text-sm">
               <span v-if="schedulerPaused" class="flex items-center gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <PauseIcon class-name="h-3 w-3" />
                 {{ t("general.paused") }}
               </span>
               <span v-else-if="nextBreakInfo" class="flex items-center gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-success" fill="none" viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <CheckCircleIcon class-name="h-3 w-3 text-success" />
                 {{ t("general.nextBreak", { kind: nextBreakInfo.kind, time: nextBreakInfo.timeRemaining }) }}
               </span>
               <span v-else class="flex items-center gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-success animate-pulse" fill="none"
-                  viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <PlayIcon class-name="h-3 w-3 text-success animate-pulse" />
                 {{ t("general.running") }}
               </span>
             </p>
@@ -313,43 +302,22 @@ defineExpose({
         <div class="flex flex-wrap items-center gap-2">
           <button class="btn btn-sm gap-2 btn-ghost hover:btn-primary" :class="{ 'btn-active': schedulerPaused }"
             @click="togglePause">
-            <svg v-if="schedulerPaused" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
-              viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <PlayIcon v-if="schedulerPaused" class-name="h-4 w-4" />
+            <PauseIcon v-else class-name="h-4 w-4" />
             <span class="hidden sm:inline">{{ schedulerPaused ? t("actions.resume") : t("actions.pause") }}</span>
           </button>
           <button class="btn btn-sm gap-2 btn-ghost hover:btn-info" @click="handlePostpone">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <ClockIcon class-name="h-4 w-4" />
             <span class="hidden sm:inline">{{ t("actions.postpone") }}</span>
           </button>
           <div class="divider divider-horizontal mx-0"></div>
           <button class="btn btn-sm gap-2 btn-ghost" :disabled="!isDirty" @click="handleReset">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
+            <RefreshIcon class-name="h-4 w-4" />
             <span class="hidden sm:inline">{{ t("actions.reset") }}</span>
           </button>
           <button class="btn btn-sm gap-2 btn-primary shadow-lg" :disabled="!isDirty || isSaving" @click="handleSave">
             <span v-if="isSaving" class="loading loading-spinner loading-xs" />
-            <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
+            <CheckIcon v-else class-name="h-4 w-4" />
             <span>{{ t("actions.save") }}</span>
           </button>
         </div>
@@ -366,11 +334,11 @@ defineExpose({
                 ? 'active bg-linear-to-r from-primary to-secondary text-primary-content font-semibold shadow-lg'
                 : 'hover:bg-base-200'" @click="activeTab = tab.key">
                 <!-- Icon -->
-                <SettingGear v-if="index === 0" />
-                <CleanCalendar v-else-if="index === 1" />
-                <AttentionBell v-else-if="index === 2" />
-                <SuggestionBulb v-else-if="index === 3" />
-                <AdvancedOption v-else-if="index === 4" />
+                <SettingGear :class-name="'h-5 w-5'" v-if="index === 0" />
+                <CleanCalendar :class-name="'h-5 w-5'" v-else-if="index === 1" />
+                <BellIcon :class-name="'h-5 w-5'" v-else-if="index === 2" />
+                <SuggestionBulb :class-name="'h-5 w-5'" v-else-if="index === 3" />
+                <SlidersIcon :class-name="'h-5 w-5'" v-else-if="index === 4" />
                 <span>{{ tab.label }}</span>
               </a>
             </li>

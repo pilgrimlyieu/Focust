@@ -1,18 +1,15 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
+import CheckCircleIcon from "@/components/icons/CheckCircleIcon.vue";
+import DuplicateIcon from "@/components/icons/DuplicateIcon.vue";
+import GripVerticalIcon from "@/components/icons/GripVerticalIcon.vue";
+import PauseCircleIcon from "@/components/icons/PauseCircleIcon.vue";
+import TrashIcon from "@/components/icons/TrashIcon.vue";
 import AudioPicker from "@/components/settings/AudioPicker.vue";
 import SuggestionsToggle from "@/components/settings/SuggestionsToggle.vue";
 import ThemeDesigner from "@/components/settings/ThemeDesigner.vue";
 import type { ScheduleSettings } from "@/stores/config";
-
-defineOptions({
-  components: {
-    AudioPicker,
-    SuggestionsToggle,
-    ThemeDesigner,
-  },
-});
 
 const props = defineProps<{
   schedule: ScheduleSettings;
@@ -85,130 +82,209 @@ const longPostponeMinutes = computed({
     props.schedule.longBreaks.postponedS = Math.max(1, Math.round(value)) * 60;
   },
 });
-
-defineExpose({
-  dayOrder,
-  duplicateSchedule,
-  longDurationMinutes,
-  longPostponeMinutes,
-  miniDurationMinutes,
-  miniIntervalMinutes,
-  miniPostponeMinutes,
-  removeSchedule,
-  t,
-  toggleDay,
-});
 </script>
 
 <template>
-  <article class="space-y-6 rounded-2xl border border-base-300 bg-base-100/70 p-6 shadow-sm">
-    <header class="flex flex-wrap items-center justify-between gap-3">
-      <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-1">
-        <label class="label cursor-pointer gap-3 shrink-0">
-          <input v-model="schedule.enabled" type="checkbox" class="toggle toggle-lg shrink-0"
-            :class="{ 'toggle-success': schedule.enabled }" />
-        </label>
-        <div class="flex flex-col gap-2 flex-1 min-w-0">
-          <input v-model="schedule.name" type="text" class="input input-bordered text-lg w-full"
-            :placeholder="t('schedule.name')" />
-          <p class="text-xs flex items-center gap-1.5">
-            <template v-if="schedule.enabled">
-              <svg xmlns="http://www.w3.org/2000/svg" class="inline h-3 w-3 text-success" fill="none"
-                viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span class="text-success">{{ t("schedule.enabledStatus") }}</span>
-            </template>
-            <template v-else>
-              <svg xmlns="http://www.w3.org/2000/svg" class="inline h-3 w-3 text-base-content/30" fill="none"
-                viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span class="text-base-content/50">{{ t("schedule.disabledStatus") }}</span>
-            </template>
-          </p>
-        </div>
+  <article
+    class="group space-y-6 rounded-2xl border border-base-300 bg-linear-to-br from-base-100 to-base-200/30 p-6 shadow-md hover:shadow-xl transition-all"
+  >
+    <!-- Header -->
+    <header class="flex flex-wrap items-start gap-4">
+      <div class="flex items-center gap-3 cursor-grab active:cursor-grabbing shrink-0">
+        <GripVerticalIcon class-name="h-5 w-5 text-base-content/20 group-hover:text-base-content/50 transition-colors" />
+        <input
+          v-model="schedule.enabled"
+          type="checkbox"
+          class="toggle toggle-lg transition-all"
+          :class="{ 'toggle-success': schedule.enabled }"
+        />
+      </div>
+      <div class="flex-1 min-w-0">
+        <input
+          v-model="schedule.name"
+          type="text"
+          class="input input-bordered input-lg text-lg w-full font-semibold transition-all focus:input-primary"
+          :placeholder="t('schedule.name')"
+        />
+        <p class="text-xs text-base-content/50 mt-2 flex items-center gap-1.5">
+          <template v-if="schedule.enabled">
+            <CheckCircleIcon class-name="h-3.5 w-3.5 text-success" />
+            <span class="text-success font-medium">{{ t("schedule.enabledStatus") }}</span>
+          </template>
+          <template v-else>
+            <PauseCircleIcon class-name="h-3.5 w-3.5 text-base-content/30" />
+            <span class="text-base-content/50">{{ t("schedule.disabledStatus") }}</span>
+          </template>
+        </p>
       </div>
       <div class="flex gap-2 shrink-0">
-        <button class="btn btn-sm btn-ghost" @click="duplicateSchedule">{{ t("actions.duplicate") }}</button>
-        <button class="btn btn-sm btn-error" @click="removeSchedule">{{ t("actions.delete") }}</button>
+        <button
+          class="btn btn-sm btn-ghost gap-2 opacity-60 hover:opacity-100 transition-all"
+          :title="t('actions.duplicate')"
+          @click="duplicateSchedule"
+        >
+          <DuplicateIcon class-name="h-4 w-4" />
+          <span class="hidden sm:inline font-medium">{{ t("actions.duplicate") }}</span>
+        </button>
+        <button
+          class="btn btn-sm btn-error btn-ghost gap-2 opacity-60 hover:opacity-100 transition-all"
+          :title="t('actions.delete')"
+          @click="removeSchedule"
+        >
+          <TrashIcon class-name="h-4 w-4" />
+          <span class="hidden sm:inline font-medium">{{ t("actions.delete") }}</span>
+        </button>
       </div>
     </header>
 
+    <!-- Time Range and Notification -->
     <section class="grid gap-4 md:grid-cols-3">
       <label class="form-control">
-        <span class="label-text">{{ t("schedule.start") }}</span>
-        <input v-model="schedule.timeRange.start" type="time" class="input input-bordered" />
+        <span class="label-text text-sm font-medium mb-2">{{ t("schedule.start") }}</span>
+        <input
+          v-model="schedule.timeRange.start"
+          type="time"
+          class="input input-bordered transition-all focus:input-primary"
+        />
       </label>
       <label class="form-control">
-        <span class="label-text">{{ t("schedule.end") }}</span>
-        <input v-model="schedule.timeRange.end" type="time" class="input input-bordered" />
+        <span class="label-text text-sm font-medium mb-2">{{ t("schedule.end") }}</span>
+        <input
+          v-model="schedule.timeRange.end"
+          type="time"
+          class="input input-bordered transition-all focus:input-primary"
+        />
       </label>
       <label class="form-control">
-        <span class="label-text">{{ t("schedule.notifyBefore") }}</span>
-        <input v-model.number="schedule.notificationBeforeS" type="number" min="0" class="input input-bordered" />
+        <span class="label-text text-sm font-medium mb-2">{{ t("schedule.notifyBefore") }}</span>
+        <input
+          v-model.number="schedule.notificationBeforeS"
+          type="number"
+          min="0"
+          class="input input-bordered transition-all focus:input-primary"
+        />
       </label>
     </section>
 
-    <section class="space-y-3">
-      <span class="label-text">{{ t("schedule.days") }}</span>
+    <!-- Days of Week -->
+    <section class="rounded-xl bg-base-200/50 p-5">
+      <span class="label-text text-sm font-medium mb-3 block">{{ t("schedule.days") }}</span>
       <div class="flex flex-wrap gap-2">
-        <button v-for="day in dayOrder" :key="day" class="btn btn-sm" :class="schedule.daysOfWeek.includes(day) ? 'btn-primary' : 'btn-outline'
-          " @click="toggleDay(day)">
+        <button
+          v-for="day in dayOrder"
+          :key="day"
+          class="btn btn-sm min-w-14 transition-all font-medium"
+          :class="schedule.daysOfWeek.includes(day) ? 'btn-primary shadow-md' : 'btn-outline btn-ghost'"
+          @click="toggleDay(day)"
+        >
           {{ t(`days.${day}`) }}
         </button>
       </div>
     </section>
 
-    <section class="grid gap-6 md:grid-cols-2">
-      <div class="space-y-4">
-        <h3 class="text-lg font-semibold">{{ t("schedule.miniBreak") }}</h3>
-        <div class="grid gap-4 md:grid-cols-2">
+    <!-- Breaks Configuration -->
+    <section class="grid gap-6 lg:grid-cols-2">
+      <!-- Mini Break -->
+      <div class="rounded-xl border border-base-300 bg-base-100/50 p-5 space-y-5">
+        <h3 class="text-lg font-bold flex items-center gap-2">
+          <span class="badge badge-primary badge-sm">MINI</span>
+          {{ t("schedule.miniBreak") }}
+        </h3>
+        
+        <!-- Mini Break Settings -->
+        <div class="grid gap-4 sm:grid-cols-2">
           <label class="form-control">
-            <span class="label-text">{{ t("schedule.intervalMinutes") }}</span>
-            <input v-model.number="miniIntervalMinutes" type="number" min="1" class="input input-bordered" />
+            <span class="label-text text-xs font-medium mb-1.5">{{ t("schedule.intervalMinutes") }}</span>
+            <input
+              v-model.number="miniIntervalMinutes"
+              type="number"
+              min="1"
+              class="input input-sm input-bordered transition-all focus:input-primary"
+            />
           </label>
           <label class="form-control">
-            <span class="label-text">{{ t("schedule.durationMinutes") }}</span>
-            <input v-model.number="miniDurationMinutes" type="number" min="1" class="input input-bordered" />
+            <span class="label-text text-xs font-medium mb-1.5">{{ t("schedule.durationMinutes") }}</span>
+            <input
+              v-model.number="miniDurationMinutes"
+              type="number"
+              min="1"
+              class="input input-sm input-bordered transition-all focus:input-primary"
+            />
           </label>
           <label class="form-control">
-            <span class="label-text">{{ t("schedule.postponeMinutes") }}</span>
-            <input v-model.number="miniPostponeMinutes" type="number" min="1" class="input input-bordered" />
+            <span class="label-text text-xs font-medium mb-1.5">{{ t("schedule.postponeMinutes") }}</span>
+            <input
+              v-model.number="miniPostponeMinutes"
+              type="number"
+              min="1"
+              class="input input-sm input-bordered transition-all focus:input-primary"
+            />
           </label>
-          <label class="label cursor-pointer justify-start gap-3">
-            <input v-model="schedule.miniBreaks.strictMode" type="checkbox" class="checkbox" />
-            <span>{{ t("schedule.strictMode") }}</span>
+          <label class="label cursor-pointer justify-start gap-2 py-2">
+            <input
+              v-model="schedule.miniBreaks.strictMode"
+              type="checkbox"
+              class="checkbox checkbox-sm transition-all"
+            />
+            <span class="label-text text-xs font-medium">{{ t("schedule.strictMode") }}</span>
           </label>
         </div>
+
+        <div class="divider my-3"></div>
+
         <ThemeDesigner :theme="schedule.miniBreaks.theme" :label="t('schedule.theme')" />
         <AudioPicker :audio="schedule.miniBreaks.audio" :label="t('schedule.audio')" />
         <SuggestionsToggle :suggestions="schedule.miniBreaks.suggestions" :label="t('schedule.suggestions')" />
       </div>
 
-      <div class="space-y-4">
-        <h3 class="text-lg font-semibold">{{ t("schedule.longBreak") }}</h3>
-        <div class="grid gap-4 md:grid-cols-2">
+      <!-- Long Break -->
+      <div class="rounded-xl border border-base-300 bg-base-100/50 p-5 space-y-5">
+        <h3 class="text-lg font-bold flex items-center gap-2">
+          <span class="badge badge-secondary badge-sm">LONG</span>
+          {{ t("schedule.longBreak") }}
+        </h3>
+
+        <!-- Long Break Settings -->
+        <div class="grid gap-4 sm:grid-cols-2">
           <label class="form-control">
-            <span class="label-text">{{ t("schedule.durationMinutes") }}</span>
-            <input v-model.number="longDurationMinutes" type="number" min="1" class="input input-bordered" />
+            <span class="label-text text-xs font-medium mb-1.5">{{ t("schedule.durationMinutes") }}</span>
+            <input
+              v-model.number="longDurationMinutes"
+              type="number"
+              min="1"
+              class="input input-sm input-bordered transition-all focus:input-primary"
+            />
           </label>
           <label class="form-control">
-            <span class="label-text">{{ t("schedule.postponeMinutes") }}</span>
-            <input v-model.number="longPostponeMinutes" type="number" min="1" class="input input-bordered" />
+            <span class="label-text text-xs font-medium mb-1.5">{{ t("schedule.postponeMinutes") }}</span>
+            <input
+              v-model.number="longPostponeMinutes"
+              type="number"
+              min="1"
+              class="input input-sm input-bordered transition-all focus:input-primary"
+            />
           </label>
           <label class="form-control">
-            <span class="label-text">{{ t("schedule.afterMiniBreaks") }}</span>
-            <input v-model.number="schedule.longBreaks.afterMiniBreaks" type="number" min="1"
-              class="input input-bordered" />
+            <span class="label-text text-xs font-medium mb-1.5">{{ t("schedule.afterMiniBreaks") }}</span>
+            <input
+              v-model.number="schedule.longBreaks.afterMiniBreaks"
+              type="number"
+              min="1"
+              class="input input-sm input-bordered transition-all focus:input-primary"
+            />
           </label>
-          <label class="label cursor-pointer justify-start gap-3">
-            <input v-model="schedule.longBreaks.strictMode" type="checkbox" class="checkbox" />
-            <span>{{ t("schedule.strictMode") }}</span>
+          <label class="label cursor-pointer justify-start gap-2 py-2">
+            <input
+              v-model="schedule.longBreaks.strictMode"
+              type="checkbox"
+              class="checkbox checkbox-sm transition-all"
+            />
+            <span class="label-text text-xs font-medium">{{ t("schedule.strictMode") }}</span>
           </label>
         </div>
+
+        <div class="divider my-3"></div>
+
         <ThemeDesigner :theme="schedule.longBreaks.theme" :label="t('schedule.theme')" />
         <AudioPicker :audio="schedule.longBreaks.audio" :label="t('schedule.audio')" />
         <SuggestionsToggle :suggestions="schedule.longBreaks.suggestions" :label="t('schedule.suggestions')" />

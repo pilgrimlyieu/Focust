@@ -46,7 +46,7 @@ pub async fn open_settings_window<R: Runtime>(app: AppHandle<R>) -> Result<(), S
     // Wait for ready event with timeout
     let app_clone2 = app.clone();
     tauri::async_runtime::spawn(async move {
-        let ready = tokio::time::timeout(tokio::time::Duration::from_millis(1000), rx).await;
+        let ready = tokio::time::timeout(tokio::time::Duration::from_millis(3000), rx).await;
         app_clone.unlisten(unlisten);
 
         match ready {

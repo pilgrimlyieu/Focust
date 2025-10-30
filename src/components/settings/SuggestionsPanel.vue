@@ -1,13 +1,20 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, TransitionGroup, watch } from "vue";
 import { useI18n } from "vue-i18n";
+import CloseIcon from "@/components/icons/CloseIcon.vue";
+import DocumentIcon from "@/components/icons/DocumentIcon.vue";
+import GripVerticalIcon from "@/components/icons/GripVerticalIcon.vue";
+import ImportIcon from "@/components/icons/ImportIcon.vue";
+import InfoIcon from "@/components/icons/InfoIcon.vue";
+import ListIcon from "@/components/icons/ListIcon.vue";
+import PlusIcon from "@/components/icons/PlusIcon.vue";
+import SuggestionBulb from "@/components/icons/SuggestionBulb.vue";
 import { getI18nLocale } from "@/i18n";
 import { useSuggestionsStore } from "@/stores/suggestions";
 
 const { t } = useI18n();
 const suggestionsStore = useSuggestionsStore();
 
-// Load suggestions on mount
 onMounted(() => {
   if (!suggestionsStore.hasLoaded) {
     suggestionsStore.load();
@@ -27,6 +34,7 @@ const suggestionsText = ref("");
 
 const newSuggestionInput = ref("");
 const isSaving = ref(false);
+const draggedIndex = ref<number | null>(null);
 
 watch(
   [() => suggestionsStore.config, currentLanguage],
@@ -126,115 +134,146 @@ function importFromBulk() {
   editMode.value = "list";
   saveSuggestions();
 }
+
+/**
+ * Handle drag start
+ * @param {number} index The index of the dragged item
+ */
+function handleDragStart(index: number) {
+  draggedIndex.value = index;
+}
+
+/**
+ * Handle drag over
+ * @param {DragEvent} event The drag event
+ * @param {number} index The target index
+ */
+function handleDragOver(event: DragEvent, index: number) {
+  event.preventDefault();
+  if (draggedIndex.value === null || draggedIndex.value === index) return;
+
+  const items = [...suggestionsList.value];
+  const draggedItem = items[draggedIndex.value];
+  items.splice(draggedIndex.value, 1);
+  items.splice(index, 0, draggedItem);
+
+  suggestionsList.value = items;
+  draggedIndex.value = index;
+}
+
+/**
+ * Handle drag end
+ */
+function handleDragEnd() {
+  draggedIndex.value = null;
+  saveSuggestions();
+}
 </script>
 
 <template>
   <section class="space-y-6">
-    <header>
-      <h2 class="text-xl font-semibold">{{ t("suggestions.title") }}</h2>
-      <p class="text-sm opacity-70">
-        {{ t("suggestions.description") }}
-      </p>
-    </header>
-
-    <div v-if="suggestionsStore.loading" class="flex justify-center py-8">
-      <span class="loading loading-spinner loading-lg"></span>
-    </div>
-
-    <div v-else class="space-y-6">
-      <!-- Language info -->
-      <div class="alert alert-info shadow-lg">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        <div class="flex-1">
-          <div class="font-semibold">
-            {{ t("suggestions.currentLanguage") }}: {{ currentLanguage }}
-          </div>
-          <div class="text-sm mt-1 opacity-80">
-            {{ t("suggestions.totalCount") }}: {{ suggestionsList.length }}
+    <!-- Header Card -->
+    <div
+      class="rounded-2xl border border-success/30 bg-linear-to-br from-success/10 via-success/5 to-transparent p-6 shadow-sm backdrop-blur-sm">
+      <div class="flex flex-col sm:flex-row items-start gap-5">
+        <div
+          class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-success to-success/80 shadow-lg">
+          <SuggestionBulb class-name="h-7 w-7 text-white" />
+        </div>
+        <div class="flex-1 min-w-0">
+          <h2 class="text-2xl font-bold text-base-content mb-2.5">
+            {{ t("suggestions.title") }}
+          </h2>
+          <p class="text-sm text-base-content/70 leading-relaxed mb-4">
+            {{ t("suggestions.description") }}
+          </p>
+          <div class="flex flex-wrap gap-2 items-center">
+            <div class="badge badge-success badge-outline gap-1.5 py-3 px-3">
+              <InfoIcon class-name="h-3.5 w-3.5" />
+              <span class="text-xs font-medium">{{ t("suggestions.currentLanguage") }}: {{ currentLanguage }}</span>
+            </div>
+            <div v-if="suggestionsList.length" class="badge badge-ghost gap-1.5 py-3 px-3">
+              <span class="font-semibold">{{ suggestionsList.length }}</span>
+              <span class="text-xs">{{ t("suggestions.totalCount") }}</span>
+            </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Mode switcher -->
-      <div class="flex gap-2">
-        <button class="btn btn-sm" :class="{ 'btn-primary': editMode === 'list' }" @click="switchMode('list')">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-          </svg>
+    <!-- Loading State -->
+    <div v-if="suggestionsStore.loading" class="flex justify-center py-12">
+      <span class="loading loading-spinner loading-lg text-primary"></span>
+    </div>
+
+    <div v-else class="space-y-6">
+      <!-- Mode Switcher -->
+      <div class="flex gap-2 bg-base-200/50 p-1.5 rounded-xl w-fit">
+        <button class="btn btn-sm transition-all font-medium"
+          :class="{ 'btn-primary shadow-md': editMode === 'list', 'btn-ghost': editMode !== 'list' }"
+          @click="switchMode('list')">
+          <ListIcon class-name="h-4 w-4" />
           {{ t("suggestions.listMode") }}
         </button>
-        <button class="btn btn-sm" :class="{ 'btn-primary': editMode === 'bulk' }" @click="switchMode('bulk')">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
+        <button class="btn btn-sm transition-all font-medium"
+          :class="{ 'btn-primary shadow-md': editMode === 'bulk', 'btn-ghost': editMode !== 'bulk' }"
+          @click="switchMode('bulk')">
+          <DocumentIcon class-name="h-4 w-4" />
           {{ t("suggestions.bulkMode") }}
         </button>
       </div>
 
-      <!-- List mode -->
+      <!-- List Mode -->
       <div v-if="editMode === 'list'" class="space-y-4">
-        <!-- Add new suggestion -->
+        <!-- Add New Suggestion -->
         <div class="flex gap-2">
           <input v-model="newSuggestionInput" type="text" :placeholder="t('suggestions.addPlaceholder')"
-            class="input input-bordered flex-1" @keyup.enter="addSuggestion" />
-          <button class="btn btn-primary" :disabled="!newSuggestionInput.trim()" @click="addSuggestion">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
+            class="input input-bordered flex-1 transition-all focus:input-primary" @keyup.enter="addSuggestion" />
+          <button class="btn btn-primary gap-2 font-medium shadow-md hover:shadow-lg transition-all"
+            :disabled="!newSuggestionInput.trim()" @click="addSuggestion">
+            <PlusIcon class-name="h-5 w-5" />
             {{ t("suggestions.add") }}
           </button>
         </div>
 
-        <!-- Suggestions list -->
-        <div class="space-y-2 max-h-96 overflow-y-auto pr-2">
-          <div v-for="(suggestion, index) in suggestionsList" :key="index"
-            class="flex gap-2 items-center group bg-base-200/50 hover:bg-base-200 rounded-lg p-3 transition-all">
-            <span class="text-base-content/40 font-mono text-sm w-8 text-right">{{ index + 1 }}</span>
-            <input :value="suggestion" type="text" class="input input-sm input-bordered flex-1 bg-base-100" @blur="
-              updateSuggestion(
-                index,
-                ($event.target as HTMLInputElement).value
-              );
-            saveSuggestions();
-            " @keyup.enter="($event.target as HTMLInputElement).blur()" />
+        <!-- Suggestions List -->
+        <TransitionGroup name="list" tag="div" class="space-y-2 max-h-96 overflow-y-auto pr-2">
+          <div v-for="(suggestion, index) in suggestionsList" :key="`suggestion-${index}`" :draggable="true"
+            class="flex gap-2 items-center group bg-base-200/50 hover:bg-base-200 rounded-lg p-3 transition-all cursor-move"
+            :class="{
+              'opacity-50 scale-95': draggedIndex === index,
+              'ring-2 ring-primary/50': draggedIndex !== null && draggedIndex !== index,
+            }" @dragstart="handleDragStart(index)" @dragover="handleDragOver($event, index)" @dragend="handleDragEnd">
+            <GripVerticalIcon
+              class-name="h-4 w-4 text-base-content/20 group-hover:text-base-content/50 transition-colors cursor-grab active:cursor-grabbing" />
+            <span class="text-base-content/40 font-mono text-xs w-8 text-right shrink-0">{{ index + 1 }}</span>
+            <input :value="suggestion" type="text"
+              class="input input-sm input-bordered flex-1 bg-base-100 transition-all focus:input-primary" @blur="
+                updateSuggestion(index, ($event.target as HTMLInputElement).value);
+              saveSuggestions();
+              " @keyup.enter="($event.target as HTMLInputElement).blur()" />
             <button
               class="btn btn-sm btn-ghost btn-circle text-error opacity-0 group-hover:opacity-100 transition-opacity"
-              @click="removeSuggestion(index)">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              :title="t('actions.delete')" @click="removeSuggestion(index)">
+              <CloseIcon class-name="h-5 w-5" />
             </button>
           </div>
 
-          <div v-if="!suggestionsList.length" class="text-center py-8 text-base-content/50">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-2 opacity-20" fill="none"
-              viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <p>{{ t("suggestions.emptyList") }}</p>
+          <div v-if="!suggestionsList.length" key="empty" class="text-center py-12 text-base-content/50">
+            <SuggestionBulb class-name="h-20 w-20 mx-auto mb-4 text-base-content/10" />
+            <p class="text-base font-medium">{{ t("suggestions.emptyList") }}</p>
           </div>
-        </div>
+        </TransitionGroup>
       </div>
 
-      <!-- Bulk mode -->
+      <!-- Bulk Mode -->
       <div v-if="editMode === 'bulk'" class="space-y-4">
-        <!-- Instructions card -->
+        <!-- Instructions -->
         <div class="alert alert-warning shadow-lg">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-            class="stroke-current shrink-0 w-6 h-6">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
+          <InfoIcon class-name="h-6 w-6" />
           <div>
-            <h3 class="font-bold">{{ t("suggestions.bulkModeTitle") }}</h3>
-            <div class="text-xs opacity-80">
+            <h3 class="font-bold text-sm">{{ t("suggestions.bulkModeTitle") }}</h3>
+            <div class="text-xs opacity-80 mt-1">
               {{ t("suggestions.bulkModeDesc") }}
             </div>
           </div>
@@ -243,32 +282,27 @@ function importFromBulk() {
         <!-- Textarea -->
         <div class="form-control">
           <textarea v-model="suggestionsText"
-            class="textarea textarea-bordered h-80 font-mono text-sm leading-relaxed resize-none"
+            class="textarea textarea-bordered h-80 font-mono text-sm leading-relaxed resize-none transition-all focus:textarea-primary"
             :placeholder="t('suggestions.bulkPlaceholder')" /><br />
           <label class="label">
             <span class="label-text-alt">
               <span class="font-semibold">{{
                 suggestionsText.split("\n").filter((s) => s.trim()).length
-              }}</span>
+                }}</span>
               {{ t("suggestions.linesDetected") }}
             </span>
           </label>
         </div>
 
-        <!-- Action buttons -->
+        <!-- Action Buttons -->
         <div class="flex gap-2 justify-end">
-          <button class="btn btn-ghost" @click="switchMode('list')">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+          <button class="btn btn-ghost gap-2 font-medium" @click="switchMode('list')">
+            <CloseIcon class-name="h-5 w-5" />
             {{ t("suggestions.cancel") }}
           </button>
-          <button class="btn btn-primary" @click="importFromBulk">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
+          <button class="btn btn-primary gap-2 shadow-md hover:shadow-lg transition-all font-medium"
+            @click="importFromBulk">
+            <ImportIcon class-name="h-5 w-5" />
             {{ t("suggestions.importAndSave") }}
           </button>
         </div>
@@ -276,3 +310,26 @@ function importFromBulk() {
     </div>
   </section>
 </template>
+
+<style scoped>
+.list-move,
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.list-enter-from {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.list-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.list-leave-active {
+  position: absolute;
+  width: calc(100% - 2rem);
+}
+</style>

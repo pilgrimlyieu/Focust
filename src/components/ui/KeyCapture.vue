@@ -90,8 +90,8 @@ function clearShortcut() {
 
 <template>
   <div class="form-control w-full">
-    <label v-if="label" class="label">
-      <span class="label-text">{{ label }}</span>
+    <label v-if="label" class="label pb-2">
+      <span class="label-text font-medium text-sm">{{ label }}</span>
     </label>
     <div class="relative">
       <input ref="inputRef" type="text" :value="displayValue" :placeholder="placeholder"
