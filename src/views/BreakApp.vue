@@ -212,6 +212,14 @@ const handleKeydown = (event: KeyboardEvent) => {
   }
 };
 
+/**
+ * Prevent context menu (right-click) in break window
+ * @param {MouseEvent} event The mouse event.
+ */
+const handleContextMenu = (event: MouseEvent) => {
+  event.preventDefault();
+};
+
 watch(payload, (next) => {
   document.title = next ? `${next.title} — Focust` : "Focust";
 });
@@ -219,6 +227,7 @@ watch(payload, (next) => {
 onMounted(async () => {
   console.log("[BreakApp] Component mounted");
   window.addEventListener("keydown", handleKeydown);
+  window.addEventListener("contextmenu", handleContextMenu);
 
   // Get window label from URL
   const params = new URLSearchParams(window.location.search);
@@ -250,6 +259,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener("keydown", handleKeydown);
+  window.removeEventListener("contextmenu", handleContextMenu);
   if (intervalId.value) {
     clearInterval(intervalId.value);
   }
