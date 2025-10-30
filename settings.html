@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Focust - Settings</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      .loading-skeleton {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="app">
+      <!-- Loading skeleton shown until Vue mounts -->
+      <div
+        class="loading-skeleton"
+        style="
+          background: linear-gradient(to bottom right, #f3f4f6, #e5e7eb);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        "
+      >
+        <div style="text-align: center">
+          <!-- Loading spinner -->
+          <div
+            style="
+              width: 48px;
+              height: 48px;
+              border: 3px solid #e5e7eb;
+              border-top-color: #3b82f6;
+              border-radius: 50%;
+              animation: spin 0.8s linear infinite;
+              margin: 0 auto 16px;
+            "
+          ></div>
+          <p
+            style="
+              color: #6b7280;
+              font-size: 14px;
+              font-family: system-ui, -apple-system, sans-serif;
+            "
+          >
+            Loading Settings...
+          </p>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/settings.ts"></script>
+  </body>
+</html>

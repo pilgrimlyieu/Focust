@@ -149,17 +149,14 @@ fn handle_tray_menu_event<R: Runtime>(app: &AppHandle<R>, event_id: &str) {
     }
 }
 
-/// Show or focus the settings window
-fn show_settings_window<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
-    // Try to get existing settings window
-    if let Some(window) = app.get_webview_window("settings") {
-        window.show()?;
-        window.set_focus()?;
-        tracing::debug!("Settings window shown and focused");
-    } else {
-        tracing::warn!("Settings window not found, will be created automatically");
-        // Note: Window should be created by tauri.conf.json.
-    }
+/// Show or focus the settings window (create on demand)
+fn show_settings_window<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {
+    let app_clone = app.clone();
+    tauri::async_runtime::spawn(async move {
+        if let Err(e) = crate::cmd::window::open_settings_window(app_clone).await {
+            tracing::error!("Failed to open settings window: {e}");
+        }
+    });
     Ok(())
 }
 

@@ -1,18 +1,37 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import {
+  computed,
+  defineAsyncComponent,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from "vue";
 import { useI18n } from "vue-i18n";
 import AdvancedOption from "@/components/icons/AdvancedOption.vue";
 import AttentionBell from "@/components/icons/AttentionBell.vue";
 import CleanCalendar from "@/components/icons/CleanCalendar.vue";
 import SettingGear from "@/components/icons/SettingGear.vue";
 import SuggestionBulb from "@/components/icons/SuggestionBulb.vue";
-import AdvancedPanel from "@/components/settings/AdvancedPanel.vue";
-import AttentionsPanel from "@/components/settings/AttentionsPanel.vue";
-import GeneralSettingsPanel from "@/components/settings/GeneralSettingsPanel.vue";
-import SchedulesPanel from "@/components/settings/SchedulesPanel.vue";
-import SuggestionsPanel from "@/components/settings/SuggestionsPanel.vue";
 import ToastHost from "@/components/ui/ToastHost.vue";
+
+const AdvancedPanel = defineAsyncComponent(
+  () => import("@/components/settings/AdvancedPanel.vue"),
+);
+const AttentionsPanel = defineAsyncComponent(
+  () => import("@/components/settings/AttentionsPanel.vue"),
+);
+const GeneralSettingsPanel = defineAsyncComponent(
+  () => import("@/components/settings/GeneralSettingsPanel.vue"),
+);
+const SchedulesPanel = defineAsyncComponent(
+  () => import("@/components/settings/SchedulesPanel.vue"),
+);
+const SuggestionsPanel = defineAsyncComponent(
+  () => import("@/components/settings/SuggestionsPanel.vue"),
+);
+
 import type { ToastKind } from "@/composables/useToast";
 import { useToast } from "@/composables/useToast";
 import { useConfigStore } from "@/stores/config";
@@ -23,16 +42,6 @@ import {
   isMiniBreak,
   isNotificationKind,
 } from "@/types/guards";
-
-defineOptions({
-  components: {
-    AttentionsPanel,
-    GeneralSettingsPanel,
-    SchedulesPanel,
-    SuggestionsPanel,
-    ToastHost,
-  },
-});
 
 const { t } = useI18n();
 const configStore = useConfigStore();
@@ -209,9 +218,20 @@ function handleNotify(kind: ToastKind, message: string) {
   show(kind, message);
 }
 
-onMounted(() => {
-  if (!configStore.loading && configStore.draft) {
-    show("success", t("toast.loaded"));
+// Initialize config and scheduler when settings window opens
+onMounted(async () => {
+  try {
+    if (!configStore.draft) {
+      await configStore.load();
+    }
+    await schedulerStore.init();
+
+    if (configStore.draft) {
+      show("success", t("toast.loaded"));
+    }
+  } catch (err) {
+    console.error("Failed to initialize settings:", err);
+    show("error", t("toast.loadFailed"));
   }
 });
 
@@ -376,13 +396,25 @@ defineExpose({
             <p class="text-sm text-base-content/60">Loading configuration…</p>
           </div>
           <template v-else-if="configStore.draft">
-            <Transition name="fade" mode="out-in">
-              <GeneralSettingsPanel v-if="activeTab === 'general'" :key="'general'" :config="configStore.draft" />
-              <SchedulesPanel v-else-if="activeTab === 'schedules'" :key="'schedules'" :config="configStore.draft" />
-              <AttentionsPanel v-else-if="activeTab === 'attentions'" :key="'attentions'" :config="configStore.draft" />
-              <SuggestionsPanel v-else-if="activeTab === 'suggestions'" :key="'suggestions'" />
-              <AdvancedPanel v-else-if="activeTab === 'advanced'" :key="'advanced'" @notify="handleNotify" />
-            </Transition>
+            <Suspense>
+              <template #default>
+                <Transition name="fade" mode="out-in">
+                  <GeneralSettingsPanel v-if="activeTab === 'general'" :key="'general'" :config="configStore.draft" />
+                  <SchedulesPanel v-else-if="activeTab === 'schedules'" :key="'schedules'"
+                    :config="configStore.draft" />
+                  <AttentionsPanel v-else-if="activeTab === 'attentions'" :key="'attentions'"
+                    :config="configStore.draft" />
+                  <SuggestionsPanel v-else-if="activeTab === 'suggestions'" :key="'suggestions'" />
+                  <AdvancedPanel v-else-if="activeTab === 'advanced'" :key="'advanced'" @notify="handleNotify" />
+                </Transition>
+              </template>
+              <template #fallback>
+                <div class="flex flex-col items-center justify-center gap-4 py-32">
+                  <span class="loading loading-spinner loading-md text-primary" />
+                  <p class="text-sm text-base-content/60">Loading panel…</p>
+                </div>
+              </template>
+            </Suspense>
           </template>
         </div>
       </main>

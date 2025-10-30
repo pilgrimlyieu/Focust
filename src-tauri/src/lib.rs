@@ -69,37 +69,39 @@ pub fn run() {
 
             Ok(())
         })
-        .on_window_event(|window, event| {
-            if let tauri::WindowEvent::CloseRequested { api, .. } = event
-                && window.label() == "settings"
-            {
-                api.prevent_close();
-                if let Err(e) = window.hide() {
-                    tracing::error!("Failed to hide settings window: {e}");
-                }
-            }
-        })
         .invoke_handler(tauri::generate_handler![
-            cmd::config::get_config,
-            cmd::scheduler::pause_scheduler,
-            cmd::scheduler::resume_scheduler,
-            cmd::scheduler::postpone_break,
-            cmd::scheduler::trigger_break,
-            cmd::scheduler::skip_break,
-            cmd::scheduler::request_scheduler_status,
-            cmd::config::save_config,
-            cmd::config::pick_background_image,
             cmd::audio::play_audio,
             cmd::audio::play_builtin_audio,
             cmd::audio::stop_audio,
-            cmd::system::open_config_directory,
+            cmd::config::get_config,
+            cmd::config::pick_background_image,
+            cmd::config::save_config,
+            cmd::payload::get_break_payload,
+            cmd::payload::remove_break_payload,
+            cmd::payload::store_break_payload,
+            cmd::scheduler::pause_scheduler,
+            cmd::scheduler::postpone_break,
+            cmd::scheduler::request_scheduler_status,
+            cmd::scheduler::resume_scheduler,
+            cmd::scheduler::skip_break,
+            cmd::scheduler::trigger_break,
             cmd::suggestions::get_suggestions,
             cmd::suggestions::get_suggestions_for_language,
             cmd::suggestions::save_suggestions,
-            cmd::payload::store_break_payload,
-            cmd::payload::get_break_payload,
-            cmd::payload::remove_break_payload,
+            cmd::system::open_config_directory,
+            cmd::window::open_settings_window,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|_app_handle, event| {
+            // Prevent exit when all window destroyed
+            // See: https://github.com/tauri-apps/tauri/issues/13511
+            if let tauri::RunEvent::ExitRequested { api, code, .. } = event {
+                if code.is_none() {
+                    api.prevent_exit();
+                } else {
+                    tracing::info!("Application exit code: {code:?}");
+                }
+            }
+        })
 }

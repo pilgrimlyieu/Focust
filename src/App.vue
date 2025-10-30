@@ -1,20 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import { useConfigStore } from "@/stores/config";
-import { useSchedulerStore } from "@/stores/scheduler";
 import { getErrorMessage } from "@/utils/handleError";
 import BreakApp from "@/views/BreakApp.vue";
-import SettingsApp from "@/views/SettingsApp.vue";
-
-type AppView = "settings" | "break";
-
-const params = new URLSearchParams(window.location.search);
-const view = (params.get("view") as AppView) ?? "settings";
 
 const ready = ref(false);
 const error = ref<string | null>(null);
 
-const currentView = computed(() => (view === "break" ? BreakApp : SettingsApp));
+// Break app is the only view in the main window now
+const currentView = computed(() => BreakApp);
 
 function reload() {
   window.location.reload();
@@ -27,16 +20,9 @@ defineExpose({
 
 onMounted(async () => {
   try {
-    if (view === "settings") {
-      const configStore = useConfigStore();
-      await configStore.load();
-      const schedulerStore = useSchedulerStore();
-      await schedulerStore.init();
-    }
+    ready.value = true;
   } catch (err) {
     error.value = getErrorMessage(err);
-  } finally {
-    ready.value = true;
   }
 });
 </script>
