@@ -13,9 +13,10 @@
   "files": {
     "ignoreUnknown": false,
     "includes": [
-      "**",
-      "!dist",
-      "!src-tauri",
+      "src/**",
+      "*.json",
+      "*.js",
+      "*.ts",
       "!**/*.json",
       "!**/*.d.ts",
       "!**/*.css",
