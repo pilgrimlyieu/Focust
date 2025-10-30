@@ -1,7 +1,11 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
-import { availableMonitors } from "@tauri-apps/api/window";
+import {
+  availableMonitors,
+  currentMonitor,
+  type Monitor,
+} from "@tauri-apps/api/window";
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { useConfigStore } from "@/stores/config";
@@ -175,6 +179,83 @@ function extractBreakInfo(
   return null;
 }
 
+/**
+ * Get monitor information with scaled dimensions
+ * @param {Monitor | null} monitor Monitor object
+ * @param {Screen} fallback Fallback screen object
+ * @returns {object} Scaled monitor information
+ */
+function getMonitorInfo(
+  monitor: Monitor | null,
+  fallback: Screen,
+): {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+} {
+  if (!monitor) {
+    return {
+      height: fallback.height,
+      width: fallback.width,
+      x: 0,
+      y: 0,
+    };
+  }
+  const scaleFactor = monitor.scaleFactor;
+  return {
+    height: monitor.size.height / scaleFactor,
+    width: monitor.size.width / scaleFactor,
+    x: monitor.position.x / scaleFactor,
+    y: monitor.position.y / scaleFactor,
+  };
+}
+
+/**
+ * Calculate window options for a given monitor and window size
+ * @param {Monitor | null} monitor Monitor object
+ * @param {number} windowSize Window size ratio (0.0 to 1.0)
+ * @returns {object} Calculated window options
+ */
+function getWindowOptionsForMonitor(
+  monitor: Monitor | null,
+  windowSize: number,
+): {
+  width?: number;
+  height?: number;
+  x: number;
+  y: number;
+  fullscreen: boolean;
+} {
+  const isFullscreen = windowSize >= 1.0;
+  const monitorInfo = getMonitorInfo(monitor, globalThis.screen);
+  const {
+    width: monitorWidth,
+    height: monitorHeight,
+    x: monitorX,
+    y: monitorY,
+  } = monitorInfo;
+  const windowWidth = isFullscreen
+    ? monitorWidth
+    : Math.floor(monitorWidth * windowSize);
+  const windowHeight = isFullscreen
+    ? monitorHeight
+    : Math.floor(monitorHeight * windowSize);
+  return isFullscreen
+    ? {
+        fullscreen: true,
+        x: monitorX,
+        y: monitorY,
+      }
+    : {
+        fullscreen: false,
+        height: windowHeight,
+        width: windowWidth,
+        x: monitorX + Math.floor((monitorWidth - windowWidth) / 2),
+        y: monitorY + Math.floor((monitorHeight - windowHeight) / 2),
+      };
+}
+
 /** Scheduler store for managing break windows and events */
 export const useSchedulerStore = defineStore("scheduler", () => {
   const initialized = ref(false); // Initialization flag
@@ -324,84 +405,50 @@ export const useSchedulerStore = defineStore("scheduler", () => {
 
     // See `src-tauri/src/config/models.rs`
     const windowSize = config?.windowSize ?? 0.8;
-    const isFullscreen = windowSize >= 1.0;
 
     const monitors = payload.allScreens ? await availableMonitors() : [];
 
     console.log("[Scheduler] Monitors:", monitors.length);
 
     if (monitors.length <= 1) {
-      // Calculate window size based on config
-      const screenWidth = globalThis.screen.width;
-      const screenHeight = globalThis.screen.height;
-
-      console.log("[Scheduler] Screen size:", screenWidth, "x", screenHeight);
-
+      const targetMonitor = await currentMonitor();
       const windowOptions = {
         alwaysOnTop: true,
         decorations: false,
         focus: true,
-        fullscreen: isFullscreen,
-        skipTaskbar: !isFullscreen,
+        skipTaskbar: true,
         transparent: true,
         url: `/index.html?view=break&label=${label}`,
-        ...(isFullscreen
-          ? {}
-          : {
-              center: true,
-              height: Math.floor(screenHeight * windowSize),
-              width: Math.floor(screenWidth * windowSize),
-            }),
+        ...getWindowOptionsForMonitor(targetMonitor, windowSize),
       };
-
       console.log("[Scheduler] Creating window with options:", windowOptions);
-
       const breakWindow = new WebviewWindow(label, windowOptions);
-
       breakWindow.once("tauri://error", (e) => {
         console.error("[Scheduler] Window creation error:", e);
       });
-
       breakWindow.once("tauri://created", () => {
         console.log("[Scheduler] Window created successfully");
       });
     } else {
       monitors.forEach((monitor, index) => {
         const childLabel = `${label}-${index}`;
-        const scaleFactor = monitor.scaleFactor;
-
-        const monitorWidth = monitor.size.width / scaleFactor;
-        const monitorHeight = monitor.size.height / scaleFactor;
-        const monitorX = monitor.position.x / scaleFactor;
-        const monitorY = monitor.position.y / scaleFactor;
-        const windowWidth = isFullscreen
-          ? monitorWidth
-          : Math.floor(monitorWidth * windowSize);
-        const windowHeight = isFullscreen
-          ? monitorHeight
-          : Math.floor(monitorHeight * windowSize);
         const win = new WebviewWindow(childLabel, {
           alwaysOnTop: true,
           decorations: false,
-          focus: index === 0,
-          fullscreen: isFullscreen,
-          skipTaskbar: !isFullscreen,
+          focus: true,
+          skipTaskbar: true,
           transparent: true,
           url: `/index.html?view=break&label=${childLabel}`,
-          ...(isFullscreen
-            ? {
-                x: monitorX,
-                y: monitorY,
-              }
-            : {
-                height: windowHeight,
-                width: windowWidth,
-                x: monitorX + Math.floor((monitorWidth - windowWidth) / 2),
-                y: monitorY + Math.floor((monitorHeight - windowHeight) / 2),
-              }),
+          ...getWindowOptionsForMonitor(monitor, windowSize),
         });
         win.once("tauri://error", (e) => {
           console.error("[Scheduler] Multi-monitor window creation error:", e);
+        });
+        win.once("tauri://created", () => {
+          console.log(
+            "[Scheduler] Multi-monitor window created successfully:",
+            childLabel,
+          );
         });
         activeLabels.value.push(childLabel);
       });
