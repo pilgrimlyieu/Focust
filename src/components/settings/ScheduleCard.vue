@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import CheckCircleIcon from "@/components/icons/CheckCircleIcon.vue";
 import DuplicateIcon from "@/components/icons/DuplicateIcon.vue";
@@ -9,6 +8,7 @@ import TrashIcon from "@/components/icons/TrashIcon.vue";
 import AudioPicker from "@/components/settings/AudioPicker.vue";
 import SuggestionsToggle from "@/components/settings/SuggestionsToggle.vue";
 import ThemeDesigner from "@/components/settings/ThemeDesigner.vue";
+import { useSecondsToMinutes } from "@/composables/useComputed";
 import type { ScheduleSettings } from "@/stores/config";
 
 const props = defineProps<{
@@ -48,64 +48,58 @@ function toggleDay(day: string) {
   }
 }
 
-const miniIntervalMinutes = computed({
-  get: () => Math.round(props.schedule.miniBreaks.intervalS / 60),
-  set: (value: number) => {
-    props.schedule.miniBreaks.intervalS = Math.max(1, Math.round(value)) * 60;
+// Use composables for time conversions
+const miniIntervalMinutes = useSecondsToMinutes(
+  () => props.schedule.miniBreaks.intervalS,
+  (value) => {
+    props.schedule.miniBreaks.intervalS = value;
   },
-});
+);
 
-const miniDurationMinutes = computed({
-  get: () => Math.round(props.schedule.miniBreaks.durationS / 60),
-  set: (value: number) => {
-    props.schedule.miniBreaks.durationS = Math.max(1, Math.round(value)) * 60;
+const miniDurationMinutes = useSecondsToMinutes(
+  () => props.schedule.miniBreaks.durationS,
+  (value) => {
+    props.schedule.miniBreaks.durationS = value;
   },
-});
+);
 
-const miniPostponeMinutes = computed({
-  get: () => Math.round(props.schedule.miniBreaks.postponedS / 60),
-  set: (value: number) => {
-    props.schedule.miniBreaks.postponedS = Math.max(1, Math.round(value)) * 60;
+const miniPostponeMinutes = useSecondsToMinutes(
+  () => props.schedule.miniBreaks.postponedS,
+  (value) => {
+    props.schedule.miniBreaks.postponedS = value;
   },
-});
+);
 
-const longDurationMinutes = computed({
-  get: () => Math.round(props.schedule.longBreaks.durationS / 60),
-  set: (value: number) => {
-    props.schedule.longBreaks.durationS = Math.max(1, Math.round(value)) * 60;
+const longDurationMinutes = useSecondsToMinutes(
+  () => props.schedule.longBreaks.durationS,
+  (value) => {
+    props.schedule.longBreaks.durationS = value;
   },
-});
+);
 
-const longPostponeMinutes = computed({
-  get: () => Math.round(props.schedule.longBreaks.postponedS / 60),
-  set: (value: number) => {
-    props.schedule.longBreaks.postponedS = Math.max(1, Math.round(value)) * 60;
+const longPostponeMinutes = useSecondsToMinutes(
+  () => props.schedule.longBreaks.postponedS,
+  (value) => {
+    props.schedule.longBreaks.postponedS = value;
   },
-});
+);
 </script>
 
 <template>
   <article
-    class="group space-y-6 rounded-2xl border border-base-300 bg-linear-to-br from-base-100 to-base-200/30 p-6 shadow-md hover:shadow-xl transition-all"
-  >
+    class="group space-y-6 rounded-2xl border border-base-300 bg-linear-to-br from-base-100 to-base-200/30 p-6 shadow-md hover:shadow-xl transition-all">
     <!-- Header -->
     <header class="flex flex-wrap items-start gap-4">
       <div class="flex items-center gap-3 cursor-grab active:cursor-grabbing shrink-0">
-        <GripVerticalIcon class-name="h-5 w-5 text-base-content/20 group-hover:text-base-content/50 transition-colors" />
-        <input
-          v-model="schedule.enabled"
-          type="checkbox"
-          class="toggle toggle-lg transition-all"
-          :class="{ 'toggle-success': schedule.enabled }"
-        />
+        <GripVerticalIcon
+          class-name="h-5 w-5 text-base-content/20 group-hover:text-base-content/50 transition-colors" />
+        <input v-model="schedule.enabled" type="checkbox" class="toggle toggle-lg transition-all"
+          :class="{ 'toggle-success': schedule.enabled }" />
       </div>
       <div class="flex-1 min-w-0">
-        <input
-          v-model="schedule.name"
-          type="text"
-          class="input input-bordered input-lg text-lg w-full font-semibold transition-all focus:input-primary"
-          :placeholder="t('schedule.name')"
-        />
+        <input v-model="schedule.name" type="text"
+          class="input input-ghost input-lg text-lg w-full font-semibold transition-all focus:input-primary"
+          :placeholder="t('schedule.name')" />
         <p class="text-xs text-base-content/50 mt-2 flex items-center gap-1.5">
           <template v-if="schedule.enabled">
             <CheckCircleIcon class-name="h-3.5 w-3.5 text-success" />
@@ -118,19 +112,13 @@ const longPostponeMinutes = computed({
         </p>
       </div>
       <div class="flex gap-2 shrink-0">
-        <button
-          class="btn btn-sm btn-ghost gap-2 opacity-60 hover:opacity-100 transition-all"
-          :title="t('actions.duplicate')"
-          @click="duplicateSchedule"
-        >
+        <button class="btn btn-sm btn-ghost gap-2 opacity-60 hover:opacity-100 transition-all"
+          :title="t('actions.duplicate')" @click="duplicateSchedule">
           <DuplicateIcon class-name="h-4 w-4" />
           <span class="hidden sm:inline font-medium">{{ t("actions.duplicate") }}</span>
         </button>
-        <button
-          class="btn btn-sm btn-error btn-ghost gap-2 opacity-60 hover:opacity-100 transition-all"
-          :title="t('actions.delete')"
-          @click="removeSchedule"
-        >
+        <button class="btn btn-sm btn-error btn-ghost gap-2 opacity-60 hover:opacity-100 transition-all"
+          :title="t('actions.delete')" @click="removeSchedule">
           <TrashIcon class-name="h-4 w-4" />
           <span class="hidden sm:inline font-medium">{{ t("actions.delete") }}</span>
         </button>
@@ -141,28 +129,18 @@ const longPostponeMinutes = computed({
     <section class="grid gap-4 md:grid-cols-3">
       <label class="form-control">
         <span class="label-text text-sm font-medium mb-2">{{ t("schedule.start") }}</span>
-        <input
-          v-model="schedule.timeRange.start"
-          type="time"
-          class="input input-bordered transition-all focus:input-primary"
-        />
+        <input v-model="schedule.timeRange.start" type="time"
+          class="input input-bordered transition-all focus:input-primary" />
       </label>
       <label class="form-control">
         <span class="label-text text-sm font-medium mb-2">{{ t("schedule.end") }}</span>
-        <input
-          v-model="schedule.timeRange.end"
-          type="time"
-          class="input input-bordered transition-all focus:input-primary"
-        />
+        <input v-model="schedule.timeRange.end" type="time"
+          class="input input-bordered transition-all focus:input-primary" />
       </label>
       <label class="form-control">
         <span class="label-text text-sm font-medium mb-2">{{ t("schedule.notifyBefore") }}</span>
-        <input
-          v-model.number="schedule.notificationBeforeS"
-          type="number"
-          min="0"
-          class="input input-bordered transition-all focus:input-primary"
-        />
+        <input v-model.number="schedule.notificationBeforeS" type="number" min="0"
+          class="input input-bordered transition-all focus:input-primary" />
       </label>
     </section>
 
@@ -170,13 +148,9 @@ const longPostponeMinutes = computed({
     <section class="rounded-xl bg-base-200/50 p-5">
       <span class="label-text text-sm font-medium mb-3 block">{{ t("schedule.days") }}</span>
       <div class="flex flex-wrap gap-2">
-        <button
-          v-for="day in dayOrder"
-          :key="day"
-          class="btn btn-sm min-w-14 transition-all font-medium"
+        <button v-for="day in dayOrder" :key="day" class="btn btn-sm min-w-14 transition-all font-medium"
           :class="schedule.daysOfWeek.includes(day) ? 'btn-primary shadow-md' : 'btn-outline btn-ghost'"
-          @click="toggleDay(day)"
-        >
+          @click="toggleDay(day)">
           {{ t(`days.${day}`) }}
         </button>
       </div>
@@ -190,42 +164,27 @@ const longPostponeMinutes = computed({
           <span class="badge badge-primary badge-sm">MINI</span>
           {{ t("schedule.miniBreak") }}
         </h3>
-        
+
         <!-- Mini Break Settings -->
         <div class="grid gap-4 sm:grid-cols-2">
           <label class="form-control">
             <span class="label-text text-xs font-medium mb-1.5">{{ t("schedule.intervalMinutes") }}</span>
-            <input
-              v-model.number="miniIntervalMinutes"
-              type="number"
-              min="1"
-              class="input input-sm input-bordered transition-all focus:input-primary"
-            />
+            <input v-model.number="miniIntervalMinutes" type="number" min="1"
+              class="input input-sm input-bordered transition-all focus:input-primary" />
           </label>
           <label class="form-control">
             <span class="label-text text-xs font-medium mb-1.5">{{ t("schedule.durationMinutes") }}</span>
-            <input
-              v-model.number="miniDurationMinutes"
-              type="number"
-              min="1"
-              class="input input-sm input-bordered transition-all focus:input-primary"
-            />
+            <input v-model.number="miniDurationMinutes" type="number" min="1"
+              class="input input-sm input-bordered transition-all focus:input-primary" />
           </label>
           <label class="form-control">
             <span class="label-text text-xs font-medium mb-1.5">{{ t("schedule.postponeMinutes") }}</span>
-            <input
-              v-model.number="miniPostponeMinutes"
-              type="number"
-              min="1"
-              class="input input-sm input-bordered transition-all focus:input-primary"
-            />
+            <input v-model.number="miniPostponeMinutes" type="number" min="1"
+              class="input input-sm input-bordered transition-all focus:input-primary" />
           </label>
           <label class="label cursor-pointer justify-start gap-2 py-2">
-            <input
-              v-model="schedule.miniBreaks.strictMode"
-              type="checkbox"
-              class="checkbox checkbox-sm transition-all"
-            />
+            <input v-model="schedule.miniBreaks.strictMode" type="checkbox"
+              class="checkbox checkbox-sm transition-all" />
             <span class="label-text text-xs font-medium">{{ t("schedule.strictMode") }}</span>
           </label>
         </div>
@@ -248,37 +207,22 @@ const longPostponeMinutes = computed({
         <div class="grid gap-4 sm:grid-cols-2">
           <label class="form-control">
             <span class="label-text text-xs font-medium mb-1.5">{{ t("schedule.durationMinutes") }}</span>
-            <input
-              v-model.number="longDurationMinutes"
-              type="number"
-              min="1"
-              class="input input-sm input-bordered transition-all focus:input-primary"
-            />
+            <input v-model.number="longDurationMinutes" type="number" min="1"
+              class="input input-sm input-bordered transition-all focus:input-primary" />
           </label>
           <label class="form-control">
             <span class="label-text text-xs font-medium mb-1.5">{{ t("schedule.postponeMinutes") }}</span>
-            <input
-              v-model.number="longPostponeMinutes"
-              type="number"
-              min="1"
-              class="input input-sm input-bordered transition-all focus:input-primary"
-            />
+            <input v-model.number="longPostponeMinutes" type="number" min="1"
+              class="input input-sm input-bordered transition-all focus:input-primary" />
           </label>
           <label class="form-control">
             <span class="label-text text-xs font-medium mb-1.5">{{ t("schedule.afterMiniBreaks") }}</span>
-            <input
-              v-model.number="schedule.longBreaks.afterMiniBreaks"
-              type="number"
-              min="1"
-              class="input input-sm input-bordered transition-all focus:input-primary"
-            />
+            <input v-model.number="schedule.longBreaks.afterMiniBreaks" type="number" min="1"
+              class="input input-sm input-bordered transition-all focus:input-primary" />
           </label>
           <label class="label cursor-pointer justify-start gap-2 py-2">
-            <input
-              v-model="schedule.longBreaks.strictMode"
-              type="checkbox"
-              class="checkbox checkbox-sm transition-all"
-            />
+            <input v-model="schedule.longBreaks.strictMode" type="checkbox"
+              class="checkbox checkbox-sm transition-all" />
             <span class="label-text text-xs font-medium">{{ t("schedule.strictMode") }}</span>
           </label>
         </div>

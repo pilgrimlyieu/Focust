@@ -1,43 +1,54 @@
 import type { AudioSettings } from "./generated/AudioSettings";
 import type { BackgroundSource } from "./generated/BackgroundSource";
 import type { EventKind } from "./generated/EventKind";
+import type { ResolvedBackground } from "./generated/ResolvedBackground";
 
 /** Type guards for audio sources */
 function isBuiltinAudio(audio: AudioSettings) {
-  return audio.source === "Builtin";
+  return audio.source === "builtin";
 }
 function isFilePathAudio(audio: AudioSettings) {
-  return audio.source === "FilePath";
+  return audio.source === "filePath";
 }
 function isNoAudio(audio: AudioSettings) {
-  return audio.source === "None";
+  return audio.source === "none";
 }
 
 /** Type guards for background sources */
 function isSolidBackground(background: BackgroundSource) {
-  return "Solid" in background;
+  return "solid" in background;
 }
 function isImagePathBackground(background: BackgroundSource) {
-  return "ImagePath" in background;
+  return "imagePath" in background;
 }
 function isImageFolderBackground(background: BackgroundSource) {
-  return "ImageFolder" in background;
+  return "imageFolder" in background;
 }
 
 /**
  * Type guards for EventKind variants
  */
 function isNotificationKind(payload: EventKind) {
-  return "Notification" in payload;
+  return "notification" in payload;
 }
 function isMiniBreak(payload: EventKind) {
-  return "MiniBreak" in payload;
+  return "miniBreak" in payload;
 }
 function isLongBreak(payload: EventKind) {
-  return "LongBreak" in payload;
+  return "longBreak" in payload;
 }
 function isAttention(payload: EventKind) {
-  return "Attention" in payload;
+  return "attention" in payload;
+}
+
+/**
+ * Type guards for ResolvedBackground variants
+ */
+function isResolvedImageBackground(background: ResolvedBackground) {
+  return background.type === "image";
+}
+function isResolvedSolidBackground(background: ResolvedBackground) {
+  return background.type === "solid";
 }
 
 export {
@@ -51,4 +62,6 @@ export {
   isMiniBreak,
   isLongBreak,
   isAttention,
+  isResolvedImageBackground,
+  isResolvedSolidBackground,
 };

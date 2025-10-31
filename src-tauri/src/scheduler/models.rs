@@ -16,7 +16,8 @@ pub struct ScheduledEvent {
 /// Defines the different kinds of events the scheduler can handle.
 /// The order of variants defines their priority (lower discriminant = higher priority).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, TS)]
-#[ts(export)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, rename_all = "camelCase")]
 pub enum EventKind {
     Attention(AttentionId),
     LongBreak(BreakId),
@@ -37,6 +38,8 @@ impl Display for EventKind {
 
 /// Specifies the type of break for a notification.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(rename_all = "camelCase")]
 pub enum NotificationKind {
     LongBreak(BreakId),
     MiniBreak(BreakId),
@@ -105,9 +108,8 @@ impl Display for PauseReason {
 
 /// Scheduler status information for UI display
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
-#[ts(rename_all = "camelCase")]
+#[ts(export, rename_all = "camelCase")]
 pub struct SchedulerStatus {
     /// Whether the scheduler is currently paused
     pub paused: bool,
@@ -117,7 +119,6 @@ pub struct SchedulerStatus {
 
 /// Information about a scheduled event
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 #[ts(rename_all = "camelCase")]
 pub struct SchedulerEventInfo {
@@ -297,7 +298,7 @@ mod tests {
         let json = serde_json::to_string(&event).expect("Failed to serialize");
         let _deserialized: EventKind = serde_json::from_str(&json).expect("Failed to deserialize");
         // Should be able to deserialize after serialization
-        assert!(json.contains("MiniBreak"));
+        assert!(json.contains("miniBreak"));
     }
 
     #[test]
@@ -308,7 +309,7 @@ mod tests {
         let _deserialized: NotificationKind =
             serde_json::from_str(&json).expect("Failed to deserialize");
         // Should be able to deserialize after serialization
-        assert!(json.contains("LongBreak"));
+        assert!(json.contains("longBreak"));
     }
 
     // Edge case tests

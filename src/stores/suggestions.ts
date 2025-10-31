@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 import { LANGUAGE_FALLBACK } from "@/i18n";
-import type { SuggestionsConfig } from "@/types/generated/SuggestionsConfig";
+import type { SuggestionsConfig } from "@/types";
 
 /** Suggestions store for managing suggestion configurations */
 export const useSuggestionsStore = defineStore("suggestions", () => {

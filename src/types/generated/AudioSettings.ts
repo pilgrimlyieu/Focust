@@ -7,4 +7,4 @@ export type AudioSettings = {
 /**
  * Volume level (0.0 to 1.0)
  */
-volume: number, } & ({ "source": "None" } | { "source": "Builtin", name: string, } | { "source": "FilePath", path: string, });
+volume: number, } & ({ "source": "none" } | { "source": "builtin", name: string, } | { "source": "filePath", path: string, });

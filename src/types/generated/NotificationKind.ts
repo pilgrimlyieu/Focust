@@ -4,4 +4,4 @@ import type { BreakId } from "./BreakId";
 /**
  * Specifies the type of break for a notification.
  */
-export type NotificationKind = { "LongBreak": BreakId } | { "MiniBreak": BreakId };
+export type NotificationKind = { "longBreak": BreakId } | { "miniBreak": BreakId };

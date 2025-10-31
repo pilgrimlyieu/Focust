@@ -3,25 +3,23 @@ use ts_rs::TS;
 
 /// Audio source configuration for break sounds
 #[derive(Serialize, Deserialize, Default, Clone, Debug, TS)]
-#[ts(export)]
-#[serde(tag = "source")]
+#[serde(tag = "source", rename_all = "camelCase")]
+#[ts(export, rename_all = "camelCase")]
 pub enum AudioSource {
     /// No audio
     #[default]
     None, // No audio source
 
     /// Builtin audio resource
-    #[serde(rename = "Builtin")]
     Builtin { name: String }, // Builtin audio resource name
 
     /// File path audio source
-    #[serde(rename = "FilePath")]
     FilePath { path: String }, // File path to audio source
 }
 
 /// Audio settings for break sounds
 #[derive(Serialize, Deserialize, Clone, Debug, TS)]
-#[ts(export)]
+#[ts(export, rename_all = "camelCase")]
 pub struct AudioSettings {
     /// Audio source configuration
     #[serde(flatten)]

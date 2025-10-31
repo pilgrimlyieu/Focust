@@ -3,4 +3,4 @@
 /**
  * Audio source configuration for break sounds
  */
-export type AudioSource = { "source": "None" } | { "source": "Builtin", name: string, } | { "source": "FilePath", path: string, };
+export type AudioSource = { "source": "none" } | { "source": "builtin", name: string, } | { "source": "filePath", path: string, };

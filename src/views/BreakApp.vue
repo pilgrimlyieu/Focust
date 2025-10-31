@@ -11,9 +11,14 @@ import {
   watch,
 } from "vue";
 import { useI18n } from "vue-i18n";
-import type { AudioSettings } from "@/types/generated/AudioSettings";
-import type { BreakPayload } from "@/types/generated/BreakPayload";
-import { isBuiltinAudio, isFilePathAudio } from "@/types/guards";
+import type { AudioSettings, BreakPayload } from "@/types";
+import {
+  isBuiltinAudio,
+  isFilePathAudio,
+  isNoAudio,
+  isResolvedImageBackground,
+  isResolvedSolidBackground,
+} from "@/types";
 
 const { t } = useI18n();
 
@@ -57,7 +62,7 @@ const formatTime = (value: number) => {
 const backgroundStyle = computed(() => {
   const current = payload.value;
   if (!current) return {};
-  if (current.background.type === "solid") {
+  if (isResolvedSolidBackground(current.background)) {
     return {
       backgroundColor: current.background.value,
       backgroundImage: "none",
@@ -111,7 +116,7 @@ const stopAudio = async () => {
  */
 const playAudio = async (settings?: AudioSettings | null) => {
   await stopAudio();
-  if (!settings || settings.source === "None") return;
+  if (!settings || isNoAudio(settings)) return;
 
   try {
     if (isBuiltinAudio(settings)) {
@@ -133,7 +138,7 @@ const playAudio = async (settings?: AudioSettings | null) => {
 };
 
 const preloadBackground = async (data: BreakPayload): Promise<void> => {
-  if (data.background.type === "image") {
+  if (isResolvedImageBackground(data.background)) {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => resolve();

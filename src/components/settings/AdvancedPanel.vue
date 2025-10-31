@@ -11,7 +11,7 @@ import InfoIcon from "@/components/icons/InfoIcon.vue";
 import MonitorIcon from "@/components/icons/MonitorIcon.vue";
 import type { ToastKind } from "@/composables/useToast";
 import { useConfigStore } from "@/stores/config";
-import type { EventKind } from "@/types/generated/EventKind";
+import type { EventKind } from "@/types";
 
 const emit =
   defineEmits<(event: "notify", kind: ToastKind, message: string) => void>();
@@ -59,7 +59,7 @@ async function triggerMiniBreak() {
     }
     // Use the first schedule's mini break, whether it's enabled.
     const breakKind: EventKind = {
-      MiniBreak: config.schedules[0].miniBreaks.id,
+      miniBreak: config.schedules[0].miniBreaks.id,
     };
     console.log("Triggering mini break with:", breakKind);
     await invoke("trigger_break", { breakKind });
@@ -81,7 +81,7 @@ async function triggerLongBreak() {
       return;
     }
     const breakKind: EventKind = {
-      LongBreak: config.schedules[0].longBreaks.id,
+      longBreak: config.schedules[0].longBreaks.id,
     };
     console.log("Triggering long break with:", breakKind);
     await invoke("trigger_break", { breakKind });
@@ -103,7 +103,7 @@ async function triggerAttention() {
       return;
     }
     const breakKind: EventKind = {
-      Attention: config.attentions[0].id,
+      attention: config.attentions[0].id,
     };
     console.log("Triggering attention with:", breakKind);
     await invoke("trigger_break", { breakKind });

@@ -49,7 +49,7 @@ import {
   isLongBreak,
   isMiniBreak,
   isNotificationKind,
-} from "@/types/guards";
+} from "@/types";
 
 const { t } = useI18n();
 const configStore = useConfigStore();
@@ -123,7 +123,7 @@ const nextBreakInfo = computed(() => {
   // by adding the notification lead time (typically 5 seconds)
   // TODO: Maybe make it more reliable by fetching from schedule config?
   if (isNotificationKind(event.kind)) {
-    const notifKind = event.kind.Notification;
+    const notifKind = event.kind.notification;
 
     const schedule = configStore.draft?.schedules?.[0];
     const notifyBefore = schedule?.notificationBeforeS ?? 5;

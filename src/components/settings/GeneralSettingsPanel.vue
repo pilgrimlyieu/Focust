@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import ClockIcon from "@/components/icons/ClockIcon.vue";
 import InfoIcon from "@/components/icons/InfoIcon.vue";
@@ -7,6 +6,11 @@ import MonitorIcon from "@/components/icons/MonitorIcon.vue";
 import SettingGear from "@/components/icons/SettingGear.vue";
 import SlidersIcon from "@/components/icons/SlidersIcon.vue";
 import KeyCapture from "@/components/ui/KeyCapture.vue";
+import {
+  useComputedProp,
+  useComputedValidated,
+  useDecimalToPercent,
+} from "@/composables/useComputed";
 import { supportedLocales } from "@/i18n";
 import type { AppConfig, ThemeMode } from "@/stores/config";
 import { useConfigStore } from "@/stores/config";
@@ -16,26 +20,28 @@ const { t } = useI18n();
 const configStore = useConfigStore();
 const locales = supportedLocales;
 
-const inactivitySeconds = computed({
-  get: () => props.config.inactiveS,
-  set: (value: number) => {
-    props.config.inactiveS = Math.max(30, Math.round(value));
+// Use composables for computed properties
+const inactivitySeconds = useComputedValidated(
+  () => props.config.inactiveS,
+  (value) => {
+    props.config.inactiveS = value;
   },
-});
+  (value) => Math.max(30, Math.round(value)),
+);
 
-const postponeShortcut = computed({
-  get: () => props.config.postponeShortcut,
-  set: (value: string) => {
-    props.config.postponeShortcut = value;
-  },
-});
+const postponeShortcut = useComputedProp(
+  () => props.config,
+  "postponeShortcut",
+);
 
-const windowSizePercent = computed({
-  get: () => Math.round(props.config.windowSize * 100),
-  set: (value: number) => {
-    props.config.windowSize = Math.max(10, Math.min(100, value)) / 100; // min 10%
+const windowSizePercent = useDecimalToPercent(
+  () => props.config.windowSize,
+  (value) => {
+    props.config.windowSize = value;
   },
-});
+  10,
+  100,
+);
 
 /**
  * Handle language change event

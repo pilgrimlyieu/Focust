@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
+import { useComputedProp } from "@/composables/useComputed";
 import { getI18nLocale } from "@/i18n";
 import { useSuggestionsStore } from "@/stores/suggestions";
-import type { SuggestionsSettings } from "@/types/generated/SuggestionsSettings";
+import type { SuggestionsSettings } from "@/types";
 
 const props = defineProps<{
   suggestions: SuggestionsSettings;
@@ -26,13 +27,8 @@ const preview = computed(() => {
   return suggestionsStore.sampleMany(getI18nLocale(), 3);
 });
 
-// Computed property for toggle
-const showSuggestions = computed({
-  get: () => props.suggestions.show,
-  set: (value: boolean) => {
-    props.suggestions.show = value;
-  },
-});
+// Use composable for toggle
+const showSuggestions = useComputedProp(() => props.suggestions, "show");
 
 defineExpose({ preview, showSuggestions, t });
 </script>

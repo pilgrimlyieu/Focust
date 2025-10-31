@@ -11,8 +11,8 @@ use crate::core::theme::ThemeSettings;
 
 /// Break kind type
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, rename_all = "camelCase")]
 pub enum BreakKind {
     Mini,
     Long,
@@ -21,9 +21,8 @@ pub enum BreakKind {
 
 /// Resolved background for break window
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
-#[serde(rename_all = "camelCase")]
-#[serde(tag = "type")]
+#[serde(tag = "type", rename_all = "camelCase")]
+#[ts(export, rename_all = "camelCase")]
 pub enum ResolvedBackground {
     Solid { value: String },
     Image { value: String },
@@ -31,9 +30,8 @@ pub enum ResolvedBackground {
 
 /// Break payload stored in backend
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
-#[ts(rename_all = "camelCase")]
 #[serde(rename_all = "camelCase")]
+#[ts(export, rename_all = "camelCase")]
 pub struct BreakPayload {
     pub id: u32,
     pub kind: BreakKind,

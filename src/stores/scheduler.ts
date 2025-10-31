@@ -10,23 +10,26 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import { useConfigStore } from "@/stores/config";
 import { useSuggestionsStore } from "@/stores/suggestions";
-import type { AppConfig } from "@/types/generated/AppConfig";
-import type { AudioSettings } from "@/types/generated/AudioSettings";
-import type { BackgroundSource } from "@/types/generated/BackgroundSource";
-import type { BreakPayload } from "@/types/generated/BreakPayload";
-import type { EventKind } from "@/types/generated/EventKind";
-import type { ResolvedBackground } from "@/types/generated/ResolvedBackground";
-import type { SchedulerStatus } from "@/types/generated/SchedulerStatus";
-import type { ThemeSettings } from "@/types/generated/ThemeSettings";
+import type {
+  AppConfig,
+  AudioSettings,
+  BackgroundSource,
+  BreakKind,
+  BreakPayload,
+  EventKind,
+  ResolvedBackground,
+  SchedulerStatus,
+  ThemeSettings,
+} from "@/types";
 import {
   isAttention,
+  isImageFolderBackground,
+  isImagePathBackground,
   isLongBreak,
   isMiniBreak,
   isNotificationKind,
-} from "@/types/guards";
-
-/** Break kind type */
-export type BreakKind = "mini" | "long" | "attention";
+  isSolidBackground,
+} from "@/types";
 
 /**
  * Resolve background source to actual background for break window
@@ -36,17 +39,17 @@ export type BreakKind = "mini" | "long" | "attention";
 async function resolveBackground(
   source: BackgroundSource,
 ): Promise<ResolvedBackground> {
-  if ("Solid" in source) {
-    return { type: "solid", value: source.Solid };
-  } else if ("ImagePath" in source) {
+  if (isSolidBackground(source)) {
+    return { type: "solid", value: source.solid };
+  } else if (isImagePathBackground(source)) {
     return {
       type: "image",
-      value: convertFileSrc(source.ImagePath),
+      value: convertFileSrc(source.imagePath),
     };
-  } else if ("ImageFolder" in source) {
+  } else if (isImageFolderBackground(source)) {
     try {
       const image = await invoke<string | null>("pick_background_image", {
-        folder: source.ImageFolder,
+        folder: source.imageFolder,
       });
       if (image) {
         return { type: "image", value: convertFileSrc(image) };
@@ -84,7 +87,7 @@ function extractBreakInfo(
   suggestionsStore: ReturnType<typeof useSuggestionsStore>,
 ): BreakExtractionResult | null {
   if (isMiniBreak(payload)) {
-    const id = payload.MiniBreak;
+    const id = payload.miniBreak;
     console.log("[Scheduler] Looking for mini break with id:", id);
     const schedule = config.schedules.find((s) => s.miniBreaks.id === id);
     console.log("[Scheduler] Found schedule:", schedule);
@@ -111,7 +114,7 @@ function extractBreakInfo(
       title: schedule.name,
     };
   } else if (isLongBreak(payload)) {
-    const id = payload.LongBreak;
+    const id = payload.longBreak;
     console.log("[Scheduler] Looking for long break with id:", id);
     const schedule = config.schedules.find((s) => s.longBreaks.id === id);
     console.log("[Scheduler] Found schedule:", schedule);
@@ -137,7 +140,7 @@ function extractBreakInfo(
       title: schedule.name,
     };
   } else if (isAttention(payload)) {
-    const id = payload.Attention;
+    const id = payload.attention;
     const attention = config.attentions.find((a) => a.id === id);
     if (!attention) return null;
     return {
@@ -310,7 +313,7 @@ export const useSchedulerStore = defineStore("scheduler", () => {
     console.log("[Scheduler] Received scheduler event:", payload);
 
     if (isNotificationKind(payload)) {
-      const id = Object.values(payload.Notification)[0];
+      const id = Object.values(payload.notification)[0];
       console.info("Break notification", id);
       return;
     }

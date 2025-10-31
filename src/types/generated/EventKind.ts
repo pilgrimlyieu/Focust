@@ -7,4 +7,4 @@ import type { NotificationKind } from "./NotificationKind";
  * Defines the different kinds of events the scheduler can handle.
  * The order of variants defines their priority (lower discriminant = higher priority).
  */
-export type EventKind = { "Attention": AttentionId } | { "LongBreak": BreakId } | { "MiniBreak": BreakId } | { "Notification": NotificationKind };
+export type EventKind = { "attention": AttentionId } | { "longBreak": BreakId } | { "miniBreak": BreakId } | { "notification": NotificationKind };

@@ -3,8 +3,18 @@ import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import type { AudioSettings } from "@/types/generated/AudioSettings";
-import { isBuiltinAudio, isFilePathAudio, isNoAudio } from "@/types/guards";
+import type { AudioSettings } from "@/types";
+import {
+  convertToBuiltinAudio,
+  convertToFilePathAudio,
+  convertToNoAudio,
+  getAudioFilePath,
+  getAudioSourceType,
+  getBuiltinAudioName,
+  isBuiltinAudio,
+  isFilePathAudio,
+  isNoAudio,
+} from "@/types";
 
 const props = defineProps<{
   audio: AudioSettings;
@@ -23,50 +33,39 @@ const providedOptions = [
 
 const selectedType = computed<"none" | "builtin" | "filepath">({
   get: () => {
-    if (isBuiltinAudio(props.audio)) return "builtin";
-    if (isFilePathAudio(props.audio)) return "filepath";
-    if (isNoAudio(props.audio)) return "none";
-    return "none";
+    const type = getAudioSourceType(props.audio);
+    // Convert "filePath" to "filepath" for UI consistency
+    return type === "filePath" ? "filepath" : type;
   },
   set: (value) => {
-    const audio = props.audio as Record<string, unknown>;
     if (value === "none") {
-      audio.source = "None";
-      delete audio.name;
-      delete audio.path;
+      convertToNoAudio(props.audio);
     } else if (value === "builtin") {
-      audio.source = "Builtin";
-      audio.name = providedOptions[0]?.value ?? "gentle-bell"; // Default option
-      delete audio.path;
+      convertToBuiltinAudio(
+        props.audio,
+        providedOptions[0]?.value ?? "gentle-bell",
+      );
     } else {
-      audio.source = "FilePath";
-      audio.path = "";
-      delete audio.name;
+      convertToFilePathAudio(props.audio, "");
     }
   },
 });
 
 const builtinValue = computed({
   get: () => {
-    return isBuiltinAudio(props.audio) ? props.audio.name : "";
+    return getBuiltinAudioName(props.audio) ?? "";
   },
   set: (value: string) => {
-    const audio = props.audio as Record<string, unknown>;
-    audio.source = "Builtin";
-    audio.name = value;
-    delete audio.path;
+    convertToBuiltinAudio(props.audio, value);
   },
 });
 
 const filePath = computed({
   get: () => {
-    return isFilePathAudio(props.audio) ? props.audio.path : "";
+    return getAudioFilePath(props.audio) ?? "";
   },
   set: (value: string) => {
-    const audio = props.audio as Record<string, unknown>;
-    audio.source = "FilePath";
-    audio.path = value;
-    delete audio.name;
+    convertToFilePathAudio(props.audio, value);
   },
 });
 
@@ -91,7 +90,7 @@ async function playPreview() {
   await stopPreview();
   const audio = props.audio;
 
-  if (audio.source === "None") {
+  if (isNoAudio(audio)) {
     return;
   }
 

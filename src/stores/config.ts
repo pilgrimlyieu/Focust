@@ -2,12 +2,19 @@ import { invoke } from "@tauri-apps/api/core";
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 import { setI18nLocale } from "@/i18n";
-import type { AppConfig } from "@/types/generated/AppConfig";
-import type { AttentionSettings } from "@/types/generated/AttentionSettings";
-import type { LongBreakSettings } from "@/types/generated/LongBreakSettings";
-import type { MiniBreakSettings } from "@/types/generated/MiniBreakSettings";
-import type { ScheduleSettings } from "@/types/generated/ScheduleSettings";
-import type { ThemeSettings } from "@/types/generated/ThemeSettings";
+import type {
+  AppConfig,
+  AttentionSettings,
+  LongBreakSettings,
+  MiniBreakSettings,
+  ScheduleSettings,
+} from "@/types";
+import {
+  createAllDayTimeRange,
+  createDefaultTheme,
+  createNoAudio,
+  createSuggestionsSettings,
+} from "@/types";
 import { getErrorMessage } from "@/utils/handleError";
 import { safeClone } from "@/utils/safeClone";
 
@@ -31,28 +38,6 @@ export type ThemeMode = "light" | "dark" | "system";
 function nextId(existing: number[]): number {
   const max = existing.length ? Math.max(...existing) : 0;
   return max + 1;
-}
-
-/**
- * Create default theme settings
- * @param {object} options Optional overrides for default settings
- * @returns {ThemeSettings} ThemeSettings object
- */
-function createDefaultTheme(options?: {
-  backgroundColor?: string;
-  blurRadius?: number;
-  opacity?: number;
-  fontSize?: number;
-}): ThemeSettings {
-  // See `/src-tauri/src/core/theme.rs` for defaults
-  return {
-    background: { Solid: options?.backgroundColor ?? "#1f2937" },
-    blurRadius: options?.blurRadius ?? 8,
-    fontFamily: "Arial",
-    fontSize: options?.fontSize ?? 24,
-    opacity: options?.opacity ?? 0.9,
-    textColor: "#f8fafc",
-  };
 }
 
 /** Configuration store for managing application settings */
@@ -220,29 +205,29 @@ export const useConfigStore = defineStore("config", () => {
       enabled: true,
       longBreaks: {
         afterMiniBreaks: 4,
-        audio: { source: "None", volume: 0.6 },
+        audio: createNoAudio(),
         durationS: 300,
         enabled: true,
         id: longId,
         postponedS: 300,
         strictMode: false,
-        suggestions: { show: true },
+        suggestions: createSuggestionsSettings(),
         theme: createDefaultTheme(),
       },
       miniBreaks: {
-        audio: { source: "None", volume: 0.6 },
+        audio: createNoAudio(),
         durationS: 20,
         enabled: true,
         id: miniId,
         intervalS: 1200,
         postponedS: 300,
         strictMode: false,
-        suggestions: { show: true },
+        suggestions: createSuggestionsSettings(),
         theme: createDefaultTheme(),
       },
       name: `New Schedule (${miniId})`, // Use miniId to differentiate
       notificationBeforeS: 10,
-      timeRange: { end: "00:00", start: "00:00" },
+      timeRange: createAllDayTimeRange(),
     });
   }
 

@@ -16,6 +16,8 @@ impl HexColor {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(rename_all = "camelCase")]
 pub enum BackgroundSource {
     /// Solid color background (hex color code)
     Solid(String),
