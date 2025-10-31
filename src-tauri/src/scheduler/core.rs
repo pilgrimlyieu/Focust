@@ -282,15 +282,17 @@ impl Scheduler {
             Command::Postpone => {
                 // TODO: WHAT TO DO WITH POSTPONE?
                 tracing::info!("Postponing current break.");
-                // 1. Get the relevant postpone duration from config
-                let config = self.app_handle.state::<SharedConfig>();
-                let config_guard = config.read().await;
-                // This assumes we are postponing a mini-break. A more complex logic
-                // could check what the *next* break is to get the correct duration.
-                let postpone_duration_s = config_guard
-                    .schedules
-                    .first() // Assuming a single schedule for simplicity
-                    .map_or(300, |s| s.mini_breaks.base.postponed_s);
+                let postpone_duration_s = {
+                    // 1. Get the relevant postpone duration from config
+                    let config = self.app_handle.state::<SharedConfig>();
+                    let config_guard = config.read().await;
+                    // This assumes we are postponing a mini-break. A more complex logic
+                    // could check what the *next* break is to get the correct duration.
+                    config_guard
+                        .schedules
+                        .first() // Assuming a single schedule for simplicity
+                        .map_or(300, |s| s.mini_breaks.base.postponed_s)
+                };
 
                 // 2. Update the last break time to be `now + postpone_duration`
                 self.last_break_time =

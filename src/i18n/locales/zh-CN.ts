@@ -177,7 +177,7 @@ const zhCN: LocaleStrings = {
     bulkPlaceholder:
       "在此粘贴建议\n每行一条\n\n例如：\n深呼吸 5 次\n站起来走动\n眺望远方 20 秒\n做一组拉伸\n喝一杯水",
     cancel: "取消",
-    currentLanguage: "当前语言",
+    currentLanguage: "当前语言：{language}",
     customTitle: "自定义建议",
     description: "管理休息时显示的建议内容",
     disabled: "不显示休息建议",

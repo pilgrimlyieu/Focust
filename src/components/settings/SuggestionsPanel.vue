@@ -190,7 +190,8 @@ function handleDragEnd() {
           <div class="flex flex-wrap gap-2 items-center">
             <div class="badge badge-success badge-outline gap-1.5 py-3 px-3">
               <InfoIcon class-name="h-3.5 w-3.5" />
-              <span class="text-xs font-medium">{{ t("suggestions.currentLanguage") }}: {{ currentLanguage }}</span>
+              <span class="text-xs font-medium">{{ t("suggestions.currentLanguage", { language: currentLanguage })
+                }}</span>
             </div>
             <div v-if="suggestionsList.length" class="badge badge-ghost gap-1.5 py-3 px-3">
               <span class="font-semibold">{{ suggestionsList.length }}</span>

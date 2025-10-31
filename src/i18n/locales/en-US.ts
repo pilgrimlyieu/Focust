@@ -182,7 +182,7 @@ const enUS = {
     bulkPlaceholder:
       "Paste suggestions here\nOne per line\n\nExample:\nTake 5 deep breaths\nStand up and walk around\nLook at something 20 feet away\nDo some stretching\nDrink a glass of water",
     cancel: "Cancel",
-    currentLanguage: "Current language",
+    currentLanguage: "Current language: {language}",
     customTitle: "Custom Suggestions",
     description: "Manage suggestions shown during breaks",
     disabled: "No suggestions will be shown",
