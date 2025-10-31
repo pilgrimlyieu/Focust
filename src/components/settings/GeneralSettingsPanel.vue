@@ -149,7 +149,7 @@ function onLanguageChange(event: Event) {
           <div class="label pt-1">
             <span class="label-text-alt text-base-content/50 text-xs">{{
               t("general.inactivityHint")
-              }}</span>
+            }}</span>
           </div>
         </label>
 
@@ -183,7 +183,7 @@ function onLanguageChange(event: Event) {
           </div>
           <select class="select select-bordered focus:select-primary w-full transition-all" :value="config.themeMode"
             @change="
-              (e) => configStore.setThemeMode((e.target as HTMLSelectElement).value as ThemeMode)
+              (e: Event) => configStore.setThemeMode((e.target as HTMLSelectElement).value as ThemeMode)
             ">
             <option value="light">{{ t("general.themeModeLight") }}</option>
             <option value="dark">{{ t("general.themeModeDark") }}</option>

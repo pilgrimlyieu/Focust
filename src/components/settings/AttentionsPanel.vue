@@ -265,8 +265,11 @@ function updateTime(attentionIndex: number, timeIndex: number, value: string) {
               <div class="label pb-2">
                 <span class="label-text font-medium text-sm">{{ t("attention.durationSeconds") }}</span>
               </div>
-              <input v-model.number="attention.durationS" type="number" min="5" max="300"
-                class="input input-bordered focus:input-primary w-full transition-all" />
+              <div class="join w-full">
+                <input v-model.number="attention.durationS" type="number" min="5" max="300"
+                  class="input input-bordered join-item flex-1 focus:input-primary transition-all" />
+                <span class="btn btn-ghost join-item pointer-events-none text-sm">{{ t("schedule.secondsUnit") }}</span>
+              </div>
             </label>
           </div>
 

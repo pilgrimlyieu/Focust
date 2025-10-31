@@ -48,7 +48,6 @@ function toggleDay(day: string) {
   }
 }
 
-// Use composables for time conversions
 const miniIntervalMinutes = useSecondsToMinutes(
   () => props.schedule.miniBreaks.intervalS,
   (value) => {
@@ -56,24 +55,10 @@ const miniIntervalMinutes = useSecondsToMinutes(
   },
 );
 
-const miniDurationMinutes = useSecondsToMinutes(
-  () => props.schedule.miniBreaks.durationS,
-  (value) => {
-    props.schedule.miniBreaks.durationS = value;
-  },
-);
-
 const miniPostponeMinutes = useSecondsToMinutes(
   () => props.schedule.miniBreaks.postponedS,
   (value) => {
     props.schedule.miniBreaks.postponedS = value;
-  },
-);
-
-const longDurationMinutes = useSecondsToMinutes(
-  () => props.schedule.longBreaks.durationS,
-  (value) => {
-    props.schedule.longBreaks.durationS = value;
   },
 );
 
@@ -139,8 +124,11 @@ const longPostponeMinutes = useSecondsToMinutes(
       </label>
       <label class="form-control">
         <span class="label-text text-sm font-medium mb-2">{{ t("schedule.notifyBefore") }}</span>
-        <input v-model.number="schedule.notificationBeforeS" type="number" min="0"
-          class="input input-bordered transition-all focus:input-primary" />
+        <div class="join w-full">
+          <input v-model.number="schedule.notificationBeforeS" type="number" min="0"
+            class="input input-bordered join-item flex-1 transition-all focus:input-primary" />
+          <span class="btn btn-ghost join-item pointer-events-none text-sm">{{ t("schedule.secondsUnit") }}</span>
+        </div>
       </label>
     </section>
 
@@ -169,18 +157,30 @@ const longPostponeMinutes = useSecondsToMinutes(
         <div class="grid gap-4 sm:grid-cols-2">
           <label class="form-control">
             <span class="label-text text-xs font-medium mb-1.5">{{ t("schedule.intervalMinutes") }}</span>
-            <input v-model.number="miniIntervalMinutes" type="number" min="1"
-              class="input input-sm input-bordered transition-all focus:input-primary" />
+            <div class="join w-full">
+              <input v-model.number="miniIntervalMinutes" type="number" min="1"
+                class="input input-sm input-bordered join-item flex-1 transition-all focus:input-primary" />
+              <span class="btn btn-sm btn-ghost join-item pointer-events-none text-xs">{{ t("schedule.minutesUnit")
+              }}</span>
+            </div>
           </label>
           <label class="form-control">
-            <span class="label-text text-xs font-medium mb-1.5">{{ t("schedule.durationMinutes") }}</span>
-            <input v-model.number="miniDurationMinutes" type="number" min="1"
-              class="input input-sm input-bordered transition-all focus:input-primary" />
+            <span class="label-text text-xs font-medium mb-1.5">{{ t("schedule.durationSeconds") }}</span>
+            <div class="join w-full">
+              <input v-model.number="schedule.miniBreaks.durationS" type="number" min="1"
+                class="input input-sm input-bordered join-item flex-1 transition-all focus:input-primary" />
+              <span class="btn btn-sm btn-ghost join-item pointer-events-none text-xs">{{ t("schedule.secondsUnit")
+              }}</span>
+            </div>
           </label>
           <label class="form-control">
             <span class="label-text text-xs font-medium mb-1.5">{{ t("schedule.postponeMinutes") }}</span>
-            <input v-model.number="miniPostponeMinutes" type="number" min="1"
-              class="input input-sm input-bordered transition-all focus:input-primary" />
+            <div class="join w-full">
+              <input v-model.number="miniPostponeMinutes" type="number" min="1"
+                class="input input-sm input-bordered join-item flex-1 transition-all focus:input-primary" />
+              <span class="btn btn-sm btn-ghost join-item pointer-events-none text-xs">{{ t("schedule.minutesUnit")
+              }}</span>
+            </div>
           </label>
           <label class="label cursor-pointer justify-start gap-2 py-2">
             <input v-model="schedule.miniBreaks.strictMode" type="checkbox"
@@ -206,14 +206,22 @@ const longPostponeMinutes = useSecondsToMinutes(
         <!-- Long Break Settings -->
         <div class="grid gap-4 sm:grid-cols-2">
           <label class="form-control">
-            <span class="label-text text-xs font-medium mb-1.5">{{ t("schedule.durationMinutes") }}</span>
-            <input v-model.number="longDurationMinutes" type="number" min="1"
-              class="input input-sm input-bordered transition-all focus:input-primary" />
+            <span class="label-text text-xs font-medium mb-1.5">{{ t("schedule.durationSeconds") }}</span>
+            <div class="join w-full">
+              <input v-model.number="schedule.longBreaks.durationS" type="number" min="1"
+                class="input input-sm input-bordered join-item flex-1 transition-all focus:input-primary" />
+              <span class="btn btn-sm btn-ghost join-item pointer-events-none text-xs">{{ t("schedule.secondsUnit")
+              }}</span>
+            </div>
           </label>
           <label class="form-control">
             <span class="label-text text-xs font-medium mb-1.5">{{ t("schedule.postponeMinutes") }}</span>
-            <input v-model.number="longPostponeMinutes" type="number" min="1"
-              class="input input-sm input-bordered transition-all focus:input-primary" />
+            <div class="join w-full">
+              <input v-model.number="longPostponeMinutes" type="number" min="1"
+                class="input input-sm input-bordered join-item flex-1 transition-all focus:input-primary" />
+              <span class="btn btn-sm btn-ghost join-item pointer-events-none text-xs">{{ t("schedule.minutesUnit")
+              }}</span>
+            </div>
           </label>
           <label class="form-control">
             <span class="label-text text-xs font-medium mb-1.5">{{ t("schedule.afterMiniBreaks") }}</span>

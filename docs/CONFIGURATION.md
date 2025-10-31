@@ -75,7 +75,6 @@ enabled = true
 - **Default**: `300` (5 minutes)
 - **Minimum**: `30` seconds
 - **Description**: Duration of inactivity before the scheduler automatically pauses. The scheduler resumes when activity is detected.
-- **NOTE**: UNIMPLEMENTED yet
 
 ### `allScreens`
 - **Type**: Boolean
