@@ -1,9 +1,6 @@
 use tauri::{AppHandle, State, command};
 
-use crate::core::suggestions::SuggestionsConfig;
-
-/// Global shared suggestions state
-pub type SharedSuggestions = tokio::sync::RwLock<SuggestionsConfig>;
+use crate::core::suggestions::{SharedSuggestions, SuggestionsConfig};
 
 /// Get suggestions configuration
 #[command]

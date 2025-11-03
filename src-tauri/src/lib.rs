@@ -10,7 +10,8 @@ use tauri::Manager;
 use tauri_plugin_autostart::ManagerExt;
 
 use crate::{
-    cmd::{BreakPayloadStore, SchedulerCmd, ShutdownTx},
+    cmd::{SchedulerCmd, ShutdownTx},
+    core::payload::BreakPayloadStore,
     scheduler::init_scheduler,
 };
 
@@ -42,7 +43,7 @@ pub fn run() {
             } else {
                 tracing::warn!("Settings window not found, creating new one");
                 // If settings window doesn't exist, create it
-                let _ = cmd::window::create_settings_window(app);
+                let _ = platform::create_settings_window(app);
             }
         }))
         .plugin(tauri_plugin_autostart::init(
@@ -105,7 +106,8 @@ pub fn run() {
 
                 // Load suggestions
                 let suggestions_config = core::suggestions::load_suggestions(&handle).await;
-                let shared_suggestions = cmd::SharedSuggestions::new(suggestions_config);
+                let shared_suggestions =
+                    core::suggestions::SharedSuggestions::new(suggestions_config);
                 handle.manage(shared_suggestions);
 
                 let (cmd_tx, shutdown_tx) = init_scheduler(&handle);

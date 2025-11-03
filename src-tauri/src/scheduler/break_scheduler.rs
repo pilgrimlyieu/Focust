@@ -11,9 +11,9 @@ use tokio::time::sleep;
 use super::models::{
     BreakInfo, Command, PauseReason, SchedulerEvent, SchedulerEventInfo, SchedulerStatus,
 };
-use crate::cmd::window::create_break_windows;
 use crate::config::{AppConfig, SharedConfig};
 use crate::core::schedule::ScheduleSettings;
+use crate::platform::create_break_windows;
 use crate::platform::send_break_notification;
 
 /// The state of the break scheduler

@@ -79,16 +79,6 @@ pub async fn save_config(
     Ok(())
 }
 
-fn is_image(path: &Path) -> bool {
-    match path.extension().and_then(OsStr::to_str) {
-        Some(ext) => matches!(
-            ext.to_lowercase().as_str(),
-            "png" | "jpg" | "jpeg" | "bmp" | "gif" | "webp"
-        ),
-        None => false,
-    }
-}
-
 #[tauri::command]
 pub async fn pick_background_image(folder: String) -> Result<Option<String>, String> {
     let folder = PathBuf::from(folder);
@@ -116,4 +106,14 @@ pub async fn pick_background_image(folder: String) -> Result<Option<String>, Str
     .map_err(|err| format!("Background picker task panicked: {err}"))?;
 
     Ok(result?.map(|path| path.to_string_lossy().to_string()))
+}
+
+fn is_image(path: &Path) -> bool {
+    match path.extension().and_then(OsStr::to_str) {
+        Some(ext) => matches!(
+            ext.to_lowercase().as_str(),
+            "png" | "jpg" | "jpeg" | "bmp" | "gif" | "webp"
+        ),
+        None => false,
+    }
 }

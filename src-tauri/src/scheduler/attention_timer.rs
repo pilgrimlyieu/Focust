@@ -6,7 +6,8 @@ use tokio::sync::{mpsc, watch};
 use tokio::time::sleep;
 
 use super::models::{Command, SchedulerEvent};
-use crate::{cmd::window::create_break_windows, core::schedule::AttentionSettings};
+use crate::core::schedule::AttentionSettings;
+use crate::platform::create_break_windows;
 use crate::{config::SharedConfig, core::schedule::AttentionId};
 
 /// A simple timer for attention reminders

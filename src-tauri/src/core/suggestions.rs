@@ -39,6 +39,9 @@ pub struct SuggestionsConfig {
     pub by_language: HashMap<String, LanguageSuggestions>,
 }
 
+/// Global shared suggestions state
+pub type SharedSuggestions = tokio::sync::RwLock<SuggestionsConfig>;
+
 /// Suggestions for a specific language
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]

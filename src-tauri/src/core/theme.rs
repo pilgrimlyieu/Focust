@@ -45,6 +45,71 @@ impl Display for HexColor {
     }
 }
 
+/// Resolved background for break window
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, rename_all = "camelCase")]
+pub struct ResolvedBackground {
+    pub kind: BackgroundKind,
+    pub value: String,
+}
+
+impl Default for ResolvedBackground {
+    fn default() -> Self {
+        Self {
+            kind: BackgroundKind::Solid,
+            value: HexColor::default().to_string(),
+        }
+    }
+}
+
+impl ResolvedBackground {
+    #[must_use]
+    pub fn new_solid(color: String) -> Self {
+        Self {
+            kind: BackgroundKind::Solid,
+            value: color,
+        }
+    }
+
+    #[must_use]
+    pub fn new_image(path: String) -> Self {
+        Self {
+            kind: BackgroundKind::Image,
+            value: path,
+        }
+    }
+
+    #[must_use]
+    pub fn is_solid(&self) -> bool {
+        self.kind == BackgroundKind::Solid
+    }
+
+    #[must_use]
+    pub fn is_image(&self) -> bool {
+        self.kind == BackgroundKind::Image
+    }
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, rename_all = "camelCase")]
+#[derive(Default)]
+pub enum BackgroundKind {
+    #[default]
+    Solid,
+    Image,
+}
+
+impl Display for BackgroundKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let kind_str = match self {
+            BackgroundKind::Solid => "solid",
+            BackgroundKind::Image => "image",
+        };
+        write!(f, "{kind_str}")
+    }
+}
 impl Deref for FontFamily {
     type Target = String;
 
