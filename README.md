@@ -13,7 +13,7 @@
 
 Take regular breaks, protect your eyes, and maintain healthy work habits with customizable schedules, beautiful themes, and intelligent reminders.
 
-[Quick Start](#quick-start) • [Features](#features) • [Installation](#installation) • [Building](#building-from-source) • [Contributing](#contributing) • [Documentation](#documentation)
+[Quick Start](#-quick-start) • [Features](#-features) • [Installation](#-installation) • [Building](#-building-from-source) • [Contributing](#-contributing) • [Documentation](#-documentation)
 
 </div>
 
@@ -97,7 +97,7 @@ See the [QUICKSTART.md](docs/QUICKSTART.md) for a step-by-step guide to getting 
 - **Global Hotkeys**: Postpone breaks without switching windows
 - **Strict Mode**: Force breaks when you really need them (cannot be skipped)
 - **Break Notifications**: Get notified before breaks start (configurable lead time)
-- **Automatic Pausing**(TODO): Detects system idle time and pauses the scheduler
+- **Automatic Pausing**: Detects system idle time and pauses the scheduler
 - **DND Detection**(TODO): Planned feature to detect Do Not Disturb mode
 - **Theme Modes**: Light, dark, or system-based theme for settings UI
 - **Detailed Logging**: Debug logs for troubleshooting

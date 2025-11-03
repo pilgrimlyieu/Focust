@@ -1,0 +1,73 @@
+name: PR Quality Check
+
+on:
+  pull_request:
+    branches:
+      - main
+      - dev
+
+jobs:
+  check:
+    name: Quality Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Cache Node modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Format Check
+        run: |
+          echo "🔍 Checking code formatting..."
+          bunx biome check .
+          cargo fmt --manifest-path src-tauri/Cargo.toml --all --check
+
+      - name: Lint Check
+        run: |
+          echo "🔍 Running linters..."
+          cargo clippy --manifest-path src-tauri/Cargo.toml --workspace --all-targets -- -D warnings
+
+      - name: Type Check
+        run: |
+          echo "🔍 Running type checks..."
+          bunx tsc --noEmit
+          cargo check --manifest-path src-tauri/Cargo.toml --workspace --all-targets
+
+      - name: Run Tests
+        run: |
+          echo "🧪 Running tests..."
+          bun run test:run
+          cargo test --manifest-path src-tauri/Cargo.toml --workspace
+
+      - name: Quality Check Summary
+        if: always()
+        run: |
+          echo "## Quality Check Results" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All checks completed!" >> $GITHUB_STEP_SUMMARY
