@@ -42,10 +42,10 @@ function isSchedulerAttention(event: SchedulerEvent) {
  * Type guards for ResolvedBackground variants
  */
 function isResolvedImageBackground(background: ResolvedBackground) {
-  return background.type === "image";
+  return background.kind === "image";
 }
 function isResolvedSolidBackground(background: ResolvedBackground) {
-  return background.type === "solid";
+  return background.kind === "solid";
 }
 
 export {

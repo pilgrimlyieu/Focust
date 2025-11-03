@@ -264,13 +264,13 @@ fn resolve_background(source: &BackgroundSource) -> ResolvedBackground {
             }
 
             let mut rng = rand::rng();
-            ResolvedBackground::new_image(
-                entries
-                    .choose(&mut rng)
-                    .unwrap()
-                    .to_string_lossy()
-                    .to_string(),
-            ) // Safe unwrap due to earlier check
+            let chosen_entry = entries
+                .choose(&mut rng)
+                .unwrap() // Safe unwrap due to earlier check
+                .to_string_lossy()
+                .to_string();
+            tracing::debug!("Chosen background image: {chosen_entry}");
+            ResolvedBackground::new_image(chosen_entry)
         }
     }
 }
