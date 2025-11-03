@@ -61,7 +61,7 @@ pub async fn trigger_break(
     break_kind: SchedulerEvent,
 ) -> Result<(), String> {
     state
-        .send(Command::TriggerBreak(break_kind))
+        .send(Command::TriggerEvent(break_kind))
         .await
         .map_err(|e| e.to_string())
 }

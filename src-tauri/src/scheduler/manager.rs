@@ -7,6 +7,7 @@ use super::attention_timer::AttentionTimer;
 use super::break_scheduler::BreakScheduler;
 use super::models::{Command, PauseReason};
 use crate::config::SharedConfig;
+use crate::scheduler::SchedulerEvent;
 
 /// Top-level scheduler manager that coordinates break scheduling and attention timers
 pub struct SchedulerManager;
@@ -76,10 +77,13 @@ impl SchedulerManager {
                             let _ = break_cmd_tx.send(cmd.clone()).await;
                             let _ = attention_cmd_tx.send(cmd).await;
                         }
-                        Command::TriggerBreak(_) => {
-                            // Both might be interested (depends on event type)
-                            let _ = break_cmd_tx.send(cmd.clone()).await;
+                        Command::TriggerEvent(SchedulerEvent::Attention(_)) => {
+                            // Attention-specific
                             let _ = attention_cmd_tx.send(cmd).await;
+                        }
+                        Command::TriggerEvent(_) => {
+                            // Break-specific
+                            let _ = break_cmd_tx.send(cmd).await;
                         }
                         // All other commands are break-specific
                         _ => {

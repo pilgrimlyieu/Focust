@@ -192,7 +192,7 @@ impl AttentionTimer {
                 }
                 // Config updated, will recalculate next attention in next loop iteration
             }
-            Command::TriggerBreak(SchedulerEvent::Attention(attention_id)) => {
+            Command::TriggerEvent(SchedulerEvent::Attention(attention_id)) => {
                 tracing::info!("Manually triggering attention: {attention_id}");
                 self.trigger_attention(attention_id);
             }

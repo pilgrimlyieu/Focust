@@ -61,7 +61,7 @@ pub enum Command {
     /// Skip the current break immediately
     SkipBreak,
     /// Manually trigger a break for testing/debugging
-    TriggerBreak(SchedulerEvent),
+    TriggerEvent(SchedulerEvent),
     /// Request the scheduler to emit its current status
     RequestStatus,
 }
@@ -73,7 +73,7 @@ impl Display for Command {
             Command::Pause(reason) => write!(f, "Pause({reason})"),
             Command::Resume(reason) => write!(f, "Resume({reason})"),
             Command::Postpone => write!(f, "Postpone"),
-            Command::TriggerBreak(event) => write!(f, "TriggerBreak({event})"),
+            Command::TriggerEvent(event) => write!(f, "TriggerBreak({event})"),
             Command::SkipBreak => write!(f, "SkipBreak"),
             Command::RequestStatus => write!(f, "RequestStatus"),
         }

@@ -360,7 +360,7 @@ impl BreakScheduler {
                     tracing::error!("Failed to emit break-finished event: {e}");
                 }
             }
-            Command::TriggerBreak(event) => {
+            Command::TriggerEvent(event) => {
                 tracing::info!("Manually triggering break: {event}");
                 self.cancel_current_wait();
                 self.execute_break(event);
