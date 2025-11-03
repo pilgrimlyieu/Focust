@@ -11,7 +11,11 @@ import InfoIcon from "@/components/icons/InfoIcon.vue";
 import MonitorIcon from "@/components/icons/MonitorIcon.vue";
 import type { ToastKind } from "@/composables/useToast";
 import { useConfigStore } from "@/stores/config";
-import type { EventKind } from "@/types";
+import {
+  createAttentionEvent,
+  createLongBreakEvent,
+  createMiniBreakEvent,
+} from "@/types";
 
 const emit =
   defineEmits<(event: "notify", kind: ToastKind, message: string) => void>();
@@ -58,9 +62,7 @@ async function triggerMiniBreak() {
       return;
     }
     // Use the first schedule's mini break, whether it's enabled.
-    const breakKind: EventKind = {
-      miniBreak: config.schedules[0].miniBreaks.id,
-    };
+    const breakKind = createMiniBreakEvent(config.schedules[0].miniBreaks.id);
     console.log("Triggering mini break with:", breakKind);
     await invoke("trigger_break", { breakKind });
     emit("notify", "success", "Mini break triggered");
@@ -80,9 +82,7 @@ async function triggerLongBreak() {
       emit("notify", "error", "There's no available schedule configuration");
       return;
     }
-    const breakKind: EventKind = {
-      longBreak: config.schedules[0].longBreaks.id,
-    };
+    const breakKind = createLongBreakEvent(config.schedules[0].longBreaks.id);
     console.log("Triggering long break with:", breakKind);
     await invoke("trigger_break", { breakKind });
     emit("notify", "success", "Long break triggered");
@@ -102,9 +102,7 @@ async function triggerAttention() {
       emit("notify", "error", "There's no available attention configuration");
       return;
     }
-    const breakKind: EventKind = {
-      attention: config.attentions[0].id,
-    };
+    const breakKind = createAttentionEvent(config.attentions[0].id);
     console.log("Triggering attention with:", breakKind);
     await invoke("trigger_break", { breakKind });
     emit("notify", "success", "Attention triggered");

@@ -7,68 +7,61 @@ use ts_rs::TS;
 use crate::config::AppConfig;
 use crate::core::schedule::{AttentionId, BreakId};
 
-#[derive(Debug, Clone)]
-pub struct ScheduledEvent {
-    pub time: DateTime<Utc>,
-    pub kind: EventKind,
-}
+// ============================================================================
+// Event Types - Sent to Frontend
+// ============================================================================
 
-/// Defines the different kinds of events the scheduler can handle.
-/// The order of variants defines their priority (lower discriminant = higher priority).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, TS)]
-#[serde(rename_all = "camelCase")]
+/// Events sent to the frontend for display
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(tag = "type", content = "data", rename_all = "camelCase")]
 #[ts(export, rename_all = "camelCase")]
-pub enum EventKind {
+pub enum SchedulerEvent {
+    MiniBreak(BreakId),
+    LongBreak(BreakId),
     Attention(AttentionId),
-    LongBreak(BreakId),
-    MiniBreak(BreakId),
-    Notification(NotificationKind),
 }
 
-impl Display for EventKind {
+impl Display for SchedulerEvent {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            EventKind::Attention(id) => write!(f, "Attention({id})"),
-            EventKind::LongBreak(id) => write!(f, "LongBreak({id})"),
-            EventKind::MiniBreak(id) => write!(f, "MiniBreak({id})"),
-            EventKind::Notification(kind) => write!(f, "Notification({kind:?})"),
+            SchedulerEvent::MiniBreak(id) => write!(f, "MiniBreak({id})"),
+            SchedulerEvent::LongBreak(id) => write!(f, "LongBreak({id})"),
+            SchedulerEvent::Attention(id) => write!(f, "Attention({id})"),
         }
     }
 }
 
-/// Specifies the type of break for a notification.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(rename_all = "camelCase")]
-pub enum NotificationKind {
-    LongBreak(BreakId),
-    MiniBreak(BreakId),
+// ============================================================================
+// Internal Types
+// ============================================================================
+
+/// Internal representation of a scheduled break (used by `BreakScheduler`)
+#[derive(Debug, Clone)]
+pub(crate) struct BreakInfo {
+    pub break_time: DateTime<Utc>,
+    pub notification_time: Option<DateTime<Utc>>,
+    pub event: SchedulerEvent,
 }
 
-impl Display for NotificationKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            NotificationKind::LongBreak(id) => write!(f, "LongBreak({id})"),
-            NotificationKind::MiniBreak(id) => write!(f, "MiniBreak({id})"),
-        }
-    }
-}
+// ============================================================================
+// Command Types
+// ============================================================================
 
-/// Commands that can be sent to the scheduler to control its behavior.
+/// Commands sent to the scheduler from external sources
 #[derive(Debug, Clone)]
 pub enum Command {
     /// Update the scheduler configuration
     UpdateConfig(AppConfig),
-    /// Pause the scheduler for a given reason
+    /// Pause the break scheduler
     Pause(PauseReason),
-    /// Resume the scheduler from a paused state for a given reason
+    /// Resume the break scheduler
     Resume(PauseReason),
     /// Postpone the current break
     Postpone,
-    /// Manually trigger a break for testing/debugging purposes
-    TriggerBreak(EventKind),
     /// Skip the current break immediately
     SkipBreak,
+    /// Manually trigger a break for testing/debugging
+    TriggerBreak(SchedulerEvent),
     /// Request the scheduler to emit its current status
     RequestStatus,
 }
@@ -77,22 +70,26 @@ impl Display for Command {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Command::UpdateConfig(_) => write!(f, "UpdateConfig"),
-            Command::Pause(reason) => write!(f, "Pause({reason:?})"),
-            Command::Resume(reason) => write!(f, "Resume({reason:?})"),
+            Command::Pause(reason) => write!(f, "Pause({reason})"),
+            Command::Resume(reason) => write!(f, "Resume({reason})"),
             Command::Postpone => write!(f, "Postpone"),
-            Command::TriggerBreak(kind) => write!(f, "TriggerBreak({kind})"),
+            Command::TriggerBreak(event) => write!(f, "TriggerBreak({event})"),
             Command::SkipBreak => write!(f, "SkipBreak"),
             Command::RequestStatus => write!(f, "RequestStatus"),
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+// ============================================================================
+// State Types
+// ============================================================================
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PauseReason {
     UserIdle,
-    Dnd, // TODO
+    Dnd,
     Manual,
-    AppExclusion, // TODO
+    AppExclusion,
 }
 
 impl Display for PauseReason {
@@ -106,14 +103,18 @@ impl Display for PauseReason {
     }
 }
 
+// ============================================================================
+// Status Types - For UI Display
+// ============================================================================
+
 /// Scheduler status information for UI display
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, rename_all = "camelCase")]
 pub struct SchedulerStatus {
-    /// Whether the scheduler is currently paused
+    /// Whether the break scheduler is currently paused
     pub paused: bool,
-    /// The next scheduled event (if any)
+    /// The next scheduled break event (if any)
     pub next_event: Option<SchedulerEventInfo>,
 }
 
@@ -123,7 +124,7 @@ pub struct SchedulerStatus {
 #[ts(rename_all = "camelCase")]
 pub struct SchedulerEventInfo {
     /// The type of event
-    pub kind: EventKind,
+    pub kind: SchedulerEvent,
     /// When the event will occur (ISO 8601 timestamp)
     pub time: String,
     /// Seconds until the event
@@ -133,139 +134,44 @@ pub struct SchedulerEventInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::TimeZone;
 
-    // EventKind priority test
+    // SchedulerEvent tests
     #[test]
-    fn test_event_kind_priority_order() {
+    fn test_scheduler_event_display() {
         use crate::core::schedule::{AttentionId, BreakId};
-        // EventKind priority order should be: Attention > LongBreak > MiniBreak > Notification
-        let attention = EventKind::Attention(AttentionId::new());
-        let long_break = EventKind::LongBreak(BreakId::new());
-        let mini_break = EventKind::MiniBreak(BreakId::new());
-        let notification = EventKind::Notification(NotificationKind::MiniBreak(BreakId::new()));
+        let mini_break = SchedulerEvent::MiniBreak(BreakId::new());
+        let long_break = SchedulerEvent::LongBreak(BreakId::new());
+        let attention = SchedulerEvent::Attention(AttentionId::new());
 
-        // Attention has highest priority
-        assert!(attention < long_break);
-        assert!(attention < mini_break);
-        assert!(attention < notification);
-
-        // LongBreak has second highest priority
-        assert!(long_break < mini_break);
-        assert!(long_break < notification);
-
-        // MiniBreak has third priority
-        assert!(mini_break < notification);
+        assert!(mini_break.to_string().starts_with("MiniBreak("));
+        assert!(long_break.to_string().starts_with("LongBreak("));
+        assert!(attention.to_string().starts_with("Attention("));
     }
 
     #[test]
-    fn test_event_kind_equality() {
+    fn test_scheduler_event_equality() {
         use crate::core::schedule::BreakId;
         let id = BreakId::new();
-        let event1 = EventKind::MiniBreak(id);
-        let event2 = EventKind::MiniBreak(id);
-        let event3 = EventKind::MiniBreak(BreakId::new());
+        let event1 = SchedulerEvent::MiniBreak(id);
+        let event2 = SchedulerEvent::MiniBreak(id);
+        let event3 = SchedulerEvent::MiniBreak(BreakId::new());
 
         assert_eq!(event1, event2);
         assert_ne!(event1, event3);
-    }
-
-    #[test]
-    fn test_event_kind_display() {
-        use crate::core::schedule::{AttentionId, BreakId};
-        let attention_id = AttentionId::new();
-        let break_id = BreakId::new();
-        let long_break_id = BreakId::new();
-
-        assert!(
-            EventKind::Attention(attention_id)
-                .to_string()
-                .starts_with("Attention(")
-        );
-        assert!(
-            EventKind::LongBreak(long_break_id)
-                .to_string()
-                .starts_with("LongBreak(")
-        );
-        assert!(
-            EventKind::MiniBreak(break_id)
-                .to_string()
-                .starts_with("MiniBreak(")
-        );
-    }
-
-    // NotificationKind tests
-    #[test]
-    fn test_notification_kind_ordering() {
-        use crate::core::schedule::BreakId;
-        let long_notif = NotificationKind::LongBreak(BreakId::new());
-        let mini_notif = NotificationKind::MiniBreak(BreakId::new());
-
-        assert!(long_notif < mini_notif);
-    }
-
-    #[test]
-    fn test_notification_kind_display() {
-        use crate::core::schedule::BreakId;
-        let break_id = BreakId::new();
-        let notif = NotificationKind::MiniBreak(break_id);
-        assert!(notif.to_string().starts_with("MiniBreak("));
-    }
-
-    // ScheduledEvent tests
-    #[test]
-    fn test_scheduled_event_creation() {
-        use crate::core::schedule::BreakId;
-        let time = Utc.with_ymd_and_hms(2025, 9, 1, 12, 0, 0).unwrap();
-        let event = ScheduledEvent {
-            time,
-            kind: EventKind::MiniBreak(BreakId::new()),
-        };
-
-        assert_eq!(event.time, time);
-    }
-
-    #[test]
-    fn test_scheduled_event_clone() {
-        use crate::core::schedule::BreakId;
-        let time = Utc.with_ymd_and_hms(2025, 9, 1, 12, 0, 0).unwrap();
-        let break_id = BreakId::new();
-        let event = ScheduledEvent {
-            time,
-            kind: EventKind::LongBreak(break_id),
-        };
-
-        let cloned = event.clone();
-        assert_eq!(event.time, cloned.time);
-        assert_eq!(event.kind, cloned.kind);
     }
 
     // Command tests
     #[test]
     fn test_command_display() {
         assert_eq!(Command::Postpone.to_string(), "Postpone");
-        assert_eq!(
-            Command::Pause(PauseReason::UserIdle).to_string(),
-            "Pause(UserIdle)"
-        );
-        assert_eq!(
-            Command::Resume(PauseReason::Manual).to_string(),
-            "Resume(Manual)"
-        );
+        assert_eq!(Command::SkipBreak.to_string(), "SkipBreak");
+        assert_eq!(Command::RequestStatus.to_string(), "RequestStatus");
     }
 
     #[test]
-    fn test_command_update_config_display() {
-        let config = AppConfig::default();
-        let cmd = Command::UpdateConfig(config);
-        assert_eq!(cmd.to_string(), "UpdateConfig");
-    }
-
-    #[test]
-    fn test_command_clone() {
-        let cmd = Command::Postpone;
-        let cloned = cmd.clone();
-        assert_eq!(cmd.to_string(), cloned.to_string());
+    fn test_command_pause_display() {
+        let cmd = Command::Pause(PauseReason::UserIdle);
+        assert_eq!(cmd.to_string(), "Pause(UserIdle)");
     }
 
     // PauseReason tests
@@ -276,54 +182,10 @@ mod tests {
     }
 
     #[test]
-    fn test_pause_reason_clone() {
-        let reason = PauseReason::Dnd;
-        let cloned = reason.clone();
-        assert_eq!(reason, cloned);
-    }
-
-    #[test]
     fn test_pause_reason_display() {
         assert_eq!(PauseReason::UserIdle.to_string(), "UserIdle");
         assert_eq!(PauseReason::Dnd.to_string(), "Dnd");
         assert_eq!(PauseReason::Manual.to_string(), "Manual");
         assert_eq!(PauseReason::AppExclusion.to_string(), "AppExclusion");
-    }
-
-    // Serialization tests (EventKind and NotificationKind)
-    #[test]
-    fn test_event_kind_serialization() {
-        use crate::core::schedule::BreakId;
-        let event = EventKind::MiniBreak(BreakId::new());
-        let json = serde_json::to_string(&event).expect("Failed to serialize");
-        let _deserialized: EventKind = serde_json::from_str(&json).expect("Failed to deserialize");
-        // Should be able to deserialize after serialization
-        assert!(json.contains("miniBreak"));
-    }
-
-    #[test]
-    fn test_notification_kind_serialization() {
-        use crate::core::schedule::BreakId;
-        let notif = NotificationKind::LongBreak(BreakId::new());
-        let json = serde_json::to_string(&notif).expect("Failed to serialize");
-        let _deserialized: NotificationKind =
-            serde_json::from_str(&json).expect("Failed to deserialize");
-        // Should be able to deserialize after serialization
-        assert!(json.contains("longBreak"));
-    }
-
-    // Edge case tests
-    #[test]
-    fn test_event_kind_with_new_id() {
-        use crate::core::schedule::BreakId;
-        let event = EventKind::MiniBreak(BreakId::new());
-        assert!(event.to_string().contains("MiniBreak"));
-    }
-
-    #[test]
-    fn test_event_kind_with_attention_id() {
-        use crate::core::schedule::AttentionId;
-        let event = EventKind::Attention(AttentionId::new());
-        assert!(event.to_string().contains("Attention"));
     }
 }

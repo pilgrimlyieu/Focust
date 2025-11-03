@@ -6,10 +6,10 @@ import type { SchedulerEventInfo } from "./SchedulerEventInfo";
  */
 export type SchedulerStatus = { 
 /**
- * Whether the scheduler is currently paused
+ * Whether the break scheduler is currently paused
  */
 paused: boolean, 
 /**
- * The next scheduled event (if any)
+ * The next scheduled break event (if any)
  */
 nextEvent: SchedulerEventInfo | null, };

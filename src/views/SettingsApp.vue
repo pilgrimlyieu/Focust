@@ -9,8 +9,6 @@ import {
   watch,
 } from "vue";
 import { useI18n } from "vue-i18n";
-import AdvancedOption from "@/components/icons/AdvancedOption.vue";
-import AttentionBell from "@/components/icons/AttentionBell.vue";
 import CheckCircleIcon from "@/components/icons/CheckCircleIcon.vue";
 import CheckIcon from "@/components/icons/CheckIcon.vue";
 import CleanCalendar from "@/components/icons/CleanCalendar.vue";
@@ -45,10 +43,9 @@ import { useToast } from "@/composables/useToast";
 import { useConfigStore } from "@/stores/config";
 import { useSchedulerStore } from "@/stores/scheduler";
 import {
-  isAttention,
-  isLongBreak,
-  isMiniBreak,
-  isNotificationKind,
+  isSchedulerAttention,
+  isSchedulerLongBreak,
+  isSchedulerMiniBreak,
 } from "@/types";
 
 const { t } = useI18n();
@@ -117,28 +114,13 @@ const nextBreakInfo = computed(() => {
   // Calculate remaining seconds, accounting for elapsed time
   let seconds = Math.max(0, Number(event.secondsUntil) - elapsedSeconds);
   let kindStr = "";
-  let eventKind = event.kind;
 
-  // If this is a Notification event, we need to calculate the actual break time
-  // by adding the notification lead time (typically 5 seconds)
-  // TODO: Maybe make it more reliable by fetching from schedule config?
-  if (isNotificationKind(event.kind)) {
-    const notifKind = event.kind.notification;
-
-    const schedule = configStore.draft?.schedules?.[0];
-    const notifyBefore = schedule?.notificationBeforeS ?? 5;
-
-    eventKind = notifKind;
-
-    // The actual break happens AFTER the notification
-    seconds += notifyBefore;
-  }
-
-  if (isMiniBreak(eventKind)) {
+  // Determine the event kind and display string
+  if (isSchedulerMiniBreak(event.kind)) {
     kindStr = t("schedule.miniBreak");
-  } else if (isLongBreak(eventKind)) {
+  } else if (isSchedulerLongBreak(event.kind)) {
     kindStr = t("schedule.longBreak");
-  } else if (isAttention(eventKind)) {
+  } else if (isSchedulerAttention(event.kind)) {
     kindStr = t("break.attention");
   }
 

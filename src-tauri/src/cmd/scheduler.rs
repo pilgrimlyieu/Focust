@@ -3,7 +3,7 @@ use std::ops::Deref;
 use tauri::State;
 use tokio::sync::{mpsc::Sender, watch};
 
-use crate::scheduler::models::{Command, EventKind, PauseReason};
+use crate::scheduler::models::{Command, PauseReason, SchedulerEvent};
 
 pub struct SchedulerCmd(pub Sender<Command>);
 
@@ -58,7 +58,7 @@ pub async fn postpone_break(state: State<'_, SchedulerCmd>) -> Result<(), String
 #[tauri::command]
 pub async fn trigger_break(
     state: State<'_, SchedulerCmd>,
-    break_kind: EventKind,
+    break_kind: SchedulerEvent,
 ) -> Result<(), String> {
     state
         .send(Command::TriggerBreak(break_kind))

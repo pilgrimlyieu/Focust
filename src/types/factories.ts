@@ -11,6 +11,7 @@ import type { BackgroundSource } from "./generated/BackgroundSource";
 import type { FontFamily } from "./generated/FontFamily";
 import type { HexColor } from "./generated/HexColor";
 import type { ResolvedBackground } from "./generated/ResolvedBackground";
+import type { SchedulerEvent } from "./generated/SchedulerEvent";
 import type { SuggestionsSettings } from "./generated/SuggestionsSettings";
 import type { ThemeSettings } from "./generated/ThemeSettings";
 import type { TimeRange } from "./generated/TimeRange";
@@ -20,7 +21,60 @@ import {
   isImageFolderBackground,
   isImagePathBackground,
   isSolidBackground,
-} from "./guards"; // ============================================================================
+} from "./guards";
+
+// ============================================================================
+// SchedulerEvent Factory
+// ============================================================================
+
+/**
+ * Create a mini break event
+ * @param {number} breakId Break ID
+ * @returns {SchedulerEvent} SchedulerEvent with miniBreak type
+ */
+export function createMiniBreakEvent(breakId: number): SchedulerEvent {
+  return { data: breakId, type: "miniBreak" };
+}
+
+/**
+ * Create a long break event
+ * @param {number} breakId Break ID
+ * @returns {SchedulerEvent} SchedulerEvent with longBreak type
+ */
+export function createLongBreakEvent(breakId: number): SchedulerEvent {
+  return { data: breakId, type: "longBreak" };
+}
+
+/**
+ * Create an attention event
+ * @param {number} attentionId Attention ID
+ * @returns {SchedulerEvent} SchedulerEvent with attention type
+ */
+export function createAttentionEvent(attentionId: number): SchedulerEvent {
+  return { data: attentionId, type: "attention" };
+}
+
+/**
+ * Get the event type as a string
+ * @param {SchedulerEvent} event SchedulerEvent to check
+ * @returns { "miniBreak" | "longBreak" | "attention" } Event type
+ */
+export function getSchedulerEventType(
+  event: SchedulerEvent,
+): "miniBreak" | "longBreak" | "attention" {
+  return event.type;
+}
+
+/**
+ * Get the event data (ID)
+ * @param {SchedulerEvent} event SchedulerEvent to extract from
+ * @returns {number} Event data (break or attention ID)
+ */
+export function getSchedulerEventData(event: SchedulerEvent): number {
+  return event.data;
+}
+
+// ============================================================================
 // BackgroundSource Factory
 // ============================================================================
 

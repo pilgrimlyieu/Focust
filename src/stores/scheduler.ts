@@ -16,18 +16,17 @@ import type {
   BackgroundSource,
   BreakKind,
   BreakPayload,
-  EventKind,
   ResolvedBackground,
+  SchedulerEvent,
   SchedulerStatus,
   ThemeSettings,
 } from "@/types";
 import {
-  isAttention,
   isImageFolderBackground,
   isImagePathBackground,
-  isLongBreak,
-  isMiniBreak,
-  isNotificationKind,
+  isSchedulerAttention,
+  isSchedulerLongBreak,
+  isSchedulerMiniBreak,
   isSolidBackground,
 } from "@/types";
 
@@ -78,16 +77,16 @@ type BreakExtractionResult = {
 
 /**
  * Extract break information from scheduler event payload
- * @param {EventKind} payload EventKind payload
+ * @param {SchedulerEvent} payload SchedulerEvent payload
  * @param {AppConfig} config Application configuration
  */
 function extractBreakInfo(
-  payload: EventKind,
+  payload: SchedulerEvent,
   config: AppConfig,
   suggestionsStore: ReturnType<typeof useSuggestionsStore>,
 ): BreakExtractionResult | null {
-  if (isMiniBreak(payload)) {
-    const id = payload.miniBreak;
+  if (isSchedulerMiniBreak(payload)) {
+    const id = payload.data;
     console.log("[Scheduler] Looking for mini break with id:", id);
     const schedule = config.schedules.find((s) => s.miniBreaks.id === id);
     console.log("[Scheduler] Found schedule:", schedule);
@@ -113,8 +112,8 @@ function extractBreakInfo(
       theme: mini.theme,
       title: schedule.name,
     };
-  } else if (isLongBreak(payload)) {
-    const id = payload.longBreak;
+  } else if (isSchedulerLongBreak(payload)) {
+    const id = payload.data;
     console.log("[Scheduler] Looking for long break with id:", id);
     const schedule = config.schedules.find((s) => s.longBreaks.id === id);
     console.log("[Scheduler] Found schedule:", schedule);
@@ -139,8 +138,8 @@ function extractBreakInfo(
       theme: long.theme,
       title: schedule.name,
     };
-  } else if (isAttention(payload)) {
-    const id = payload.attention;
+  } else if (isSchedulerAttention(payload)) {
+    const id = payload.data;
     const attention = config.attentions.find((a) => a.id === id);
     if (!attention) return null;
     return {
@@ -281,7 +280,7 @@ export const useSchedulerStore = defineStore("scheduler", () => {
       }
     }
 
-    await listen<EventKind>("scheduler-event", (event) => {
+    await listen<SchedulerEvent>("scheduler-event", (event) => {
       handleSchedulerEvent(event.payload);
     });
 
@@ -307,16 +306,10 @@ export const useSchedulerStore = defineStore("scheduler", () => {
 
   /**
    * Handle scheduler event and open break window if needed
-   * @param {EventKind} payload Scheduler event payload
+   * @param {SchedulerEvent} payload Scheduler event payload
    */
-  async function handleSchedulerEvent(payload: EventKind) {
+  async function handleSchedulerEvent(payload: SchedulerEvent) {
     console.log("[Scheduler] Received scheduler event:", payload);
-
-    if (isNotificationKind(payload)) {
-      const id = Object.values(payload.notification)[0];
-      console.info("Break notification", id);
-      return;
-    }
 
     const configStore = useConfigStore();
     const suggestionsStore = useSuggestionsStore();

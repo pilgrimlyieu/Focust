@@ -1,7 +1,7 @@
 import type { AudioSettings } from "./generated/AudioSettings";
 import type { BackgroundSource } from "./generated/BackgroundSource";
-import type { EventKind } from "./generated/EventKind";
 import type { ResolvedBackground } from "./generated/ResolvedBackground";
+import type { SchedulerEvent } from "./generated/SchedulerEvent";
 
 /** Type guards for audio sources */
 function isBuiltinAudio(audio: AudioSettings) {
@@ -26,19 +26,16 @@ function isImageFolderBackground(background: BackgroundSource) {
 }
 
 /**
- * Type guards for EventKind variants
+ * Type guards for SchedulerEvent variants
  */
-function isNotificationKind(payload: EventKind) {
-  return "notification" in payload;
+function isSchedulerMiniBreak(event: SchedulerEvent) {
+  return event.type === "miniBreak";
 }
-function isMiniBreak(payload: EventKind) {
-  return "miniBreak" in payload;
+function isSchedulerLongBreak(event: SchedulerEvent) {
+  return event.type === "longBreak";
 }
-function isLongBreak(payload: EventKind) {
-  return "longBreak" in payload;
-}
-function isAttention(payload: EventKind) {
-  return "attention" in payload;
+function isSchedulerAttention(event: SchedulerEvent) {
+  return event.type === "attention";
 }
 
 /**
@@ -58,10 +55,9 @@ export {
   isSolidBackground,
   isImagePathBackground,
   isImageFolderBackground,
-  isNotificationKind,
-  isMiniBreak,
-  isLongBreak,
-  isAttention,
+  isSchedulerMiniBreak,
+  isSchedulerLongBreak,
+  isSchedulerAttention,
   isResolvedImageBackground,
   isResolvedSolidBackground,
 };
