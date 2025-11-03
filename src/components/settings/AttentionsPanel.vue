@@ -24,11 +24,24 @@ const attentions = computed(() => props.config.attentions);
 const draggedIndex = ref<number | null>(null);
 
 /**
- * Handle drag start
+ * Handle drag start from the drag handle
+ * @param {DragEvent} event The drag event
  * @param {number} index The index of the dragged item
  */
-function handleDragStart(index: number) {
+function handleDragStart(event: DragEvent, index: number) {
+  // Only allow drag if started from the drag handle
+  const target = event.target as HTMLElement;
+  if (!target.classList.contains("drag-handle")) {
+    event.preventDefault();
+    return;
+  }
+
   draggedIndex.value = index;
+  // Set data transfer for compatibility
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", String(index));
+  }
 }
 
 /**
@@ -206,19 +219,20 @@ function updateTime(attentionIndex: number, timeIndex: number, value: string) {
 
     <!-- Attentions List -->
     <TransitionGroup v-else name="list" tag="div" class="space-y-5">
-      <article v-for="(attention, index) in attentions" :key="attention.id" :draggable="true"
-        class="group rounded-2xl border border-base-300 bg-linear-to-br from-base-100 to-base-200/30 p-6 shadow-md transition-all hover:shadow-xl cursor-move"
+      <article v-for="(attention, index) in attentions" :key="attention.id"
+        class="group rounded-2xl border border-base-300 bg-linear-to-br from-base-100 to-base-200/30 p-6 shadow-md transition-all hover:shadow-xl"
         :class="{
           'opacity-50 scale-95': draggedIndex === index,
           'ring-2 ring-primary/50': draggedIndex !== null && draggedIndex !== index,
-        }" @dragstart="handleDragStart(index)" @dragover="handleDragOver($event, index)" @dragend="handleDragEnd">
+        }" @dragover="handleDragOver($event, index)" @dragend="handleDragEnd">
         <!-- Header -->
         <header class="mb-6 flex flex-wrap items-start gap-4">
-          <div class="flex items-center gap-3 cursor-grab active:cursor-grabbing shrink-0">
+          <div draggable="true" class="drag-handle flex items-center gap-3 shrink-0 cursor-grab active:cursor-grabbing"
+            @dragstart="handleDragStart($event, index)">
             <GripVerticalIcon
               class-name="h-5 w-5 text-base-content/20 group-hover:text-base-content/50 transition-colors" />
             <input v-model="attention.enabled" type="checkbox" class="toggle toggle-lg transition-all"
-              :class="{ 'toggle-success': attention.enabled }" />
+              :class="{ 'toggle-success': attention.enabled }" draggable="false" @mousedown.stop @click.stop />
           </div>
           <div class="flex-1 min-w-0">
             <input v-model="attention.name" type="text" :placeholder="t('attention.nameHint')"

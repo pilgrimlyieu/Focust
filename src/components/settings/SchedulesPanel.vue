@@ -16,11 +16,24 @@ const schedules = computed(() => props.config.schedules);
 const draggedIndex = ref<number | null>(null);
 
 /**
- * Handle drag start
+ * Handle drag start from the drag handle
+ * @param {DragEvent} event The drag event
  * @param {number} index The index of the dragged item
  */
-function handleDragStart(index: number) {
+function handleDragStart(event: DragEvent, index: number) {
+  // Only allow drag if started from the drag handle
+  const target = event.target as HTMLElement;
+  if (!target.classList.contains("drag-handle")) {
+    event.preventDefault();
+    return;
+  }
+
   draggedIndex.value = index;
+  // Set data transfer for compatibility
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", String(index));
+  }
 }
 
 /**
@@ -79,12 +92,10 @@ function removeSchedule(id: number) {
   <section class="space-y-6">
     <!-- Header Card -->
     <div
-      class="rounded-2xl border border-primary/30 bg-linear-to-br from-primary/10 via-primary/5 to-transparent p-6 shadow-sm backdrop-blur-sm"
-    >
+      class="rounded-2xl border border-primary/30 bg-linear-to-br from-primary/10 via-primary/5 to-transparent p-6 shadow-sm backdrop-blur-sm">
       <div class="flex flex-col sm:flex-row items-start gap-5">
         <div
-          class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-primary to-primary/80 shadow-lg"
-        >
+          class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-primary to-primary/80 shadow-lg">
           <CleanCalendar class-name="h-7 w-7 text-white" />
         </div>
         <div class="flex-1 min-w-0">
@@ -107,8 +118,7 @@ function removeSchedule(id: number) {
         </div>
         <button
           class="btn btn-primary gap-2.5 shadow-md hover:shadow-lg transition-all shrink-0 w-full sm:w-auto font-medium"
-          @click="addSchedule()"
-        >
+          @click="addSchedule()">
           <PlusIcon class-name="h-5 w-5" />
           {{ t("schedule.create") }}
         </button>
@@ -116,16 +126,13 @@ function removeSchedule(id: number) {
     </div>
 
     <!-- Empty State -->
-    <div
-      v-if="!schedules.length"
-      class="rounded-2xl border-2 border-dashed border-base-300 bg-base-100/50 p-20 text-center"
-    >
+    <div v-if="!schedules.length"
+      class="rounded-2xl border-2 border-dashed border-base-300 bg-base-100/50 p-20 text-center">
       <div class="mx-auto max-w-md space-y-5">
         <div class="relative mx-auto h-28 w-28">
           <CleanCalendar class-name="h-28 w-28 text-base-content/10" />
           <div
-            class="absolute right-0 top-0 flex h-10 w-10 items-center justify-center rounded-full bg-warning animate-pulse shadow-lg"
-          >
+            class="absolute right-0 top-0 flex h-10 w-10 items-center justify-center rounded-full bg-warning animate-pulse shadow-lg">
             <PlusIcon class-name="h-6 w-6 text-warning-content" />
           </div>
         </div>
@@ -137,10 +144,8 @@ function removeSchedule(id: number) {
             {{ t("schedule.description") }}
           </p>
         </div>
-        <button
-          class="btn btn-primary btn-lg gap-2.5 shadow-lg hover:shadow-xl transition-all font-medium"
-          @click="addSchedule()"
-        >
+        <button class="btn btn-primary btn-lg gap-2.5 shadow-lg hover:shadow-xl transition-all font-medium"
+          @click="addSchedule()">
           <PlusIcon class-name="h-5 w-5" />
           {{ t("schedule.create") }}
         </button>
@@ -149,25 +154,13 @@ function removeSchedule(id: number) {
 
     <!-- Schedules List -->
     <TransitionGroup v-else name="list" tag="div" class="space-y-6">
-      <div
-        v-for="(schedule, index) in schedules"
-        :key="schedule.miniBreaks.id"
-        :draggable="true"
-        class="cursor-move"
-        :class="{
-          'opacity-50 scale-95': draggedIndex === index,
-          'ring-2 ring-primary/50 rounded-2xl': draggedIndex !== null && draggedIndex !== index,
-        }"
-        @dragstart="handleDragStart(index)"
-        @dragover="handleDragOver($event, index)"
-        @dragend="handleDragEnd"
-      >
-        <ScheduleCard
-          :schedule="schedule"
-          :index="index"
-          @duplicate="duplicateSchedule(schedule.miniBreaks.id)"
-          @remove="removeSchedule(schedule.miniBreaks.id)"
-        />
+      <div v-for="(schedule, index) in schedules" :key="schedule.miniBreaks.id" :class="{
+        'opacity-50 scale-95': draggedIndex === index,
+        'ring-2 ring-primary/50 rounded-2xl': draggedIndex !== null && draggedIndex !== index,
+      }" @dragover="handleDragOver($event, index)" @dragend="handleDragEnd">
+        <ScheduleCard :schedule="schedule" :index="index" :dragged-index="draggedIndex"
+          @duplicate="duplicateSchedule(schedule.miniBreaks.id)" @remove="removeSchedule(schedule.miniBreaks.id)"
+          @dragstart="handleDragStart($event, index)" />
       </div>
     </TransitionGroup>
   </section>

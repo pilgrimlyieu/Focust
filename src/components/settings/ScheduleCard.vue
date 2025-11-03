@@ -14,11 +14,13 @@ import type { ScheduleSettings } from "@/stores/config";
 const props = defineProps<{
   schedule: ScheduleSettings;
   index: number;
+  draggedIndex?: number | null;
 }>();
 
 const emit = defineEmits<{
   (event: "duplicate"): void;
   (event: "remove"): void;
+  (event: "dragstart", dragEvent: DragEvent): void;
 }>();
 
 const { t } = useI18n();
@@ -75,11 +77,12 @@ const longPostponeMinutes = useSecondsToMinutes(
     class="group space-y-6 rounded-2xl border border-base-300 bg-linear-to-br from-base-100 to-base-200/30 p-6 shadow-md hover:shadow-xl transition-all">
     <!-- Header -->
     <header class="flex flex-wrap items-start gap-4">
-      <div class="flex items-center gap-3 cursor-grab active:cursor-grabbing shrink-0">
+      <div draggable="true" class="drag-handle flex items-center gap-3 shrink-0 cursor-grab active:cursor-grabbing"
+        @dragstart="(e) => emit('dragstart', e)">
         <GripVerticalIcon
           class-name="h-5 w-5 text-base-content/20 group-hover:text-base-content/50 transition-colors" />
         <input v-model="schedule.enabled" type="checkbox" class="toggle toggle-lg transition-all"
-          :class="{ 'toggle-success': schedule.enabled }" />
+          :class="{ 'toggle-success': schedule.enabled }" draggable="false" @mousedown.stop @click.stop />
       </div>
       <div class="flex-1 min-w-0">
         <input v-model="schedule.name" type="text"
@@ -161,7 +164,7 @@ const longPostponeMinutes = useSecondsToMinutes(
               <input v-model.number="miniIntervalMinutes" type="number" min="1"
                 class="input input-sm input-bordered join-item flex-1 transition-all focus:input-primary" />
               <span class="btn btn-sm btn-ghost join-item pointer-events-none text-xs">{{ t("schedule.minutesUnit")
-              }}</span>
+                }}</span>
             </div>
           </label>
           <label class="form-control">
@@ -170,7 +173,7 @@ const longPostponeMinutes = useSecondsToMinutes(
               <input v-model.number="schedule.miniBreaks.durationS" type="number" min="1"
                 class="input input-sm input-bordered join-item flex-1 transition-all focus:input-primary" />
               <span class="btn btn-sm btn-ghost join-item pointer-events-none text-xs">{{ t("schedule.secondsUnit")
-              }}</span>
+                }}</span>
             </div>
           </label>
           <label class="form-control">
@@ -179,7 +182,7 @@ const longPostponeMinutes = useSecondsToMinutes(
               <input v-model.number="miniPostponeMinutes" type="number" min="1"
                 class="input input-sm input-bordered join-item flex-1 transition-all focus:input-primary" />
               <span class="btn btn-sm btn-ghost join-item pointer-events-none text-xs">{{ t("schedule.minutesUnit")
-              }}</span>
+                }}</span>
             </div>
           </label>
           <label class="label cursor-pointer justify-start gap-2 py-2">
@@ -211,7 +214,7 @@ const longPostponeMinutes = useSecondsToMinutes(
               <input v-model.number="schedule.longBreaks.durationS" type="number" min="1"
                 class="input input-sm input-bordered join-item flex-1 transition-all focus:input-primary" />
               <span class="btn btn-sm btn-ghost join-item pointer-events-none text-xs">{{ t("schedule.secondsUnit")
-              }}</span>
+                }}</span>
             </div>
           </label>
           <label class="form-control">
@@ -220,7 +223,7 @@ const longPostponeMinutes = useSecondsToMinutes(
               <input v-model.number="longPostponeMinutes" type="number" min="1"
                 class="input input-sm input-bordered join-item flex-1 transition-all focus:input-primary" />
               <span class="btn btn-sm btn-ghost join-item pointer-events-none text-xs">{{ t("schedule.minutesUnit")
-              }}</span>
+                }}</span>
             </div>
           </label>
           <label class="form-control">
