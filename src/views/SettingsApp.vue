@@ -349,7 +349,8 @@ defineExpose({
             <Suspense>
               <template #default>
                 <Transition name="fade" mode="out-in">
-                  <GeneralSettingsPanel v-if="activeTab === 'general'" :key="'general'" :config="configStore.draft" />
+                  <GeneralSettingsPanel v-if="activeTab === 'general'" :key="'general'" :config="configStore.draft"
+                    @notify="handleNotify" />
                   <SchedulesPanel v-else-if="activeTab === 'schedules'" :key="'schedules'"
                     :config="configStore.draft" />
                   <AttentionsPanel v-else-if="activeTab === 'attentions'" :key="'attentions'"

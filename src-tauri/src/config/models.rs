@@ -11,6 +11,8 @@ use crate::core::schedule::{AttentionSettings, ScheduleSettings};
 pub struct AppConfig {
     /// If auto check for updates on startup
     pub check_for_updates: bool,
+    /// If launch on system startup
+    pub autostart: bool,
     /// If monitor DND status and pause breaks
     pub monitor_dnd: bool,
     /// Inactive time in seconds before pausing breaks
@@ -35,6 +37,7 @@ impl Default for AppConfig {
     fn default() -> Self {
         Self {
             check_for_updates: true,
+            autostart: false,
             monitor_dnd: true,
             inactive_s: 300,
             all_screens: false,

@@ -99,6 +99,10 @@ const zhCN: LocaleStrings = {
   general: {
     allScreens: "在所有显示器上显示休息界面",
     allScreensHint: "在多显示器环境下，每个屏幕都显示休息窗口",
+    autostart: "开机自动启动",
+    autostartDisabled: "已禁用开机自启动",
+    autostartEnabled: "已启用开机自启动",
+    autostartHint: "登录系统时自动启动 Focust",
     behaviorSettings: "应用行为",
     checkUpdates: "启动时检查更新",
     checkUpdatesHint: "启动时自动检查是否有新版本可用",

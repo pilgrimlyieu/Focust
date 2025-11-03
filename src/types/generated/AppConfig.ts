@@ -11,6 +11,10 @@ export type AppConfig = {
  */
 checkForUpdates: boolean, 
 /**
+ * If launch on system startup
+ */
+autostart: boolean, 
+/**
  * If monitor DND status and pause breaks
  */
 monitorDnd: boolean, 

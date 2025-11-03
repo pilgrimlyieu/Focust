@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { invoke } from "@tauri-apps/api/core";
+import { onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import ClockIcon from "@/components/icons/ClockIcon.vue";
 import InfoIcon from "@/components/icons/InfoIcon.vue";
@@ -16,9 +18,22 @@ import type { AppConfig, ThemeMode } from "@/stores/config";
 import { useConfigStore } from "@/stores/config";
 
 const props = defineProps<{ config: AppConfig }>();
+const emit =
+  defineEmits<
+    (
+      event: "notify",
+      kind: "success" | "error" | "info",
+      message: string,
+    ) => void
+  >();
+
 const { t } = useI18n();
 const configStore = useConfigStore();
 const locales = supportedLocales;
+
+// Autostart state
+const autostartEnabled = ref(false);
+const autostartLoading = ref(true);
 
 // Use composables for computed properties
 const inactivitySeconds = useComputedValidated(
@@ -51,6 +66,53 @@ function onLanguageChange(event: Event) {
   const value = (event.target as HTMLSelectElement).value;
   configStore.setLanguage(value);
 }
+
+/**
+ * Load autostart status
+ */
+async function loadAutostartStatus() {
+  try {
+    // Use config value as source of truth
+    autostartEnabled.value = props.config.autostart;
+  } catch (err) {
+    console.error("Failed to load autostart status:", err);
+  } finally {
+    autostartLoading.value = false;
+  }
+}
+
+/**
+ * Toggle autostart
+ */
+async function toggleAutostart() {
+  const newValue = !autostartEnabled.value;
+  try {
+    await invoke("set_autostart_enabled", { enabled: newValue });
+    autostartEnabled.value = newValue;
+    // Update local config
+    props.config.autostart = newValue;
+    emit(
+      "notify",
+      "success",
+      newValue ? t("general.autostartEnabled") : t("general.autostartDisabled"),
+    );
+  } catch (err) {
+    console.error("Failed to toggle autostart:", err);
+    // Show warning instead of error since preference is still saved
+    emit(
+      "notify",
+      "info",
+      `${newValue ? t("general.autostartEnabled") : t("general.autostartDisabled")} (${err})`,
+    );
+    // Still update the UI since preference was saved
+    autostartEnabled.value = newValue;
+    props.config.autostart = newValue;
+  }
+}
+
+onMounted(() => {
+  loadAutostartStatus();
+});
 </script>
 
 <template>
@@ -87,6 +149,20 @@ function onLanguageChange(event: Event) {
         {{ t("general.behaviorSettings") }}
       </h3>
       <div class="space-y-2">
+        <div class="flex items-center justify-between gap-4 p-4 rounded-lg hover:bg-base-200/50 transition-all">
+          <div class="flex-1 min-w-0">
+            <div class="font-medium text-sm">{{ t("general.autostart") }}</div>
+            <p class="text-xs text-base-content/50 mt-1">
+              {{ t("general.autostartHint") }}
+            </p>
+          </div>
+          <input v-if="!autostartLoading" v-model="autostartEnabled" type="checkbox"
+            class="toggle toggle-primary toggle-lg shrink-0 transition-all" @change="toggleAutostart" />
+          <span v-else class="loading loading-spinner loading-md"></span>
+        </div>
+
+        <div class="divider my-0"></div>
+
         <div class="flex items-center justify-between gap-4 p-4 rounded-lg hover:bg-base-200/50 transition-all">
           <div class="flex-1 min-w-0">
             <div class="font-medium text-sm">{{ t("general.checkUpdates") }}</div>
@@ -144,7 +220,7 @@ function onLanguageChange(event: Event) {
               class="input input-bordered join-item flex-1 focus:input-primary transition-all" />
             <span class="btn btn-ghost join-item pointer-events-none text-sm">{{
               t("general.inactivityUnit")
-              }}</span>
+            }}</span>
           </div>
           <div class="label pt-1">
             <span class="label-text-alt text-base-content/50 text-xs">{{

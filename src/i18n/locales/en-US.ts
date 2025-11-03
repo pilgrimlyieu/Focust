@@ -102,6 +102,10 @@ const enUS = {
     allScreens: "Show breaks on all monitors",
     allScreensHint:
       "Display break window on every screen in multi-monitor setup",
+    autostart: "Launch on system startup",
+    autostartDisabled: "Autostart disabled successfully",
+    autostartEnabled: "Autostart enabled successfully",
+    autostartHint: "Automatically start Focust when you log in",
     behaviorSettings: "Application Behavior",
     checkUpdates: "Check for updates on startup",
     checkUpdatesHint: "Automatically check for new versions on startup",

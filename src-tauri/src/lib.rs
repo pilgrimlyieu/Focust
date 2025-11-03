@@ -3,6 +3,7 @@
 #![allow(clippy::missing_errors_doc)]
 #![allow(clippy::missing_panics_doc)]
 #![allow(clippy::cast_possible_truncation)]
+#![allow(clippy::struct_excessive_bools)]
 
 use tauri::Manager;
 
@@ -18,9 +19,34 @@ pub mod platform;
 pub mod scheduler;
 pub mod utils;
 
+#[allow(clippy::too_many_lines)]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            // When a second instance is launched, focus the existing settings window
+            tracing::info!("Single instance: attempting to focus existing window");
+
+            if let Some(window) = app.get_webview_window("settings") {
+                if let Err(e) = window.show() {
+                    tracing::error!("Failed to show settings window: {e}");
+                }
+                if let Err(e) = window.set_focus() {
+                    tracing::error!("Failed to focus settings window: {e}");
+                }
+                if let Err(e) = window.unminimize() {
+                    tracing::error!("Failed to unminimize settings window: {e}");
+                }
+            } else {
+                tracing::warn!("Settings window not found, creating new one");
+                // If settings window doesn't exist, create it
+                let _ = cmd::window::create_settings_window(app);
+            }
+        }))
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            Some(vec!["--minimized"]),
+        ))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
@@ -58,6 +84,14 @@ pub fn run() {
                 let shared_config = config::SharedConfig::new(app_config.clone());
                 handle.manage(shared_config);
 
+                // Sync system autostart with config preference
+                if app_config.autostart {
+                    use tauri_plugin_autostart::ManagerExt;
+                    if let Err(e) = handle.autolaunch().enable() {
+                        tracing::warn!("Failed to enable autostart on startup: {e}");
+                    }
+                }
+
                 // Setup system tray after config is loaded
                 if let Err(e) = platform::setup_tray(&handle).await {
                     tracing::error!("Failed to setup system tray: {e}");
@@ -84,6 +118,8 @@ pub fn run() {
             cmd::audio::play_audio,
             cmd::audio::play_builtin_audio,
             cmd::audio::stop_audio,
+            cmd::autostart::is_autostart_enabled,
+            cmd::autostart::set_autostart_enabled,
             cmd::config::get_config,
             cmd::config::pick_background_image,
             cmd::config::save_config,

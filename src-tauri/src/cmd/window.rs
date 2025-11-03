@@ -2,10 +2,9 @@ use std::sync::Arc;
 use tauri::{AppHandle, Listener, Manager, Runtime, WebviewUrl, WebviewWindowBuilder};
 use tokio::sync::Mutex;
 
-/// Open settings window (create if not exists, show if already exists)
-#[tauri::command]
-pub async fn open_settings_window<R: Runtime>(app: AppHandle<R>) -> Result<(), String> {
-    // Window exists, just show and focus it
+/// Create settings window (internal function used by both command and single instance)
+pub fn create_settings_window<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {
+    // Check if window already exists
     if let Some(window) = app.get_webview_window("settings") {
         window.show().map_err(|e| e.to_string())?;
         window.set_focus().map_err(|e| e.to_string())?;
@@ -33,7 +32,7 @@ pub async fn open_settings_window<R: Runtime>(app: AppHandle<R>) -> Result<(), S
 
     // Create window
     let _window =
-        WebviewWindowBuilder::new(&app, "settings", WebviewUrl::App("settings.html".into()))
+        WebviewWindowBuilder::new(app, "settings", WebviewUrl::App("settings.html".into()))
             .title("Focust - Settings")
             .inner_size(1400.0, 900.0)
             .center()
@@ -69,4 +68,10 @@ pub async fn open_settings_window<R: Runtime>(app: AppHandle<R>) -> Result<(), S
     });
 
     Ok(())
+}
+
+/// Open settings window (create if not exists, show if already exists)
+#[tauri::command]
+pub async fn open_settings_window<R: Runtime>(app: AppHandle<R>) -> Result<(), String> {
+    create_settings_window(&app)
 }
