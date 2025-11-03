@@ -1,12 +1,12 @@
 use chrono::offset::LocalResult;
 use chrono::{DateTime, Duration, Local, Utc};
 use chrono::{Datelike, NaiveDate, NaiveTime};
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Manager};
 use tokio::sync::{mpsc, watch};
 use tokio::time::sleep;
 
 use super::models::{Command, SchedulerEvent};
-use crate::core::schedule::AttentionSettings;
+use crate::{cmd::window::create_break_windows, core::schedule::AttentionSettings};
 use crate::{config::SharedConfig, core::schedule::AttentionId};
 
 /// A simple timer for attention reminders
@@ -173,14 +173,18 @@ impl AttentionTimer {
         tracing::info!("Triggering attention: {attention_id}");
 
         let event = SchedulerEvent::Attention(attention_id);
-        if let Err(e) = self.app_handle.emit("scheduler-event", &event) {
-            tracing::error!("Failed to emit attention event: {e}");
-        }
+
+        let app_handle = self.app_handle.clone();
+        tokio::spawn(async move {
+            if let Err(e) = create_break_windows(&app_handle, event).await {
+                tracing::error!("Failed to create attention windows: {e}");
+            }
+        });
     }
 
     /// Handle incoming commands
     async fn handle_command(&mut self, cmd: Command) {
-        tracing::debug!("AttentionTimer handling command: {cmd:?}");
+        tracing::debug!("AttentionTimer handling command: {cmd}");
 
         match cmd {
             Command::UpdateConfig(new_config) => {

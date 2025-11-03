@@ -3,9 +3,11 @@
 #![allow(clippy::missing_errors_doc)]
 #![allow(clippy::missing_panics_doc)]
 #![allow(clippy::cast_possible_truncation)]
+#![allow(clippy::cast_possible_wrap)]
 #![allow(clippy::struct_excessive_bools)]
 
 use tauri::Manager;
+use tauri_plugin_autostart::ManagerExt;
 
 use crate::{
     cmd::{BreakPayloadStore, SchedulerCmd, ShutdownTx},
@@ -85,11 +87,10 @@ pub fn run() {
                 handle.manage(shared_config);
 
                 // Sync system autostart with config preference
-                if app_config.autostart {
-                    use tauri_plugin_autostart::ManagerExt;
-                    if let Err(e) = handle.autolaunch().enable() {
-                        tracing::warn!("Failed to enable autostart on startup: {e}");
-                    }
+                if app_config.autostart
+                    && let Err(e) = handle.autolaunch().enable()
+                {
+                    tracing::warn!("Failed to enable autostart on startup: {e}");
                 }
 
                 // Setup system tray after config is loaded
@@ -138,6 +139,7 @@ pub fn run() {
             cmd::suggestions::save_suggestions,
             cmd::system::open_config_directory,
             cmd::system::open_log_directory,
+            cmd::window::close_all_break_windows,
             cmd::window::open_settings_window,
         ])
         .build(tauri::generate_context!())

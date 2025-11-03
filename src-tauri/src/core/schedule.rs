@@ -1,4 +1,4 @@
-use std::{fmt::Display, sync::atomic::AtomicUsize};
+use std::{fmt::Display, sync::atomic::AtomicU32};
 
 use crate::core::{
     audio::AudioSettings,
@@ -10,11 +10,11 @@ use chrono::Weekday;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-static NEXT_SCHEDULE_ID: AtomicUsize = AtomicUsize::new(0);
-static NEXT_ATTENTION_ID: AtomicUsize = AtomicUsize::new(0);
+static NEXT_SCHEDULE_ID: AtomicU32 = AtomicU32::new(0);
+static NEXT_ATTENTION_ID: AtomicU32 = AtomicU32::new(0);
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, TS)]
-pub struct BreakId(usize);
+pub struct BreakId(u32);
 
 impl Display for BreakId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -25,6 +25,12 @@ impl Display for BreakId {
 impl BreakId {
     pub fn new() -> Self {
         BreakId(NEXT_SCHEDULE_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed))
+    }
+}
+
+impl From<BreakId> for u32 {
+    fn from(id: BreakId) -> Self {
+        id.0
     }
 }
 
@@ -169,7 +175,7 @@ impl ScheduleSettings {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, TS)]
-pub struct AttentionId(usize);
+pub struct AttentionId(u32);
 
 impl Display for AttentionId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -180,6 +186,12 @@ impl Display for AttentionId {
 impl AttentionId {
     pub fn new() -> Self {
         AttentionId(NEXT_ATTENTION_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed))
+    }
+}
+
+impl From<AttentionId> for u32 {
+    fn from(id: AttentionId) -> Self {
+        id.0
     }
 }
 

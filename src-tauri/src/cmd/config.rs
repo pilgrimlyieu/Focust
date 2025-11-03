@@ -8,8 +8,8 @@ use tokio::task;
 
 use crate::{
     cmd::SchedulerCmd,
-    config,
-    config::{AppConfig, SharedConfig},
+    config::{self, AppConfig, SharedConfig},
+    platform::register_shortcuts,
     scheduler::Command,
 };
 
@@ -68,7 +68,7 @@ pub async fn save_config(
         }
 
         // Re-register with new shortcut
-        if let Err(e) = crate::platform::register_shortcuts(&app_handle).await {
+        if let Err(e) = register_shortcuts(&app_handle).await {
             tracing::error!("Failed to re-register shortcuts: {e}");
             return Err(format!("Failed to re-register shortcuts: {e}"));
         }

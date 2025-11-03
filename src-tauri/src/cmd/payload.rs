@@ -1,31 +1,121 @@
-use std::sync::Arc;
 use std::{collections::HashMap, ops::Deref};
+use std::{fmt::Display, sync::Arc};
 
 use serde::{Deserialize, Serialize};
 use tauri::State;
 use tokio::sync::RwLock;
 use ts_rs::TS;
 
-use crate::core::audio::AudioSettings;
 use crate::core::theme::ThemeSettings;
+use crate::core::{audio::AudioSettings, theme::HexColor};
 
 /// Break kind type
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, rename_all = "camelCase")]
-pub enum BreakKind {
+pub enum EventKind {
     Mini,
     Long,
     Attention,
 }
 
+impl Display for EventKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let kind_str = match self {
+            EventKind::Mini => "MiniBreak",
+            EventKind::Long => "LongBreak",
+            EventKind::Attention => "Attention",
+        };
+        write!(f, "{kind_str}")
+    }
+}
+
+impl EventKind {
+    #[must_use]
+    pub fn is_break(&self) -> bool {
+        matches!(self, EventKind::Mini | EventKind::Long)
+    }
+
+    #[must_use]
+    pub fn is_attention(&self) -> bool {
+        matches!(self, EventKind::Attention)
+    }
+
+    #[must_use]
+    pub fn is_mini(&self) -> bool {
+        matches!(self, EventKind::Mini)
+    }
+
+    #[must_use]
+    pub fn is_long(&self) -> bool {
+        matches!(self, EventKind::Long)
+    }
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, rename_all = "camelCase")]
+#[derive(Default)]
+pub enum BackgroundKind {
+    #[default]
+    Solid,
+    Image,
+}
+
+impl Display for BackgroundKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let kind_str = match self {
+            BackgroundKind::Solid => "solid",
+            BackgroundKind::Image => "image",
+        };
+        write!(f, "{kind_str}")
+    }
+}
+
 /// Resolved background for break window
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[serde(tag = "type", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 #[ts(export, rename_all = "camelCase")]
-pub enum ResolvedBackground {
-    Solid { value: String },
-    Image { value: String },
+pub struct ResolvedBackground {
+    pub kind: BackgroundKind,
+    pub value: String,
+}
+
+impl Default for ResolvedBackground {
+    fn default() -> Self {
+        Self {
+            kind: BackgroundKind::Solid,
+            value: HexColor::default().to_string(),
+        }
+    }
+}
+
+impl ResolvedBackground {
+    #[must_use]
+    pub fn new_solid(color: String) -> Self {
+        Self {
+            kind: BackgroundKind::Solid,
+            value: color,
+        }
+    }
+
+    #[must_use]
+    pub fn new_image(path: String) -> Self {
+        Self {
+            kind: BackgroundKind::Image,
+            value: path,
+        }
+    }
+
+    #[must_use]
+    pub fn is_solid(&self) -> bool {
+        self.kind == BackgroundKind::Solid
+    }
+
+    #[must_use]
+    pub fn is_image(&self) -> bool {
+        self.kind == BackgroundKind::Image
+    }
 }
 
 /// Break payload stored in backend
@@ -34,19 +124,19 @@ pub enum ResolvedBackground {
 #[ts(export, rename_all = "camelCase")]
 pub struct BreakPayload {
     pub id: u32,
-    pub kind: BreakKind,
+    pub kind: EventKind,
     pub title: String,
     pub message_key: String,
     pub message: Option<String>,
-    pub duration: u32,
+    pub schedule_name: Option<String>,
+    pub duration: i32,
     pub strict_mode: bool,
     pub theme: ThemeSettings,
     pub background: ResolvedBackground,
     pub suggestion: Option<String>,
     pub audio: Option<AudioSettings>,
-    pub all_screens: bool,
-    pub schedule_name: Option<String>,
     pub postpone_shortcut: String,
+    pub all_screens: bool,
 }
 
 /// Shared state for storing active break payloads
@@ -104,11 +194,21 @@ impl BreakPayloadStore {
 /// Store a break payload in the backend
 #[tauri::command]
 pub async fn store_break_payload(
-    payload_id: String,
-    payload: BreakPayload,
     state: State<'_, BreakPayloadStore>,
+    payload: BreakPayload,
+    payload_id: String,
 ) -> Result<(), String> {
     state.store(payload_id, payload).await;
+    Ok(())
+}
+
+/// Store a break payload (non-command version for internal use)
+pub async fn store_payload_internal(
+    store: &BreakPayloadStore,
+    payload: BreakPayload,
+    payload_id: String,
+) -> Result<(), String> {
+    store.store(payload_id, payload).await;
     Ok(())
 }
 

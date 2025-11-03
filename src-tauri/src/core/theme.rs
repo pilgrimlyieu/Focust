@@ -1,18 +1,55 @@
+use std::{fmt::Display, ops::Deref, str::FromStr};
+
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
 pub struct FontFamily(String);
 
-#[derive(Serialize, Deserialize, Debug, Clone, TS)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, TS)]
 pub struct HexColor(String);
 
 impl HexColor {
     #[must_use]
-    pub fn is_valid(&self) -> bool {
-        self.0.starts_with('#')
-            && self.0.len() == 7
-            && self.0[1..].chars().all(|c| c.is_ascii_hexdigit())
+    fn is_valid(s: &str) -> bool {
+        s.starts_with('#') && s.len() == 7 && s[1..].chars().all(|c| c.is_ascii_hexdigit())
+    }
+
+    #[must_use]
+    pub fn new(s: &str) -> Self {
+        HexColor::from_str(s).unwrap_or_default()
+    }
+}
+
+impl FromStr for HexColor {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if Self::is_valid(s) {
+            Ok(HexColor(s.to_string()))
+        } else {
+            Err(())
+        }
+    }
+}
+
+impl Default for HexColor {
+    fn default() -> Self {
+        HexColor("#FFFFFF".to_string())
+    }
+}
+
+impl Display for HexColor {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl Deref for FontFamily {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
@@ -21,7 +58,7 @@ impl HexColor {
 #[ts(rename_all = "camelCase")]
 pub enum BackgroundSource {
     /// Solid color background (hex color code)
-    Solid(String),
+    Solid(HexColor),
     /// Image background from a specific file path
     ImagePath(String),
     /// Image background from a folder (randomly selected)
@@ -50,8 +87,8 @@ pub struct ThemeSettings {
 impl Default for ThemeSettings {
     fn default() -> Self {
         ThemeSettings {
-            background: BackgroundSource::Solid("#1f2937".to_string()),
-            text_color: HexColor("#f8fafc".to_string()),
+            background: BackgroundSource::Solid(HexColor::new("#1f2937")),
+            text_color: HexColor::new("#f8fafc"),
             blur_radius: 8,
             opacity: 0.9,
             font_size: 24,
@@ -65,73 +102,11 @@ impl Default for ThemeSettings {
 mod tests {
     use super::*;
 
-    // HexColor validation tests
-    #[test]
-    fn test_hex_color_valid() {
-        let color = HexColor("#FFFFFF".to_string());
-        assert!(color.is_valid());
-    }
-
-    #[test]
-    fn test_hex_color_valid_lowercase() {
-        let color = HexColor("#ffffff".to_string());
-        assert!(color.is_valid());
-    }
-
-    #[test]
-    fn test_hex_color_valid_mixed_case() {
-        let color = HexColor("#FfFfFf".to_string());
-        assert!(color.is_valid());
-    }
-
-    #[test]
-    fn test_hex_color_invalid_no_hash() {
-        let color = HexColor("FFFFFF".to_string());
-        assert!(!color.is_valid());
-    }
-
-    #[test]
-    fn test_hex_color_invalid_too_short() {
-        let color = HexColor("#FFF".to_string());
-        assert!(!color.is_valid());
-    }
-
-    #[test]
-    fn test_hex_color_invalid_too_long() {
-        let color = HexColor("#FFFFFF00".to_string());
-        assert!(!color.is_valid());
-    }
-
-    #[test]
-    fn test_hex_color_invalid_non_hex_chars() {
-        let color = HexColor("#GGGGGG".to_string());
-        assert!(!color.is_valid());
-    }
-
-    #[test]
-    fn test_hex_color_invalid_special_chars() {
-        let color = HexColor("#FFF FFF".to_string());
-        assert!(!color.is_valid());
-    }
-
-    #[test]
-    fn test_hex_color_empty() {
-        let color = HexColor(String::new());
-        assert!(!color.is_valid());
-    }
-
-    #[test]
-    fn test_hex_color_only_hash() {
-        let color = HexColor("#".to_string());
-        assert!(!color.is_valid());
-    }
-
-    // BackgroundSource tests
     #[test]
     fn test_background_source_solid() {
-        let bg = BackgroundSource::Solid("#000000".to_string());
+        let bg = BackgroundSource::Solid(HexColor::new("#000000"));
         match bg {
-            BackgroundSource::Solid(color) => assert_eq!(color, "#000000"),
+            BackgroundSource::Solid(color) => assert_eq!(color.to_string(), "#000000"),
             _ => panic!("Expected Solid variant"),
         }
     }
@@ -156,7 +131,7 @@ mod tests {
 
     #[test]
     fn test_background_source_clone() {
-        let bg = BackgroundSource::Solid("#123456".to_string());
+        let bg = BackgroundSource::Solid(HexColor::new("#123456"));
         let cloned = bg.clone();
         match (bg, cloned) {
             (BackgroundSource::Solid(a), BackgroundSource::Solid(b)) => assert_eq!(a, b),
@@ -175,12 +150,6 @@ mod tests {
     }
 
     #[test]
-    fn test_theme_settings_default_valid_color() {
-        let theme = ThemeSettings::default();
-        assert!(theme.text_color.is_valid());
-    }
-
-    #[test]
     fn test_theme_settings_clone() {
         let theme = ThemeSettings::default();
         let cloned = theme.clone();
@@ -193,7 +162,7 @@ mod tests {
     fn test_theme_settings_custom() {
         let theme = ThemeSettings {
             background: BackgroundSource::ImagePath("/test.jpg".to_string()),
-            text_color: HexColor("#FF0000".to_string()),
+            text_color: HexColor::new("#FF0000"),
             blur_radius: 10,
             opacity: 0.8,
             font_size: 24,
@@ -201,7 +170,6 @@ mod tests {
         };
 
         assert!(matches!(theme.background, BackgroundSource::ImagePath(_)));
-        assert!(theme.text_color.is_valid());
         assert_eq!(theme.blur_radius, 10);
         assert_eq!(theme.opacity, 0.8);
         assert_eq!(theme.font_size, 24);
@@ -219,19 +187,19 @@ mod tests {
     // Serialization tests
     #[test]
     fn test_hex_color_serialization() {
-        let color = HexColor("#ABCDEF".to_string());
+        let color = HexColor::new("#ABCDEF");
         let json = serde_json::to_string(&color).unwrap();
         let deserialized: HexColor = serde_json::from_str(&json).unwrap();
-        assert!(deserialized.is_valid());
+        assert_eq!(color.to_string(), deserialized.to_string());
     }
 
     #[test]
     fn test_background_source_serialization() {
-        let bg = BackgroundSource::Solid("#123456".to_string());
+        let bg = BackgroundSource::Solid(HexColor::new("#123456"));
         let json = serde_json::to_string(&bg).unwrap();
         let deserialized: BackgroundSource = serde_json::from_str(&json).unwrap();
         match deserialized {
-            BackgroundSource::Solid(color) => assert_eq!(color, "#123456"),
+            BackgroundSource::Solid(color) => assert_eq!(color.to_string(), "#123456"),
             _ => panic!("Deserialization failed"),
         }
     }

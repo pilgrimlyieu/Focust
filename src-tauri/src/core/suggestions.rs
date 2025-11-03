@@ -3,6 +3,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
+use rand::prelude::IndexedRandom;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 use ts_rs::TS;
@@ -189,6 +190,19 @@ pub fn get_suggestions_for_language(config: &SuggestionsConfig, language: &str) 
 
     // Last resort: empty vec
     vec![]
+}
+
+/// Sample a random suggestion for a specific language
+/// Returns None if no suggestions available
+#[must_use]
+pub fn sample_suggestion(config: &SuggestionsConfig, language: &str) -> Option<String> {
+    let suggestions = get_suggestions_for_language(config, language);
+    if suggestions.is_empty() {
+        return None;
+    }
+
+    let mut rng = rand::rng();
+    suggestions.choose(&mut rng).cloned()
 }
 
 #[cfg(test)]

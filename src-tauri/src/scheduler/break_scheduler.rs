@@ -7,7 +7,10 @@ use tokio_util::sync::CancellationToken;
 use super::models::{
     BreakInfo, Command, PauseReason, SchedulerEvent, SchedulerEventInfo, SchedulerStatus,
 };
+use crate::cmd::window::create_break_windows;
 use crate::config::{AppConfig, SharedConfig};
+use crate::core::schedule::ScheduleSettings;
+use crate::platform::send_break_notification;
 
 /// The state of the break scheduler
 #[derive(Debug, PartialEq, Clone)]
@@ -63,18 +66,22 @@ impl BreakScheduler {
                 if should_interrupt {
                     continue;
                 }
-                // If command doesn't interrupt, continue with current state
             }
 
             match &self.state {
                 BreakSchedulerState::Running => {
-                    let break_result = {
+                    // Check if we have a manually triggered break waiting
+                    let break_info = if let Some(info) = self.current_break_info.take() {
+                        tracing::info!("Using manually triggered break: {}", info.event);
+                        Some(info)
+                    } else {
+                        // Calculate next break normally
                         let config = self.app_handle.state::<SharedConfig>();
                         let config_guard = config.read().await;
                         self.calculate_next_break(&config_guard)
                     };
 
-                    if let Some(break_info) = break_result {
+                    if let Some(break_info) = break_info {
                         self.emit_status(&break_info);
                         self.wait_and_execute_break(break_info, &mut cmd_rx).await;
                     } else {
@@ -172,7 +179,8 @@ impl BreakScheduler {
         if duration_to_break <= Duration::zero() {
             // Break time already passed, execute immediately
             tracing::warn!("Break time already passed, executing immediately");
-            self.execute_break(break_info.event);
+            self.execute_break(break_info.event, cmd_rx).await;
+            self.current_break_info = None;
             self.current_wait_cancel = None;
             return;
         }
@@ -183,41 +191,53 @@ impl BreakScheduler {
             duration_to_break.num_seconds()
         );
 
-        // Phase 1: Wait until notification time (if applicable)
-        if let Some(notif_time) = break_info.notification_time
-            && let duration_to_notif = notif_time - now
-            && duration_to_notif > Duration::zero()
-        {
-            tracing::debug!(
-                "Waiting {} seconds until notification",
-                duration_to_notif.num_seconds()
-            );
+        // Check if we should send notification
+        let _notification_sent = if let Some(notif_time) = break_info.notification_time {
+            let duration_to_notif = notif_time - now;
+            if duration_to_notif > Duration::zero() {
+                // Wait until notification time
+                tracing::debug!(
+                    "Waiting {} seconds until notification",
+                    duration_to_notif.num_seconds()
+                );
 
-            tokio::select! {
-                biased;
-                _ = self.shutdown_rx.changed() => {
-                    tracing::info!("BreakScheduler received shutdown (during break wait)");
-                    self.current_wait_cancel = None;
-                    return;
-                }
-                () = cancel_token.cancelled() => {
-                    tracing::info!("Break wait cancelled during notification phase");
-                    self.current_wait_cancel = None;
-                    return;
-                }
-                () = sleep(duration_to_notif.to_std().unwrap_or(std::time::Duration::ZERO)) => {
-                    self.send_notification(&break_info.event).await;
-                }
-                Some(cmd) = cmd_rx.recv() => {
-                    let should_interrupt = self.handle_command(cmd).await;
-                    if should_interrupt {
+                tokio::select! {
+                    biased;
+                    _ = self.shutdown_rx.changed() => {
+                        tracing::info!("BreakScheduler received shutdown (during notification wait)");
+                        self.current_break_info = None;
                         self.current_wait_cancel = None;
                         return;
                     }
-                    // If command doesn't interrupt (e.g., RequestStatus), continue waiting
+                    () = cancel_token.cancelled() => {
+                        tracing::info!("Break wait cancelled during notification phase");
+                        self.current_break_info = None;
+                        self.current_wait_cancel = None;
+                        return;
+                    }
+                    () = sleep(duration_to_notif.to_std().unwrap_or(std::time::Duration::ZERO)) => {
+                        self.send_notification(&break_info.event).await;
+                    }
+                    Some(cmd) = cmd_rx.recv() => {
+                        let should_interrupt = self.handle_command(cmd).await;
+                        if should_interrupt {
+                            // Don't clear current_break_info here - the command handler may have set a new one
+                            self.current_wait_cancel = None;
+                            return;
+                        }
+                        // If command doesn't interrupt (e.g., RequestStatus), continue waiting
+                    }
                 }
+                true
+            } else {
+                // Notification time already passed, send it now
+                tracing::debug!("Notification time already passed, sending immediately");
+                self.send_notification(&break_info.event).await;
+                true
             }
-        }
+        } else {
+            false
+        };
 
         // Phase 2: Wait until break time
         let now = Utc::now();
@@ -233,20 +253,24 @@ impl BreakScheduler {
                 biased;
                 _ = self.shutdown_rx.changed() => {
                     tracing::info!("BreakScheduler received shutdown (during break wait)");
+                    self.current_break_info = None;
                     self.current_wait_cancel = None;
                     return;
                 }
                 () = cancel_token.cancelled() => {
                     tracing::info!("Break wait cancelled during break phase");
+                    self.current_break_info = None;
                     self.current_wait_cancel = None;
                     return;
                 }
                 () = sleep(remaining_duration.to_std().unwrap_or(std::time::Duration::ZERO)) => {
-                    self.execute_break(break_info.event);
+                    // Execute break and wait for it to finish
+                    self.execute_break(break_info.event, cmd_rx).await;
                 }
                 Some(cmd) = cmd_rx.recv() => {
                     let should_interrupt = self.handle_command(cmd).await;
                     if should_interrupt {
+                        // Don't clear current_break_info here - the command handler may have set a new one
                         self.current_wait_cancel = None;
                         return;
                     }
@@ -254,7 +278,8 @@ impl BreakScheduler {
                 }
             }
         } else {
-            self.execute_break(break_info.event);
+            // Execute break and wait for it to finish
+            self.execute_break(break_info.event, cmd_rx).await;
         }
 
         self.current_break_info = None;
@@ -278,11 +303,8 @@ impl BreakScheduler {
             active_schedule.map_or(0, |s| s.notification_before_s)
         };
 
-        if let Err(e) = crate::platform::notifications::send_break_notification(
-            &self.app_handle,
-            break_type,
-            notification_before_s,
-        ) {
+        if let Err(e) = send_break_notification(&self.app_handle, break_type, notification_before_s)
+        {
             tracing::warn!("Failed to send break notification: {e}");
         }
     }
@@ -302,17 +324,119 @@ impl BreakScheduler {
         }
     }
 
-    /// Execute a break and emit event to frontend
-    /// Note: State is updated after the break is finished (when frontend emits "break-finished")
-    fn execute_break(&mut self, event: SchedulerEvent) {
+    /// Execute a break: create window and play audio, then wait for completion
+    /// Close all break windows
+    fn close_break_windows(&self) {
+        let windows = self.app_handle.webview_windows();
+        for (label, window) in windows {
+            if label.starts_with("break-") {
+                tracing::debug!("Closing break window: {label}");
+                let _ = window.close();
+            }
+        }
+    }
+
+    /// Execute a break and wait for it to finish
+    async fn execute_break(&mut self, event: SchedulerEvent, cmd_rx: &mut mpsc::Receiver<Command>) {
         tracing::info!("Executing break: {event}");
 
-        // Store the event for later state update
+        // Store the event for tracking
         self.current_executing_event = Some(event);
 
-        // Emit event to frontend
-        if let Err(e) = self.app_handle.emit("scheduler-event", &event) {
-            tracing::error!("Failed to emit scheduler-event: {e}");
+        // Create break window
+        if let Err(e) = create_break_windows(&self.app_handle, event).await {
+            tracing::error!("Failed to create break windows: {e}");
+            // If window creation fails, update state and continue
+            self.update_state_after_break(event);
+            self.current_executing_event = None;
+            return;
+        }
+
+        // Wait for BreakFinished command or handle other commands
+        loop {
+            tokio::select! {
+                biased;
+                _ = self.shutdown_rx.changed() => {
+                    tracing::info!("Shutdown during break execution");
+                    self.current_executing_event = None;
+                    return;
+                }
+                Some(cmd) = cmd_rx.recv() => {
+                    match cmd {
+                        Command::BreakFinished(finished_event) => {
+                            tracing::info!("Received BreakFinished command: finished_event={}, current_event={}", finished_event, event);
+                            if finished_event == event {
+                                tracing::info!("Break finished normally: {event}");
+                                self.update_state_after_break(event);
+                                self.current_executing_event = None;
+                                return;
+                            }
+                            tracing::warn!("Received BreakFinished for different event: expected {event}, got {finished_event}");
+                        }
+                        Command::SkipBreak => {
+                            tracing::info!("Break skipped by user");
+                            self.update_state_after_break(event);
+                            self.current_executing_event = None;
+                            self.close_break_windows();
+                            return;
+                        }
+                        Command::Postpone => {
+                            tracing::info!("Break postponed by user");
+                            let postpone_duration_s = {
+                                let config = self.app_handle.state::<SharedConfig>();
+                                let config_guard = config.read().await;
+                                let now_local = Utc::now().with_timezone(&Local);
+                                get_active_schedule(&config_guard, now_local.time(), now_local.weekday())
+                                    .map_or(300, |s| {
+                                        if event.is_mini() {
+                                            s.mini_breaks.base.postponed_s
+                                        } else {
+                                            s.long_breaks.base.postponed_s
+                                        }
+                                    })
+                            };
+
+                            self.postponed_until =
+                                Some(Utc::now() + Duration::seconds(i64::from(postpone_duration_s)));
+                            self.current_executing_event = None;
+                            self.close_break_windows();
+                            return;
+                        }
+                        Command::Pause(reason) => {
+                            tracing::info!("Pausing during break execution: {reason}");
+                            self.state = BreakSchedulerState::Paused(reason);
+                            self.current_executing_event = None;
+
+                            // Reset timers for certain pause reasons
+                            match reason {
+                                PauseReason::UserIdle | PauseReason::Dnd | PauseReason::AppExclusion => {
+                                    self.reset_timers();
+                                }
+                                PauseReason::Manual => {}
+                            }
+
+                            self.close_break_windows();
+                            self.emit_paused_status(true);
+                            return;
+                        }
+                        Command::RequestStatus => {
+                            // During break, just report running status
+                            tracing::debug!("Status requested during break");
+                            if let Some(break_info) = &self.current_break_info {
+                                self.emit_status(break_info);
+                            }
+                        }
+                        other => {
+                            tracing::debug!("Ignoring command during break: {other}");
+                        }
+                    }
+                }
+                else => {
+                    tracing::warn!("Command channel closed during break");
+                    self.current_executing_event = None;
+                    return;
+                }
+            }
         }
     }
 
@@ -320,7 +444,7 @@ impl BreakScheduler {
     /// Returns true if the command requires interrupting the current wait
     #[allow(clippy::too_many_lines)]
     async fn handle_command(&mut self, cmd: Command) -> bool {
-        tracing::debug!("BreakScheduler handling command: {cmd:?}");
+        tracing::debug!("BreakScheduler handling command: {cmd}");
 
         match cmd {
             Command::Pause(reason) => {
@@ -358,12 +482,9 @@ impl BreakScheduler {
 
                 self.postponed_until =
                     Some(Utc::now() + Duration::seconds(i64::from(postpone_duration_s)));
+                // Clear current break info to prevent re-execution
+                self.current_break_info = None;
                 self.cancel_current_wait();
-
-                // Close break window
-                if let Err(e) = self.app_handle.emit("break-finished", "") {
-                    tracing::error!("Failed to emit break-finished event: {e}");
-                }
                 true // Interrupt wait
             }
             Command::SkipBreak => {
@@ -376,38 +497,32 @@ impl BreakScheduler {
                 } else {
                     self.update_break_timers(true);
                 }
+                // Clear current break info and executing event to prevent re-execution
+                self.current_break_info = None;
                 self.current_executing_event = None;
                 self.cancel_current_wait();
-
-                // Close break window
-                if let Err(e) = self.app_handle.emit("break-finished", "") {
-                    tracing::error!("Failed to emit break-finished event: {e}");
-                }
                 true // Interrupt wait
             }
             Command::BreakFinished(event) => {
-                tracing::info!("Break finished normally: {event}");
-
-                // Verify this matches the current executing event
-                if let Some(current) = self.current_executing_event
-                    && current != event
-                {
-                    tracing::warn!(
-                        "BreakFinished event {event} doesn't match current executing event {current}"
-                    );
-                }
-
-                // Update state after break is finished
-                self.update_state_after_break(event);
-                self.current_executing_event = None;
-
-                false // Don't interrupt, this is just a notification after break finishes
+                tracing::warn!(
+                    "Unexpected BreakFinished command outside of break execution: {event}"
+                );
+                // This should only be handled inside execute_break
+                // If we get it here, just ignore it
+                false
             }
             Command::TriggerEvent(event) => {
                 tracing::info!("Manually triggering break: {event}");
                 self.cancel_current_wait();
-                self.execute_break(event);
-                true // Interrupt wait
+
+                // Store break info for immediate execution
+                self.current_break_info = Some(BreakInfo {
+                    event,
+                    break_time: Utc::now(), // Execute immediately
+                    notification_time: None,
+                });
+
+                true // Interrupt wait to execute break immediately
             }
             Command::UpdateConfig(new_config) => {
                 tracing::debug!("Updating config");
@@ -506,7 +621,7 @@ fn get_active_schedule(
     config: &AppConfig,
     now_time: chrono::NaiveTime,
     now_day: chrono::Weekday,
-) -> Option<&crate::core::schedule::ScheduleSettings> {
+) -> Option<&ScheduleSettings> {
     config.schedules.iter().find(|s| {
         s.enabled && s.days_of_week.contains(&now_day) && s.time_range.contains(&now_time)
     })

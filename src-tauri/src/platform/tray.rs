@@ -6,9 +6,12 @@ use tauri::{
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
 };
 
-use crate::cmd::SchedulerCmd;
 use crate::config::SharedConfig;
 use crate::scheduler::models::Command;
+use crate::{
+    cmd::{SchedulerCmd, open_settings_window},
+    scheduler::PauseReason,
+};
 
 #[derive(Debug, Deserialize)]
 struct TrayTranslations {
@@ -148,7 +151,7 @@ fn handle_tray_menu_event<R: Runtime>(app: &AppHandle<R>, event_id: &str) {
 fn show_settings_window<R: Runtime>(app: &AppHandle<R>) {
     let app_clone = app.clone();
     tauri::async_runtime::spawn(async move {
-        if let Err(e) = crate::cmd::window::open_settings_window(app_clone).await {
+        if let Err(e) = open_settings_window(app_clone).await {
             tracing::error!("Failed to open settings window: {e}");
         }
     });
@@ -162,9 +165,7 @@ fn toggle_pause<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {
     // Send pause command
     scheduler_cmd
         .0
-        .try_send(Command::Pause(
-            crate::scheduler::models::PauseReason::Manual,
-        ))
+        .try_send(Command::Pause(PauseReason::Manual))
         .map_err(|e| format!("Failed to send pause command: {e}"))?;
 
     tracing::info!("Pause toggled from tray menu");

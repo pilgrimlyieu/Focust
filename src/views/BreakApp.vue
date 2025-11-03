@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { invoke } from "@tauri-apps/api/core";
-import { emit } from "@tauri-apps/api/event";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   computed,
@@ -73,8 +72,9 @@ const backgroundStyle = computed(() => {
       backgroundImage: "none",
     };
   }
+  const imageUrl = convertFileSrc(current.background.value);
   return {
-    backgroundImage: `url(${current.background.value})`,
+    backgroundImage: `url(${imageUrl})`,
     backgroundPosition: "center",
     backgroundSize: "cover",
   };
@@ -149,7 +149,7 @@ const preloadBackground = async (data: BreakPayload): Promise<void> => {
       img.onload = () => resolve();
       img.onerror = () => resolve();
       setTimeout(() => resolve(), 1000);
-      img.src = data.background.value;
+      img.src = convertFileSrc(data.background.value);
     });
   }
 };
@@ -224,7 +224,27 @@ const finishBreak = async (isAutoFinish = false) => {
     }
   }
 
-  await emit("break-finished", null);
+  // Close all break windows
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const payloadId = params.get("payloadId");
+    if (payloadId) {
+      console.log(
+        "[BreakApp] Closing all break windows for payload:",
+        payloadId,
+      );
+      await invoke("close_all_break_windows", { payloadId });
+    } else {
+      // Fallback: close only current window
+      console.warn(
+        "[BreakApp] No payloadId found, closing current window only",
+      );
+      const window = getCurrentWindow();
+      await window.close();
+    }
+  } catch (err) {
+    console.error("[BreakApp] Failed to close windows:", err);
+  }
 };
 
 /**

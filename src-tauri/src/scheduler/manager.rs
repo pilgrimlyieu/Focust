@@ -115,34 +115,31 @@ fn spawn_idle_monitor_task(cmd_tx: mpsc::Sender<Command>, app_handle: AppHandle)
                 config_guard.inactive_s
             };
 
-            match UserIdle::get_time() {
-                Ok(idle_duration) => {
-                    let idle_seconds = idle_duration.as_seconds();
-                    let is_idle = idle_seconds >= u64::from(inactive_s);
+            if let Ok(idle_duration) = UserIdle::get_time() {
+                let idle_seconds = idle_duration.as_seconds();
+                let is_idle = idle_seconds >= u64::from(inactive_s);
 
-                    if is_idle && !was_idle {
-                        // User became idle
-                        tracing::info!(
-                            "User became idle (idle for {idle_seconds}s). Pausing scheduler."
-                        );
-                        if let Err(e) = cmd_tx.send(Command::Pause(PauseReason::UserIdle)).await {
-                            tracing::error!("Failed to send Pause command: {e}");
-                            break;
-                        }
-                        was_idle = true;
-                    } else if !is_idle && was_idle {
-                        // User became active
-                        tracing::info!("User became active. Resuming scheduler.");
-                        if let Err(e) = cmd_tx.send(Command::Resume(PauseReason::UserIdle)).await {
-                            tracing::error!("Failed to send Resume command: {e}");
-                            break;
-                        }
-                        was_idle = false;
+                if is_idle && !was_idle {
+                    // User became idle
+                    tracing::info!(
+                        "User became idle (idle for {idle_seconds}s). Pausing scheduler."
+                    );
+                    if let Err(e) = cmd_tx.send(Command::Pause(PauseReason::UserIdle)).await {
+                        tracing::error!("Failed to send Pause command: {e}");
+                        break;
                     }
+                    was_idle = true;
+                } else if !is_idle && was_idle {
+                    // User became active
+                    tracing::info!("User became active. Resuming scheduler.");
+                    if let Err(e) = cmd_tx.send(Command::Resume(PauseReason::UserIdle)).await {
+                        tracing::error!("Failed to send Resume command: {e}");
+                        break;
+                    }
+                    was_idle = false;
                 }
-                Err(e) => {
-                    tracing::error!("Failed to get user idle time: {e}");
-                }
+            } else {
+                tracing::error!("Failed to get user idle time");
             }
 
             sleep(CHECK_INTERVAL).await;

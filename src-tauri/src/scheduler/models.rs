@@ -31,6 +31,35 @@ impl Display for SchedulerEvent {
     }
 }
 
+impl SchedulerEvent {
+    /// Check if the event is a break (mini or long)
+    #[must_use]
+    pub fn is_break(&self) -> bool {
+        matches!(
+            self,
+            SchedulerEvent::MiniBreak(_) | SchedulerEvent::LongBreak(_)
+        )
+    }
+
+    /// Check if the event is an attention reminder
+    #[must_use]
+    pub fn is_attention(&self) -> bool {
+        matches!(self, SchedulerEvent::Attention(_))
+    }
+
+    /// Check if the event is a mini break
+    #[must_use]
+    pub fn is_mini(&self) -> bool {
+        matches!(self, SchedulerEvent::MiniBreak(_))
+    }
+
+    /// Check if the event is a long break
+    #[must_use]
+    pub fn is_long(&self) -> bool {
+        matches!(self, SchedulerEvent::LongBreak(_))
+    }
+}
+
 // ============================================================================
 // Internal Types
 // ============================================================================

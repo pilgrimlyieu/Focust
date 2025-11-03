@@ -33,7 +33,6 @@ mod tests {
 
     use super::*;
     use crate::core::schedule::ScheduleSettings;
-
     use crate::{config::AppConfig, core::time::TimeRange};
 
     fn create_test_config() -> AppConfig {

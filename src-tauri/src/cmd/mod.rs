@@ -20,4 +20,4 @@ pub use suggestions::{
     SharedSuggestions, get_suggestions, get_suggestions_for_language, save_suggestions,
 };
 pub use system::{open_config_directory, open_log_directory};
-pub use window::{create_settings_window, open_settings_window};
+pub use window::{close_all_break_windows, create_settings_window, open_settings_window};

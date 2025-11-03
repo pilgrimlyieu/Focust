@@ -7,6 +7,7 @@
  */
 
 import type { AudioSettings } from "./generated/AudioSettings";
+import type { BackgroundKind } from "./generated/BackgroundKind";
 import type { BackgroundSource } from "./generated/BackgroundSource";
 import type { FontFamily } from "./generated/FontFamily";
 import type { HexColor } from "./generated/HexColor";
@@ -313,7 +314,7 @@ export function getAudioSourceType(
 export function createResolvedSolidBackground(
   color: HexColor,
 ): ResolvedBackground {
-  return { type: "solid", value: color };
+  return { kind: "solid", value: color };
 }
 
 /**
@@ -324,7 +325,7 @@ export function createResolvedSolidBackground(
 export function createResolvedImageBackground(
   path: string,
 ): ResolvedBackground {
-  return { type: "image", value: path };
+  return { kind: "image", value: path };
 }
 
 /**
@@ -341,12 +342,12 @@ export function getResolvedBackgroundValue(
 /**
  * Get the type of a resolved background
  * @param {ResolvedBackground} background ResolvedBackground to check
- * @returns { "solid" | "image" } Background type
+ * @returns {BackgroundKind} Background type
  */
 export function getResolvedBackgroundType(
   background: ResolvedBackground,
-): "solid" | "image" {
-  return background.type;
+): BackgroundKind {
+  return background.kind;
 }
 
 // ============================================================================

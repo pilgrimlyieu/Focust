@@ -3,4 +3,4 @@
 /**
  * Break kind type
  */
-export type BreakKind = "mini" | "long" | "attention";
+export type EventKind = "mini" | "long" | "attention";
