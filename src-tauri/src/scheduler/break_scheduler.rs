@@ -59,8 +59,11 @@ impl BreakScheduler {
         loop {
             // Check for incoming commands first
             if let Ok(cmd) = cmd_rx.try_recv() {
-                self.handle_command(cmd).await;
-                continue;
+                let should_interrupt = self.handle_command(cmd).await;
+                if should_interrupt {
+                    continue;
+                }
+                // If command doesn't interrupt, continue with current state
             }
 
             match &self.state {
@@ -206,9 +209,12 @@ impl BreakScheduler {
                     self.send_notification(&break_info.event).await;
                 }
                 Some(cmd) = cmd_rx.recv() => {
-                    self.handle_command(cmd).await;
-                    self.current_wait_cancel = None;
-                    return;
+                    let should_interrupt = self.handle_command(cmd).await;
+                    if should_interrupt {
+                        self.current_wait_cancel = None;
+                        return;
+                    }
+                    // If command doesn't interrupt (e.g., RequestStatus), continue waiting
                 }
             }
         }
@@ -239,9 +245,12 @@ impl BreakScheduler {
                     self.execute_break(break_info.event);
                 }
                 Some(cmd) = cmd_rx.recv() => {
-                    self.handle_command(cmd).await;
-                    self.current_wait_cancel = None;
-                    return;
+                    let should_interrupt = self.handle_command(cmd).await;
+                    if should_interrupt {
+                        self.current_wait_cancel = None;
+                        return;
+                    }
+                    // If command doesn't interrupt (e.g., RequestStatus), continue waiting
                 }
             }
         } else {
@@ -308,7 +317,9 @@ impl BreakScheduler {
     }
 
     /// Handle incoming commands
-    async fn handle_command(&mut self, cmd: Command) {
+    /// Returns true if the command requires interrupting the current wait
+    #[allow(clippy::too_many_lines)]
+    async fn handle_command(&mut self, cmd: Command) -> bool {
         tracing::debug!("BreakScheduler handling command: {cmd:?}");
 
         match cmd {
@@ -326,12 +337,14 @@ impl BreakScheduler {
                 }
 
                 self.emit_paused_status(true);
+                true // Interrupt wait
             }
             Command::Resume(_reason) => {
                 tracing::info!("Resuming BreakScheduler");
                 self.state = BreakSchedulerState::Running;
                 self.update_break_timers(false);
                 // Status will be emitted in next loop iteration
+                true // Interrupt wait to resume
             }
             Command::Postpone => {
                 tracing::info!("Postponing current break");
@@ -351,6 +364,7 @@ impl BreakScheduler {
                 if let Err(e) = self.app_handle.emit("break-finished", "") {
                     tracing::error!("Failed to emit break-finished event: {e}");
                 }
+                true // Interrupt wait
             }
             Command::SkipBreak => {
                 tracing::info!("Skipping current break");
@@ -369,6 +383,7 @@ impl BreakScheduler {
                 if let Err(e) = self.app_handle.emit("break-finished", "") {
                     tracing::error!("Failed to emit break-finished event: {e}");
                 }
+                true // Interrupt wait
             }
             Command::BreakFinished(event) => {
                 tracing::info!("Break finished normally: {event}");
@@ -385,11 +400,14 @@ impl BreakScheduler {
                 // Update state after break is finished
                 self.update_state_after_break(event);
                 self.current_executing_event = None;
+
+                false // Don't interrupt, this is just a notification after break finishes
             }
             Command::TriggerEvent(event) => {
                 tracing::info!("Manually triggering break: {event}");
                 self.cancel_current_wait();
                 self.execute_break(event);
+                true // Interrupt wait
             }
             Command::UpdateConfig(new_config) => {
                 tracing::debug!("Updating config");
@@ -400,6 +418,7 @@ impl BreakScheduler {
                 }
 
                 self.cancel_current_wait();
+                true // Interrupt wait to recalculate with new config
             }
             Command::RequestStatus => {
                 tracing::debug!("Status request received");
@@ -407,7 +426,7 @@ impl BreakScheduler {
                 // Check if we're in paused state
                 if let BreakSchedulerState::Paused(_) = self.state {
                     self.emit_paused_status(true);
-                    return;
+                    return false; // Don't interrupt
                 }
 
                 // If we already have a break scheduled and waiting, use that instead of recalculating
@@ -425,6 +444,7 @@ impl BreakScheduler {
                         self.emit_paused_status(false);
                     }
                 }
+                false // Don't interrupt wait, just report status
             }
         }
     }
