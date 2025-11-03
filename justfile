@@ -287,7 +287,7 @@ alias adb := add-dep-back
 
 # Check before committing
 [group: "git"]
-@pre-commit:
+@pre-commit-checks:
     echo "🔒 Running frontend checks..."
     bunx biome check .
     bunx tsc --noEmit
@@ -300,7 +300,7 @@ alias adb := add-dep-back
 
 # Check before committing
 [group: "git"]
-@pre-commit-all:
+@pre-commit-checks-all:
     echo "🔒 Running front-end checks..."
     -bunx biome check .
     -bunx tsc --noEmit
@@ -310,3 +310,19 @@ alias adb := add-dep-back
     -cargo check --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace --all-targets
     -cargo clippy --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace --all-targets -- -D warnings
     echo "✅ Back-end checks passed!"
+
+# Fix before committing
+[group: "git"]
+@pre-commit-fixes:
+    echo "💅 Formatting front-end code..."
+    -bunx biome format --write .
+    echo "✅ Front-end formatting applied!"
+    echo "💅 Formatting back-end code..."
+    -cargo fmt --manifest-path {{ RUST_DIR }}/Cargo.toml --all
+    echo "✅ Back-end formatting applied!"
+    echo "🛠️ Fixing front-end code issues..."
+    -bunx biome check --write .
+    echo "✅ Front-end fixing complete!"
+    echo "🛠️ Fixing back-end code issues..."
+    -cargo clippy --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace --all-targets --fix --allow-dirty
+    echo "✅ Back-end fixing complete!"

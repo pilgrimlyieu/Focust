@@ -15,13 +15,13 @@
     "includes": [
       "src/**",
       "*.json",
-      "!package.json",
       "*.jsonc",
+      "!package.json",
       "*.js",
       "*.ts",
       "!**/*.d.ts",
       "!**/*.css",
-      "!**/src/types/generated/**/*.ts"
+      "!src/types/generated/**/*.ts"
     ]
   },
   "formatter": {
