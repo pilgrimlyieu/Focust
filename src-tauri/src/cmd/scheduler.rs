@@ -74,3 +74,15 @@ pub async fn skip_break(state: State<'_, SchedulerCmd>) -> Result<(), String> {
         .await
         .map_err(|e| e.to_string())
 }
+
+/// Notify that a break has finished normally
+#[tauri::command]
+pub async fn break_finished(
+    state: State<'_, SchedulerCmd>,
+    event: SchedulerEvent,
+) -> Result<(), String> {
+    state
+        .send(Command::BreakFinished(event))
+        .await
+        .map_err(|e| e.to_string())
+}

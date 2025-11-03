@@ -11,7 +11,7 @@ import {
   watch,
 } from "vue";
 import { useI18n } from "vue-i18n";
-import type { AudioSettings, BreakPayload } from "@/types";
+import type { AudioSettings, BreakPayload, SchedulerEvent } from "@/types";
 import {
   isBuiltinAudio,
   isFilePathAudio,
@@ -19,6 +19,11 @@ import {
   isResolvedImageBackground,
   isResolvedSolidBackground,
 } from "@/types";
+import {
+  createAttentionEvent,
+  createLongBreakEvent,
+  createMiniBreakEvent,
+} from "@/types/factories";
 
 const { t } = useI18n();
 
@@ -205,7 +210,39 @@ const finishBreak = async (isAutoFinish = false) => {
     intervalId.value = null;
   }
   stopAudio();
+
+  // Notify backend that break has finished (so it can update timers)
+  if (payload.value) {
+    try {
+      const event = constructSchedulerEvent(payload.value);
+      await invoke("break_finished", { event });
+    } catch (err) {
+      console.error(
+        "[BreakApp] Failed to notify backend about break finish:",
+        err,
+      );
+    }
+  }
+
   await emit("break-finished", null);
+};
+
+/**
+ * Construct a SchedulerEvent from the current break payload using factory functions
+ * @param {BreakPayload} payload The break payload
+ * @returns {SchedulerEvent} SchedulerEvent object
+ */
+const constructSchedulerEvent = (payload: BreakPayload): SchedulerEvent => {
+  switch (payload.kind) {
+    case "mini":
+      return createMiniBreakEvent(payload.id);
+    case "long":
+      return createLongBreakEvent(payload.id);
+    case "attention":
+      return createAttentionEvent(payload.id);
+    default:
+      throw new Error(`Unknown break kind: ${payload.kind}`);
+  }
 };
 
 const postponeBreak = async () => {

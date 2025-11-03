@@ -64,6 +64,8 @@ pub enum Command {
     TriggerEvent(SchedulerEvent),
     /// Request the scheduler to emit its current status
     RequestStatus,
+    /// Notify that a break has finished normally (from frontend)
+    BreakFinished(SchedulerEvent),
 }
 
 impl Display for Command {
@@ -76,6 +78,7 @@ impl Display for Command {
             Command::TriggerEvent(event) => write!(f, "TriggerBreak({event})"),
             Command::SkipBreak => write!(f, "SkipBreak"),
             Command::RequestStatus => write!(f, "RequestStatus"),
+            Command::BreakFinished(event) => write!(f, "BreakFinished({event})"),
         }
     }
 }

@@ -126,6 +126,7 @@ pub fn run() {
             cmd::payload::get_break_payload,
             cmd::payload::remove_break_payload,
             cmd::payload::store_break_payload,
+            cmd::scheduler::break_finished,
             cmd::scheduler::pause_scheduler,
             cmd::scheduler::postpone_break,
             cmd::scheduler::request_scheduler_status,

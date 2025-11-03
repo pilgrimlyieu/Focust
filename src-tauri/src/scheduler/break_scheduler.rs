@@ -31,6 +31,9 @@ pub struct BreakScheduler {
 
     current_break_info: Option<BreakInfo>,
 
+    // Track the currently executing break event (for state update after finish)
+    current_executing_event: Option<SchedulerEvent>,
+
     // Cancellation token for interrupting waits
     current_wait_cancel: Option<CancellationToken>,
 }
@@ -45,6 +48,7 @@ impl BreakScheduler {
             last_break_time: None,
             postponed_until: None,
             current_break_info: None,
+            current_executing_event: None,
             current_wait_cancel: None,
         }
     }
@@ -289,16 +293,18 @@ impl BreakScheduler {
         }
     }
 
-    /// Execute a break and update state
+    /// Execute a break and emit event to frontend
+    /// Note: State is updated after the break is finished (when frontend emits "break-finished")
     fn execute_break(&mut self, event: SchedulerEvent) {
         tracing::info!("Executing break: {event}");
+
+        // Store the event for later state update
+        self.current_executing_event = Some(event);
 
         // Emit event to frontend
         if let Err(e) = self.app_handle.emit("scheduler-event", &event) {
             tracing::error!("Failed to emit scheduler-event: {e}");
         }
-
-        self.update_state_after_break(event);
     }
 
     /// Handle incoming commands
@@ -350,15 +356,35 @@ impl BreakScheduler {
                 tracing::info!("Skipping current break");
                 if let Some(break_info) = &self.current_break_info {
                     self.update_state_after_break(break_info.event);
+                } else if let Some(event) = self.current_executing_event {
+                    // If we're in the middle of a break execution, update state based on that
+                    self.update_state_after_break(event);
                 } else {
                     self.update_break_timers(true);
                 }
+                self.current_executing_event = None;
                 self.cancel_current_wait();
 
                 // Close break window
                 if let Err(e) = self.app_handle.emit("break-finished", "") {
                     tracing::error!("Failed to emit break-finished event: {e}");
                 }
+            }
+            Command::BreakFinished(event) => {
+                tracing::info!("Break finished normally: {event}");
+
+                // Verify this matches the current executing event
+                if let Some(current) = self.current_executing_event
+                    && current != event
+                {
+                    tracing::warn!(
+                        "BreakFinished event {event} doesn't match current executing event {current}"
+                    );
+                }
+
+                // Update state after break is finished
+                self.update_state_after_break(event);
+                self.current_executing_event = None;
             }
             Command::TriggerEvent(event) => {
                 tracing::info!("Manually triggering break: {event}");
