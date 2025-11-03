@@ -28,6 +28,10 @@ alias c := check
 alias cf := check-front
 alias cb := check-back
 
+alias fi := fix
+alias fif := fix-front
+alias fib := fix-back
+
 alias ta := test-all
 alias tfa := test-front-all
 alias tf := test-front
@@ -104,30 +108,8 @@ alias adb := add-dep-back
 
 
 # -----------------------------------------------------------------------------
-# Linting, Formatting, Checking
+# Formatting, Checking, Linting, and Fixing
 # -----------------------------------------------------------------------------
-
-# Linting
-[group: "lint"]
-@lint:
-    echo "🔍 Running linters..."
-    -bunx biome check .
-    cargo clippy --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace --all-targets
-    echo "✅ Linting complete!"
-
-# Front-end specific linting
-[group: "lint"]
-@lint-front:
-    echo "🔍 Running front-end linters..."
-    bunx biome check .
-    echo "✅ Front-end linting complete!"
-
-# Back-end specific linting
-[group: "lint"]
-@lint-back:
-    echo "🔍 Running back-end linters..."
-    cargo clippy --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace --all-targets
-    echo "✅ Back-end linting complete!"
 
 # Formatting
 [group: "format"]
@@ -154,7 +136,7 @@ alias adb := add-dep-back
 # Checking
 [group: "check"]
 @check:
-    echo "🧐 Running type checks and static analysis..."
+    echo "🧐 Running static analysis..."
     -bunx biome check .
     -bunx tsc --noEmit
     cargo check --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace --all-targets
@@ -163,16 +145,61 @@ alias adb := add-dep-back
 # Front-end specific checks
 [group: "check"]
 @check-front:
-    echo "🧐 Running front-end type checks..."
+    echo "🧐 Running front-end checks..."
+    -bunx biome check .
     bunx tsc --noEmit
-    echo "✅ Front-end type checks complete!"
+    echo "✅ Front-end checks complete!"
 
 # Back-end specific checks
 [group: "check"]
 @check-back:
-    echo "🧐 Running back-end type checks..."
+    echo "🧐 Running back-end checks..."
     cargo check --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace --all-targets
-    echo "✅ Back-end type checks complete!"
+    echo "✅ Back-end checks complete!"
+
+# Linting
+[group: "lint"]
+@lint:
+    echo "🔍 Running linters..."
+    -bunx biome lint .
+    cargo clippy --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace --all-targets
+    echo "✅ Linting complete!"
+
+# Front-end specific linting
+[group: "lint"]
+@lint-front:
+    echo "🔍 Running front-end linters..."
+    bunx biome lint .
+    echo "✅ Front-end linting complete!"
+
+# Back-end specific linting
+[group: "lint"]
+@lint-back:
+    echo "🔍 Running back-end linters..."
+    cargo clippy --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace --all-targets
+    echo "✅ Back-end linting complete!"
+
+# Fixing
+[group: "fix"]
+@fix:
+    echo "🛠️ Fixing code issues..."
+    bunx biome check --write .
+    cargo clippy --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace --all-targets --fix --allow-dirty
+    echo "✅ Fixing complete!"
+
+# Front-end specific fixing
+[group: "fix"]
+@fix-front:
+    echo "🛠️ Fixing front-end code issues..."
+    bunx biome check --write .
+    echo "✅ Front-end fixing complete!"
+
+# Back-end specific fixing
+[group: "fix"]
+@fix-back:
+    echo "🛠️ Fixing back-end code issues..."
+    cargo clippy --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace --all-targets --fix --allow-dirty
+    echo "✅ Back-end fixing complete!"
 
 # -----------------------------------------------------------------------------
 # Testing
@@ -261,8 +288,25 @@ alias adb := add-dep-back
 # Check before committing
 [group: "git"]
 @pre-commit:
-    echo "🔒 Running pre-commit checks..."
-    just format
-    just check
-    just lint
-    echo "✅ Pre-commit checks passed!"
+    echo "🔒 Running frontend checks..."
+    bunx biome check .
+    bunx tsc --noEmit
+    echo "✅ Frontend checks passed!"
+    echo "🔒 Running backend checks..."
+    cargo fmt --manifest-path src-tauri/Cargo.toml --all --check
+    cargo check --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace --all-target
+    cargo clippy --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace --all-targets -- -D warnings
+    echo "✅ Backend checks passed!"
+
+# Check before committing
+[group: "git"]
+@pre-commit-all:
+    echo "🔒 Running front-end checks..."
+    -bunx biome check .
+    -bunx tsc --noEmit
+    echo "✅ Front-end checks passed!"
+    echo "🔒 Running back-end checks..."
+    -cargo fmt --manifest-path src-tauri/Cargo.toml --all --check
+    -cargo check --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace --all-targets
+    -cargo clippy --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace --all-targets -- -D warnings
+    echo "✅ Back-end checks passed!"

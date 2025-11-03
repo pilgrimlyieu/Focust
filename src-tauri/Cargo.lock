@@ -1094,7 +1094,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
- "log",
  "rand 0.9.2",
  "rodio",
  "serde",
@@ -1110,6 +1109,7 @@ dependencies = [
  "tempfile",
  "thiserror 2.0.17",
  "tokio",
+ "tokio-util",
  "toml 0.9.8",
  "tracing",
  "tracing-appender",

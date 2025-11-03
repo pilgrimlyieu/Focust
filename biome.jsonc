@@ -15,9 +15,10 @@
     "includes": [
       "src/**",
       "*.json",
+      "!package.json",
+      "*.jsonc",
       "*.js",
       "*.ts",
-      "!**/*.json",
       "!**/*.d.ts",
       "!**/*.css",
       "!**/src/types/generated/**/*.ts"
@@ -59,7 +60,7 @@
   ],
   "vcs": {
     "clientKind": "git",
-    "enabled": false,
-    "useIgnoreFile": false
+    "enabled": true,
+    "useIgnoreFile": true
   }
 }

@@ -33,6 +33,7 @@
     "@vitest/ui": "^4.0.5",
     "@vue/test-utils": "^2.4.6",
     "daisyui": "^5.3.10",
+    "jsdom": "^27.1.0",
     "tailwindcss": "^4.1.16",
     "typescript": "^5.9.3",
     "vite": "^7.1.12",
