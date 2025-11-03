@@ -17,14 +17,14 @@ pub async fn register_shortcuts<R: Runtime>(app: &AppHandle<R>) -> Result<(), St
     };
 
     // Only register if shortcut is configured
-    if !postpone_shortcut.is_empty() {
+    if postpone_shortcut.is_empty() {
+        tracing::info!("No postpone shortcut configured, skipping registration");
+    } else {
         if let Err(e) = register_postpone_shortcut(app, &postpone_shortcut) {
             tracing::error!("Failed to register postpone shortcut '{postpone_shortcut}': {e}",);
             return Err(e);
         }
         tracing::info!("Global shortcuts registered successfully");
-    } else {
-        tracing::info!("No postpone shortcut configured, skipping registration");
     }
 
     Ok(())
@@ -69,7 +69,7 @@ fn parse_shortcut(s: &str) -> Result<Shortcut, String> {
 
     let parts: Vec<&str> = s
         .split('+')
-        .map(|p| p.trim())
+        .map(str::trim)
         .filter(|p| !p.is_empty())
         .collect();
 

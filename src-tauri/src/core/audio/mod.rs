@@ -23,7 +23,7 @@ pub async fn init_audio_player() -> Result<(), PlaybackError> {
 }
 
 /// Get the global audio player instance
-pub async fn get_audio_player() -> Arc<Mutex<Option<AudioPlayer>>> {
+pub fn get_audio_player() -> Arc<Mutex<Option<AudioPlayer>>> {
     AUDIO_PLAYER.clone()
 }
 

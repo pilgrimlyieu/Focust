@@ -42,6 +42,7 @@ impl AudioSettings {
     /// Returns None if the source is None
     /// For builtin sources, returns the resource identifier that can be resolved at runtime
     /// For file paths, returns the absolute path
+    #[must_use]
     pub fn get_path(&self) -> Option<String> {
         match &self.source {
             AudioSource::None => None,
@@ -55,6 +56,7 @@ impl AudioSettings {
     }
 
     /// Check if this audio source is a builtin resource
+    #[must_use]
     pub fn is_builtin(&self) -> bool {
         matches!(self.source, AudioSource::Builtin { .. })
     }

@@ -8,6 +8,7 @@ pub struct FontFamily(String);
 pub struct HexColor(String);
 
 impl HexColor {
+    #[must_use]
     pub fn is_valid(&self) -> bool {
         self.0.starts_with('#')
             && self.0.len() == 7
@@ -60,6 +61,7 @@ impl Default for ThemeSettings {
 }
 
 #[cfg(test)]
+#[allow(clippy::float_cmp)]
 mod tests {
     use super::*;
 
@@ -114,7 +116,7 @@ mod tests {
 
     #[test]
     fn test_hex_color_empty() {
-        let color = HexColor("".to_string());
+        let color = HexColor(String::new());
         assert!(!color.is_valid());
     }
 

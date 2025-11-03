@@ -55,7 +55,7 @@ fn detect_system_language() -> String {
         .unwrap_or_else(|| "en-US".to_string())
 }
 
-/// Shared application configuration wrapped in a RwLock for thread-safe access
+/// Shared application configuration wrapped in a `RwLock` for thread-safe access
 pub type SharedConfig = RwLock<AppConfig>;
 
 #[cfg(test)]

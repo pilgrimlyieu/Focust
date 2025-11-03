@@ -50,7 +50,7 @@ pub async fn open_settings_window<R: Runtime>(app: AppHandle<R>) -> Result<(), S
         app_clone.unlisten(unlisten);
 
         match ready {
-            Ok(Ok(_)) => {
+            Ok(Ok(())) => {
                 tracing::info!("Settings window content ready, showing window");
             }
             Ok(Err(e)) => {

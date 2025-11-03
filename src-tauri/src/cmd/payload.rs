@@ -67,6 +67,7 @@ impl Deref for BreakPayloadStore {
 }
 
 impl BreakPayloadStore {
+    #[must_use]
     pub fn new() -> Self {
         Self(Arc::new(RwLock::new(HashMap::new())))
     }

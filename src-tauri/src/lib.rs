@@ -1,3 +1,9 @@
+#![warn(clippy::pedantic)]
+#![allow(clippy::missing_docs_in_private_items)]
+#![allow(clippy::missing_errors_doc)]
+#![allow(clippy::missing_panics_doc)]
+#![allow(clippy::cast_possible_truncation)]
+
 use tauri::Manager;
 
 use crate::{
@@ -32,7 +38,7 @@ pub fn run() {
                 "warn"
             };
 
-            if let Err(e) = utils::init_logging(log_dir, log_level) {
+            if let Err(e) = utils::init_logging(&log_dir, log_level) {
                 eprintln!("Failed to initialize logging: {e}");
             }
 
@@ -67,7 +73,7 @@ pub fn run() {
                 let shared_suggestions = cmd::SharedSuggestions::new(suggestions_config);
                 handle.manage(shared_suggestions);
 
-                let (cmd_tx, shutdown_tx) = init_scheduler(handle.clone()).await;
+                let (cmd_tx, shutdown_tx) = init_scheduler(&handle);
                 handle.manage(SchedulerCmd(cmd_tx)); // keep alive
                 handle.manage(ShutdownTx(shutdown_tx));
             });
@@ -109,5 +115,5 @@ pub fn run() {
                     tracing::info!("Application exit code: {code:?}");
                 }
             }
-        })
+        });
 }

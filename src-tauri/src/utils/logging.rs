@@ -11,17 +11,16 @@ use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberI
 /// # Arguments
 /// * `log_dir` - Directory to store log files
 /// * `log_level` - Default log level (e.g., "info", "debug", "trace")
-pub fn init_logging(log_dir: PathBuf, log_level: &str) -> Result<(), String> {
+pub fn init_logging(log_dir: &PathBuf, log_level: &str) -> Result<(), String> {
     // Create log directory if it doesn't exist
-    std::fs::create_dir_all(&log_dir)
-        .map_err(|e| format!("Failed to create log directory: {e}"))?;
+    std::fs::create_dir_all(log_dir).map_err(|e| format!("Failed to create log directory: {e}"))?;
 
     // Create a file appender that rotates daily
     let file_appender = RollingFileAppender::builder()
         .rotation(Rotation::DAILY)
         .filename_suffix("focust.log") // 2025-10-28.focust.log
         .max_log_files(1) // Keep only 1 day of logs
-        .build(&log_dir)
+        .build(log_dir)
         .expect("Failed to create log file appender");
 
     // Create a layer that writes to the file
@@ -41,7 +40,6 @@ pub fn init_logging(log_dir: PathBuf, log_level: &str) -> Result<(), String> {
     let level = match log_level.to_lowercase().as_str() {
         "trace" => Level::TRACE,
         "debug" => Level::DEBUG,
-        "info" => Level::INFO,
         "warn" => Level::WARN,
         "error" => Level::ERROR,
         _ => Level::INFO,

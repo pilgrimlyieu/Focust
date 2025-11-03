@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use chrono::NaiveTime;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -6,18 +8,29 @@ use ts_rs::TS;
 pub struct ShortTimes(Vec<NaiveTime>);
 
 impl ShortTimes {
+    #[must_use]
     pub fn new(mut times: Vec<NaiveTime>) -> Self {
         times.sort();
         times.dedup();
         ShortTimes(times)
     }
 
+    #[must_use]
     pub fn earliest_after(&self, time: &NaiveTime) -> Option<NaiveTime> {
-        self.0.iter().filter(|&&t| t > *time).min().cloned()
+        self.0.iter().filter(|&&t| t > *time).min().copied()
     }
 
+    #[must_use]
     pub fn first(&self) -> Option<NaiveTime> {
-        self.0.first().cloned()
+        self.0.first().copied()
+    }
+}
+
+impl Deref for ShortTimes {
+    type Target = Vec<NaiveTime>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
@@ -39,6 +52,7 @@ impl Default for TimeRange {
 }
 
 impl TimeRange {
+    #[must_use]
     pub fn contains(&self, time: &NaiveTime) -> bool {
         if (self.start == NaiveTime::MIN) && (self.end == NaiveTime::MIN) {
             // if both are 00:00, treat as full day

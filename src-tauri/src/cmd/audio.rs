@@ -90,7 +90,7 @@ fn resolve_builtin_audio_path(app: &AppHandle, resource_name: &str) -> Result<St
             return dev_path1
                 .to_str()
                 .ok_or_else(|| "Invalid path encoding".to_string())
-                .map(|s| s.to_string());
+                .map(std::string::ToString::to_string);
         }
 
         // Path 2: Assume cwd is project root
@@ -106,7 +106,7 @@ fn resolve_builtin_audio_path(app: &AppHandle, resource_name: &str) -> Result<St
             return dev_path2
                 .to_str()
                 .ok_or_else(|| "Invalid path encoding".to_string())
-                .map(|s| s.to_string());
+                .map(std::string::ToString::to_string);
         }
 
         return Err(format!(
@@ -121,5 +121,5 @@ fn resolve_builtin_audio_path(app: &AppHandle, resource_name: &str) -> Result<St
     audio_path
         .to_str()
         .ok_or_else(|| "Invalid path encoding".to_string())
-        .map(|s| s.to_string())
+        .map(std::string::ToString::to_string)
 }

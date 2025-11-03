@@ -109,10 +109,7 @@ pub async fn setup_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
                 ..
             } = event
             {
-                let app = tray.app_handle();
-                if let Err(e) = show_settings_window(app) {
-                    tracing::error!("Failed to show settings window: {e}");
-                }
+                show_settings_window(tray.app_handle());
             }
         })
         .build(app)?;
@@ -125,9 +122,7 @@ pub async fn setup_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
 fn handle_tray_menu_event<R: Runtime>(app: &AppHandle<R>, event_id: &str) {
     match event_id {
         "show" => {
-            if let Err(e) = show_settings_window(app) {
-                tracing::error!("Failed to show settings window: {e}");
-            }
+            show_settings_window(app);
         }
         "pause" => {
             if let Err(e) = toggle_pause(app) {
@@ -150,14 +145,13 @@ fn handle_tray_menu_event<R: Runtime>(app: &AppHandle<R>, event_id: &str) {
 }
 
 /// Show or focus the settings window (create on demand)
-fn show_settings_window<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {
+fn show_settings_window<R: Runtime>(app: &AppHandle<R>) {
     let app_clone = app.clone();
     tauri::async_runtime::spawn(async move {
         if let Err(e) = crate::cmd::window::open_settings_window(app_clone).await {
             tracing::error!("Failed to open settings window: {e}");
         }
     });
-    Ok(())
 }
 
 /// Toggle scheduler pause state

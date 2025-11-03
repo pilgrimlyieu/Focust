@@ -33,10 +33,10 @@ async fn try_load_or_create_config(app_handle: &AppHandle) -> Result<AppConfig> 
 
     let content = tokio::fs::read_to_string(&config_path)
         .await
-        .with_context(|| format!("Failed to read config file from {:?}", &config_path))?;
+        .with_context(|| format!("Failed to read config file from {}", config_path.display()))?;
     let config = toml::from_str(&content).context("Failed to parse config file content as TOML")?;
 
-    tracing::info!("Config loaded successfully from {config_path:?}");
+    tracing::info!("Config loaded successfully from {}", config_path.display());
     Ok(config)
 }
 
@@ -57,7 +57,10 @@ pub async fn save_config(app_handle: &AppHandle, config: &AppConfig) -> Result<(
         toml::to_string_pretty(config).context("Failed to serialize config to TOML")?;
     a_fs::write(&config_path, toml_string)
         .await
-        .context(format!("Failed to write config to {config_path:?}"))?;
-    tracing::info!("Config saved successfully to {config_path:?}");
+        .context(format!(
+            "Failed to write config to {}",
+            config_path.display()
+        ))?;
+    tracing::info!("Config saved successfully to {}", config_path.display());
     Ok(())
 }

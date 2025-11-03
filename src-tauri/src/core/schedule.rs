@@ -162,6 +162,7 @@ impl Default for ScheduleSettings {
 }
 
 impl ScheduleSettings {
+    #[must_use]
     pub fn has_notification(&self) -> bool {
         self.notification_before_s > 0
     }

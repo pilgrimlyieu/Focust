@@ -12,7 +12,7 @@ const LANGUAGE_FALLBACK: &str = "en-US";
 /// Settings for displaying suggestions during breaks
 ///
 /// This controls whether suggestions are shown to the user during break windows.
-/// The actual suggestion content is managed separately in the [SuggestionsConfig].
+/// The actual suggestion content is managed separately in the [`SuggestionsConfig`].
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, rename_all = "camelCase")]
@@ -134,7 +134,12 @@ async fn try_load_suggestions(app_handle: &AppHandle) -> Result<SuggestionsConfi
 
     let content = tokio::fs::read_to_string(&suggestions_path)
         .await
-        .with_context(|| format!("Failed to read suggestions from {suggestions_path:?}"))?;
+        .with_context(|| {
+            format!(
+                "Failed to read suggestions from {}",
+                suggestions_path.display()
+            )
+        })?;
 
     let config: SuggestionsConfig =
         toml::from_str(&content).context("Failed to parse suggestions.toml")?;
@@ -158,7 +163,12 @@ pub async fn save_suggestions(app_handle: &AppHandle, config: &SuggestionsConfig
 
     tokio::fs::write(&suggestions_path, toml_string)
         .await
-        .with_context(|| format!("Failed to write suggestions to {suggestions_path:?}"))?;
+        .with_context(|| {
+            format!(
+                "Failed to write suggestions to {}",
+                suggestions_path.display()
+            )
+        })?;
 
     tracing::info!("Suggestions saved successfully to {suggestions_path:?}");
     Ok(())
@@ -166,6 +176,7 @@ pub async fn save_suggestions(app_handle: &AppHandle, config: &SuggestionsConfig
 
 /// Get suggestions for a specific language
 /// Falls back to en-US if language not found
+#[must_use]
 pub fn get_suggestions_for_language(config: &SuggestionsConfig, language: &str) -> Vec<String> {
     if let Some(lang_suggestions) = config.by_language.get(language) {
         return lang_suggestions.suggestions.clone();
