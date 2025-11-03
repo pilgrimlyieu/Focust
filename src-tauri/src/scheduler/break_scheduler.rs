@@ -403,15 +403,27 @@ impl BreakScheduler {
             }
             Command::RequestStatus => {
                 tracing::debug!("Status request received");
-                let config = self.app_handle.state::<SharedConfig>();
-                let config_guard = config.read().await;
 
+                // Check if we're in paused state
                 if let BreakSchedulerState::Paused(_) = self.state {
                     self.emit_paused_status(true);
-                } else if let Some(break_info) = self.calculate_next_break(&config_guard) {
-                    self.emit_status(&break_info);
+                    return;
+                }
+
+                // If we already have a break scheduled and waiting, use that instead of recalculating
+                if let Some(break_info) = &self.current_break_info {
+                    tracing::debug!("Using current scheduled break info for status");
+                    self.emit_status(break_info);
                 } else {
-                    self.emit_paused_status(false);
+                    // No break currently scheduled, calculate a new one
+                    let config = self.app_handle.state::<SharedConfig>();
+                    let config_guard = config.read().await;
+
+                    if let Some(break_info) = self.calculate_next_break(&config_guard) {
+                        self.emit_status(&break_info);
+                    } else {
+                        self.emit_paused_status(false);
+                    }
                 }
             }
         }
