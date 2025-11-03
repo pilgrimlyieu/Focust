@@ -159,7 +159,7 @@ const cardStyle = computed(() => {
   }
   if (imagePreview.value) {
     return {
-      backgroundImage: `url(${imagePreview.value})`,
+      backgroundImage: `url("${imagePreview.value}")`,
       backgroundPosition: "center",
       backgroundSize: "cover",
     };

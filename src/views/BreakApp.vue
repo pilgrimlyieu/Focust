@@ -74,7 +74,7 @@ const backgroundStyle = computed(() => {
   }
   const imageUrl = convertFileSrc(current.background.value);
   return {
-    backgroundImage: `url(${imageUrl})`,
+    backgroundImage: `url("${imageUrl}")`,
     backgroundPosition: "center",
     backgroundSize: "cover",
   };
