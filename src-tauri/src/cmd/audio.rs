@@ -1,5 +1,5 @@
 use crate::core::audio;
-use std::path::PathBuf;
+use tauri::path::BaseDirectory;
 use tauri::{AppHandle, Manager};
 
 /// Tauri command to play an audio file
@@ -35,90 +35,30 @@ pub async fn stop_audio() -> Result<(), String> {
         .map_err(|e| format!("Failed to stop audio: {e}"))
 }
 
-/// Helper function to resolve builtin audio resource path
+/// Helper function to resolve the path of a builtin audio resource
 fn resolve_builtin_audio_path(app: &AppHandle, resource_name: &str) -> Result<String, String> {
-    // TODO: refactor
-    // Try to get the resource directory (works in production)
-    let resource_dir_result = app.path().resource_dir();
+    let resource_relative_path = format!("assets/sounds/{resource_name}.mp3");
 
-    let audio_path: PathBuf = if let Ok(resource_dir) = resource_dir_result {
-        // Production: use bundled resources
-        resource_dir
-            .join("sounds")
-            .join(format!("{resource_name}.mp3"))
-    } else {
-        // Development: use source directory
-        // Get the app directory
-        let app_dir = app
-            .path()
-            .app_config_dir()
-            .map_err(|e| format!("Failed to get app directory: {e}"))?;
+    tracing::debug!("Attempting to resolve builtin audio resource: {resource_relative_path}",);
 
-        // Go up to project root and into assets
-        app_dir
-            .parent()
-            .and_then(|p| p.parent())
-            .ok_or_else(|| "Failed to resolve project root".to_string())?
-            .join("src-tauri")
-            .join("assets")
-            .join("sounds")
-            .join(format!("{resource_name}.mp3"))
-    };
+    let resolved_path_buf = app
+        .path()
+        .resolve(&resource_relative_path, BaseDirectory::Resource)
+        .map_err(|e| format!("Failed to resolve resource path for '{resource_name}': {e}"))?;
 
     tracing::debug!(
-        "Resolving builtin audio: {resource_name} -> {}",
-        audio_path.display()
+        "Resolved builtin audio path: {}",
+        resolved_path_buf.display()
     );
 
-    // Check if file exists
-    if !audio_path.exists() {
-        // Try alternative paths for development
-        let cwd =
-            std::env::current_dir().map_err(|e| format!("Failed to get current directory: {e}"))?;
-
-        tracing::debug!("Current working directory: {}", cwd.display());
-
-        // Path 1: Assume cwd is src-tauri directory
-        let dev_path1 = cwd
-            .join("assets")
-            .join("sounds")
-            .join(format!("{resource_name}.mp3"));
-
-        tracing::debug!("Trying dev path 1: {}", dev_path1.display());
-
-        if dev_path1.exists() {
-            return dev_path1
-                .to_str()
-                .ok_or_else(|| "Invalid path encoding".to_string())
-                .map(std::string::ToString::to_string);
-        }
-
-        // Path 2: Assume cwd is project root
-        let dev_path2 = cwd
-            .join("src-tauri")
-            .join("assets")
-            .join("sounds")
-            .join(format!("{resource_name}.mp3"));
-
-        tracing::debug!("Trying dev path 2: {}", dev_path2.display());
-
-        if dev_path2.exists() {
-            return dev_path2
-                .to_str()
-                .ok_or_else(|| "Invalid path encoding".to_string())
-                .map(std::string::ToString::to_string);
-        }
-
+    if !resolved_path_buf.exists() {
         return Err(format!(
-            "Builtin audio resource '{resource_name}' not found. Tried:\n  1. {}\n  2. {}\n  3. {}",
-            audio_path.display(),
-            dev_path1.display(),
-            dev_path2.display()
+            "Builtin audio resource '{resource_name}' not found at resolved path: {}",
+            resolved_path_buf.display()
         ));
     }
 
-    // Convert to string
-    audio_path
+    resolved_path_buf
         .to_str()
         .ok_or_else(|| "Invalid path encoding".to_string())
         .map(std::string::ToString::to_string)

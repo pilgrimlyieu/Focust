@@ -31,7 +31,7 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": ["assets/sounds/*", "resources/suggestions.toml"]
+    "resources": ["assets/sounds/*"]
   },
   "plugins": {
     "updater": {
