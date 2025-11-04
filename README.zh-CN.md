@@ -6,7 +6,7 @@
 
 **现代化、跨平台的休息提醒应用**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![MIT 许可证](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Tauri](https://img.shields.io/badge/Tauri-2.9-blue?logo=tauri)](https://tauri.app/)
 [![Vue 3](https://img.shields.io/badge/Vue-3.5-green?logo=vue.js)](https://vuejs.org/)
 [![Rust](https://img.shields.io/badge/Rust-2024-orange?logo=rust)](https://www.rust-lang.org/)
@@ -36,13 +36,13 @@
 
 ## 📋 快速开始
 
-查看 [QUICKSTART.zh-CN.md](docs/QUICKSTART.zh-CN.md) 获取详细的入门指南。
+查看 [QUICKSTART.md](docs/QUICKSTART.zh-CN.md) 获取详细的入门指南。
 
 ## ✨ 功能特性
 
 ### 🕐 智能休息调度
 
-- **灵活的休息类型**：配置短休息（20秒短暂暂停）和长休息（5分钟休息时段）
+- **灵活的休息类型**：配置短休息（20 秒短暂暂停）和长休息（5 分钟休息时段）
 - **可自定义间隔**：设置您自己的休息频率 — 每 20 分钟短休息，4 次短休息后长休息
 - **基于时间的时间表**：为工作时间创建不同的时间表，限制在工作日休息，或设置自定义时间范围
 - **智能检测**：当您离开电脑时自动暂停休息
@@ -65,7 +65,7 @@
 ### 🔔 定时提醒（注意系统）
 
 - **闹钟式提醒**：设置特定时间来提醒自己重要任务
-- **非侵入性**：与休息提醒不同，这些不会阻止您的工作 — 只是温和的通知
+- **非侵入性**：与休息提醒不同，这些不会阻止您的工作 — 只是温和的通知，可以立刻结束
 - **多个时间**：在一天中添加所需数量的提醒时间
 - **完美适用于**：喝水、服药、站立或任何时间敏感的任务
 
@@ -100,7 +100,7 @@
 - **严格模式**：在您真正需要时强制休息（无法跳过）
 - **休息通知**：在休息开始前获得通知（可配置提前时间）
 - **自动暂停**：检测系统空闲时间并暂停调度器
-- **勿扰模式检测**（待实现）: 计划中的功能，用于检测勿扰模式
+- **勿扰模式检测**（待实现）：计划中的功能，用于检测勿扰模式
 - **主题模式**：浅色、深色或基于系统的设置界面主题
 - **详细日志**：用于故障排除的调试日志
 
@@ -109,7 +109,7 @@
 
 ### 🌍 国际化
 
-- 目前支持: 英语 (en-US)、简体中文 (zh-CN)
+- 目前支持：英语 (en-US)、简体中文 (zh-CN)
 - 基于系统区域设置的自动语言检测
 - 易于添加新语言（欢迎贡献！）
 
@@ -152,13 +152,13 @@ Focust 以性能为设计理念，提供卓越的资源效率：
 
 在开始之前，请确保已安装以下内容：
 
-1. **Node.js** (v18 或更高版本) 或 **Bun** (推荐)
-2. **Rust** (最新稳定版) - 通过 [rustup](https://rustup.rs/) 安装
-3. **系统依赖项** (特定于平台):
+1. **Node.js**（v18 或更高版本）或 **Bun**（推荐）
+2. **Rust**（最新稳定版） - 通过 [rustup](https://rustup.rs/) 安装
+3. **系统依赖项**（特定于平台）：
 
    **Windows:**
    - [Microsoft Visual C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
-   - [WebView2](https://developer.microsoft.com/microsoft-edge/webview2/) (通常在 Windows 10/11 上预装)
+   - [WebView2](https://developer.microsoft.com/microsoft-edge/webview2/)（通常在 Windows 10/11 上预装）
 
    **macOS:**
    ```bash
@@ -179,7 +179,7 @@ Focust 以性能为设计理念，提供卓越的资源效率：
      librsvg2-dev
    ```
 
-4. **Just** (可选但推荐) - 命令运行器
+4. **Just**（可选但推荐）- 命令运行器
    ```bash
    cargo install just
    ```
@@ -221,15 +221,15 @@ just dev
 # 构建优化的生产包
 bun run tauri build  # 或：npm run tauri build
 
-# 使用 Just。将使用代码签名进行构建（需要设置私钥）
+# 使用 Just。将进行更新器签名构建（需要设置私钥）
 just build
 ```
 
 构建的应用程序将位于 `src-tauri/target/release/bundle/` 中。
 
-> **注意:** 对于更新器签名的发布，请参阅[更新器签名指南](docs/UPDATER_SIGNING.md)以设置签名密钥。
+> **注意**：对于更新器签名的发布，请参阅[更新器签名指南](docs/UPDATER_SIGNING.md)以设置签名密钥。
 
-### 可用命令 (Just)
+### 可用命令（Just）
 
 如果您安装了 [Just](https://github.com/casey/just)，可以使用这些便捷命令：
 
@@ -265,7 +265,7 @@ just
 
 1. **报告问题**：发现错误？[提交问题](https://github.com/pilgrimlyieu/Focust/issues/new)
 2. **建议功能**：有想法？[发起讨论](https://github.com/pilgrimlyieu/Focust/discussions)
-3. **改进文档**：发现拼写错误或不清楚的说明？提交 PR
+3. **改进文档**：发现拼写错误或不清楚的说明？[提交 PR](https://github.com/pilgrimlyieu/Focust/pulls)
 4. **编写代码**：查看 [CONTRIBUTING.md](CONTRIBUTING.md) 获取详细的开发指南
 
 ### 需要帮助的领域
@@ -312,7 +312,6 @@ just
 - **Tauri 2** - 跨平台桌面框架
 - **Tokio** - 异步运行时
 - **Serde** - 序列化框架
-- **Rodio 0.21** - 音频播放
 - **ts-rs** - 从 Rust 生成 TypeScript 类型
 
 ### 工具
@@ -327,6 +326,7 @@ just
 - [ ] 项目图标
 - [ ] 改进的错误处理和用户反馈
 - [ ] 全面的平台测试（macOS、Linux）
+- [ ] 白名单应用（v0.2.0 主要目标）
 
 ---
 

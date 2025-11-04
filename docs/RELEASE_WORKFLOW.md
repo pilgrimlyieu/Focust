@@ -239,13 +239,12 @@ Secrets are encrypted and only exposed to workflows:
 
 1. **Test key generation**:
    ```bash
-   cargo tauri signer generate -w test.key
+   bunx tauri signer generate -w test.key
    ```
 
 2. **Test signing**:
    ```bash
-   export TAURI_SIGNING_PRIVATE_KEY="$(cat test.key)"
-   just build
+   just build # Just will read `.env` for secrets
    ```
 
 3. **Verify signature files**:
@@ -278,6 +277,6 @@ Secrets are encrypted and only exposed to workflows:
 ## Support
 
 For issues or questions:
-1. Check documentation: `docs/CODE_SIGNING.md`
+1. Check documentation: [docs/UPDATER_SIGNING.md](docs/UPDATER_SIGNING.md)
 2. Review workflow logs: GitHub Actions tab
 3. Open an issue with relevant logs (redact sensitive info)

@@ -36,7 +36,6 @@ Focust is a cross-platform break reminder application built with **Tauri 2** (Ru
 - **Tokio** - Async runtime
 - **Serde + TOML** - Config serialization
 - **ts-rs** - TypeScript type generation
-- **Rodio 0.21** - Audio playback
 - **user-idle** - System idle detection
 - **tracing** - Logging
 
@@ -88,27 +87,27 @@ Focust is a cross-platform break reminder application built with **Tauri 2** (Ru
 
 ```
 src-tauri/src/
-├── cmd/              # Tauri command handlers
-├── config/           # Configuration system
-│   ├── core.rs      # Load/save with partial config support
-│   └── models.rs    # AppConfig type definitions
-├── core/             # Business logic
-│   ├── audio/       # Audio playback (Rodio)
-│   ├── schedule.rs  # Break schedule types
-│   ├── suggestions.rs # Suggestion system
-│   ├── theme.rs     # Theme types
-│   └── time.rs      # Time utilities
-├── scheduler/        # Scheduling engine
-│   ├── core.rs      # Event-driven scheduler loop
-│   ├── event.rs     # Event source calculations
-│   └── models.rs    # Scheduler state types
-├── platform/         # Platform integrations
-│   ├── tray.rs      # System tray
-│   ├── hotkey.rs    # Global shortcuts
-│   ├── i18n.rs      # Internationalization
+├── cmd/                 # Tauri command handlers
+├── config/              # Configuration system
+│   ├── core.rs          # Load/save with partial config support
+│   └── models.rs        # AppConfig type definitions
+├── core/                # Business logic
+│   ├── audio/           # Audio playback (Rodio)
+│   ├── schedule.rs      # Break schedule types
+│   ├── suggestions.rs   # Suggestion system
+│   ├── theme.rs         # Theme types
+│   └── time.rs          # Time utilities
+├── scheduler/           # Scheduling engine
+│   ├── core.rs          # Event-driven scheduler loop
+│   ├── event.rs         # Event source calculations
+│   └── models.rs        # Scheduler state types
+├── platform/            # Platform integrations
+│   ├── tray.rs          # System tray
+│   ├── hotkey.rs        # Global shortcuts
+│   ├── i18n.rs          # Internationalization
 │   └── notifications.rs # System notifications
-└── utils/            # Utilities
-    └── logging.rs   # Tracing setup
+└── utils/               # Utilities
+    └── logging.rs       # Tracing setup
 ```
 
 ### Key Concepts
@@ -138,26 +137,26 @@ src-tauri/src/
 
 ```
 src/
-├── views/            # Main views
+├── views/              # Main views
 │   ├── SettingsApp.vue # Settings window
 │   └── BreakApp.vue    # Break window
 ├── components/
-│   ├── settings/    # Settings panels (lazy-loaded)
-│   ├── ui/          # Reusable components
-│   └── icons/       # Icon components
-├── stores/           # Pinia stores
-│   ├── config.ts    # Config state + dirty tracking
-│   ├── scheduler.ts # Scheduler status
-│   └── suggestions.ts # Suggestion management
-├── composables/      # Composition utilities
-│   ├── useComputed.ts # Custom computed
-│   └── useToast.ts    # Toast notifications
+│   ├── settings/       # Settings panels (lazy-loaded)
+│   ├── ui/             # Reusable components
+│   └── icons/          # Icon components
+├── stores/             # Pinia stores
+│   ├── config.ts       # Config state + dirty tracking
+│   ├── scheduler.ts    # Scheduler status
+│   └── suggestions.ts  # Suggestion management
+├── composables/        # Composition utilities
+│   ├── useComputed.ts  # Custom computed
+│   └── useToast.ts     # Toast notifications
 ├── types/
-│   ├── generated/   # Auto-generated from Rust
-│   ├── guards.ts    # Type guards
-│   └── factories.ts # Factory functions
-├── i18n/             # Internationalization
-└── utils/            # Utility functions
+│   ├── generated/      # Auto-generated from Rust
+│   ├── guards.ts       # Type guards
+│   └── factories.ts    # Factory functions
+├── i18n/               # Internationalization
+└── utils/              # Utility functions
 ```
 
 ### Key Features
@@ -288,7 +287,7 @@ loop {
         // Send pause command
     }
     
-    sleep(Duration::from_secs(5));
+    sleep(Duration::from_secs(10));
 }
 ```
 
@@ -374,9 +373,3 @@ just test-all          # Everything
 
 - **[CONFIGURATION.md](CONFIGURATION.md)** - Config file reference
 - **[CONTRIBUTING.md](../CONTRIBUTING.md)** - Development guide
-- **[AGENTS.md](../AGENTS.md)** - AI Agent guide (中文)
-
----
-
-**Last Updated:** 2025-11-04  
-**Architecture Version:** 2.0

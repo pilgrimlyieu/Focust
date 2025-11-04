@@ -20,7 +20,7 @@ Generate a key pair using Tauri's built-in signer:
 
 ```bash
 cd src-tauri
-cargo tauri signer generate -w ~/.tauri/focust.key
+bunx tauri signer generate -w ~/.tauri/focust.key
 ```
 
 This will output:
@@ -100,12 +100,7 @@ If your key is password-protected:
 Test signing locally:
 
 ```bash
-# Set environment variables
-export TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/focust.key)"
-# If password-protected:
-# export TAURI_SIGNING_PRIVATE_KEY_PASSWORD="your_password"
-
-# Build with signing
+# Build with signing, just will read `.env` for secrets
 just build
 ```
 
@@ -212,7 +207,6 @@ If a key is compromised:
 ## Additional Resources
 
 - [Tauri Updater Documentation](https://v2.tauri.app/plugin/updater/)
-- [Tauri Signing Documentation](https://v2.tauri.app/reference/cli/#signer)
 - [GitHub Actions Secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
 
 ## Support

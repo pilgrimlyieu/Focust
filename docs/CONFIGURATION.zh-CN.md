@@ -16,12 +16,13 @@
 - [配置文件位置](#配置文件位置)
 - [配置结构](#配置结构)
 - [通用设置](#通用设置)
-- [时间表设置](#时间表设置)
+- [休息计划设置](#休息计划设置)
 - [注意设置](#注意设置)
 - [主题设置](#主题设置)
 - [音频设置](#音频设置)
 - [建议设置](#建议设置)
 - [示例](#示例)
+- [最佳实践](#最佳实践)
 
 ---
 
@@ -43,10 +44,11 @@ Focust 将其配置存储在特定于平台的位置：
 ```toml
 # 通用应用程序设置
 checkForUpdates = true
+autostart = false
 monitorDnd = true
 # ...
 
-# 休息时间表（表数组）
+# 休息计划（表数组）
 [[schedules]]
 name = "工作时间"
 enabled = true
@@ -83,7 +85,6 @@ enabled = true
 ### `inactiveS`
 - **类型**：整数（秒）
 - **默认值**：`300`（5 分钟）
-- **最小值**：`30` 秒
 - **说明**：调度器自动暂停前的不活动持续时间。检测到活动时调度器恢复。
 
 ### `allScreens`
@@ -135,39 +136,44 @@ windowSize = 0.8
 
 ---
 
-## 时间表设置
+## 休息计划设置
 
-时间表定义何时以及多久发生一次休息。您可以拥有多个具有不同时间范围和活动日期的时间表。
+休息计划定义何时以及多久发生一次休息。您可以拥有多个具有不同时间范围和活动日期的休息计划。
 
-### 基本时间表字段
+### 基本休息计划字段
+
+#### `id`
+- **类型**：整数
+- **说明**：休息计划的唯一标识符，由应用程序内部使用，不应手动更改！
+- **注意**：本篇示例中省略此字段。
 
 #### `name`
 - **类型**：字符串
 - **默认值**：`"Default Schedule"`
-- **说明**：时间表的人类可读名称
+- **说明**：休息计划的人类可读名称
 
 #### `enabled`
 - **类型**：布尔值
 - **默认值**：`true`
-- **说明**：此时间表是否活动
+- **说明**：此休息计划是否活动
 
 #### `notificationBeforeS`
 - **类型**：整数（秒）
-- **默认值**：`5`
+- **默认值**：`10`
 - **说明**：在休息开始前 X 秒发送系统通知
 
 ### 时间范围
 
 #### `timeRange`
 - **类型**：表
-- **说明**：定义此时间表在一天中何时活动。将开始和结束时间都设置为"00:00"以表示全天时间表。
+- **说明**：定义此休息计划在一天中何时活动。将开始和结束时间都设置为「00:00」以表示全天休息计划。
 
 ```toml
 [schedules.timeRange]
 start = "09:00"  # 24 小时格式
 end = "17:00"    # 24 小时格式
 
-# 对于全天时间表
+# 对于全天休息计划
 [schedules.timeRange]
 start = "00:00"
 end = "00:00"
@@ -180,22 +186,17 @@ end = "00:00:00"
 
 #### `daysOfWeek`
 - **类型**：字符串数组
-- **默认值**：`["Mon", "Tue", "Wed", "Thu", "Fri"]`
+- **默认值**：`["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]`
 - **选项**：`"Mon"`, `"Tue"`, `"Wed"`, `"Thu"`, `"Fri"`, `"Sat"`, `"Sun"`
-- **说明**：此时间表活动的日期
+- **说明**：此休息计划活动的日期
 
 ### 短休息
 
-短休息是频繁发生的短提醒（通常为 20 秒）。
+短休息是频繁发生的短提醒（通常持续时间为 20 秒）。
 
 #### `miniBreaks.enabled`
 - **类型**：布尔值
 - **默认值**：`true`
-
-#### `miniBreaks.intervalS`
-- **类型**：整数（秒）
-- **默认值**：`1200`（20 分钟）
-- **说明**：短休息之间的时间
 
 #### `miniBreaks.durationS`
 - **类型**：整数（秒）
@@ -211,6 +212,11 @@ end = "00:00:00"
 - **类型**：布尔值
 - **默认值**：`false`
 - **说明**：启用时，休息不能被跳过或推迟
+
+#### `miniBreaks.intervalS`
+- **类型**：整数（秒）
+- **默认值**：`1200`（20 分钟）
+- **说明**：短休息之间的时间
 
 #### 短休息主题
 
@@ -232,7 +238,8 @@ fontFamily = "Arial"
 
 ```toml
 [schedules.miniBreaks.audio]
-source = { builtin = "gentle-bell" }
+source = "builtin"
+name = "gentle-bell"
 volume = 0.7
 ```
 
@@ -242,7 +249,7 @@ volume = 0.7
 
 ```toml
 [schedules.miniBreaks.suggestions]
-enabled = true
+show = true
 ```
 
 ### 长休息
@@ -252,14 +259,6 @@ enabled = true
 #### `longBreaks.enabled`
 - **类型**：布尔值
 - **默认值**：`true`
-
-#### `longBreaks.afterMiniBreaks`
-- **类型**：整数
-- **默认值**：`4`
-- **说明**：在这么多短休息后触发长休息。例如，使用默认设置：
-  - 20 分钟、40 分钟、60 分钟、80 分钟时短休息
-  - 100 分钟时长休息（4 次短休息后）
-  - 循环重复
 
 #### `longBreaks.durationS`
 - **类型**：整数（秒）
@@ -273,9 +272,17 @@ enabled = true
 - **类型**：布尔值
 - **默认值**：`false`
 
+#### `longBreaks.afterMiniBreaks`
+- **类型**：整数
+- **默认值**：`4`
+- **说明**：在这么多短休息后触发长休息。例如，使用默认设置：
+  - 20 分钟、40 分钟、60 分钟、80 分钟时短休息
+  - 100 分钟时长休息（4 次短休息后）
+  - 循环重复
+
 长休息也支持主题、音频和建议设置（格式与短休息相同）。
 
-**时间表示例：**
+**休息计划示例：**
 ```toml
 [[schedules]]
 name = "工作时间"
@@ -289,10 +296,10 @@ end = "17:00"
 
 [schedules.miniBreaks]
 enabled = true
-intervalS = 1200
 durationS = 20
 postponedS = 300
 strictMode = false
+intervalS = 1200
 
 [schedules.miniBreaks.theme]
 background = { solid = "#1e293b" }
@@ -303,18 +310,19 @@ fontSize = 24
 fontFamily = "Arial"
 
 [schedules.miniBreaks.audio]
-source = { builtin = "gentle-bell" }
+source = "builtin"
+name = "gentle-bell"
 volume = 0.7
 
 [schedules.miniBreaks.suggestions]
-enabled = true
+show = true
 
 [schedules.longBreaks]
 enabled = true
-afterMiniBreaks = 4
 durationS = 300
 postponedS = 600
 strictMode = false
+afterMiniBreaks = 4
 
 [schedules.longBreaks.theme]
 background = { imagePath = "/path/to/background.jpg" }
@@ -325,30 +333,41 @@ fontSize = 28
 fontFamily = "Helvetica"
 
 [schedules.longBreaks.audio]
-source = { filePath = "/path/to/sound.mp3" }
+source = "filePath"
+path = "/path/to/sound.mp3"
 volume = 0.8
 
 [schedules.longBreaks.suggestions]
-enabled = true
+show = true
 ```
 
 ---
 
 ## 注意设置
 
-注意提醒是基于时间的通知，像闹钟一样工作。与休息不同，它们不会中断您的工作 — 只是在特定时间显示简短消息。
+注意提醒是基于时间的通知，像闹钟一样工作。与休息不同，它们不会中断您的工作 — 只是在特定时间显示简短消息，并可以直接关闭。
 
 ### 基本注意字段
 
 #### `name`
 - **类型**：字符串
 - **必需**：是
-- **说明**：提醒的名称（例如，"喝水提醒"、"站立提醒"）
+- **说明**：提醒的名称（例如，「喝水提醒」「站立提醒」）
 
 #### `enabled`
 - **类型**：布尔值
 - **默认值**：`true`
 - **说明**：此提醒是否活动
+
+#### `times`
+- **类型**：字符串数组（24 小时时间格式）
+- **必需**：是
+- **说明**：提醒应该触发的时间列表
+
+#### `daysOfWeek`
+- **类型**：字符串数组
+- **默认值**：`["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]`
+- **选项**：`"Mon"`, `"Tue"`, `"Wed"`, `"Thu"`, `"Fri"`, `"Sat"`, `"Sun"`
 
 #### `title`
 - **类型**：字符串
@@ -365,16 +384,6 @@ enabled = true
 - **默认值**：`10`
 - **说明**：显示提醒弹出窗口多长时间
 
-#### `times`
-- **类型**：字符串数组（24 小时时间格式）
-- **必需**：是
-- **说明**：提醒应该触发的时间列表
-
-#### `daysOfWeek`
-- **类型**：字符串数组
-- **默认值**：`["Mon", "Tue", "Wed", "Thu", "Fri"]`
-- **选项**：`"Mon"`, `"Tue"`, `"Wed"`, `"Thu"`, `"Fri"`, `"Sat"`, `"Sun"`
-
 注意提醒也支持主题、音频和建议设置。
 
 **注意示例：**
@@ -383,11 +392,11 @@ enabled = true
 [[attentions]]
 name = "补水"
 enabled = true
+times = ["10:00", "14:00", "16:00"]
+daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri"]
 title = "该喝水了"
 message = "保持水分充足！喝一杯水。"
 durationS = 10
-times = ["10:00", "14:00", "16:00"]
-daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri"]
 
 [attentions.theme]
 background = { solid = "#0ea5e9" }
@@ -398,18 +407,19 @@ fontSize = 20
 fontFamily = "Arial"
 
 [attentions.audio]
-source = { builtin = "notification" }
+source = "builtin"
+name = "notification"
 volume = 0.6
 
 # 站立提醒
 [[attentions]]
 name = "站起来"
 enabled = true
+times = ["11:00", "15:00"]
+daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 title = "站起来并活动"
 message = "花点时间站起来并伸展您的腿！"
 durationS = 15
-times = ["11:00", "15:00"]
-daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
 [attentions.theme]
 background = { solid = "#10b981" }
@@ -435,18 +445,18 @@ source = "none"
 
 **选项：**
 
-1. **纯色**:
+1. **纯色**：
    ```toml
    background = { solid = "#1f2937" }
    ```
 
-2. **单张图片**:
+2. **单张图片**：
    ```toml
    background = { imagePath = "/path/to/image.jpg" }
    ```
-   - 支持格式: JPG, PNG, WebP 等
+   - 支持格式：JPG, PNG, WebP 等
 
-3. **文件夹中的随机图片**:
+3. **文件夹中的随机图片**：
    ```toml
    background = { imageFolder = "/path/to/images/" }
    ```
@@ -522,34 +532,33 @@ fontFamily = "Tahoma"
 
 **选项：**
 
-1. **无音频**:
+1. **无音频**：
    ```toml
-   [audio]
    source = "none"
    ```
 
-2. **内置声音**:
+2. **内置声音**：
    ```toml
-   [audio]
-   source = { builtin = "gentle-bell" }
+   source = "builtin"
+   name = "gentle-bell"
    ```
    
    可用的内置声音：
    - `"gentle-bell"` - 温和的铃声
    - `"soft-gong"` - 柔和的锣声
-   - `"bright-notification"` - 明亮的通知
    - `"notification"` - 简单的通知
+   - `"bright-notification"` - 明亮的通知
 
-3. **自定义文件**:
+3. **自定义文件**：
    ```toml
-   [audio]
-   source = { filePath = "/path/to/sound.mp3" }
+   source = "filePath"
+   path = "/path/to/sound.mp3"
    ```
-   - 支持格式: MP3, WAV, OGG, FLAC
+   - 支持格式：MP3, WAV, OGG, FLAC
 
 ### `volume`
 - **类型**：浮点数（0.0-1.0）
-- **默认值**：`0.7`
+- **默认值**：`0.6`
 - **说明**：播放音量
   - `0.0` = 静音
   - `1.0` = 最大音量
@@ -563,12 +572,14 @@ source = "none"
 
 # 内置声音
 [audio]
-source = { builtin = "gentle-bell" }
+source = "builtin"
+name = "gentle-bell"
 volume = 0.7
 
 # 自定义声音文件
 [audio]
-source = { filePath = "C:\\Sounds\\custom-chime.mp3" }
+source = "filePath"
+path = "C:\\Users\\YourName\\Music\\zen-bell.mp3"
 volume = 0.8
 ```
 
@@ -578,7 +589,7 @@ volume = 0.8
 
 建议设置控制休息期间是否显示激励性消息。
 
-### `enabled`
+### `show`
 - **类型**：布尔值
 - **默认值**：`true`
 - **说明**：在休息期间是否显示建议
@@ -708,12 +719,12 @@ themeMode = "system"
 postponeShortcut = "Ctrl+Shift+B"
 windowSize = 0.85
 
-# Work hours schedule
+# 工作时间休息计划（较长的休息时间，更严格）
 [[schedules]]
 name = "Work Hours"
 enabled = true
-notificationBeforeS = 10
 daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri"]
+notificationBeforeS = 10
 
 [schedules.timeRange]
 start = "09:00"
@@ -721,10 +732,10 @@ end = "17:30"
 
 [schedules.miniBreaks]
 enabled = true
-intervalS = 1200 # 20 分钟
 durationS = 20
 postponedS = 300
 strictMode = false
+intervalS = 1200 # 20 分钟
 
 [schedules.miniBreaks.theme]
 background = { imagePath = "/home/user/wallpapers/calm-lake.jpg" }
@@ -735,18 +746,19 @@ fontSize = 24
 fontFamily = "Helvetica"
 
 [schedules.miniBreaks.audio]
-source = { builtin = "gentle-bell" }
+source = "builtin"
+name = "gentle-bell"
 volume = 0.6
 
 [schedules.miniBreaks.suggestions]
-enabled = true
+show = true
 
 [schedules.longBreaks]
 enabled = true
-afterMiniBreaks = 3
 durationS = 600  # 10 分钟
 postponedS = 600
 strictMode = true
+afterMiniBreaks = 3
 
 [schedules.longBreaks.theme]
 background = { imagePath = "/home/user/wallpapers/mountain.jpg" }
@@ -757,18 +769,19 @@ fontSize = 28
 fontFamily = "Georgia"
 
 [schedules.longBreaks.audio]
-source = { filePath = "/home/user/sounds/meditation-bell.mp3" }
+source = "filePath"
+path = "/home/user/sounds/meditation-bell.mp3"
 volume = 0.7
 
 [schedules.longBreaks.suggestions]
-enabled = true
+show = true
 
-# 晚上时间表（较短的休息时间，较不严格）
+# 晚上休息计划（较短的休息时间，较不严格）
 [[schedules]]
 name = "Evening"
 enabled = true
-notificationBeforeS = 5
 daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+notificationBeforeS = 5
 
 [schedules.timeRange]
 start = "18:00"
@@ -776,10 +789,10 @@ end = "22:00"
 
 [schedules.miniBreaks]
 enabled = true
-intervalS = 1800  # 30 分钟
 durationS = 15
 postponedS = 600
 strictMode = false
+intervalS = 1800  # 30 分钟
 
 [schedules.miniBreaks.theme]
 background = { Solid = "#1e3a8a" }
@@ -790,11 +803,12 @@ fontSize = 22
 fontFamily = "Arial"
 
 [schedules.miniBreaks.audio]
-source = { Builtin = "soft-gong" }
+source = "builtin"
+name = "soft-gong"
 volume = 0.5
 
 [schedules.miniBreaks.suggestions]
-enabled = true
+show = true
 
 [schedules.longBreaks]
 enabled = false
@@ -803,11 +817,11 @@ enabled = false
 [[attentions]]
 name = "Drink Water"
 enabled = true
+times = ["10:00", "14:00", "16:00", "20:00"]
+daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 title = "Hydration Time"
 message = "Remember to drink water! Stay hydrated throughout the day."
 durationS = 10
-times = ["10:00", "14:00", "16:00", "20:00"]
-daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
 [attentions.theme]
 background = { solid = "#0ea5e9" }
@@ -818,18 +832,19 @@ fontSize = 20
 fontFamily = "Arial"
 
 [attentions.audio]
-source = { builtin = "notification" }
+source = "builtin"
+name = "notification"
 volume = 0.5
 
 # 眼保健操提醒
 [[attentions]]
 name = "Eye Exercise"
 enabled = true
+times = ["11:00", "15:00", "19:00"]
+daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri"]
 title = "Eye Care"
 message = "Look at something 20 feet away for 20 seconds (20-20-20 rule)"
 durationS = 25
-times = ["11:00", "15:00", "19:00"]
-daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri"]
 
 [attentions.theme]
 background = { solid = "#10b981" }
@@ -840,7 +855,8 @@ fontSize = 22
 fontFamily = "Arial"
 
 [attentions.audio]
-source = { builtin = "bright-notification" }
+source = "builtin"
+name = "bright-notification"
 volume = 0.6
 ```
 
@@ -854,11 +870,12 @@ volume = 0.6
 4. **明智地使用严格模式**：仅对绝对需要的休息时间启用严格模式
 5. **图像路径**：使用绝对路径来避免图像加载问题
 6. **音频音量**：从较低的音量（0.5-0.7）开始，根据需要进行调整
-7. **多个时间表**：根据一天中的不同时间或一周中的不同天使用不同的时间表
+7. **多个休息计划**：根据一天中的不同时间或一周中的不同天使用不同的休息计划
 8. **注意事项时间安排**：合理安排注意事项提醒，避免通知疲劳
 
 ---
 
 有关更多信息，请参阅：
-- [快速开始指南](QUICKSTART.zh-CN.md) - 入门指南
-- [架构文档](ARCHITECTURE.md) - 技术详细信息
+- [README](../README.zh-CN.md) - 项目概述
+- [架构文档](ARCHITECTURE.md) - 技术信息
+- [贡献指南](../CONTRIBUTING.md) - 开发指南

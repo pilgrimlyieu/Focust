@@ -65,7 +65,7 @@ See the [QUICKSTART.md](docs/QUICKSTART.md) for a step-by-step guide to getting 
 ### 🔔 Timed Reminders (Attention System)
 
 - **Alarm-Style Reminders**: Set specific times to remind yourself of important tasks
-- **Non-Intrusive**: Unlike break reminders, these don't block your work — just gentle notifications
+- **Non-Intrusive**: Unlike break reminders, these don't block your work — just gentle notifications and can be dismissed immediately
 - **Multiple Times**: Add as many reminder times as you need throughout the day
 - **Perfect For**: Drinking water, taking medication, standing up, or any time-sensitive task
 
@@ -221,7 +221,7 @@ just dev
 # Build optimized production bundle
 bun run tauri build  # or: npm run tauri build
 
-# Using Just. Will build with code signing (requires private key setup)
+# Using Just. Will build with updater signing (requires private key setup)
 just build
 ```
 
@@ -311,7 +311,6 @@ Contributions are warmly welcomed! Whether it's bug reports, feature requests, d
 - **Tauri 2** - Cross-platform desktop framework
 - **Tokio** - Asynchronous runtime
 - **Serde** - Serialization framework
-- **Rodio 0.21** - Audio playback
 - **ts-rs** - TypeScript type generation from Rust
 
 ### Tools
@@ -326,6 +325,7 @@ Contributions are warmly welcomed! Whether it's bug reports, feature requests, d
 - [ ] Project icon
 - [ ] Improved error handling and user feedback
 - [ ] Comprehensive platform testing (macOS, Linux)
+- [ ] Whitelist applications (v0.2.0 major goal)
 
 ---
 
