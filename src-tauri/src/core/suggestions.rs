@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 use ts_rs::TS;
 
-const LANGUAGE_FALLBACK: &str = "en-US";
+use crate::platform::i18n::LANGUAGE_FALLBACK;
 
 /// Settings for displaying suggestions during breaks
 ///
@@ -52,50 +52,28 @@ pub struct LanguageSuggestions {
 }
 
 impl Default for SuggestionsConfig {
-    // TODO: Move i18n suggestions to a separate file for easier management
     fn default() -> Self {
-        let mut by_language = HashMap::new();
-
-        // English suggestions (default)
-        by_language.insert(
-            LANGUAGE_FALLBACK.to_string(),
-            LanguageSuggestions {
-                suggestions: vec![
-                    "Look away from your screen and focus on a distant object.".to_string(),
-                    "Roll your shoulders back and take a deep breath.".to_string(),
-                    "Drink a glass of water.".to_string(),
-                    "Stand up and stretch your legs.".to_string(),
-                    "Relax your jaw and unclench your teeth.".to_string(),
-                    "Gently stretch your wrists and fingers.".to_string(),
-                    "Let your eyes rest by closing them for a few seconds.".to_string(),
-                    "Take ten slow breaths, counting each inhale and exhale.".to_string(),
-                    "Notice five things around you that you can see.".to_string(),
-                    "Walk around your room or office.".to_string(),
-                ],
-            },
-        );
-
-        // Chinese suggestions
-        by_language.insert(
-            "zh-CN".to_string(),
-            LanguageSuggestions {
-                suggestions: vec![
-                    "将目光从屏幕移开，专注于远处的物体。".to_string(),
-                    "向后转动肩膀，深呼吸。".to_string(),
-                    "喝一杯水。".to_string(),
-                    "站起来伸展腿部。".to_string(),
-                    "放松下巴，松开咬紧的牙齿。".to_string(),
-                    "轻轻伸展手腕和手指。".to_string(),
-                    "闭上眼睛几秒钟，让眼睛休息。".to_string(),
-                    "慢慢呼吸十次，数每次吸气和呼气。".to_string(),
-                    "注意周围你能看到的五样东西。".to_string(),
-                    "在房间或办公室里走动。".to_string(),
-                ],
-            },
-        );
-
-        Self { by_language }
+        // Load from embedded resource file
+        // This should never fail
+        load_default_suggestions().unwrap_or_else(|e| {
+            tracing::error!("Failed to load embedded suggestions.toml: {e}");
+            tracing::error!("This should never happen");
+            // Return empty config as last resort
+            Self {
+                by_language: HashMap::new(),
+            }
+        })
     }
+}
+
+/// Load default suggestions from embedded resource file
+fn load_default_suggestions() -> Result<SuggestionsConfig> {
+    // The resource file will be embedded in the binary by Tauri
+    // and available at runtime via the resource protocol
+    let default_toml = include_str!("../../resources/suggestions.toml");
+    let config: SuggestionsConfig =
+        toml::from_str(default_toml).context("Failed to parse default suggestions.toml")?;
+    Ok(config)
 }
 
 /// Get the path to suggestions.toml file

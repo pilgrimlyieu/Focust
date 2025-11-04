@@ -143,8 +143,8 @@ impl BreakScheduler {
     /// Send a notification before a break
     async fn send_notification(&self, event: &SchedulerEvent) {
         let break_type = match event {
-            SchedulerEvent::MiniBreak(_) => "Mini Break",
-            SchedulerEvent::LongBreak(_) => "Long Break",
+            SchedulerEvent::MiniBreak(_) => "MiniBreak",
+            SchedulerEvent::LongBreak(_) => "LongBreak",
             SchedulerEvent::Attention(_) => return,
         };
 
@@ -157,7 +157,8 @@ impl BreakScheduler {
             active_schedule.map_or(0, |s| s.notification_before_s)
         };
 
-        if let Err(e) = send_break_notification(&self.app_handle, break_type, notification_before_s)
+        if let Err(e) =
+            send_break_notification(&self.app_handle, break_type, notification_before_s).await
         {
             tracing::warn!("Failed to send break notification: {e}");
         }

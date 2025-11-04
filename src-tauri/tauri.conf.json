@@ -31,7 +31,8 @@
       "icons/icon.ico"
     ],
     "resources": [
-      "assets/sounds/*"
+      "assets/sounds/*",
+      "resources/suggestions.toml"
     ]
   },
   "plugins": {

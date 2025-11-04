@@ -1,5 +1,9 @@
 use tauri::AppHandle;
+use tauri::Manager;
 use tauri_plugin_notification::NotificationExt;
+
+use crate::platform::i18n;
+use crate::{config::SharedConfig, platform::i18n::LANGUAGE_FALLBACK};
 
 /// Send a notification to the user
 ///
@@ -23,15 +27,41 @@ pub fn send_notification(app: &AppHandle, title: &str, body: &str) -> Result<(),
 ///
 /// # Arguments
 /// * `app` - Tauri app handle
-/// * `break_type` - Type of break (e.g., "Mini Break", "Long Break")
+/// * `break_type` - Type of break (e.g., "`MiniBreak`", "`LongBreak`", "Attention")
 /// * `seconds` - Seconds until the break starts
-pub fn send_break_notification(
+pub async fn send_break_notification(
     app: &AppHandle,
     break_type: &str,
     seconds: u32,
 ) -> Result<(), String> {
-    let title = format!("{break_type} in {seconds} seconds"); // TODO: i18n
-    let body = "Time to take a break and rest your eyes.";
+    // Get language from config
+    let lang = if let Some(config_state) = app.try_state::<SharedConfig>() {
+        // Read config asynchronously
+        let config = config_state.read().await;
+        config.language.clone()
+    } else {
+        tracing::warn!("Config not yet loaded, using default language {LANGUAGE_FALLBACK}");
+        LANGUAGE_FALLBACK.to_string()
+    };
+
+    let strings = i18n::get_strings(&lang);
+    let notif = &strings.notification;
+
+    // Get localized break type name
+    let break_type_localized = match break_type {
+        "MiniBreak" => &notif.mini_break,
+        "LongBreak" => &notif.long_break,
+        "Attention" => &notif.attention,
+        _ => break_type,
+    };
+
+    // Format the notification title
+    let title = notif
+        .starting_soon
+        .replace("{breakType}", break_type_localized)
+        .replace("{seconds}", &seconds.to_string());
+
+    let body = &notif.message;
 
     send_notification(app, &title, body)
 }

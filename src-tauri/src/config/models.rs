@@ -2,7 +2,10 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use ts_rs::TS;
 
-use crate::core::schedule::{AttentionSettings, ScheduleSettings};
+use crate::{
+    core::schedule::{AttentionSettings, ScheduleSettings},
+    platform::i18n::LANGUAGE_FALLBACK,
+};
 
 /// Application configuration structure
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
@@ -54,8 +57,8 @@ impl Default for AppConfig {
 /// Detect system language and return appropriate locale code
 fn detect_system_language() -> String {
     sys_locale::get_locale()
-        .inspect(|loc| println!("Detected system locale: {loc:?}"))
-        .unwrap_or_else(|| "en-US".to_string())
+        .inspect(|loc| println!("Detected system locale: {loc}"))
+        .unwrap_or_else(|| LANGUAGE_FALLBACK.to_string())
 }
 
 /// Shared application configuration wrapped in a `RwLock` for thread-safe access

@@ -1,0 +1,36 @@
+# Default suggestions for break reminders
+# 
+# This file contains built-in suggestions that will be used as defaults
+# when the user hasn't created their own suggestions file yet.
+#
+# Format:
+# [byLanguage.<language-code>]
+# suggestions = ["suggestion 1", "suggestion 2", ...]
+
+[byLanguage.en-US]
+suggestions = [
+    "Look away from your screen and focus on a distant object.",
+    "Roll your shoulders back and take a deep breath.",
+    "Drink a glass of water.",
+    "Stand up and stretch your legs.",
+    "Relax your jaw and unclench your teeth.",
+    "Gently stretch your wrists and fingers.",
+    "Let your eyes rest by closing them for a few seconds.",
+    "Take ten slow breaths, counting each inhale and exhale.",
+    "Notice five things around you that you can see.",
+    "Walk around your room or office.",
+]
+
+[byLanguage.zh-CN]
+suggestions = [
+    "将目光从屏幕移开，专注于远处的物体。",
+    "向后转动肩膀，深呼吸。",
+    "喝一杯水。",
+    "站起来伸展腿部。",
+    "放松下巴，松开咬紧的牙齿。",
+    "轻轻伸展手腕和手指。",
+    "闭上眼睛几秒钟，让眼睛休息。",
+    "慢慢呼吸十次，数每次吸气和呼气。",
+    "注意周围你能看到的五样东西。",
+    "在房间或办公室里走动。",
+]
