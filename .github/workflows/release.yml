@@ -74,7 +74,24 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Setup code signing
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          if [ -n "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            echo "✅ Code signing key detected"
+            # The key will be used automatically by Tauri during build
+          else
+            echo "⚠️ No code signing key found. Build will proceed without signing."
+            echo "   To enable code signing, add TAURI_SIGNING_PRIVATE_KEY to GitHub Secrets"
+          fi
+
       - name: Build application
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
           bun run tauri build --target ${{ matrix.target }}
 
@@ -85,15 +102,18 @@ jobs:
           $version = "${{ github.ref_name }}" -replace '^v', ''
           New-Item -ItemType Directory -Force -Path artifacts
 
-          # Find and copy installer and portable
+          # Find and copy installer
           $msiFile = Get-ChildItem -Path "src-tauri/target/${{ matrix.target }}/release/bundle/msi" -Filter "*.msi" -Recurse | Select-Object -First 1
-          $exeFile = Get-ChildItem -Path "src-tauri/target/${{ matrix.target }}/release" -Filter "focust.exe" | Select-Object -First 1
 
           if ($msiFile) {
             Copy-Item $msiFile.FullName "artifacts/focust_${version}_${{ matrix.os_name }}_installer.msi"
-          }
-          if ($exeFile) {
-            Copy-Item $exeFile.FullName "artifacts/focust_${version}_${{ matrix.os_name }}_portable.exe"
+            
+            # Copy signature file if exists
+            $sigFile = "$($msiFile.DirectoryName)\$($msiFile.BaseName).msi.sig"
+            if (Test-Path $sigFile) {
+              Copy-Item $sigFile "artifacts/focust_${version}_${{ matrix.os_name }}_installer.msi.sig"
+              Write-Host "✅ Signature file found and copied"
+            }
           }
 
       - name: Prepare artifacts (Linux)
@@ -103,9 +123,11 @@ jobs:
           version="${version#v}"
           mkdir -p artifacts
 
-          # Find and copy AppImage and deb
+          # Find and copy AppImage
           find src-tauri/target/${{ matrix.target }}/release/bundle/appimage -name "*.AppImage" -exec cp {} artifacts/focust_${version}_${{ matrix.os_name }}.AppImage \; 2>/dev/null || true
-          find src-tauri/target/${{ matrix.target }}/release/bundle/deb -name "*.deb" -exec cp {} artifacts/focust_${version}_${{ matrix.os_name }}.deb \; 2>/dev/null || true
+          
+          # Copy signature file if exists
+          find src-tauri/target/${{ matrix.target }}/release/bundle/appimage -name "*.AppImage.sig" -exec cp {} artifacts/focust_${version}_${{ matrix.os_name }}.AppImage.sig \; 2>/dev/null || true
 
       - name: Prepare artifacts (macOS)
         if: startsWith(matrix.os_name, 'macos')
@@ -116,6 +138,9 @@ jobs:
 
           # Find and copy DMG
           find src-tauri/target/${{ matrix.target }}/release/bundle/dmg -name "*.dmg" -exec cp {} artifacts/focust_${version}_${{ matrix.os_name }}.dmg \; 2>/dev/null || true
+          
+          # Copy signature file if exists
+          find src-tauri/target/${{ matrix.target }}/release/bundle/dmg -name "*.dmg.sig" -exec cp {} artifacts/focust_${version}_${{ matrix.os_name }}.dmg.sig \; 2>/dev/null || true
 
           # Create tarball of .app
           find src-tauri/target/${{ matrix.target }}/release/bundle/macos -name "*.app" -exec tar -czf artifacts/focust_${version}_${{ matrix.os_name }}.app.tar.gz -C "$(dirname {})" "$(basename {})" \; 2>/dev/null || true
@@ -196,6 +221,70 @@ jobs:
         run: |
           echo "Artifacts to be released:"
           ls -lh artifacts/
+
+      - name: Generate update manifest (latest.json)
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          # Create latest.json for auto-updater
+          cat > artifacts/latest.json << EOF
+          {
+            "version": "v${VERSION}",
+            "notes": "See release notes at https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}",
+            "pub_date": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+            "platforms": {
+          EOF
+          
+          # Add Windows platform if MSI exists
+          if ls artifacts/*_windows_installer.msi 1> /dev/null 2>&1; then
+            MSI_FILE=$(basename artifacts/*_windows_installer.msi)
+            MSI_SIG_FILE="${MSI_FILE}.sig"
+            
+            echo '    "windows-x86_64": {' >> artifacts/latest.json
+            echo "      \"signature\": \"$(cat artifacts/${MSI_SIG_FILE} 2>/dev/null || echo '')\"," >> artifacts/latest.json
+            echo "      \"url\": \"https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${MSI_FILE}\"" >> artifacts/latest.json
+            echo '    },' >> artifacts/latest.json
+          fi
+          
+          # Add Linux platform if AppImage exists
+          if ls artifacts/*_linux.AppImage 1> /dev/null 2>&1; then
+            APPIMAGE_FILE=$(basename artifacts/*_linux.AppImage)
+            APPIMAGE_SIG_FILE="${APPIMAGE_FILE}.sig"
+            
+            echo '    "linux-x86_64": {' >> artifacts/latest.json
+            echo "      \"signature\": \"$(cat artifacts/${APPIMAGE_SIG_FILE} 2>/dev/null || echo '')\"," >> artifacts/latest.json
+            echo "      \"url\": \"https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${APPIMAGE_FILE}\"" >> artifacts/latest.json
+            echo '    },' >> artifacts/latest.json
+          fi
+          
+          # Add macOS platforms if DMG exists
+          if ls artifacts/*_macos*.dmg 1> /dev/null 2>&1; then
+            for DMG_FILE in artifacts/*_macos*.dmg; do
+              DMG_BASENAME=$(basename "$DMG_FILE")
+              DMG_SIG_FILE="${DMG_BASENAME}.sig"
+              
+              if [[ "$DMG_BASENAME" == *"arm64"* ]]; then
+                PLATFORM="darwin-aarch64"
+              else
+                PLATFORM="darwin-x86_64"
+              fi
+              
+              echo "    \"${PLATFORM}\": {" >> artifacts/latest.json
+              echo "      \"signature\": \"$(cat artifacts/${DMG_SIG_FILE} 2>/dev/null || echo '')\"," >> artifacts/latest.json
+              echo "      \"url\": \"https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${DMG_BASENAME}\"" >> artifacts/latest.json
+              echo '    },' >> artifacts/latest.json
+            done
+          fi
+          
+          # Remove trailing comma and close JSON
+          sed -i '$ s/,$//' artifacts/latest.json
+          cat >> artifacts/latest.json << EOF
+            }
+          }
+          EOF
+          
+          echo "✅ Generated latest.json:"
+          cat artifacts/latest.json
 
       - name: Create Release
         uses: softprops/action-gh-release@v2

@@ -1,3 +1,4 @@
+set dotenv-load
 set shell := ["bash", "-c"]
 set windows-shell := ["powershell", "-NoLogo", "-Command"]
 

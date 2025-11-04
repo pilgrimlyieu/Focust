@@ -219,11 +219,13 @@ just dev
 # Build optimized production bundle
 bun run tauri build  # or: npm run tauri build
 
-# Using Just
+# Using Just. Will build with code signing (requires private key setup)
 just build
 ```
 
 The built application will be available in `src-tauri/target/release/bundle/`.
+
+> **Note:** For signed releases, see [Code Signing Guide](docs/CODE_SIGNING.md) to set up signing keys.
 
 ### Available Commands (Just)
 

@@ -23,5 +23,14 @@ dist-ssr
 *.sln
 *.sw?
 
+# Environment variables (may contain secrets)
+.env
+.env.local
+.env.*.local
+
+# Tauri private keys (never commit!)
+*.key
+!public.key
+
 AGENTS.md
 docs/agent

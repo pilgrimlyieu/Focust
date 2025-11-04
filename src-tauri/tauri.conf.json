@@ -21,6 +21,7 @@
   },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": true,
     "copyright": "MIT License",
     "targets": ["appimage", "msi", "dmg"],
     "icon": [
@@ -30,17 +31,14 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": [
-      "assets/sounds/*",
-      "resources/suggestions.toml"
-    ]
+    "resources": ["assets/sounds/*", "resources/suggestions.toml"]
   },
   "plugins": {
     "updater": {
       "endpoints": [
         "https://github.com/pilgrimlyieu/Focust/releases/latest/download/latest.json"
       ],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDc2OTc2M0FCMDM1RTQ5N0MKUldSOFNWNERxMk9YZHU2Sm1CNzVVYmp5bjE5aENkZjRuQjFkd2p2cjd1bVJqVmx4UHpWMlE4RkEK"
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEM3NTQ5QjZCQTczRjFGM0EKUldRNkh6K25hNXRVeDIvY09lMCthbEthaXdGNzJuZllEQ3FBQVBLNFB2WTV1eXZmbkRuM01nYVcK"
     }
   }
 }
