@@ -26,7 +26,7 @@ The Focust project now supports automated code signing in CI/CD pipelines. This 
 ### 2. 📚 Documentation
 
 **Files**:
-- `docs/CODE_SIGNING.md` - Comprehensive guide for setting up code signing
+- `docs/UPDATER_SIGNING.md` - Comprehensive guide for setting up updater signing
 - `README.md` - Updated with signing information
 - `.env.example` - Example environment variables
 
@@ -40,8 +40,8 @@ The Focust project now supports automated code signing in CI/CD pipelines. This 
 ### 3. 🛠 Helper Scripts
 
 **Files**:
-- `scripts/setup-signing.sh` - Bash script (Linux/macOS)
-- `scripts/setup-signing.ps1` - PowerShell script (Windows)
+- `scripts/setup-updater-signing.sh` - Bash script (Linux/macOS)
+- `scripts/setup-updater-signing.ps1` - PowerShell script (Windows)
 
 **Features**:
 - Interactive key generation
@@ -67,10 +67,10 @@ Builds the application with code signing enabled (requires key setup).
 1. **Generate signing keys**:
    ```bash
    # Linux/macOS
-   bash scripts/setup-signing.sh
+   bash scripts/setup-updater-signing.sh
    
    # Windows
-   powershell scripts/setup-signing.ps1
+   powershell scripts/setup-updater-signing.ps1
    ```
 
 2. **Add secrets to GitHub**:
@@ -273,7 +273,7 @@ Secrets are encrypted and only exposed to workflows:
 - [Tauri Updater Plugin](https://v2.tauri.app/plugin/updater/)
 - [Tauri Signer CLI](https://v2.tauri.app/reference/cli/#signer)
 - [GitHub Actions Secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
-- [Focust Code Signing Guide](CODE_SIGNING.md)
+- [Focust Updater Signing Guide](UPDATER_SIGNING.md)
 
 ## Support
 

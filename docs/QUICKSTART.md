@@ -1,5 +1,11 @@
 # Quick Start Guide
 
+<div align="center">
+
+**[简体中文](QUICKSTART.zh-CN.md)** | **[English](QUICKSTART.md)**
+
+</div>
+
 Welcome to Focust! This guide will help you get started with your first break reminders in just a few minutes.
 
 ## First Launch

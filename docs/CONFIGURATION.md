@@ -1,5 +1,11 @@
 # Configuration Reference
 
+<div align="center">
+
+**[简体中文](CONFIGURATION.zh-CN.md)** | **[English](CONFIGURATION.md)**
+
+</div>
+
 > [!WARNING]
 > Due to implementation limitations, configuration options cannot use TOML standard snake_case and are all in camelCase.
 
@@ -62,13 +68,17 @@ enabled = true
 - **Type**: Boolean
 - **Default**: `true`
 - **Description**: Automatically check for application updates on startup
-- **NOTE**: UNIMPLEMENTED yet
+- **NOTE**: Unimplemented yet
+
+### `autostart`
+- **Type**: Boolean
+- **Default**: `false`
+- **Description**: Automatically start the application when the system boots up
 
 ### `monitorDnd`
 - **Type**: Boolean
 - **Default**: `true`
 - **Description**: Pause all breaks when system Do Not Disturb mode is detected
-- **NOTE**: UNIMPLEMENTED yet
 
 ### `inactiveS`
 - **Type**: Integer (seconds)
@@ -113,6 +123,7 @@ enabled = true
 **Example:**
 ```toml
 checkForUpdates = true
+autostart = false
 monitorDnd = true
 inactiveS = 300
 allScreens = false
@@ -552,7 +563,7 @@ source = "none"
 # Built-in sound
 [audio]
 source = { builtin = "gentle-bell" }
-volume = 0.5
+volume = 0.7
 
 # Custom audio file
 [audio]
@@ -605,7 +616,9 @@ You can add your own suggestions under the appropriate language section. The app
 ### Example 1: Minimal Configuration
 
 ```toml
+# General settings
 checkForUpdates = true
+autostart = false
 monitorDnd = true
 inactiveS = 300
 allScreens = false

@@ -1,4 +1,4 @@
-# Code Signing Guide
+# Updater Signing Guide
 
 This document explains how to set up code signing for Focust releases.
 

@@ -15,6 +15,8 @@ Take regular breaks, protect your eyes, and maintain healthy work habits with cu
 
 [Quick Start](#-quick-start) • [Features](#-features) • [Installation](#-installation) • [Building](#-building-from-source) • [Contributing](#-contributing) • [Documentation](#-documentation)
 
+**[简体中文](README.zh-CN.md)** | **[English](README.md)**
+
 </div>
 
 ---
@@ -134,9 +136,9 @@ Built with performance in mind, Focust offers exceptional resource efficiency:
 
 Once available, download the latest release for your platform:
 
-- **Windows**: `.msi` installer or `.exe` portable
-- **macOS**: `.dmg` installer or `.app` bundle
-- **Linux**: `.AppImage`, `.deb`, or `.rpm`
+- **Windows**: `.msi` installer
+- **macOS**: `.dmg` installer
+- **Linux**: `.AppImage`
 
 ### Building from Source
 
@@ -225,7 +227,7 @@ just build
 
 The built application will be available in `src-tauri/target/release/bundle/`.
 
-> **Note:** For signed releases, see [Code Signing Guide](docs/CODE_SIGNING.md) to set up signing keys.
+> **Note:** For updater signed releases, see [Updater Signing Guide](docs/UPDATER_SIGNING.md) to set up signing keys.
 
 ### Available Commands (Just)
 
@@ -322,9 +324,6 @@ Contributions are warmly welcomed! Whether it's bug reports, feature requests, d
 ## 🗺️ Roadmap
 
 - [ ] Project icon
-- [ ] DND (Do Not Disturb) mode detection
-- [ ] Auto-start on system boot
-- [ ] Auto-update functionality
 - [ ] Improved error handling and user feedback
 - [ ] Comprehensive platform testing (macOS, Linux)
 
