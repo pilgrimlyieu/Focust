@@ -19,7 +19,7 @@ pub fn init_logging(log_dir: &PathBuf, log_level: &str) -> Result<(), String> {
     let file_appender = RollingFileAppender::builder()
         .rotation(Rotation::DAILY)
         .filename_suffix("focust.log") // 2025-10-28.focust.log
-        .max_log_files(1) // Keep only 1 day of logs
+        .max_log_files(1) // Keep only 1 day of logs, waiting for new version release: https://github.com/tokio-rs/tracing/pull/2966
         .build(log_dir)
         .expect("Failed to create log file appender");
 
@@ -46,9 +46,14 @@ pub fn init_logging(log_dir: &PathBuf, log_level: &str) -> Result<(), String> {
     };
 
     // Create an environment filter
-    let env_filter = EnvFilter::from_default_env()
-        .add_directive(level.into())
-        .add_directive("focust=trace".parse().unwrap()); // Always trace our own code
+    let mut env_filter = EnvFilter::from_default_env().add_directive(level.into());
+
+    // default log level for our own crate
+    if cfg!(debug_assertions) {
+        env_filter = env_filter.add_directive("focust=debug".parse().unwrap());
+    } else {
+        env_filter = env_filter.add_directive("focust=info".parse().unwrap());
+    }
 
     // Initialize the subscriber
     tracing_subscriber::registry()
