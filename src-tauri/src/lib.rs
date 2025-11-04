@@ -76,9 +76,35 @@ pub fn run() {
             let handle = app.handle().clone();
 
             tauri::async_runtime::spawn(async move {
-                // Initialize audio player
-                if let Err(e) = core::audio::init_audio_player().await {
-                    tracing::error!("Failed to initialize audio player: {e}");
+                // Audio initialization (platform-dependent)
+                //
+                // macOS: Audio temporarily disabled due to cpal Send trait issue
+                // - Fixed in cpal PR https://github.com/RustAudio/cpal/pull/1021 (merged, awaiting release in 0.17.0+)
+                // - See src/core/audio.rs for restoration plan
+                // Windows/Linux: Full audio support
+                #[cfg(not(target_os = "macos"))]
+                {
+                    match core::audio::init_audio_player() {
+                        Ok(player_state) => {
+                            handle.manage(player_state);
+                            tracing::info!("Audio player initialized and managed by Tauri");
+                        }
+                        Err(e) => {
+                            tracing::error!("Failed to initialize audio player: {e}");
+                        }
+                    }
+                }
+
+                #[cfg(target_os = "macos")]
+                {
+                    match core::audio::init_audio_player() {
+                        Ok(()) => {
+                            tracing::info!("Audio player initialization skipped on macOS (awaiting cpal 0.17.0+)");
+                        }
+                        Err(e) => {
+                            tracing::error!("Failed to initialize audio player: {e}");
+                        }
+                    }
                 }
 
                 // Initialize break payload store

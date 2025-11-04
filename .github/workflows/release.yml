@@ -2,6 +2,8 @@ name: Release Build
 
 on:
   push:
+    branches:
+      - test-ci
     tags:
       - "v*.*.*"
 
@@ -20,11 +22,8 @@ jobs:
             target: x86_64-unknown-linux-gnu
             os_name: linux
           - platform: macos-latest
-            target: x86_64-apple-darwin
-            os_name: macos-x64
-          - platform: macos-latest
-            target: aarch64-apple-darwin
-            os_name: macos-arm64
+            target: universal-apple-darwin
+            os_name: macos
 
     runs-on: ${{ matrix.platform }}
 
@@ -44,16 +43,24 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
+      - name: Install macOS targets for universal binary
+        if: matrix.os_name == 'macos'
+        run: |
+          rustup target add x86_64-apple-darwin
+          rustup target add aarch64-apple-darwin
+
       - name: Install Linux dependencies
         if: matrix.os_name == 'linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             libwebkit2gtk-4.1-dev \
+            libsoup-3.0-dev \
             libappindicator3-dev \
             librsvg2-dev \
             patchelf \
-            libasound2-dev
+            libasound2-dev \
+            libxss-dev
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
@@ -125,7 +132,7 @@ jobs:
 
           # Find and copy AppImage
           find src-tauri/target/${{ matrix.target }}/release/bundle/appimage -name "*.AppImage" -exec cp {} artifacts/focust_${version}_${{ matrix.os_name }}.AppImage \; 2>/dev/null || true
-          
+
           # Copy signature file if exists
           find src-tauri/target/${{ matrix.target }}/release/bundle/appimage -name "*.AppImage.sig" -exec cp {} artifacts/focust_${version}_${{ matrix.os_name }}.AppImage.sig \; 2>/dev/null || true
 
@@ -136,14 +143,14 @@ jobs:
           version="${version#v}"
           mkdir -p artifacts
 
-          # Find and copy DMG
-          find src-tauri/target/${{ matrix.target }}/release/bundle/dmg -name "*.dmg" -exec cp {} artifacts/focust_${version}_${{ matrix.os_name }}.dmg \; 2>/dev/null || true
-          
-          # Copy signature file if exists
-          find src-tauri/target/${{ matrix.target }}/release/bundle/dmg -name "*.dmg.sig" -exec cp {} artifacts/focust_${version}_${{ matrix.os_name }}.dmg.sig \; 2>/dev/null || true
+          # Find and copy DMG (universal binary)
+          find src-tauri/target/universal-apple-darwin/release/bundle/dmg -name "*.dmg" -exec cp {} artifacts/focust_${version}_${{ matrix.os_name }}.dmg \; 2>/dev/null || true
 
-          # Create tarball of .app
-          find src-tauri/target/${{ matrix.target }}/release/bundle/macos -name "*.app" -exec tar -czf artifacts/focust_${version}_${{ matrix.os_name }}.app.tar.gz -C "$(dirname {})" "$(basename {})" \; 2>/dev/null || true
+          # Copy signature file if exists
+          find src-tauri/target/universal-apple-darwin/release/bundle/dmg -name "*.dmg.sig" -exec cp {} artifacts/focust_${version}_${{ matrix.os_name }}.dmg.sig \; 2>/dev/null || true
+
+          # Create tarball of .app (universal binary)
+          find src-tauri/target/universal-apple-darwin/release/bundle/macos -name "*.app" -exec tar -czf artifacts/focust_${version}_${{ matrix.os_name }}.app.tar.gz -C "$(dirname {})" "$(basename {})" \; 2>/dev/null || true
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -155,6 +162,7 @@ jobs:
   create-release:
     name: Create Release
     needs: build-and-release
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -225,7 +233,7 @@ jobs:
       - name: Generate update manifest (latest.json)
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          
+
           # Create latest.json for auto-updater
           cat > artifacts/latest.json << EOF
           {
@@ -234,7 +242,7 @@ jobs:
             "pub_date": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
             "platforms": {
           EOF
-          
+
           # Add Windows platform if NSIS exists
           if ls artifacts/*_windows_installer.exe 1> /dev/null 2>&1; then
             EXE_FILE=$(basename artifacts/*_windows_installer.exe)
@@ -245,7 +253,7 @@ jobs:
             echo "      \"url\": \"https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${EXE_FILE}\"" >> artifacts/latest.json
             echo '    },' >> artifacts/latest.json
           fi
-          
+
           # Add Linux platform if AppImage exists
           if ls artifacts/*_linux.AppImage 1> /dev/null 2>&1; then
             APPIMAGE_FILE=$(basename artifacts/*_linux.AppImage)
@@ -256,33 +264,28 @@ jobs:
             echo "      \"url\": \"https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${APPIMAGE_FILE}\"" >> artifacts/latest.json
             echo '    },' >> artifacts/latest.json
           fi
-          
-          # Add macOS platforms if DMG exists
-          if ls artifacts/*_macos*.dmg 1> /dev/null 2>&1; then
-            for DMG_FILE in artifacts/*_macos*.dmg; do
-              DMG_BASENAME=$(basename "$DMG_FILE")
-              DMG_SIG_FILE="${DMG_BASENAME}.sig"
-              
-              if [[ "$DMG_BASENAME" == *"arm64"* ]]; then
-                PLATFORM="darwin-aarch64"
-              else
-                PLATFORM="darwin-x86_64"
-              fi
-              
+
+          # Add macOS platform if DMG exists (universal binary)
+          if ls artifacts/*_macos.dmg 1> /dev/null 2>&1; then
+            DMG_FILE=$(basename artifacts/*_macos.dmg)
+            DMG_SIG_FILE="${DMG_FILE}.sig"
+            
+            # Universal binary supports both architectures
+            for PLATFORM in "darwin-x86_64" "darwin-aarch64"; do
               echo "    \"${PLATFORM}\": {" >> artifacts/latest.json
               echo "      \"signature\": \"$(cat artifacts/${DMG_SIG_FILE} 2>/dev/null || echo '')\"," >> artifacts/latest.json
-              echo "      \"url\": \"https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${DMG_BASENAME}\"" >> artifacts/latest.json
+              echo "      \"url\": \"https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${DMG_FILE}\"" >> artifacts/latest.json
               echo '    },' >> artifacts/latest.json
             done
           fi
-          
+
           # Remove trailing comma and close JSON
           sed -i '$ s/,$//' artifacts/latest.json
           cat >> artifacts/latest.json << EOF
             }
           }
           EOF
-          
+
           echo "✅ Generated latest.json:"
           cat artifacts/latest.json
 

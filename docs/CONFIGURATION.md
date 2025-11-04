@@ -32,7 +32,7 @@ Focust stores its configuration in a platform-specific location:
 
 - **Windows**: `%APPDATA%\com.fesmoph.focust\config.toml`
 - **macOS**: `~/Library/Application Support/com.fesmoph.focust/config.toml`
-- **Linux**: `~/.config/focust/config.toml`
+- **Linux**: `~/.config/com.fesmoph.focust/config.toml`
 
 You can quickly open the configuration directory from the settings UI:
 1. Go to **Advanced** tab

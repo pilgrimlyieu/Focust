@@ -1,4 +1,15 @@
-[build]
+# Use lld linker on Linux and Windows for faster linking
+# macOS doesn't support lld, it uses ld64
+[target.x86_64-unknown-linux-gnu]
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+
+[target.aarch64-unknown-linux-gnu]
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+
+[target.aarch64-pc-windows-msvc]
 rustflags = ["-C", "link-arg=-fuse-ld=lld"]
 
 [env]

@@ -99,9 +99,14 @@ fn create_break_window_for_monitor(
         .always_on_top(true)
         .decorations(false)
         .skip_taskbar(true)
-        .transparent(true)
         .visible(false)
         .focused(true);
+
+    // Transparency is platform-specific
+    #[cfg(not(target_os = "macos"))]
+    {
+        builder = builder.transparent(true);
+    }
 
     if is_fullscreen {
         builder = builder.fullscreen(true).position(monitor_x, monitor_y);

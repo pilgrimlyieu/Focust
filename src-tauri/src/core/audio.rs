@@ -2,35 +2,45 @@ mod models;
 mod player;
 
 pub use models::{AudioSettings, AudioSource};
-pub use player::{AudioPlayer, PlaybackError};
+pub use player::PlaybackError;
 
-use std::sync::{Arc, LazyLock};
-use tokio::sync::Mutex;
+// Audio is only supported on non-macOS platforms
+// macOS CoreAudio backend in rodio/cpal doesn't implement Send, making it incompatible with Tauri's state management
+#[cfg(not(target_os = "macos"))]
+pub use player::AudioPlayer;
 
-/// Global audio player instance
-static AUDIO_PLAYER: LazyLock<Arc<Mutex<Option<AudioPlayer>>>> =
-    LazyLock::new(|| Arc::new(Mutex::new(None)));
+#[cfg(not(target_os = "macos"))]
+use parking_lot::Mutex;
+#[cfg(not(target_os = "macos"))]
+use std::sync::Arc;
 
-/// Initialize the global audio player
-pub async fn init_audio_player() -> Result<(), PlaybackError> {
-    let mut player_guard = AUDIO_PLAYER.lock().await;
-    if player_guard.is_none() {
-        let player = AudioPlayer::new()?;
-        *player_guard = Some(player);
-        tracing::info!("Audio player initialized successfully");
-    }
+/// Audio player state managed by Tauri (non-macOS only)
+#[cfg(not(target_os = "macos"))]
+pub type AudioPlayerState = Arc<Mutex<Option<AudioPlayer>>>;
+
+/// Initialize the audio player and store it in Tauri state (non-macOS)
+#[cfg(not(target_os = "macos"))]
+pub fn init_audio_player() -> Result<AudioPlayerState, PlaybackError> {
+    let player = AudioPlayer::new()?;
+    tracing::info!("Audio player initialized successfully");
+    Ok(Arc::new(Mutex::new(Some(player))))
+}
+
+/// Initialize audio (macOS stub - audio not supported)
+#[cfg(target_os = "macos")]
+pub fn init_audio_player() -> Result<(), PlaybackError> {
+    tracing::warn!("Audio playback is not supported on macOS due to CoreAudio backend limitations");
     Ok(())
 }
 
-/// Get the global audio player instance
-pub fn get_audio_player() -> Arc<Mutex<Option<AudioPlayer>>> {
-    AUDIO_PLAYER.clone()
-}
-
-/// Play audio from a file path
-pub async fn play_audio(path: &str, volume: f32) -> Result<(), PlaybackError> {
-    let player_arc = AUDIO_PLAYER.clone();
-    let mut player_guard = player_arc.lock().await;
+/// Play audio from a file path (non-macOS)
+#[cfg(not(target_os = "macos"))]
+pub fn play_audio(
+    player_state: &AudioPlayerState,
+    path: &str,
+    volume: f32,
+) -> Result<(), PlaybackError> {
+    let mut player_guard = player_state.lock();
 
     if let Some(ref mut player) = *player_guard {
         player.play(path, volume)?;
@@ -41,10 +51,18 @@ pub async fn play_audio(path: &str, volume: f32) -> Result<(), PlaybackError> {
     }
 }
 
-/// Stop currently playing audio
-pub async fn stop_audio() -> Result<(), PlaybackError> {
-    let player_arc = AUDIO_PLAYER.clone();
-    let mut player_guard = player_arc.lock().await;
+/// Play audio (macOS stub)
+#[cfg(target_os = "macos")]
+pub fn play_audio(_path: &str, _volume: f32) -> Result<(), PlaybackError> {
+    Err(PlaybackError::PlaybackFailed(
+        "Audio playback is not supported on macOS".to_string(),
+    ))
+}
+
+/// Stop currently playing audio (non-macOS)
+#[cfg(not(target_os = "macos"))]
+pub fn stop_audio(player_state: &AudioPlayerState) -> Result<(), PlaybackError> {
+    let mut player_guard = player_state.lock();
 
     if let Some(ref mut player) = *player_guard {
         player.stop();
@@ -53,4 +71,12 @@ pub async fn stop_audio() -> Result<(), PlaybackError> {
     } else {
         Err(PlaybackError::NotInitialized)
     }
+}
+
+/// Stop audio (macOS stub)
+#[cfg(target_os = "macos")]
+pub fn stop_audio() -> Result<(), PlaybackError> {
+    Err(PlaybackError::PlaybackFailed(
+        "Audio playback is not supported on macOS".to_string(),
+    ))
 }

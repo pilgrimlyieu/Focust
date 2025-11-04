@@ -31,7 +31,7 @@
 Focust 将其配置存储在特定于平台的位置：
 - **Windows**：`%APPDATA%\com.fesmoph.focust\config.toml`
 - **macOS**：`~/Library/Application Support/com.fesmoph.focust/config.toml`
-- **Linux**：`~/.config/focust/config.toml`
+- **Linux**: `~/.config/com.fesmoph.focust/config.toml`
 
 您可以从设置界面快速打开配置目录：
 1. 转到**高级**选项卡

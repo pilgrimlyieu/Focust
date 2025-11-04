@@ -12,7 +12,10 @@ pub fn spawn_idle_monitor_task(cmd_tx: mpsc::Sender<Command>, app_handle: AppHan
 
     tokio::spawn(async move {
         const CHECK_INTERVAL: std::time::Duration = std::time::Duration::from_secs(10);
+        const MAX_CONSECUTIVE_FAILURES: u32 = 3;
         let mut was_idle = false;
+        let mut consecutive_failures = 0;
+
         let inactive_s = {
             let config = app_handle.state::<SharedConfig>();
             let config_guard = config.read().await;
@@ -20,31 +23,54 @@ pub fn spawn_idle_monitor_task(cmd_tx: mpsc::Sender<Command>, app_handle: AppHan
         };
 
         loop {
-            if let Ok(idle_duration) = UserIdle::get_time() {
-                let idle_seconds = idle_duration.as_seconds();
-                let is_idle = idle_seconds >= u64::from(inactive_s);
+            match UserIdle::get_time() {
+                Ok(idle_duration) => {
+                    // Reset failure counter on success
+                    consecutive_failures = 0;
 
-                if is_idle && !was_idle {
-                    // User became idle
-                    tracing::info!(
-                        "User became idle (idle for {idle_seconds}s). Pausing scheduler."
-                    );
-                    if let Err(e) = cmd_tx.send(Command::Pause(PauseReason::UserIdle)).await {
-                        tracing::error!("Failed to send Pause command: {e}");
-                        break;
+                    let idle_seconds = idle_duration.as_seconds();
+                    let is_idle = idle_seconds >= u64::from(inactive_s);
+
+                    if is_idle && !was_idle {
+                        // User became idle
+                        tracing::info!(
+                            "User became idle (idle for {idle_seconds}s). Pausing scheduler."
+                        );
+                        if let Err(e) = cmd_tx.send(Command::Pause(PauseReason::UserIdle)).await {
+                            tracing::error!("Failed to send Pause command: {e}");
+                            break;
+                        }
+                        was_idle = true;
+                    } else if !is_idle && was_idle {
+                        // User became active
+                        tracing::info!("User became active. Resuming scheduler.");
+                        if let Err(e) = cmd_tx.send(Command::Resume(PauseReason::UserIdle)).await {
+                            tracing::error!("Failed to send Resume command: {e}");
+                            break;
+                        }
+                        was_idle = false;
                     }
-                    was_idle = true;
-                } else if !is_idle && was_idle {
-                    // User became active
-                    tracing::info!("User became active. Resuming scheduler.");
-                    if let Err(e) = cmd_tx.send(Command::Resume(PauseReason::UserIdle)).await {
-                        tracing::error!("Failed to send Resume command: {e}");
-                        break;
-                    }
-                    was_idle = false;
                 }
-            } else {
-                tracing::error!("Failed to get user idle time");
+                Err(e) => {
+                    consecutive_failures += 1;
+
+                    if consecutive_failures == 1 {
+                        // Log error only on first failure
+                        tracing::warn!(
+                            "Failed to get user idle time: {e}. \
+                            This is normal if running in a headless environment or without X11 Screen Saver extension."
+                        );
+                    }
+
+                    if consecutive_failures >= MAX_CONSECUTIVE_FAILURES {
+                        tracing::warn!(
+                            "User idle detection failed {} times. Disabling idle monitoring. \
+                            The application will continue to work without idle detection.",
+                            consecutive_failures
+                        );
+                        break;
+                    }
+                }
             }
 
             sleep(CHECK_INTERVAL).await;
