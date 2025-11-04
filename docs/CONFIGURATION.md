@@ -160,7 +160,7 @@ Break Schedules define when and how often breaks occur. You can have multiple sc
 #### `notificationBeforeS`
 - **Type**: Integer (seconds)
 - **Default**: `10`
-- **Description**: Send a system notification X seconds before a break starts
+- **Description**: Send a system notification X seconds before a break starts. Set to `0` to disable notifications.
 
 ### Time Range
 

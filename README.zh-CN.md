@@ -48,8 +48,8 @@
 - **智能检测**：当您离开电脑时自动暂停休息
 - **推迟支持**：需要多 5 分钟？使用全局快捷键或按钮点击推迟休息
 
-![休息时间表设置](docs/images/screenshot-schedules.png)
-*配置多个具有自定义时间范围和活动日期的休息时间表*
+![休息时间表设置](docs/images/screenshot-break-schedules.png)
+*配置多个具有自定义时间范围和活动日期的休息计划*
 
 ### 🎨 精美且可自定义的主题
 
@@ -58,8 +58,7 @@
 - **视觉反馈**：以可配置的大小（50%-100% 或全屏）查看完整的休息窗口
 - **多显示器支持**：同时在所有显示器上显示休息提醒
 
-<!-- ![Break Window](docs/images/screenshot-break-window.png) -->
-![休息窗口](https://pilgrimlyieu.github.io/daily/2025-10/29_focust.jpg)
+![Break Window](docs/images/screenshot-break-window.png)
 *具有可自定义主题和建议的沉浸式休息窗口*
 
 ### 🔔 定时提醒（注意系统）

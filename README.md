@@ -48,7 +48,7 @@ See the [QUICKSTART.md](docs/QUICKSTART.md) for a step-by-step guide to getting 
 - **Intelligent Detection**: Automatically pauses breaks when you're away from your computer
 - **Postpone Support**: Need 5 more minutes? Postpone breaks with a global hotkey or button click
 
-![Break Schedule Settings](docs/images/screenshot-schedules.png)
+![Break Schedule Settings](docs/images/screenshot-break-schedules.png)
 *Configure multiple break schedules with custom time ranges and active days*
 
 ### 🎨 Beautiful & Customizable Themes
@@ -58,8 +58,7 @@ See the [QUICKSTART.md](docs/QUICKSTART.md) for a step-by-step guide to getting 
 - **Visual Feedback**: See your break window in full glory with customizable size (50%-100% or fullscreen)
 - **Multi-Monitor Support**: Show break reminders on all monitors simultaneously
 
-<!-- ![Break Window](docs/images/screenshot-break-window.png) -->
-![Break Window](https://pilgrimlyieu.github.io/daily/2025-10/29_focust.jpg)
+![Break Window](docs/images/screenshot-break-window.png)
 *Immersive break window with customizable themes and suggestions*
 
 ### 🔔 Timed Reminders (Attention System)
