@@ -58,17 +58,17 @@ async function triggerMiniBreak() {
   try {
     const config = configStore.draft ?? configStore.original;
     if (!config || config.schedules.length === 0) {
-      emit("notify", "error", "There's no available schedule configuration");
+      emit("notify", "error", t("toast.noScheduleConfig"));
       return;
     }
     // Use the first schedule's mini break, whether it's enabled.
     const breakKind = createMiniBreakEvent(config.schedules[0].miniBreaks.id);
     console.log("Triggering mini break with:", breakKind);
     await invoke("trigger_break", { breakKind });
-    emit("notify", "success", "Mini break triggered");
+    emit("notify", "success", t("toast.miniBreakTriggered"));
   } catch (err) {
     console.error("Failed to trigger mini break:", err);
-    emit("notify", "error", `Mini break triggered failed: ${err}`);
+    emit("notify", "error", t("toast.miniBreakTriggerFailed"));
   }
 }
 
@@ -79,16 +79,16 @@ async function triggerLongBreak() {
   try {
     const config = configStore.draft ?? configStore.original;
     if (!config || config.schedules.length === 0) {
-      emit("notify", "error", "There's no available schedule configuration");
+      emit("notify", "error", t("toast.noScheduleConfig"));
       return;
     }
     const breakKind = createLongBreakEvent(config.schedules[0].longBreaks.id);
     console.log("Triggering long break with:", breakKind);
     await invoke("trigger_break", { breakKind });
-    emit("notify", "success", "Long break triggered");
+    emit("notify", "success", t("toast.longBreakTriggered"));
   } catch (err) {
     console.error("Failed to trigger long break:", err);
-    emit("notify", "error", `Long break triggered failed: ${err}`);
+    emit("notify", "error", t("toast.longBreakTriggerFailed"));
   }
 }
 
@@ -99,16 +99,16 @@ async function triggerAttention() {
   try {
     const config = configStore.draft ?? configStore.original;
     if (!config || config.attentions.length === 0) {
-      emit("notify", "error", "There's no available attention configuration");
+      emit("notify", "error", t("toast.noAttentionConfig"));
       return;
     }
     const breakKind = createAttentionEvent(config.attentions[0].id);
     console.log("Triggering attention with:", breakKind);
     await invoke("trigger_break", { breakKind });
-    emit("notify", "success", "Attention triggered");
+    emit("notify", "success", t("toast.attentionTriggered"));
   } catch (err) {
     console.error("Failed to trigger attention:", err);
-    emit("notify", "error", `Attention triggered failed: ${err}`);
+    emit("notify", "error", t("toast.attentionTriggerFailed"));
   }
 }
 
@@ -118,10 +118,10 @@ async function triggerAttention() {
 async function skipCurrentBreak() {
   try {
     await invoke("skip_break");
-    emit("notify", "success", "The current break has been skipped");
+    emit("notify", "success", t("toast.breakSkipped"));
   } catch (err) {
     console.error("Failed to skip break:", err);
-    emit("notify", "error", `Skip current break failed: ${err}`);
+    emit("notify", "error", t("toast.breakSkipFailed"));
   }
 }
 </script>

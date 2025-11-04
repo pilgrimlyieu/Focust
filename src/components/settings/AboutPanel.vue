@@ -40,7 +40,7 @@ async function openLink(url: string) {
     await openUrl(url);
   } catch (err) {
     console.error("Failed to open URL:", err);
-    emit("notify", "error", `Failed to open ${url}`);
+    emit("notify", "error", t("toast.openUrlFailed", { url }));
   }
 }
 
@@ -58,7 +58,7 @@ async function checkForUpdates() {
     }
   } catch (err) {
     console.error("Failed to check updates:", err);
-    emit("notify", "error", String(err));
+    emit("notify", "error", t("toast.updateCheckFailed"));
   } finally {
     checkingUpdate.value = false;
   }

@@ -48,7 +48,6 @@ impl AudioSettings {
             AudioSource::None => None,
             AudioSource::Builtin { name } => {
                 // Return resource identifier in format: "sounds/{name}.mp3"
-                // This will be resolved to actual path at runtime using AppHandle::path().resource_dir()
                 Some(format!("sounds/{name}.mp3"))
             }
             AudioSource::FilePath { path } => Some(path.clone()),
