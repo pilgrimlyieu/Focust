@@ -183,6 +183,7 @@ fn build_break_payload(
                     config.postpone_shortcut.clone()
                 },
                 all_screens: config.all_screens,
+                language: config.language.clone(),
             });
         }
     };
@@ -217,6 +218,7 @@ fn build_break_payload(
             config.postpone_shortcut.clone()
         },
         all_screens: config.all_screens,
+        language: config.language.clone(),
     })
 }
 

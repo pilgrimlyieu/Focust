@@ -7,7 +7,7 @@ import {
   createSolidBackground,
   createSuggestionsSettings,
   createTimeRange,
-} from "@/types/factories";
+} from "@/types";
 import { useConfigStore } from "./config";
 
 const mockConfig: RawAppConfig = {

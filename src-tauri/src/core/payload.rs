@@ -70,6 +70,7 @@ pub struct BreakPayload {
     pub audio: Option<AudioSettings>,
     pub postpone_shortcut: String,
     pub all_screens: bool,
+    pub language: String,
 }
 
 /// Shared state for storing active break payloads

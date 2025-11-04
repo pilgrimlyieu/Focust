@@ -132,7 +132,7 @@ const zhCN: LocaleStrings = {
     inactivityLabel: "空闲多少秒后暂停",
     inactivityUnit: "秒",
     keyCaptureHint: "请按下任意组合键…",
-    language: "界面语言",
+    language: "界面语言（需重启生效）",
     lessThanMinute: "不到 1 分钟",
     minutesRemaining: "{minutes} 分钟",
     monitorDnd: "勿扰模式时暂停提醒",

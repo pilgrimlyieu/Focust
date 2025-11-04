@@ -10,19 +10,18 @@ import {
   watch,
 } from "vue";
 import { useI18n } from "vue-i18n";
+import { setI18nLocale } from "@/i18n";
 import type { AudioSettings, BreakPayload, SchedulerEvent } from "@/types";
 import {
+  createAttentionEvent,
+  createLongBreakEvent,
+  createMiniBreakEvent,
   isBuiltinAudio,
   isFilePathAudio,
   isNoAudio,
   isResolvedImageBackground,
   isResolvedSolidBackground,
 } from "@/types";
-import {
-  createAttentionEvent,
-  createLongBreakEvent,
-  createMiniBreakEvent,
-} from "@/types/factories";
 
 const { t } = useI18n();
 
@@ -352,6 +351,13 @@ onMounted(async () => {
       payloadId,
     });
     console.log("[BreakApp] Payload fetched successfully:", fetchedPayload);
+
+    // Set the language from payload before handling payload
+    if (fetchedPayload.language) {
+      console.log("[BreakApp] Setting language to:", fetchedPayload.language);
+      setI18nLocale(fetchedPayload.language);
+    }
+
     await handlePayload(fetchedPayload);
   } catch (err) {
     console.error("[BreakApp] Failed to fetch payload from backend:", err);
@@ -397,14 +403,8 @@ defineExpose({
         <div v-else class="space-y-8 text-center">
           <div class="space-y-2">
             <p class="text-xs uppercase tracking-[0.35em] opacity-60">
-              {{
-              payload.scheduleName ??
-              (payload.kind === "attention"
-              ? t("break.attention")
-              : payload.kind === "long"
-              ? t("schedule.longBreak")
-              : t("schedule.miniBreak"))
-              }}
+              {{ payload.scheduleName ?? (payload.kind === "attention" ? t("break.attention") : payload.kind === "long"
+                ? t("schedule.longBreak") : t("schedule.miniBreak")) }}
             </p>
             <h1 class="text-4xl font-semibold">{{ payload.title }}</h1>
             <p class="text-base opacity-80">

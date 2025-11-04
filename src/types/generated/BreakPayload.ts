@@ -7,4 +7,4 @@ import type { ThemeSettings } from "./ThemeSettings";
 /**
  * Break payload stored in backend
  */
-export type BreakPayload = { id: number, kind: EventKind, title: string, messageKey: string, message: string | null, scheduleName: string | null, duration: number, strictMode: boolean, theme: ThemeSettings, background: ResolvedBackground, suggestion: string | null, audio: AudioSettings | null, postponeShortcut: string, allScreens: boolean, };
+export type BreakPayload = { id: number, kind: EventKind, title: string, messageKey: string, message: string | null, scheduleName: string | null, duration: number, strictMode: boolean, theme: ThemeSettings, background: ResolvedBackground, suggestion: string | null, audio: AudioSettings | null, postponeShortcut: string, allScreens: boolean, language: string, };

@@ -135,7 +135,7 @@ const enUS = {
     inactivityLabel: "Pause when inactive for",
     inactivityUnit: "seconds",
     keyCaptureHint: "Press any key combination...",
-    language: "Language",
+    language: "Language (requires restart)",
     lessThanMinute: "less than 1 min",
     minutesRemaining: "{minutes} min",
     monitorDnd: "Pause when Do Not Disturb is enabled",
