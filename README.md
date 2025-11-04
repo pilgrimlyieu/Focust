@@ -21,10 +21,6 @@ Take regular breaks, protect your eyes, and maintain healthy work habits with cu
 
 ---
 
-> [!WARNING]
->
-> Images in documentation have not been added yet. I'll be updating them soon.
-
 > [!CAUTION]
 > **Early Development Notice**
 > 

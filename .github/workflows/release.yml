@@ -19,12 +19,12 @@ jobs:
           - platform: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             os_name: linux
-          # - platform: macos-latest
-          #   target: x86_64-apple-darwin
-          #   os_name: macos-x64
-          # - platform: macos-latest
-          #   target: aarch64-apple-darwin
-          #   os_name: macos-arm64
+          - platform: macos-latest
+            target: x86_64-apple-darwin
+            os_name: macos-x64
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+            os_name: macos-arm64
 
     runs-on: ${{ matrix.platform }}
 
@@ -103,15 +103,15 @@ jobs:
           New-Item -ItemType Directory -Force -Path artifacts
 
           # Find and copy installer
-          $msiFile = Get-ChildItem -Path "src-tauri/target/${{ matrix.target }}/release/bundle/msi" -Filter "*.msi" -Recurse | Select-Object -First 1
+          $exeFile = Get-ChildItem -Path "src-tauri/target/${{ matrix.target }}/release/bundle/nsis" -Filter "*.exe" -Recurse | Select-Object -First 1
 
-          if ($msiFile) {
-            Copy-Item $msiFile.FullName "artifacts/focust_${version}_${{ matrix.os_name }}_installer.msi"
-            
+          if ($exeFile) {
+            Copy-Item $exeFile.FullName "artifacts/focust_${version}_${{ matrix.os_name }}_installer.exe"
+
             # Copy signature file if exists
-            $sigFile = "$($msiFile.DirectoryName)\$($msiFile.BaseName).msi.sig"
+            $sigFile = "$($exeFile.DirectoryName)\$($exeFile.BaseName).exe.sig"
             if (Test-Path $sigFile) {
-              Copy-Item $sigFile "artifacts/focust_${version}_${{ matrix.os_name }}_installer.msi.sig"
+              Copy-Item $sigFile "artifacts/focust_${version}_${{ matrix.os_name }}_installer.exe.sig"
               Write-Host "✅ Signature file found and copied"
             }
           }
@@ -235,14 +235,14 @@ jobs:
             "platforms": {
           EOF
           
-          # Add Windows platform if MSI exists
-          if ls artifacts/*_windows_installer.msi 1> /dev/null 2>&1; then
-            MSI_FILE=$(basename artifacts/*_windows_installer.msi)
-            MSI_SIG_FILE="${MSI_FILE}.sig"
+          # Add Windows platform if NSIS exists
+          if ls artifacts/*_windows_installer.exe 1> /dev/null 2>&1; then
+            EXE_FILE=$(basename artifacts/*_windows_installer.exe)
+            EXE_SIG_FILE="${EXE_FILE}.sig"
             
             echo '    "windows-x86_64": {' >> artifacts/latest.json
-            echo "      \"signature\": \"$(cat artifacts/${MSI_SIG_FILE} 2>/dev/null || echo '')\"," >> artifacts/latest.json
-            echo "      \"url\": \"https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${MSI_FILE}\"" >> artifacts/latest.json
+            echo "      \"signature\": \"$(cat artifacts/${EXE_SIG_FILE} 2>/dev/null || echo '')\"," >> artifacts/latest.json
+            echo "      \"url\": \"https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${EXE_FILE}\"" >> artifacts/latest.json
             echo '    },' >> artifacts/latest.json
           fi
           

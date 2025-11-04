@@ -1,2 +1,5 @@
+[build]
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+
 [env]
 TS_RS_EXPORT_DIR = { value = "src/types/generated", relative = true }
