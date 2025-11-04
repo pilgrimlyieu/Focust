@@ -12,7 +12,7 @@ use tauri_plugin_autostart::ManagerExt;
 use crate::{
     cmd::{SchedulerCmd, ShutdownTx},
     core::payload::BreakPayloadStore,
-    scheduler::init_scheduler,
+    scheduler::{init_scheduler, monitor::spawn_idle_monitor_task},
 };
 
 pub mod cmd;
@@ -26,6 +26,7 @@ pub mod utils;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             // When a second instance is launched, focus the existing settings window
             tracing::info!("Single instance: attempting to focus existing window");
@@ -111,6 +112,15 @@ pub fn run() {
                 handle.manage(shared_suggestions);
 
                 let (cmd_tx, shutdown_tx) = init_scheduler(&handle);
+
+                // Spawn idle monitor
+                if app_config.monitor_dnd {
+                    tracing::info!("User idle monitoring is enabled");
+                    spawn_idle_monitor_task(cmd_tx.clone(), handle.clone());
+                } else {
+                    tracing::info!("User idle monitoring is disabled");
+                }
+
                 handle.manage(SchedulerCmd(cmd_tx)); // keep alive
                 handle.manage(ShutdownTx(shutdown_tx));
             });

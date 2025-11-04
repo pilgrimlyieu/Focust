@@ -122,7 +122,7 @@ const enUS = {
     minutesRemaining: "{minutes} min",
     monitorDnd: "Pause when Do Not Disturb is enabled",
     monitorDndHint:
-      "Automatically pause all reminders when DND mode is detected",
+      "Automatically pause all reminders when DND mode is detected. Requires restart.",
     nextBreak: "{kind} in {time}",
     nextBreakNotification: "Notification for {kind} in {time}",
     notification: "Notification",

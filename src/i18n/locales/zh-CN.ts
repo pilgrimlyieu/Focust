@@ -118,7 +118,7 @@ const zhCN: LocaleStrings = {
     lessThanMinute: "不到 1 分钟",
     minutesRemaining: "{minutes} 分钟",
     monitorDnd: "勿扰模式时暂停提醒",
-    monitorDndHint: "检测到勿扰模式时自动暂停所有提醒",
+    monitorDndHint: "检测到勿扰模式时自动暂停所有提醒，需重启",
     nextBreak: "{time}后开始{kind}",
     nextBreakNotification: "{time}后提醒即将{kind}",
     notification: "提醒",
