@@ -16,6 +16,7 @@
     "core:path:allow-resolve-directory",
     "core:path:allow-resolve",
     "core:resources:default",
+    "autostart:default",
     "opener:default",
     "updater:default",
     "dialog:default",

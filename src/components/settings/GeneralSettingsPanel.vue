@@ -156,7 +156,7 @@ onMounted(() => {
               {{ t("general.autostartHint") }}
             </p>
           </div>
-          <input v-if="!autostartLoading" v-model="autostartEnabled" type="checkbox"
+          <input v-if="!autostartLoading" :checked="autostartEnabled" type="checkbox"
             class="toggle toggle-primary toggle-lg shrink-0 transition-all" @change="toggleAutostart" />
           <span v-else class="loading loading-spinner loading-md"></span>
         </div>

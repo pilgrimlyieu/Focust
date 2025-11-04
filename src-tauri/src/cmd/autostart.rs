@@ -6,7 +6,6 @@ use crate::config::{SharedConfig, save_config};
 /// Check if autostart is enabled
 #[tauri::command]
 pub async fn is_autostart_enabled(app: tauri::AppHandle) -> Result<bool, String> {
-    // First check config
     let config = app.state::<SharedConfig>();
     let config_guard = config.read().await;
     Ok(config_guard.autostart)
@@ -16,6 +15,17 @@ pub async fn is_autostart_enabled(app: tauri::AppHandle) -> Result<bool, String>
 #[tauri::command]
 pub async fn set_autostart_enabled(app: tauri::AppHandle, enabled: bool) -> Result<(), String> {
     let autolaunch = app.autolaunch();
+
+    let current_status = autolaunch.is_enabled().map_err(|e| {
+        tracing::error!("Failed to check current autostart status: {e}");
+        format!("Failed to check current autostart status: {e}")
+    })?;
+    tracing::info!("Current autostart status: {}", current_status);
+
+    if current_status == enabled {
+        tracing::warn!("Autostart is already set to {}", enabled);
+        return Ok(());
+    }
 
     // Try to set system autostart
     let result = if enabled {
