@@ -1,4 +1,22 @@
 const enUS = {
+  about: {
+    appDescription:
+      "A modern, cross-platform break reminder application built with Tauri and Vue 3. Take regular breaks, protect your eyes, and maintain healthy work habits.",
+    author: "Author",
+    authorName: "PilgrimLyieu (Fesmoph)",
+    checkForUpdates: "Check for Updates",
+    checkingUpdates: "Checking for updates…",
+    currentVersion: "Current Version",
+    github: "GitHub Repository",
+    license: "License",
+    noUpdateAvailable: "You're already using the latest version",
+    projectLicense: "(MIT License)",
+    starOnGitHub: "⭐ Star on GitHub",
+    title: "About Focust",
+    updateAvailable: "New version {version} is available!",
+    version: "Version",
+    viewLicense: "View License",
+  },
   actions: {
     add: "Add",
     browse: "Browse",
@@ -143,6 +161,7 @@ const enUS = {
     windowSize: "Break window size",
   },
   nav: {
+    about: "About",
     advanced: "Advanced Options",
     attentions: "Timed Reminders",
     general: "General Settings",

@@ -17,6 +17,7 @@
     "core:path:allow-resolve",
     "core:resources:default",
     "opener:default",
+    "updater:default",
     "dialog:default",
     "fs:default",
     "fs:allow-resource-meta-recursive",

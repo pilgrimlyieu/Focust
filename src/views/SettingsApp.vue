@@ -23,6 +23,9 @@ import ToastHost from "@/components/ui/ToastHost.vue";
 const AdvancedPanel = defineAsyncComponent(
   () => import("@/components/settings/AdvancedPanel.vue"),
 );
+const AboutPanel = defineAsyncComponent(
+  () => import("@/components/settings/AboutPanel.vue"),
+);
 const AttentionsPanel = defineAsyncComponent(
   () => import("@/components/settings/AttentionsPanel.vue"),
 );
@@ -37,6 +40,7 @@ const SuggestionsPanel = defineAsyncComponent(
 );
 
 import BellIcon from "@/components/icons/BellIcon.vue";
+import InfoCircleIcon from "@/components/icons/InfoCircleIcon.vue";
 import SlidersIcon from "@/components/icons/SlidersIcon.vue";
 import type { ToastKind } from "@/composables/useToast";
 import { useToast } from "@/composables/useToast";
@@ -58,6 +62,7 @@ const tabs = [
   { key: "attentions", label: computed(() => t("nav.attentions")) },
   { key: "suggestions", label: computed(() => t("nav.suggestions")) },
   { key: "advanced", label: computed(() => t("nav.advanced")) },
+  { key: "about", label: computed(() => t("nav.about")) },
 ] as const;
 
 type TabKey = (typeof tabs)[number]["key"];
@@ -321,6 +326,7 @@ defineExpose({
                 <BellIcon :class-name="'h-5 w-5'" v-else-if="index === 2" />
                 <SuggestionBulb :class-name="'h-5 w-5'" v-else-if="index === 3" />
                 <SlidersIcon :class-name="'h-5 w-5'" v-else-if="index === 4" />
+                <InfoCircleIcon :class-name="'h-5 w-5'" v-else-if="index === 5" />
                 <span>{{ tab.label }}</span>
               </a>
             </li>
@@ -357,6 +363,7 @@ defineExpose({
                     :config="configStore.draft" />
                   <SuggestionsPanel v-else-if="activeTab === 'suggestions'" :key="'suggestions'" />
                   <AdvancedPanel v-else-if="activeTab === 'advanced'" :key="'advanced'" @notify="handleNotify" />
+                  <AboutPanel v-else-if="activeTab === 'about'" :key="'about'" @notify="handleNotify" />
                 </Transition>
               </template>
               <template #fallback>

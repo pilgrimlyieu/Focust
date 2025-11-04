@@ -1,6 +1,24 @@
 import type { LocaleStrings } from "./en-US";
 
 const zhCN: LocaleStrings = {
+  about: {
+    appDescription:
+      "一个现代化的跨平台休息提醒应用，使用 Tauri 和 Vue 3 构建。定期休息，保护眼睛，保持健康的工作习惯。",
+    author: "作者",
+    authorName: "PilgrimLyieu (Fesmoph)",
+    checkForUpdates: "检查更新",
+    checkingUpdates: "正在检查更新…",
+    currentVersion: "当前版本",
+    github: "GitHub 仓库",
+    license: "许可证",
+    noUpdateAvailable: "您已经在使用最新版本",
+    projectLicense: "（MIT 许可证）",
+    starOnGitHub: "⭐ 在 GitHub 上 Star",
+    title: "关于 Focust",
+    updateAvailable: "新版本 {version} 可用！",
+    version: "版本",
+    viewLicense: "查看许可证",
+  },
   actions: {
     add: "添加",
     browse: "浏览",
@@ -139,6 +157,7 @@ const zhCN: LocaleStrings = {
     windowSize: "休息窗口大小",
   },
   nav: {
+    about: "关于",
     advanced: "高级选项",
     attentions: "定时提醒",
     general: "通用设置",

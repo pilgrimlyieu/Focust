@@ -7,7 +7,8 @@
         "@tauri-apps/api": "^2.9.0",
         "@tauri-apps/plugin-dialog": "^2.4.2",
         "@tauri-apps/plugin-fs": "^2.4.4",
-        "@tauri-apps/plugin-opener": "^2.5.2",
+        "@tauri-apps/plugin-opener": "~2",
+        "@tauri-apps/plugin-updater": "~2",
         "@vueuse/core": "^14.0.0",
         "pinia": "^3.0.3",
         "vue": "^3.5.22",
@@ -315,6 +316,8 @@
     "@tauri-apps/plugin-fs": ["@tauri-apps/plugin-fs@2.4.4", "https://registry.npmmirror.com/@tauri-apps/plugin-fs/-/plugin-fs-2.4.4.tgz", { "dependencies": { "@tauri-apps/api": "^2.8.0" } }, "sha512-MTorXxIRmOnOPT1jZ3w96vjSuScER38ryXY88vl5F0uiKdnvTKKTtaEjTEo8uPbl4e3gnUtfsDVwC7h77GQLvQ=="],
 
     "@tauri-apps/plugin-opener": ["@tauri-apps/plugin-opener@2.5.2", "https://registry.npmmirror.com/@tauri-apps/plugin-opener/-/plugin-opener-2.5.2.tgz", { "dependencies": { "@tauri-apps/api": "^2.8.0" } }, "sha512-ei/yRRoCklWHImwpCcDK3VhNXx+QXM9793aQ64YxpqVF0BDuuIlXhZgiAkc15wnPVav+IbkYhmDJIv5R326Mew=="],
+
+    "@tauri-apps/plugin-updater": ["@tauri-apps/plugin-updater@2.9.0", "https://registry.npmmirror.com/@tauri-apps/plugin-updater/-/plugin-updater-2.9.0.tgz", { "dependencies": { "@tauri-apps/api": "^2.6.0" } }, "sha512-j++sgY8XpeDvzImTrzWA08OqqGqgkNyxczLD7FjNJJx/uXxMZFz5nDcfkyoI/rCjYuj2101Tci/r/HFmOmoxCg=="],
 
     "@types/bun": ["@types/bun@1.3.1", "https://registry.npmmirror.com/@types/bun/-/bun-1.3.1.tgz", { "dependencies": { "bun-types": "1.3.1" } }, "sha512-4jNMk2/K9YJtfqwoAa28c8wK+T7nvJFOjxI4h/7sORWcypRNxBpr+TPNaCfVWq70tLCJsqoFwcf0oI0JU/fvMQ=="],
 
