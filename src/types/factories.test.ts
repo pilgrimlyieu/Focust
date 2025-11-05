@@ -226,15 +226,15 @@ describe("AudioSettings Factories", () => {
   describe("createNoAudio", () => {
     it("should create no audio with default volume", () => {
       const audio = createNoAudio();
-      expect(audio.source.current).toBe("none");
-      expect(audio.source.builtinName).toBeNull();
-      expect(audio.source.filePath).toBeNull();
+      expect(audio.current).toBe("none");
+      expect(audio.builtinName).toBeNull();
+      expect(audio.filePath).toBeNull();
       expect(audio.volume).toBe(0.6);
     });
 
     it("should create no audio with custom volume", () => {
       const audio = createNoAudio(0.8);
-      expect(audio.source.current).toBe("none");
+      expect(audio.current).toBe("none");
       expect(audio.volume).toBe(0.8);
     });
   });
@@ -242,16 +242,16 @@ describe("AudioSettings Factories", () => {
   describe("createBuiltinAudio", () => {
     it("should create builtin audio with default volume", () => {
       const audio = createBuiltinAudio("gentle-bell");
-      expect(audio.source.current).toBe("builtin");
-      expect(audio.source.builtinName).toBe("gentle-bell");
-      expect(audio.source.filePath).toBeNull();
+      expect(audio.current).toBe("builtin");
+      expect(audio.builtinName).toBe("gentle-bell");
+      expect(audio.filePath).toBeNull();
       expect(audio.volume).toBe(0.6);
     });
 
     it("should create builtin audio with custom volume", () => {
       const audio = createBuiltinAudio("soft-gong", 0.5);
-      expect(audio.source.current).toBe("builtin");
-      expect(audio.source.builtinName).toBe("soft-gong");
+      expect(audio.current).toBe("builtin");
+      expect(audio.builtinName).toBe("soft-gong");
       expect(audio.volume).toBe(0.5);
     });
   });
@@ -259,16 +259,16 @@ describe("AudioSettings Factories", () => {
   describe("createFilePathAudio", () => {
     it("should create filePath audio with default volume", () => {
       const audio = createFilePathAudio("/path/to/audio.mp3");
-      expect(audio.source.current).toBe("filePath");
-      expect(audio.source.builtinName).toBeNull();
-      expect(audio.source.filePath).toBe("/path/to/audio.mp3");
+      expect(audio.current).toBe("filePath");
+      expect(audio.builtinName).toBeNull();
+      expect(audio.filePath).toBe("/path/to/audio.mp3");
       expect(audio.volume).toBe(0.6);
     });
 
     it("should create filePath audio with custom volume", () => {
       const audio = createFilePathAudio("/path/to/audio.mp3", 0.7);
-      expect(audio.source.current).toBe("filePath");
-      expect(audio.source.filePath).toBe("/path/to/audio.mp3");
+      expect(audio.current).toBe("filePath");
+      expect(audio.filePath).toBe("/path/to/audio.mp3");
       expect(audio.volume).toBe(0.7);
     });
   });
@@ -383,6 +383,34 @@ describe("AudioSettings Factories", () => {
       const audio: AudioSettings = createNoAudio(0.5);
       convertToFilePathAudio(audio, "/path/to/audio.mp3");
       expect(audio.volume).toBe(0.5);
+    });
+  });
+
+  describe("Audio switching scenario (preserves old values)", () => {
+    it("should preserve all values when switching types", () => {
+      // Start with builtin
+      const audio = createBuiltinAudio("gentle-bell");
+      expect(getAudioSourceType(audio)).toBe("builtin");
+      expect(getBuiltinAudioName(audio)).toBe("gentle-bell");
+      expect(getAudioFilePath(audio)).toBeNull();
+
+      // Switch to filePath
+      convertToFilePathAudio(audio, "/music/sound.mp3");
+      expect(getAudioSourceType(audio)).toBe("filePath");
+      expect(getAudioFilePath(audio)).toBe("/music/sound.mp3");
+      expect(getBuiltinAudioName(audio)).toBe("gentle-bell"); // Preserved.
+
+      // Switch back to builtin - should restore old value
+      convertToBuiltinAudio(audio, audio.builtinName || "default");
+      expect(getAudioSourceType(audio)).toBe("builtin");
+      expect(getBuiltinAudioName(audio)).toBe("gentle-bell"); // Restored.
+      expect(getAudioFilePath(audio)).toBe("/music/sound.mp3"); // Still preserved.
+
+      // Switch back to filePath - should restore old value
+      convertToFilePathAudio(audio, audio.filePath || "");
+      expect(getAudioSourceType(audio)).toBe("filePath");
+      expect(getAudioFilePath(audio)).toBe("/music/sound.mp3"); // Restored.
+      expect(getBuiltinAudioName(audio)).toBe("gentle-bell"); // Still preserved.
     });
   });
 });

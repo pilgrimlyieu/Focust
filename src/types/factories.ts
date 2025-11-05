@@ -138,6 +138,42 @@ export function getImageFolder(background: BackgroundSource): string | null {
 }
 
 /**
+ * Update the solid color value (mutating, without switching type)
+ * Use this to update the persisted solid color value for later switching back
+ * @param {BackgroundSource} background BackgroundSource to modify
+ * @param {HexColor} color New color value
+ */
+export function updateSolidColor(
+  background: BackgroundSource,
+  color: HexColor,
+) {
+  background.solid = color;
+}
+
+/**
+ * Update the image path value (mutating, without switching type)
+ * Use this to update the persisted image path for later switching back
+ * @param {BackgroundSource} background BackgroundSource to modify
+ * @param {string} path New image path
+ */
+export function updateImagePath(background: BackgroundSource, path: string) {
+  background.imagePath = path;
+}
+
+/**
+ * Update the image folder value (mutating, without switching type)
+ * Use this to update the persisted image folder for later switching back
+ * @param {BackgroundSource} background BackgroundSource to modify
+ * @param {string} folder New image folder path
+ */
+export function updateImageFolder(
+  background: BackgroundSource,
+  folder: string,
+) {
+  background.imageFolder = folder;
+}
+
+/**
  * Set a new color for a solid background (mutating)
  * @param {BackgroundSource} background BackgroundSource to modify
  * @param {HexColor} color New color value
@@ -204,7 +240,9 @@ export function convertToImageFolderBackground(
  */
 export function createNoAudio(volume: number = 0.6): AudioSettings {
   return {
-    source: { builtinName: null, current: "none", filePath: null },
+    builtinName: null,
+    current: "none",
+    filePath: null,
     volume,
   };
 }
@@ -220,7 +258,9 @@ export function createBuiltinAudio(
   volume: number = 0.6,
 ): AudioSettings {
   return {
-    source: { builtinName: name, current: "builtin", filePath: null },
+    builtinName: name,
+    current: "builtin",
+    filePath: null,
     volume,
   };
 }
@@ -236,7 +276,9 @@ export function createFilePathAudio(
   volume: number = 0.6,
 ): AudioSettings {
   return {
-    source: { builtinName: null, current: "filePath", filePath: path },
+    builtinName: null,
+    current: "filePath",
+    filePath: path,
     volume,
   };
 }
@@ -247,7 +289,7 @@ export function createFilePathAudio(
  * @returns {string | null} Audio name or null if not builtin
  */
 export function getBuiltinAudioName(audio: AudioSettings): string | null {
-  return audio.source.builtinName;
+  return audio.builtinName;
 }
 
 /**
@@ -256,7 +298,27 @@ export function getBuiltinAudioName(audio: AudioSettings): string | null {
  * @returns {string | null} File path or null if not filePath
  */
 export function getAudioFilePath(audio: AudioSettings): string | null {
-  return audio.source.filePath;
+  return audio.filePath;
+}
+
+/**
+ * Update the builtin audio name (mutating, without switching type)
+ * Use this to update the persisted builtin name for later switching back
+ * @param {AudioSettings} audio AudioSettings to modify
+ * @param {string} name New builtin audio name
+ */
+export function updateBuiltinAudioName(audio: AudioSettings, name: string) {
+  audio.builtinName = name;
+}
+
+/**
+ * Update the audio file path (mutating, without switching type)
+ * Use this to update the persisted file path for later switching back
+ * @param {AudioSettings} audio AudioSettings to modify
+ * @param {string} path New audio file path
+ */
+export function updateAudioFilePath(audio: AudioSettings, path: string) {
+  audio.filePath = path;
 }
 
 /**
@@ -264,7 +326,7 @@ export function getAudioFilePath(audio: AudioSettings): string | null {
  * @param {AudioSettings} audio AudioSettings to convert
  */
 export function convertToNoAudio(audio: AudioSettings) {
-  audio.source.current = "none";
+  audio.current = "none";
 }
 
 /**
@@ -273,8 +335,8 @@ export function convertToNoAudio(audio: AudioSettings) {
  * @param {string} name Built-in audio name
  */
 export function convertToBuiltinAudio(audio: AudioSettings, name: string) {
-  audio.source.current = "builtin";
-  audio.source.builtinName = name;
+  audio.current = "builtin";
+  audio.builtinName = name;
 }
 
 /**
@@ -283,8 +345,8 @@ export function convertToBuiltinAudio(audio: AudioSettings, name: string) {
  * @param {string} path Audio file path
  */
 export function convertToFilePathAudio(audio: AudioSettings, path: string) {
-  audio.source.current = "filePath";
-  audio.source.filePath = path;
+  audio.current = "filePath";
+  audio.filePath = path;
 }
 
 /**
@@ -295,7 +357,7 @@ export function convertToFilePathAudio(audio: AudioSettings, path: string) {
 export function getAudioSourceType(
   audio: AudioSettings,
 ): "none" | "builtin" | "filePath" {
-  return audio.source.current;
+  return audio.current;
 }
 
 // ============================================================================

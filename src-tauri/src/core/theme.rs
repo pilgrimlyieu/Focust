@@ -463,4 +463,78 @@ mod tests {
         theme.font_size = 72;
         assert_eq!(theme.font_size, 72);
     }
+
+    #[test]
+    fn test_background_source_persists_all_values() {
+        // Create background with solid color
+        let mut bg = BackgroundSource::new_solid(HexColor::new("#ff0000"));
+        bg.set_image_path("/image.jpg".to_string());
+        bg.set_image_folder("/folder".to_string());
+
+        // Serialize to JSON - all fields should be present
+        let json = serde_json::to_string(&bg).unwrap();
+        println!("Serialized JSON: {json}");
+
+        // Verify all fields are present in JSON
+        let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed["current"], "solid");
+        assert_eq!(parsed["solid"], "#ff0000");
+        assert_eq!(parsed["imagePath"], "/image.jpg");
+        assert_eq!(parsed["imageFolder"], "/folder");
+
+        // Deserialize back
+        let mut restored: BackgroundSource = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored.current, BackgroundType::Solid);
+        assert_eq!(restored.solid.as_ref().unwrap().to_string(), "#ff0000");
+        assert_eq!(restored.image_path.as_ref().unwrap(), "/image.jpg");
+        assert_eq!(restored.image_folder.as_ref().unwrap(), "/folder");
+
+        // Switch to image path - solid should still be there
+        restored.use_image_path();
+        let json2 = serde_json::to_string(&restored).unwrap();
+        let parsed2: serde_json::Value = serde_json::from_str(&json2).unwrap();
+        assert_eq!(parsed2["current"], "imagePath");
+        assert_eq!(parsed2["solid"], "#ff0000"); // Still preserved.
+        assert_eq!(parsed2["imagePath"], "/image.jpg");
+        assert_eq!(parsed2["imageFolder"], "/folder");
+
+        // Switch to image folder - everything should still be there
+        restored.use_image_folder();
+        let json3 = serde_json::to_string(&restored).unwrap();
+        let parsed3: serde_json::Value = serde_json::from_str(&json3).unwrap();
+        assert_eq!(parsed3["current"], "imageFolder");
+        assert_eq!(parsed3["solid"], "#ff0000"); // Still preserved.
+        assert_eq!(parsed3["imagePath"], "/image.jpg"); // Still preserved.
+        assert_eq!(parsed3["imageFolder"], "/folder");
+    }
+
+    #[test]
+    fn test_background_source_toml_skips_none_values() {
+        // Create background with only solid color (other fields are None)
+        let bg = BackgroundSource::new_solid(HexColor::new("#ff0000"));
+
+        // Serialize to TOML
+        let toml = toml::to_string(&bg).unwrap();
+        println!("Serialized TOML:\n{toml}");
+
+        // TOML should only contain "current" and "solid", not imagePath or imageFolder
+        assert!(toml.contains("current = \"solid\""));
+        assert!(toml.contains("solid = \"#ff0000\""));
+        assert!(!toml.contains("imagePath"));
+        assert!(!toml.contains("imageFolder"));
+
+        // Now set image path and serialize again
+        let mut bg2 = BackgroundSource::new_solid(HexColor::new("#00ff00"));
+        bg2.set_image_path("/test.jpg".to_string());
+        bg2.use_image_path();
+
+        let toml2 = toml::to_string(&bg2).unwrap();
+        println!("After switch to imagePath:\n{toml2}");
+
+        // Should have both solid and imagePath, but not imageFolder
+        assert!(toml2.contains("current = \"imagePath\""));
+        assert!(toml2.contains("solid = \"#00ff00\"")); // Preserved!
+        assert!(toml2.contains("imagePath = \"/test.jpg\""));
+        assert!(!toml2.contains("imageFolder"));
+    }
 }

@@ -76,7 +76,7 @@ export function useComputedTransform<T, R>(
 export function useSecondsToMinutes(
   getter: () => number,
   setter: (value: number) => void,
-  min = 1,
+  min: number = 1,
 ): WritableComputedRef<number> {
   return useComputedTransform(
     getter,
@@ -104,8 +104,8 @@ export function useSecondsToMinutes(
 export function useDecimalToPercent(
   getter: () => number,
   setter: (value: number) => void,
-  min = 0,
-  max = 100,
+  min: number = 0,
+  max: number = 100,
 ): WritableComputedRef<number> {
   return useComputedTransform(
     getter,

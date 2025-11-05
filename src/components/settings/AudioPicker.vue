@@ -41,12 +41,16 @@ const selectedType = computed<"none" | "builtin" | "filepath">({
     if (value === "none") {
       convertToNoAudio(props.audio);
     } else if (value === "builtin") {
-      convertToBuiltinAudio(
-        props.audio,
-        providedOptions[0]?.value ?? "gentle-bell",
-      );
+      // Use persisted value if available, otherwise use default
+      const name =
+        getBuiltinAudioName(props.audio) ||
+        providedOptions[0]?.value ||
+        "gentle-bell";
+      convertToBuiltinAudio(props.audio, name);
     } else {
-      convertToFilePathAudio(props.audio, "");
+      // Use persisted value if available, otherwise use empty string
+      const path = getAudioFilePath(props.audio) || "";
+      convertToFilePathAudio(props.audio, path);
     }
   },
 });
@@ -98,12 +102,12 @@ async function playPreview() {
     isPreviewing.value = true;
 
     if (isFilePathAudio(audio)) {
-      const path = audio.source.filePath;
+      const path = getAudioFilePath(audio);
       if (path) {
         await invoke("play_audio", { path, volume: audio.volume });
       }
     } else if (isBuiltinAudio(audio)) {
-      const name = audio.source.builtinName;
+      const name = getBuiltinAudioName(audio);
       if (name) {
         await invoke("play_builtin_audio", {
           resourceName: name,

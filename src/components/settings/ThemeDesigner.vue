@@ -3,17 +3,20 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import type { BackgroundSource, ThemeSettings } from "@/types";
+import type { ThemeSettings } from "@/types";
 import {
-  createImageFolderBackground,
-  createImagePathBackground,
-  createSolidBackground,
+  convertToImageFolderBackground,
+  convertToImagePathBackground,
+  convertToSolidBackground,
   getImageFolder,
   getImagePath,
   getSolidColor,
   isImageFolderBackground,
   isImagePathBackground,
   isSolidBackground,
+  updateImageFolder,
+  updateImagePath,
+  updateSolidColor,
 } from "@/types";
 
 const props = defineProps<{
@@ -25,65 +28,56 @@ const { t } = useI18n();
 
 const backgroundType = ref<"solid" | "image" | "folder">("solid");
 const imagePreview = ref<string | null>(null);
-const lastSolidColor = ref<string>("#1f2937");
-const lastImagePath = ref<string>("");
-const lastFolder = ref<string>("");
 
-// Use factory functions for background access
+// Direct access to persisted values in background object
 const solidColor = computed({
   get: () => {
-    const bg = props.theme.background;
-    return isSolidBackground(bg)
-      ? getSolidColor(bg) || lastSolidColor.value
-      : lastSolidColor.value;
+    const color = getSolidColor(props.theme.background);
+    return color ?? "#1f2937";
   },
-  set: (value: string) => updateBackground(createSolidBackground(value)),
+  set: (value: string) => {
+    // Update the solid field and switch to solid type
+    updateSolidColor(props.theme.background, value);
+    convertToSolidBackground(props.theme.background, value);
+  },
 });
 
 const imagePath = computed({
   get: () => {
-    const bg = props.theme.background;
-    return isImagePathBackground(bg)
-      ? getImagePath(bg) || lastImagePath.value
-      : lastImagePath.value;
+    return getImagePath(props.theme.background) ?? "";
   },
-  set: (value: string) => updateBackground(createImagePathBackground(value)),
+  set: (value: string) => {
+    // Update the imagePath field and switch to imagePath type
+    updateImagePath(props.theme.background, value);
+    convertToImagePathBackground(props.theme.background, value);
+  },
 });
 
 const folderPath = computed({
   get: () => {
-    const bg = props.theme.background;
-    return isImageFolderBackground(bg)
-      ? getImageFolder(bg) || lastFolder.value
-      : lastFolder.value;
+    return getImageFolder(props.theme.background) ?? "";
   },
-  set: (value: string) => updateBackground(createImageFolderBackground(value)),
+  set: (value: string) => {
+    // Update the imageFolder field and switch to imageFolder type
+    updateImageFolder(props.theme.background, value);
+    convertToImageFolderBackground(props.theme.background, value);
+  },
 });
 
 /**
- * Update the background source in the theme.
- * @param {BackgroundSource} source The new background source.
+ * Update image preview based on current background
  */
-function updateBackground(source: BackgroundSource) {
-  props.theme.background = source;
-  if (isImagePathBackground(source)) {
-    const path = getImagePath(source);
+function updateImagePreview() {
+  const background = props.theme.background;
+  if (isImagePathBackground(background)) {
+    const path = getImagePath(background);
     if (path) {
       imagePreview.value = convertFileSrc(path);
-      lastImagePath.value = path;
+    } else {
+      imagePreview.value = null;
     }
-  } else if (isImageFolderBackground(source)) {
+  } else {
     imagePreview.value = null;
-    const folder = getImageFolder(source);
-    if (folder) {
-      lastFolder.value = folder;
-    }
-  } else if (isSolidBackground(source)) {
-    imagePreview.value = null;
-    const color = getSolidColor(source);
-    if (color) {
-      lastSolidColor.value = color;
-    }
   }
 }
 
@@ -92,34 +86,26 @@ watch(
   (background) => {
     if (isSolidBackground(background)) {
       backgroundType.value = "solid";
-      imagePreview.value = null;
-      const color = getSolidColor(background);
-      if (color) lastSolidColor.value = color;
     } else if (isImagePathBackground(background)) {
       backgroundType.value = "image";
-      const path = getImagePath(background);
-      if (path) {
-        imagePreview.value = convertFileSrc(path);
-        lastImagePath.value = path;
-      }
     } else if (isImageFolderBackground(background)) {
       backgroundType.value = "folder";
-      imagePreview.value = null;
-      const folder = getImageFolder(background);
-      if (folder) lastFolder.value = folder;
     }
+    updateImagePreview();
   },
   { immediate: true },
 );
 
 watch(backgroundType, (mode) => {
+  const bg = props.theme.background;
   if (mode === "solid") {
-    updateBackground(createSolidBackground(lastSolidColor.value));
+    convertToSolidBackground(bg, getSolidColor(bg) ?? "#1f2937");
   } else if (mode === "image") {
-    updateBackground(createImagePathBackground(lastImagePath.value));
+    convertToImagePathBackground(bg, getImagePath(bg) ?? "");
   } else {
-    updateBackground(createImageFolderBackground(lastFolder.value));
+    convertToImageFolderBackground(bg, getImageFolder(bg) ?? "");
   }
+  updateImagePreview();
 });
 
 /**
@@ -136,7 +122,7 @@ async function pickImage() {
     multiple: false,
   });
   if (typeof file === "string") {
-    updateBackground(createImagePathBackground(file));
+    imagePath.value = file;
   }
 }
 
@@ -146,7 +132,7 @@ async function pickImage() {
 async function pickFolder() {
   const folder = await open({ directory: true, multiple: false });
   if (typeof folder === "string") {
-    updateBackground(createImageFolderBackground(folder));
+    folderPath.value = folder;
   }
 }
 

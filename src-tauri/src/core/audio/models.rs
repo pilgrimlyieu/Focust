@@ -119,6 +119,7 @@ impl AudioSource {
 #[serde(rename_all = "camelCase")]
 pub struct AudioSettings {
     /// Audio source configuration
+    #[serde(flatten)]
     pub source: AudioSource,
     /// Volume level (0.0 to 1.0)
     pub volume: f32,
@@ -315,5 +316,65 @@ mod tests {
 
         settings.source.use_file_path();
         assert!(!settings.is_builtin());
+    }
+
+    #[test]
+    fn test_audio_source_persists_all_values() {
+        // Create source with builtin
+        let mut source = AudioSource::new_builtin("bell".to_string());
+        source.set_file_path("/custom.mp3".to_string());
+
+        // Serialize to JSON - all fields should be present
+        let json = serde_json::to_string(&source).unwrap();
+        println!("Serialized JSON: {json}");
+
+        // Verify all fields are present in JSON
+        let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed["current"], "builtin");
+        assert_eq!(parsed["builtinName"], "bell");
+        assert_eq!(parsed["filePath"], "/custom.mp3");
+
+        // Deserialize back
+        let restored: AudioSource = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored.current, AudioSourceType::Builtin);
+        assert_eq!(restored.builtin_name, Some("bell".to_string()));
+        assert_eq!(restored.file_path, Some("/custom.mp3".to_string()));
+
+        // Switch to file path - builtin should still be there
+        let mut restored = restored;
+        restored.use_file_path();
+        let json2 = serde_json::to_string(&restored).unwrap();
+        let parsed2: serde_json::Value = serde_json::from_str(&json2).unwrap();
+        assert_eq!(parsed2["current"], "filePath");
+        assert_eq!(parsed2["builtinName"], "bell"); // Still preserved.
+        assert_eq!(parsed2["filePath"], "/custom.mp3");
+    }
+
+    #[test]
+    fn test_audio_source_toml_skips_none_values() {
+        // Create source with only builtin (file_path is None)
+        let source = AudioSource::new_builtin("bell".to_string());
+
+        // Serialize to TOML
+        let toml = toml::to_string(&source).unwrap();
+        println!("Serialized TOML:\n{toml}");
+
+        // TOML should only contain "current" and "builtinName", not filePath
+        assert!(toml.contains("current = \"builtin\""));
+        assert!(toml.contains("builtinName = \"bell\""));
+        assert!(!toml.contains("filePath"));
+
+        // Now set file path and serialize again
+        let mut source2 = AudioSource::new_builtin("chime".to_string());
+        source2.set_file_path("/music.mp3".to_string());
+        source2.use_file_path();
+
+        let toml2 = toml::to_string(&source2).unwrap();
+        println!("After switch to filePath:\n{toml2}");
+
+        // Should have both builtinName and filePath
+        assert!(toml2.contains("current = \"filePath\""));
+        assert!(toml2.contains("builtinName = \"chime\"")); // Preserved.
+        assert!(toml2.contains("filePath = \"/music.mp3\""));
     }
 }

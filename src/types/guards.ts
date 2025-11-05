@@ -5,13 +5,13 @@ import type { SchedulerEvent } from "./generated/SchedulerEvent";
 
 /** Type guards for audio sources */
 function isBuiltinAudio(audio: AudioSettings) {
-  return audio.source.current === "builtin";
+  return audio.current === "builtin";
 }
 function isFilePathAudio(audio: AudioSettings) {
-  return audio.source.current === "filePath";
+  return audio.current === "filePath";
 }
 function isNoAudio(audio: AudioSettings) {
-  return audio.source.current === "none";
+  return audio.current === "none";
 }
 
 /** Type guards for background sources */

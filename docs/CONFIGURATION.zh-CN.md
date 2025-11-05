@@ -238,7 +238,7 @@ fontFamily = "Arial"
 
 ```toml
 [schedules.miniBreaks.audio]
-source = "builtin"
+current = "builtin"
 name = "gentle-bell"
 volume = 0.7
 ```
@@ -310,7 +310,7 @@ fontSize = 24
 fontFamily = "Arial"
 
 [schedules.miniBreaks.audio]
-source = "builtin"
+current = "builtin"
 name = "gentle-bell"
 volume = 0.7
 
@@ -333,7 +333,7 @@ fontSize = 28
 fontFamily = "Helvetica"
 
 [schedules.longBreaks.audio]
-source = "filePath"
+current = "filePath"
 path = "/path/to/sound.mp3"
 volume = 0.8
 
@@ -407,7 +407,7 @@ fontSize = 20
 fontFamily = "Arial"
 
 [attentions.audio]
-source = "builtin"
+current = "builtin"
 name = "notification"
 volume = 0.6
 
@@ -430,7 +430,7 @@ fontSize = 20
 fontFamily = "Arial"
 
 [attentions.audio]
-source = "none"
+current = "none"
 ```
 
 ---
@@ -703,7 +703,7 @@ fontFamily = "Arial"
 solid = "#1f2937"
 
 [schedules.miniBreaks.audio]
-source = "none"
+current = "none"
 volume = 0.6
 
 [schedules.miniBreaks.suggestions]
@@ -728,7 +728,7 @@ fontFamily = "Arial"
 solid = "#1f2937"
 
 [schedules.longBreaks.audio]
-source = "none"
+current = "none"
 volume = 0.6
 
 [schedules.longBreaks.suggestions]
@@ -774,7 +774,7 @@ fontSize = 24
 fontFamily = "Helvetica"
 
 [schedules.miniBreaks.audio]
-source = "builtin"
+current = "builtin"
 name = "gentle-bell"
 volume = 0.6
 
@@ -797,7 +797,7 @@ fontSize = 28
 fontFamily = "Georgia"
 
 [schedules.longBreaks.audio]
-source = "filePath"
+current = "filePath"
 path = "/home/user/sounds/meditation-bell.mp3"
 volume = 0.7
 
@@ -831,7 +831,7 @@ fontSize = 22
 fontFamily = "Arial"
 
 [schedules.miniBreaks.audio]
-source = "builtin"
+current = "builtin"
 name = "soft-gong"
 volume = 0.5
 
@@ -860,7 +860,7 @@ fontSize = 20
 fontFamily = "Arial"
 
 [attentions.audio]
-source = "builtin"
+current = "builtin"
 name = "notification"
 volume = 0.5
 
@@ -883,7 +883,7 @@ fontSize = 22
 fontFamily = "Arial"
 
 [attentions.audio]
-source = "builtin"
+current = "builtin"
 name = "bright-notification"
 volume = 0.6
 ```
