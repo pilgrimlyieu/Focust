@@ -32,21 +32,24 @@ pub fn run() {
             // When a second instance is launched, focus the existing settings window
             tracing::info!("Single instance: attempting to focus existing window");
 
-            if let Some(window) = app.get_webview_window("settings") {
-                if let Err(e) = window.show() {
-                    tracing::error!("Failed to show settings window: {e}");
-                }
-                if let Err(e) = window.set_focus() {
-                    tracing::error!("Failed to focus settings window: {e}");
-                }
-                if let Err(e) = window.unminimize() {
-                    tracing::error!("Failed to unminimize settings window: {e}");
-                }
-            } else {
-                tracing::warn!("Settings window not found, creating new one");
-                // If settings window doesn't exist, create it
-                let _ = platform::create_settings_window(app);
-            }
+            app.get_webview_window("settings")
+                .map_or_else(|| {
+                    tracing::warn!("Settings window not found, creating new one");
+                    platform::create_settings_window(app).unwrap_or_else(|e| {
+                        tracing::error!("Failed to create settings window: {e}");
+                    });
+                },
+                |window| {
+                    window.show().unwrap_or_else(|e| {
+                        tracing::error!("Failed to show settings window: {e}");
+                    });
+                    window.set_focus().unwrap_or_else(|e| {
+                        tracing::error!("Failed to focus settings window: {e}");
+                    });
+                    window.unminimize().unwrap_or_else(|e| {
+                        tracing::error!("Failed to unminimize settings window: {e}");
+                    });
+                });
         }))
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
@@ -69,9 +72,9 @@ pub fn run() {
                 "warn"
             };
 
-            if let Err(e) = utils::init_logging(&log_dir, log_level) {
+            utils::init_logging(&log_dir, log_level).unwrap_or_else(|e| {
                 eprintln!("Failed to initialize logging: {e}");
-            }
+            });
 
             let handle = app.handle().clone();
 
@@ -123,14 +126,14 @@ pub fn run() {
                 }
 
                 // Setup system tray after config is loaded
-                if let Err(e) = platform::setup_tray(&handle).await {
+                platform::setup_tray(&handle).await.unwrap_or_else(|e| {
                     tracing::error!("Failed to setup system tray: {e}");
-                }
+                });
 
                 // Register global shortcuts (after config is managed)
-                if let Err(e) = platform::register_shortcuts(&handle).await {
-                    tracing::error!("Failed to register global shortcuts: {e}");
-                }
+                platform::register_shortcuts(&handle).await.unwrap_or_else(|e| {
+                    tracing::error!("Failed to register shortcuts: {e}");
+                });
 
                 // Load suggestions
                 let suggestions_config = core::suggestions::load_suggestions(&handle).await;

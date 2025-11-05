@@ -20,10 +20,10 @@ pub async fn register_shortcuts<R: Runtime>(app: &AppHandle<R>) -> Result<(), St
     if postpone_shortcut.is_empty() {
         tracing::info!("No postpone shortcut configured, skipping registration");
     } else {
-        if let Err(e) = register_postpone_shortcut(app, &postpone_shortcut) {
-            tracing::error!("Failed to register postpone shortcut '{postpone_shortcut}': {e}",);
-            return Err(e);
-        }
+        register_postpone_shortcut(app, &postpone_shortcut).map_err(|e| {
+            tracing::error!("Failed to register postpone shortcut '{postpone_shortcut}': {e}");
+            e
+        })?;
         tracing::info!("Global shortcuts registered successfully");
     }
 
@@ -46,9 +46,7 @@ fn register_postpone_shortcut<R: Runtime>(
 
                 // Send postpone command to scheduler
                 if let Some(scheduler_cmd) = app_handle.try_state::<SchedulerCmd>() {
-                    if let Err(e) = scheduler_cmd.0.try_send(Command::Postpone) {
-                        tracing::error!("Failed to send postpone command: {e}");
-                    }
+                    scheduler_cmd.try_send_command(&Command::Postpone);
                 } else {
                     tracing::warn!("SchedulerCmd state not found");
                 }

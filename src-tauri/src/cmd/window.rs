@@ -24,9 +24,9 @@ pub fn close_all_break_windows<R: Runtime>(
     for (label, window) in windows {
         if label.starts_with(payload_id) {
             tracing::debug!("Closing break window: {label}");
-            if let Err(e) = window.close() {
+            window.close().unwrap_or_else(|e| {
                 tracing::warn!("Failed to close window {label}: {e}");
-            }
+            });
         }
     }
 

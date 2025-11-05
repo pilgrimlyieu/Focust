@@ -59,9 +59,9 @@ async fn try_load_or_create_config(app_handle: &AppHandle) -> Result<AppConfig> 
             config_path.display()
         );
         let config = AppConfig::default();
-        if let Err(e) = save_config(app_handle, &config).await {
+        save_config(app_handle, &config).await.unwrap_or_else(|e| {
             tracing::error!("Failed to save the default config file: {e}");
-        }
+        });
         return Ok(config);
     }
 

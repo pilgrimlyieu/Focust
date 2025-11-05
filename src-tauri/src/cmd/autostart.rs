@@ -41,9 +41,9 @@ pub async fn set_autostart_enabled(app: tauri::AppHandle, enabled: bool) -> Resu
         config_guard.autostart = enabled;
 
         // Save config to disk
-        if let Err(e) = save_config(&app, &config_guard).await {
+        save_config(&app, &config_guard).await.unwrap_or_else(|e| {
             tracing::warn!("Failed to save autostart config: {e}");
-        }
+        });
     }
 
     // Return system autostart result

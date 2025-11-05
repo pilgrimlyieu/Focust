@@ -136,7 +136,11 @@ pub async fn setup_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
             if let Ok(sender_option) = tray_state_clone.tray_sender.lock()
                 && let Some(sender) = sender_option.as_ref()
             {
-                let _ = sender.send(TrayUpdate::UpdateMenu(status.paused));
+                sender
+                    .send(TrayUpdate::UpdateMenu(status.paused))
+                    .unwrap_or_else(|e| {
+                        tracing::warn!("Failed to send tray update: {e}");
+                    });
             }
         }
     });
@@ -152,9 +156,9 @@ fn handle_tray_menu_event<R: Runtime>(app: &AppHandle<R>, event_id: &str) {
             show_settings_window(app);
         }
         "pause" => {
-            if let Err(e) = toggle_pause(app) {
+            toggle_pause(app).unwrap_or_else(|e| {
                 tracing::error!("Failed to toggle pause: {e}");
-            }
+            });
         }
         "quit" => {
             tracing::info!("Quit requested from tray menu");
@@ -175,9 +179,9 @@ fn handle_tray_menu_event<R: Runtime>(app: &AppHandle<R>, event_id: &str) {
 fn show_settings_window<R: Runtime>(app: &AppHandle<R>) {
     let app_clone = app.clone();
     tauri::async_runtime::spawn(async move {
-        if let Err(e) = open_settings_window(app_clone).await {
+        open_settings_window(app_clone).await.unwrap_or_else(|e| {
             tracing::error!("Failed to open settings window: {e}");
-        }
+        });
     });
 }
 
@@ -197,14 +201,12 @@ fn toggle_pause<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {
     if is_paused {
         // Currently paused, send resume command
         scheduler_cmd
-            .0
             .try_send(Command::Resume(PauseReason::Manual))
             .map_err(|e| format!("Failed to send resume command: {e}"))?;
         tracing::info!("Resume sent from tray menu");
     } else {
         // Currently running, send pause command
         scheduler_cmd
-            .0
             .try_send(Command::Pause(PauseReason::Manual))
             .map_err(|e| format!("Failed to send pause command: {e}"))?;
         tracing::info!("Pause sent from tray menu");

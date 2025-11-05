@@ -32,21 +32,23 @@ pub async fn save_config(
     };
 
     // Save config to file
-    if let Err(e) = config::save_config(&app_handle, &config).await {
-        let err_msg = format!("Failed to save config file: {e}");
-        tracing::error!("{err_msg}");
-        return Err(err_msg);
-    }
+    config::save_config(&app_handle, &config)
+        .await
+        .map_err(|e| {
+            let err_msg = format!("Failed to save config file: {e}");
+            tracing::error!("{err_msg}");
+            err_msg
+        })?;
 
     // Update the scheduler with the new config
-    if let Err(e) = scheduler_cmd
+    scheduler_cmd
         .send(Command::UpdateConfig(config.clone()))
         .await
-    {
-        let err_msg = format!("Failed to send update_config command to scheduler: {e}");
-        tracing::error!("{err_msg}");
-        return Err(err_msg);
-    }
+        .map_err(|e| {
+            let err_msg = format!("Failed to send update_config command to scheduler: {e}");
+            tracing::error!("{err_msg}");
+            err_msg
+        })?;
 
     // Update the shared config state
     {
@@ -63,15 +65,19 @@ pub async fn save_config(
 
         // Unregister all existing shortcuts
         // TODO: only unregister the changed one
-        if let Err(e) = app_handle.global_shortcut().unregister_all() {
-            tracing::warn!("Failed to unregister existing shortcuts: {e}");
-        }
+        app_handle
+            .global_shortcut()
+            .unregister_all()
+            .unwrap_or_else(|e| {
+                tracing::warn!("Failed to unregister existing shortcuts: {e}");
+            });
 
         // Re-register with new shortcut
-        if let Err(e) = register_shortcuts(&app_handle).await {
-            tracing::error!("Failed to re-register shortcuts: {e}");
-            return Err(format!("Failed to re-register shortcuts: {e}"));
-        }
+        register_shortcuts(&app_handle).await.map_err(|e| {
+            let err_msg = format!("Failed to re-register shortcuts: {e}");
+            tracing::error!("{err_msg}");
+            err_msg
+        })?;
 
         tracing::info!("Shortcuts re-registered successfully");
     }

@@ -15,6 +15,28 @@ impl Deref for SchedulerCmd {
     }
 }
 
+impl SchedulerCmd {
+    /// Create a new [`SchedulerCmd`]
+    #[must_use]
+    pub fn new(sender: Sender<Command>) -> Self {
+        SchedulerCmd(sender)
+    }
+
+    /// Try to send a command to the scheduler
+    pub fn try_send_command(&self, command: &Command) {
+        self.0.try_send(command.clone()).unwrap_or_else(|e| {
+            tracing::error!("Failed to send {command} to scheduler: {e}");
+        });
+    }
+
+    /// Send a command to the scheduler asynchronously
+    pub async fn send_command(&self, command: &Command) {
+        self.0.send(command.clone()).await.unwrap_or_else(|e| {
+            tracing::error!("Failed to send {command} to scheduler: {e}");
+        });
+    }
+}
+
 /// Shutdown sender to keep the scheduler alive
 pub struct ShutdownTx(pub watch::Sender<()>);
 

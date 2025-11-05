@@ -157,11 +157,11 @@ impl BreakScheduler {
             active_schedule.map_or(0, |s| s.notification_before_s)
         };
 
-        if let Err(e) =
-            send_break_notification(&self.app_handle, break_type, notification_before_s).await
-        {
-            tracing::warn!("Failed to send break notification: {e}");
-        }
+        send_break_notification(&self.app_handle, break_type, notification_before_s)
+            .await
+            .unwrap_or_else(|e| {
+                tracing::warn!("Failed to send break notification: {e}");
+            });
     }
 
     /// Update state after a break has been executed
@@ -443,9 +443,11 @@ impl BreakScheduler {
             }),
         };
 
-        if let Err(e) = self.app_handle.emit("scheduler-status", &status) {
-            tracing::warn!("Failed to emit scheduler status: {e}");
-        }
+        self.app_handle
+            .emit("scheduler-status", &status)
+            .unwrap_or_else(|e| {
+                tracing::warn!("Failed to emit scheduler status: {e}");
+            });
     }
 
     /// Emit paused status to frontend
@@ -455,9 +457,11 @@ impl BreakScheduler {
             next_event: None,
         };
 
-        if let Err(e) = self.app_handle.emit("scheduler-status", &status) {
-            tracing::warn!("Failed to emit scheduler status: {e}");
-        }
+        self.app_handle
+            .emit("scheduler-status", &status)
+            .unwrap_or_else(|e| {
+                tracing::warn!("Failed to emit scheduler status: {e}");
+            });
     }
 
     /// Emit idle status to frontend

@@ -55,14 +55,12 @@ impl Default for SuggestionsConfig {
     fn default() -> Self {
         // Load from embedded resource file
         // This should never fail
-        load_default_suggestions().unwrap_or_else(|e| {
-            tracing::error!("Failed to load embedded suggestions.toml: {e}");
-            tracing::error!("This should never happen");
-            // Return empty config as last resort
-            Self {
-                by_language: HashMap::new(),
-            }
-        })
+        load_default_suggestions()
+            .inspect_err(|e| {
+                tracing::error!("Failed to load embedded suggestions.toml: {e}");
+                unreachable!("This should never happen because the resource is embedded");
+            })
+            .unwrap_or_default()
     }
 }
 
@@ -74,13 +72,15 @@ pub async fn load_suggestions(app_handle: &AppHandle) -> SuggestionsConfig {
             config
         }
         Err(e) => {
-            tracing::warn!("Failed to load suggestions, using defaults: {e:#}");
+            tracing::warn!("Failed to load suggestions, using defaults: {e}");
             let default = SuggestionsConfig::default();
 
             // Try to save default config
-            if let Err(save_err) = save_suggestions(app_handle, &default).await {
-                tracing::error!("Failed to save default suggestions: {save_err:#}");
-            }
+            save_suggestions(app_handle, &default)
+                .await
+                .unwrap_or_else(|e| {
+                    tracing::error!("Failed to save default suggestions: {e}");
+                });
 
             default
         }

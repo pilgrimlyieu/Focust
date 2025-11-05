@@ -177,9 +177,11 @@ impl AttentionTimer {
 
         let app_handle = self.app_handle.clone();
         tokio::spawn(async move {
-            if let Err(e) = create_break_windows(&app_handle, event).await {
-                tracing::error!("Failed to create attention windows: {e}");
-            }
+            create_break_windows(&app_handle, event)
+                .await
+                .unwrap_or_else(|e| {
+                    tracing::error!("Failed to create attention windows: {e}");
+                });
         });
     }
 
