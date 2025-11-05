@@ -98,14 +98,18 @@ async function playPreview() {
     isPreviewing.value = true;
 
     if (isFilePathAudio(audio)) {
-      const path = audio.path;
-      await invoke("play_audio", { path, volume: audio.volume });
+      const path = audio.source.filePath;
+      if (path) {
+        await invoke("play_audio", { path, volume: audio.volume });
+      }
     } else if (isBuiltinAudio(audio)) {
-      const name = audio.name;
-      await invoke("play_builtin_audio", {
-        resourceName: name,
-        volume: audio.volume,
-      });
+      const name = audio.source.builtinName;
+      if (name) {
+        await invoke("play_builtin_audio", {
+          resourceName: name,
+          volume: audio.volume,
+        });
+      }
     }
 
     // Auto-stop preview flag after 3 seconds (audio might finish before)

@@ -5,24 +5,24 @@ import type { SchedulerEvent } from "./generated/SchedulerEvent";
 
 /** Type guards for audio sources */
 function isBuiltinAudio(audio: AudioSettings) {
-  return audio.source === "builtin";
+  return audio.source.current === "builtin";
 }
 function isFilePathAudio(audio: AudioSettings) {
-  return audio.source === "filePath";
+  return audio.source.current === "filePath";
 }
 function isNoAudio(audio: AudioSettings) {
-  return audio.source === "none";
+  return audio.source.current === "none";
 }
 
 /** Type guards for background sources */
 function isSolidBackground(background: BackgroundSource) {
-  return "solid" in background;
+  return background.current === "solid";
 }
 function isImagePathBackground(background: BackgroundSource) {
-  return "imagePath" in background;
+  return background.current === "imagePath";
 }
 function isImageFolderBackground(background: BackgroundSource) {
-  return "imageFolder" in background;
+  return background.current === "imageFolder";
 }
 
 /**

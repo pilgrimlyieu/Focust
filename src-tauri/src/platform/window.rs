@@ -1,11 +1,15 @@
-use rand::seq::IndexedRandom;
-use std::{path::PathBuf, sync::Arc};
+use rand::{Rng, seq::IndexedRandom};
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 use tauri::{AppHandle, Listener, Manager, Monitor, Runtime, WebviewUrl, WebviewWindowBuilder};
 use tokio::sync::Mutex;
 
 use crate::core::{
     payload::store_payload_internal,
     suggestions::{SharedSuggestions, sample_suggestion},
+    theme::BackgroundType,
 };
 use crate::core::{
     payload::{BreakPayload, EventKind},
@@ -14,6 +18,8 @@ use crate::core::{
 use crate::scheduler::SchedulerEvent;
 use crate::{config::AppConfig, core::suggestions::SuggestionsConfig};
 use crate::{config::SharedConfig, core::payload::BreakPayloadStore};
+
+const ALLOWED_EXTENSIONS_LOWERCASE: &[&str] = &["jpg", "jpeg", "png", "webp", "bmp", "gif"];
 
 /// Create break windows for monitors based on configuration
 pub async fn create_break_windows(app: &AppHandle, event: SchedulerEvent) -> Result<(), String> {
@@ -72,6 +78,84 @@ pub async fn create_break_windows(app: &AppHandle, event: SchedulerEvent) -> Res
     }
 
     Ok(())
+}
+
+/// Create settings window (internal function used by both command and single instance)
+pub fn create_settings_window<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {
+    // Check if window already exists
+    if let Some(window) = app.get_webview_window("settings") {
+        window.show().map_err(|e| e.to_string())?;
+        window.set_focus().map_err(|e| e.to_string())?;
+        tracing::debug!("Settings window already exists, showing and focusing");
+        return Ok(());
+    }
+
+    tracing::info!("Creating new settings window");
+
+    // Register event listener BEFORE creating the window
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    let tx = Arc::new(Mutex::new(Some(tx)));
+
+    let tx_clone = tx.clone();
+    let app_clone = app.clone();
+    let unlisten = app.listen("settings-ready", move |_event| {
+        tracing::info!("Received settings-ready event from frontend");
+        let tx_clone = tx_clone.clone();
+        tauri::async_runtime::spawn(async move {
+            if let Some(sender) = tx_clone.lock().await.take() {
+                let _ = sender.send(());
+            }
+        });
+    });
+
+    // Create window
+    let _window =
+        WebviewWindowBuilder::new(app, "settings", WebviewUrl::App("settings.html".into()))
+            .title("Focust - Settings")
+            .inner_size(1400.0, 900.0)
+            .center()
+            .visible(false) // Start hidden to avoid showing blank window
+            .build()
+            .map_err(|e| e.to_string())?;
+
+    tracing::info!("Settings window created, waiting for ready event...");
+
+    // Wait for ready event with timeout
+    let app_clone2 = app.clone();
+    tauri::async_runtime::spawn(async move {
+        let ready = tokio::time::timeout(tokio::time::Duration::from_millis(2000), rx).await;
+        app_clone.unlisten(unlisten);
+
+        match ready {
+            Ok(Ok(())) => {
+                tracing::info!("Settings window content ready, showing window");
+            }
+            Ok(Err(e)) => {
+                tracing::warn!("Error waiting for ready event: {e}, showing window anyway");
+            }
+            Err(_) => {
+                tracing::warn!("Timeout waiting for ready event, showing window anyway");
+            }
+        }
+
+        // Show the window now
+        if let Some(win) = app_clone2.get_webview_window("settings") {
+            let _ = win.show();
+            let _ = win.set_focus();
+        }
+    });
+
+    Ok(())
+}
+
+fn is_allowed_image_extension(path: &Path) -> bool {
+    path.extension()
+        .and_then(|ext| ext.to_str())
+        .is_some_and(|ext_str| {
+            ALLOWED_EXTENSIONS_LOWERCASE
+                .iter()
+                .any(|&allowed_ext| ext_str.eq_ignore_ascii_case(allowed_ext))
+        })
 }
 
 /// Create a single break window for a specific monitor
@@ -229,122 +313,64 @@ fn build_break_payload(
 
 /// Resolve background source to actual background, or fallback to solid
 fn resolve_background(source: &BackgroundSource) -> ResolvedBackground {
-    match source {
-        BackgroundSource::Solid(color) => ResolvedBackground::new_solid(color.to_string()),
-        BackgroundSource::ImagePath(path) => ResolvedBackground::new_image(path.clone()),
-        BackgroundSource::ImageFolder(folder) => {
-            let folder_path = PathBuf::from(folder);
-            if !folder_path.exists() {
-                tracing::warn!(
-                    "Background folder does not exist: {}",
-                    folder_path.display()
-                );
-                return ResolvedBackground::default();
-            }
-
-            let entries: Vec<PathBuf> = match std::fs::read_dir(&folder_path) {
-                Ok(read_dir) => read_dir
-                    .filter_map(|entry| entry.ok().map(|e| e.path()))
-                    .filter(|path| {
-                        path.is_file()
-                            && path
-                                .extension()
-                                .and_then(|e| e.to_str())
-                                .is_some_and(|ext| {
-                                    matches!(
-                                        ext.to_lowercase().as_str(),
-                                        "jpg" | "jpeg" | "png" | "webp" | "bmp" | "gif"
-                                    )
-                                })
-                    })
-                    .collect(),
-                Err(e) => {
-                    tracing::error!("Failed to read folder {}: {e}", folder_path.display());
-                    return ResolvedBackground::default();
-                }
-            };
-
-            if entries.is_empty() {
-                tracing::warn!("No images found in folder: {folder}");
-                return ResolvedBackground::default();
-            }
-
-            let mut rng = rand::rng();
-            let chosen_entry = entries
-                .choose(&mut rng)
-                .unwrap() // Safe unwrap due to earlier check
-                .to_string_lossy()
-                .to_string();
-            tracing::debug!("Chosen background image: {chosen_entry}");
-            ResolvedBackground::new_image(chosen_entry)
-        }
+    match source.current {
+        BackgroundType::Solid => source
+            .get_solid()
+            .map(|color| ResolvedBackground::new_solid(color.to_string()))
+            .unwrap_or_default(),
+        BackgroundType::ImagePath => source
+            .get_image_path()
+            .map(|path| ResolvedBackground::new_image(path.to_string()))
+            .unwrap_or_default(),
+        BackgroundType::ImageFolder => source
+            .get_image_folder()
+            .and_then(|folder| {
+                let mut rng = rand::rng();
+                resolve_random_image_from_folder(folder, &mut rng)
+            })
+            .unwrap_or_default(),
     }
 }
 
-/// Create settings window (internal function used by both command and single instance)
-pub fn create_settings_window<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {
-    // Check if window already exists
-    if let Some(window) = app.get_webview_window("settings") {
-        window.show().map_err(|e| e.to_string())?;
-        window.set_focus().map_err(|e| e.to_string())?;
-        tracing::debug!("Settings window already exists, showing and focusing");
-        return Ok(());
+/// Resolve a random image from the specified folder
+fn resolve_random_image_from_folder(
+    folder_str: &str,
+    rng: &mut impl Rng,
+) -> Option<ResolvedBackground> {
+    let folder_path = PathBuf::from(folder_str);
+
+    if !folder_path.exists() {
+        tracing::warn!(
+            "Background folder does not exist: {}",
+            folder_path.display()
+        );
+        return None;
     }
 
-    tracing::info!("Creating new settings window");
-
-    // Register event listener BEFORE creating the window
-    let (tx, rx) = tokio::sync::oneshot::channel();
-    let tx = Arc::new(Mutex::new(Some(tx)));
-
-    let tx_clone = tx.clone();
-    let app_clone = app.clone();
-    let unlisten = app.listen("settings-ready", move |_event| {
-        tracing::info!("Received settings-ready event from frontend");
-        let tx_clone = tx_clone.clone();
-        tauri::async_runtime::spawn(async move {
-            if let Some(sender) = tx_clone.lock().await.take() {
-                let _ = sender.send(());
-            }
-        });
-    });
-
-    // Create window
-    let _window =
-        WebviewWindowBuilder::new(app, "settings", WebviewUrl::App("settings.html".into()))
-            .title("Focust - Settings")
-            .inner_size(1400.0, 900.0)
-            .center()
-            .visible(false) // Start hidden to avoid showing blank window
-            .build()
-            .map_err(|e| e.to_string())?;
-
-    tracing::info!("Settings window created, waiting for ready event...");
-
-    // Wait for ready event with timeout
-    let app_clone2 = app.clone();
-    tauri::async_runtime::spawn(async move {
-        let ready = tokio::time::timeout(tokio::time::Duration::from_millis(2000), rx).await;
-        app_clone.unlisten(unlisten);
-
-        match ready {
-            Ok(Ok(())) => {
-                tracing::info!("Settings window content ready, showing window");
-            }
-            Ok(Err(e)) => {
-                tracing::warn!("Error waiting for ready event: {e}, showing window anyway");
-            }
-            Err(_) => {
-                tracing::warn!("Timeout waiting for ready event, showing window anyway");
-            }
+    let entries: Vec<PathBuf> = match std::fs::read_dir(&folder_path) {
+        Ok(read_dir) => read_dir
+            .filter_map(|entry| entry.ok().map(|e| e.path()))
+            .filter(|path| path.is_file() && is_allowed_image_extension(path))
+            .collect(),
+        Err(e) => {
+            tracing::warn!(
+                "Failed to read background folder {}: {e}",
+                folder_path.display(),
+            );
+            return None;
         }
+    };
 
-        // Show the window now
-        if let Some(win) = app_clone2.get_webview_window("settings") {
-            let _ = win.show();
-            let _ = win.set_focus();
-        }
-    });
+    if entries.is_empty() {
+        tracing::warn!("No images found in folder: {}", folder_path.display());
+        return None;
+    }
 
-    Ok(())
+    let chosen_entry = entries
+        .choose(rng)
+        .expect("Should have chosen an entry as entries is not empty");
+
+    let chosen_path_string = chosen_entry.to_string_lossy().to_string();
+    tracing::debug!("Chosen background image: {chosen_path_string}");
+    Some(ResolvedBackground::new_image(chosen_path_string))
 }

@@ -16,13 +16,7 @@ import type { SchedulerEvent } from "./generated/SchedulerEvent";
 import type { SuggestionsSettings } from "./generated/SuggestionsSettings";
 import type { ThemeSettings } from "./generated/ThemeSettings";
 import type { TimeRange } from "./generated/TimeRange";
-import {
-  isBuiltinAudio,
-  isFilePathAudio,
-  isImageFolderBackground,
-  isImagePathBackground,
-  isSolidBackground,
-} from "./guards";
+import { isSolidBackground } from "./guards";
 
 // ============================================================================
 // SchedulerEvent Factory
@@ -85,7 +79,7 @@ export function getSchedulerEventData(event: SchedulerEvent): number {
  * @returns {BackgroundSource} BackgroundSource with solid variant
  */
 export function createSolidBackground(color: HexColor): BackgroundSource {
-  return { solid: color };
+  return { current: "solid", imageFolder: null, imagePath: null, solid: color };
 }
 
 /**
@@ -94,7 +88,12 @@ export function createSolidBackground(color: HexColor): BackgroundSource {
  * @returns {BackgroundSource} BackgroundSource with imagePath variant
  */
 export function createImagePathBackground(path: string): BackgroundSource {
-  return { imagePath: path };
+  return {
+    current: "imagePath",
+    imageFolder: null,
+    imagePath: path,
+    solid: null,
+  };
 }
 
 /**
@@ -103,7 +102,12 @@ export function createImagePathBackground(path: string): BackgroundSource {
  * @returns {BackgroundSource} BackgroundSource with imageFolder variant
  */
 export function createImageFolderBackground(folder: string): BackgroundSource {
-  return { imageFolder: folder };
+  return {
+    current: "imageFolder",
+    imageFolder: folder,
+    imagePath: null,
+    solid: null,
+  };
 }
 
 /**
@@ -112,7 +116,7 @@ export function createImageFolderBackground(folder: string): BackgroundSource {
  * @returns {HexColor | null} Color value or null if not solid
  */
 export function getSolidColor(background: BackgroundSource): HexColor | null {
-  return isSolidBackground(background) ? background.solid : null;
+  return background.solid;
 }
 
 /**
@@ -121,7 +125,7 @@ export function getSolidColor(background: BackgroundSource): HexColor | null {
  * @returns {string | null} Image path or null if not imagePath
  */
 export function getImagePath(background: BackgroundSource): string | null {
-  return isImagePathBackground(background) ? background.imagePath : null;
+  return background.imagePath;
 }
 
 /**
@@ -130,7 +134,7 @@ export function getImagePath(background: BackgroundSource): string | null {
  * @returns {string | null} Image folder path or null if not imageFolder
  */
 export function getImageFolder(background: BackgroundSource): string | null {
-  return isImageFolderBackground(background) ? background.imageFolder : null;
+  return background.imageFolder;
 }
 
 /**
@@ -159,12 +163,8 @@ export function convertToSolidBackground(
   background: BackgroundSource,
   color: HexColor,
 ) {
-  const bg = background as Record<string, unknown>;
-  // Remove all existing properties
-  delete bg.imagePath;
-  delete bg.imageFolder;
-  // Set new property
-  bg.solid = color;
+  background.current = "solid";
+  background.solid = color;
 }
 
 /**
@@ -176,10 +176,8 @@ export function convertToImagePathBackground(
   background: BackgroundSource,
   path: string,
 ) {
-  const bg = background as Record<string, unknown>;
-  delete bg.solid;
-  delete bg.imageFolder;
-  bg.imagePath = path;
+  background.current = "imagePath";
+  background.imagePath = path;
 }
 
 /**
@@ -191,10 +189,8 @@ export function convertToImageFolderBackground(
   background: BackgroundSource,
   folder: string,
 ) {
-  const bg = background as Record<string, unknown>;
-  delete bg.solid;
-  delete bg.imagePath;
-  bg.imageFolder = folder;
+  background.current = "imageFolder";
+  background.imageFolder = folder;
 }
 
 // ============================================================================
@@ -207,7 +203,10 @@ export function convertToImageFolderBackground(
  * @returns {AudioSettings} AudioSettings with none source
  */
 export function createNoAudio(volume: number = 0.6): AudioSettings {
-  return { source: "none", volume };
+  return {
+    source: { builtinName: null, current: "none", filePath: null },
+    volume,
+  };
 }
 
 /**
@@ -220,7 +219,10 @@ export function createBuiltinAudio(
   name: string,
   volume: number = 0.6,
 ): AudioSettings {
-  return { name, source: "builtin", volume };
+  return {
+    source: { builtinName: name, current: "builtin", filePath: null },
+    volume,
+  };
 }
 
 /**
@@ -233,7 +235,10 @@ export function createFilePathAudio(
   path: string,
   volume: number = 0.6,
 ): AudioSettings {
-  return { path, source: "filePath", volume };
+  return {
+    source: { builtinName: null, current: "filePath", filePath: path },
+    volume,
+  };
 }
 
 /**
@@ -242,7 +247,7 @@ export function createFilePathAudio(
  * @returns {string | null} Audio name or null if not builtin
  */
 export function getBuiltinAudioName(audio: AudioSettings): string | null {
-  return isBuiltinAudio(audio) ? audio.name : null;
+  return audio.source.builtinName;
 }
 
 /**
@@ -251,7 +256,7 @@ export function getBuiltinAudioName(audio: AudioSettings): string | null {
  * @returns {string | null} File path or null if not filePath
  */
 export function getAudioFilePath(audio: AudioSettings): string | null {
-  return isFilePathAudio(audio) ? audio.path : null;
+  return audio.source.filePath;
 }
 
 /**
@@ -259,10 +264,7 @@ export function getAudioFilePath(audio: AudioSettings): string | null {
  * @param {AudioSettings} audio AudioSettings to convert
  */
 export function convertToNoAudio(audio: AudioSettings) {
-  const a = audio as Record<string, unknown>;
-  a.source = "none";
-  delete a.name;
-  delete a.path;
+  audio.source.current = "none";
 }
 
 /**
@@ -271,10 +273,8 @@ export function convertToNoAudio(audio: AudioSettings) {
  * @param {string} name Built-in audio name
  */
 export function convertToBuiltinAudio(audio: AudioSettings, name: string) {
-  const a = audio as Record<string, unknown>;
-  a.source = "builtin";
-  a.name = name;
-  delete a.path;
+  audio.source.current = "builtin";
+  audio.source.builtinName = name;
 }
 
 /**
@@ -283,10 +283,8 @@ export function convertToBuiltinAudio(audio: AudioSettings, name: string) {
  * @param {string} path Audio file path
  */
 export function convertToFilePathAudio(audio: AudioSettings, path: string) {
-  const a = audio as Record<string, unknown>;
-  a.source = "filePath";
-  a.path = path;
-  delete a.name;
+  audio.source.current = "filePath";
+  audio.source.filePath = path;
 }
 
 /**
@@ -297,9 +295,7 @@ export function convertToFilePathAudio(audio: AudioSettings, path: string) {
 export function getAudioSourceType(
   audio: AudioSettings,
 ): "none" | "builtin" | "filePath" {
-  if (isBuiltinAudio(audio)) return "builtin";
-  if (isFilePathAudio(audio)) return "filePath";
-  return "none";
+  return audio.source.current;
 }
 
 // ============================================================================

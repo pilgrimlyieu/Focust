@@ -67,21 +67,30 @@ describe("BackgroundSource Factories", () => {
   describe("createSolidBackground", () => {
     it("should create a solid background with given color", () => {
       const bg = createSolidBackground("#1f2937");
-      expect(bg).toEqual({ solid: "#1f2937" });
+      expect(bg.current).toBe("solid");
+      expect(bg.solid).toBe("#1f2937");
+      expect(bg.imagePath).toBeNull();
+      expect(bg.imageFolder).toBeNull();
     });
   });
 
   describe("createImagePathBackground", () => {
     it("should create an image path background", () => {
       const bg = createImagePathBackground("/path/to/image.jpg");
-      expect(bg).toEqual({ imagePath: "/path/to/image.jpg" });
+      expect(bg.current).toBe("imagePath");
+      expect(bg.imagePath).toBe("/path/to/image.jpg");
+      expect(bg.solid).toBeNull();
+      expect(bg.imageFolder).toBeNull();
     });
   });
 
   describe("createImageFolderBackground", () => {
     it("should create an image folder background", () => {
       const bg = createImageFolderBackground("/path/to/folder");
-      expect(bg).toEqual({ imageFolder: "/path/to/folder" });
+      expect(bg.current).toBe("imageFolder");
+      expect(bg.imageFolder).toBe("/path/to/folder");
+      expect(bg.solid).toBeNull();
+      expect(bg.imagePath).toBeNull();
     });
   });
 
@@ -142,21 +151,26 @@ describe("BackgroundSource Factories", () => {
       const bg: BackgroundSource =
         createImagePathBackground("/path/to/image.jpg");
       convertToSolidBackground(bg, "#1f2937");
+      expect(bg.current).toBe("solid");
       expect(getSolidColor(bg)).toBe("#1f2937");
-      expect(getImagePath(bg)).toBeNull();
+      // Old value is preserved
+      expect(getImagePath(bg)).toBe("/path/to/image.jpg");
     });
 
     it("should convert imageFolder to solid", () => {
       const bg: BackgroundSource =
         createImageFolderBackground("/path/to/folder");
       convertToSolidBackground(bg, "#1f2937");
+      expect(bg.current).toBe("solid");
       expect(getSolidColor(bg)).toBe("#1f2937");
-      expect(getImageFolder(bg)).toBeNull();
+      // Old value is preserved
+      expect(getImageFolder(bg)).toBe("/path/to/folder");
     });
 
     it("should update existing solid background", () => {
       const bg: BackgroundSource = createSolidBackground("#ffffff");
       convertToSolidBackground(bg, "#1f2937");
+      expect(bg.current).toBe("solid");
       expect(getSolidColor(bg)).toBe("#1f2937");
     });
   });
@@ -165,16 +179,20 @@ describe("BackgroundSource Factories", () => {
     it("should convert solid to imagePath", () => {
       const bg: BackgroundSource = createSolidBackground("#1f2937");
       convertToImagePathBackground(bg, "/path/to/image.jpg");
+      expect(bg.current).toBe("imagePath");
       expect(getImagePath(bg)).toBe("/path/to/image.jpg");
-      expect(getSolidColor(bg)).toBeNull();
+      // Old value is preserved
+      expect(getSolidColor(bg)).toBe("#1f2937");
     });
 
     it("should convert imageFolder to imagePath", () => {
       const bg: BackgroundSource =
         createImageFolderBackground("/path/to/folder");
       convertToImagePathBackground(bg, "/path/to/image.jpg");
+      expect(bg.current).toBe("imagePath");
       expect(getImagePath(bg)).toBe("/path/to/image.jpg");
-      expect(getImageFolder(bg)).toBeNull();
+      // Old value is preserved
+      expect(getImageFolder(bg)).toBe("/path/to/folder");
     });
   });
 
@@ -182,16 +200,20 @@ describe("BackgroundSource Factories", () => {
     it("should convert solid to imageFolder", () => {
       const bg: BackgroundSource = createSolidBackground("#1f2937");
       convertToImageFolderBackground(bg, "/path/to/folder");
+      expect(bg.current).toBe("imageFolder");
       expect(getImageFolder(bg)).toBe("/path/to/folder");
-      expect(getSolidColor(bg)).toBeNull();
+      // Old value is preserved
+      expect(getSolidColor(bg)).toBe("#1f2937");
     });
 
     it("should convert imagePath to imageFolder", () => {
       const bg: BackgroundSource =
         createImagePathBackground("/path/to/image.jpg");
       convertToImageFolderBackground(bg, "/path/to/folder");
+      expect(bg.current).toBe("imageFolder");
       expect(getImageFolder(bg)).toBe("/path/to/folder");
-      expect(getImagePath(bg)).toBeNull();
+      // Old value is preserved
+      expect(getImagePath(bg)).toBe("/path/to/image.jpg");
     });
   });
 });
@@ -204,52 +226,50 @@ describe("AudioSettings Factories", () => {
   describe("createNoAudio", () => {
     it("should create no audio with default volume", () => {
       const audio = createNoAudio();
-      expect(audio).toEqual({ source: "none", volume: 0.6 });
+      expect(audio.source.current).toBe("none");
+      expect(audio.source.builtinName).toBeNull();
+      expect(audio.source.filePath).toBeNull();
+      expect(audio.volume).toBe(0.6);
     });
 
     it("should create no audio with custom volume", () => {
       const audio = createNoAudio(0.8);
-      expect(audio).toEqual({ source: "none", volume: 0.8 });
+      expect(audio.source.current).toBe("none");
+      expect(audio.volume).toBe(0.8);
     });
   });
 
   describe("createBuiltinAudio", () => {
     it("should create builtin audio with default volume", () => {
       const audio = createBuiltinAudio("gentle-bell");
-      expect(audio).toEqual({
-        name: "gentle-bell",
-        source: "builtin",
-        volume: 0.6,
-      });
+      expect(audio.source.current).toBe("builtin");
+      expect(audio.source.builtinName).toBe("gentle-bell");
+      expect(audio.source.filePath).toBeNull();
+      expect(audio.volume).toBe(0.6);
     });
 
     it("should create builtin audio with custom volume", () => {
       const audio = createBuiltinAudio("soft-gong", 0.5);
-      expect(audio).toEqual({
-        name: "soft-gong",
-        source: "builtin",
-        volume: 0.5,
-      });
+      expect(audio.source.current).toBe("builtin");
+      expect(audio.source.builtinName).toBe("soft-gong");
+      expect(audio.volume).toBe(0.5);
     });
   });
 
   describe("createFilePathAudio", () => {
     it("should create filePath audio with default volume", () => {
       const audio = createFilePathAudio("/path/to/audio.mp3");
-      expect(audio).toEqual({
-        path: "/path/to/audio.mp3",
-        source: "filePath",
-        volume: 0.6,
-      });
+      expect(audio.source.current).toBe("filePath");
+      expect(audio.source.builtinName).toBeNull();
+      expect(audio.source.filePath).toBe("/path/to/audio.mp3");
+      expect(audio.volume).toBe(0.6);
     });
 
     it("should create filePath audio with custom volume", () => {
       const audio = createFilePathAudio("/path/to/audio.mp3", 0.7);
-      expect(audio).toEqual({
-        path: "/path/to/audio.mp3",
-        source: "filePath",
-        volume: 0.7,
-      });
+      expect(audio.source.current).toBe("filePath");
+      expect(audio.source.filePath).toBe("/path/to/audio.mp3");
+      expect(audio.volume).toBe(0.7);
     });
   });
 
@@ -299,14 +319,16 @@ describe("AudioSettings Factories", () => {
       const audio: AudioSettings = createBuiltinAudio("gentle-bell");
       convertToNoAudio(audio);
       expect(getAudioSourceType(audio)).toBe("none");
-      expect(getBuiltinAudioName(audio)).toBeNull();
+      // Old value is preserved
+      expect(getBuiltinAudioName(audio)).toBe("gentle-bell");
     });
 
     it("should convert filePath to none", () => {
       const audio: AudioSettings = createFilePathAudio("/path/to/audio.mp3");
       convertToNoAudio(audio);
       expect(getAudioSourceType(audio)).toBe("none");
-      expect(getAudioFilePath(audio)).toBeNull();
+      // Old value is preserved
+      expect(getAudioFilePath(audio)).toBe("/path/to/audio.mp3");
     });
 
     it("should preserve volume", () => {
@@ -329,7 +351,8 @@ describe("AudioSettings Factories", () => {
       convertToBuiltinAudio(audio, "soft-gong");
       expect(getAudioSourceType(audio)).toBe("builtin");
       expect(getBuiltinAudioName(audio)).toBe("soft-gong");
-      expect(getAudioFilePath(audio)).toBeNull();
+      // Old value is preserved
+      expect(getAudioFilePath(audio)).toBe("/path/to/audio.mp3");
     });
 
     it("should preserve volume", () => {
@@ -352,7 +375,8 @@ describe("AudioSettings Factories", () => {
       convertToFilePathAudio(audio, "/path/to/audio.mp3");
       expect(getAudioSourceType(audio)).toBe("filePath");
       expect(getAudioFilePath(audio)).toBe("/path/to/audio.mp3");
-      expect(getBuiltinAudioName(audio)).toBeNull();
+      // Old value is preserved
+      expect(getBuiltinAudioName(audio)).toBe("gentle-bell");
     });
 
     it("should preserve volume", () => {
@@ -415,7 +439,8 @@ describe("ThemeSettings Factories", () => {
   describe("createDefaultTheme", () => {
     it("should create theme with default values", () => {
       const theme = createDefaultTheme();
-      expect(theme.background).toEqual({ solid: "#1f2937" });
+      expect(theme.background.current).toBe("solid");
+      expect(theme.background.solid).toBe("#1f2937");
       expect(theme.textColor).toBe("#f8fafc");
       expect(theme.blurRadius).toBe(8);
       expect(theme.opacity).toBe(0.9);

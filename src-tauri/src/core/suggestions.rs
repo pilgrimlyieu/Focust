@@ -66,25 +66,6 @@ impl Default for SuggestionsConfig {
     }
 }
 
-/// Load default suggestions from embedded resource file
-fn load_default_suggestions() -> Result<SuggestionsConfig> {
-    // The resource file will be embedded in the binary by Tauri
-    // and available at runtime via the resource protocol
-    let default_toml = include_str!("../../resources/suggestions.toml");
-    let config: SuggestionsConfig =
-        toml::from_str(default_toml).context("Failed to parse default suggestions.toml")?;
-    Ok(config)
-}
-
-/// Get the path to suggestions.toml file
-fn get_suggestions_path(app_handle: &AppHandle) -> Result<PathBuf> {
-    let config_dir = app_handle
-        .path()
-        .app_config_dir()
-        .context("Failed to get app config directory")?;
-    Ok(config_dir.join("suggestions.toml"))
-}
-
 /// Load suggestions from suggestions.toml or create default if not exists
 pub async fn load_suggestions(app_handle: &AppHandle) -> SuggestionsConfig {
     match try_load_suggestions(app_handle).await {
@@ -186,6 +167,25 @@ pub fn sample_suggestion(config: &SuggestionsConfig, language: &str) -> Option<S
     suggestions.choose(&mut rng).cloned()
 }
 
+/// Load default suggestions from embedded resource file
+fn load_default_suggestions() -> Result<SuggestionsConfig> {
+    // The resource file will be embedded in the binary by Tauri
+    // and available at runtime via the resource protocol
+    let default_toml = include_str!("../../resources/suggestions.toml");
+    let config: SuggestionsConfig =
+        toml::from_str(default_toml).context("Failed to parse default suggestions.toml")?;
+    Ok(config)
+}
+
+/// Get the path to suggestions.toml file
+fn get_suggestions_path(app_handle: &AppHandle) -> Result<PathBuf> {
+    let config_dir = app_handle
+        .path()
+        .app_config_dir()
+        .context("Failed to get app config directory")?;
+    Ok(config_dir.join("suggestions.toml"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -280,7 +280,7 @@ mod tests {
 
         let toml_string = toml::to_string_pretty(&config).expect("Failed to serialize");
 
-        // Check for actual structure (camelCase)])
+        // Check for actual structure (camelCase)
         assert!(toml_string.contains("byLanguage"));
         assert!(toml_string.contains("suggestions"));
 

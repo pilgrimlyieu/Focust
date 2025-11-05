@@ -13,6 +13,7 @@ import TrashIcon from "@/components/icons/TrashIcon.vue";
 import ThemeDesigner from "@/components/settings/ThemeDesigner.vue";
 import type { AppConfig } from "@/stores/config";
 import { useConfigStore } from "@/stores/config";
+import { safeClone } from "@/utils/safeClone";
 
 const props = defineProps<{ config: AppConfig }>();
 
@@ -89,7 +90,7 @@ function duplicateAttention(id: number) {
   const target = attentions.value.find((a) => a.id === id);
   if (!target) return;
 
-  const newAttention = JSON.parse(JSON.stringify(target));
+  const newAttention = safeClone(target);
   newAttention.id = Date.now();
   newAttention.name = `${target.name} (${t("actions.copy")})`;
   props.config.attentions = [...attentions.value, newAttention];

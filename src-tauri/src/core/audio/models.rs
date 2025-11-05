@@ -1,28 +1,124 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-/// Audio source configuration for break sounds
-#[derive(Serialize, Deserialize, Default, Clone, Debug, TS)]
-#[serde(tag = "source", rename_all = "camelCase")]
+/// Type of audio source currently active
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export, rename_all = "camelCase")]
-pub enum AudioSource {
-    /// No audio
+#[derive(Default)]
+pub enum AudioSourceType {
     #[default]
-    None, // No audio source
+    None,
+    Builtin,
+    FilePath,
+}
 
-    /// Builtin audio resource
-    Builtin { name: String }, // Builtin audio resource name
+/// Audio source configuration that preserves all type values
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(rename_all = "camelCase")]
+pub struct AudioSource {
+    /// Currently active audio source type
+    pub current: AudioSourceType,
+    /// Builtin audio name (used when current == Builtin)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub builtin_name: Option<String>,
+    /// File path (used when current == `FilePath`)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub file_path: Option<String>,
+}
 
-    /// File path audio source
-    FilePath { path: String }, // File path to audio source
+impl Default for AudioSource {
+    fn default() -> Self {
+        Self {
+            current: AudioSourceType::None,
+            builtin_name: None,
+            file_path: None,
+        }
+    }
+}
+
+impl AudioSource {
+    /// Create a new None audio source
+    #[must_use]
+    pub fn new_none() -> Self {
+        Self {
+            current: AudioSourceType::None,
+            builtin_name: None,
+            file_path: None,
+        }
+    }
+
+    /// Create a new builtin audio source
+    #[must_use]
+    pub fn new_builtin(name: String) -> Self {
+        Self {
+            current: AudioSourceType::Builtin,
+            builtin_name: Some(name),
+            file_path: None,
+        }
+    }
+
+    /// Create a new file path audio source
+    #[must_use]
+    pub fn new_file_path(path: String) -> Self {
+        Self {
+            current: AudioSourceType::FilePath,
+            builtin_name: None,
+            file_path: Some(path),
+        }
+    }
+
+    /// Get the builtin name
+    #[must_use]
+    pub fn get_builtin_name(&self) -> Option<&str> {
+        self.builtin_name.as_deref()
+    }
+
+    /// Get the file path
+    #[must_use]
+    pub fn get_file_path(&self) -> Option<&str> {
+        self.file_path.as_deref()
+    }
+
+    /// Set the builtin name (doesn't change current type)
+    pub fn set_builtin_name(&mut self, name: String) {
+        self.builtin_name = Some(name);
+    }
+
+    /// Set the file path (doesn't change current type)
+    pub fn set_file_path(&mut self, path: String) {
+        self.file_path = Some(path);
+    }
+
+    /// Switch to None audio source
+    pub fn use_none(&mut self) {
+        self.current = AudioSourceType::None;
+    }
+
+    /// Switch to builtin audio source
+    pub fn use_builtin(&mut self) {
+        self.current = AudioSourceType::Builtin;
+        if self.builtin_name.is_none() {
+            self.builtin_name = Some(String::new());
+        }
+    }
+
+    /// Switch to file path audio source
+    pub fn use_file_path(&mut self) {
+        self.current = AudioSourceType::FilePath;
+        if self.file_path.is_none() {
+            self.file_path = Some(String::new());
+        }
+    }
 }
 
 /// Audio settings for break sounds
 #[derive(Serialize, Deserialize, Clone, Debug, TS)]
 #[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct AudioSettings {
     /// Audio source configuration
-    #[serde(flatten)]
     pub source: AudioSource,
     /// Volume level (0.0 to 1.0)
     pub volume: f32,
@@ -31,7 +127,7 @@ pub struct AudioSettings {
 impl Default for AudioSettings {
     fn default() -> Self {
         Self {
-            source: AudioSource::None,
+            source: AudioSource::default(),
             volume: 0.6,
         }
     }
@@ -44,19 +140,180 @@ impl AudioSettings {
     /// For file paths, returns the absolute path
     #[must_use]
     pub fn get_path(&self) -> Option<String> {
-        match &self.source {
-            AudioSource::None => None,
-            AudioSource::Builtin { name } => {
-                // Return resource identifier in format: "sounds/{name}.mp3"
-                Some(format!("sounds/{name}.mp3"))
+        match self.source.current {
+            AudioSourceType::None => None,
+            AudioSourceType::Builtin => {
+                self.source.builtin_name.as_ref().map(|name| {
+                    // Return resource identifier in format: "sounds/{name}.mp3"
+                    format!("sounds/{name}.mp3")
+                })
             }
-            AudioSource::FilePath { path } => Some(path.clone()),
+            AudioSourceType::FilePath => self.source.file_path.clone(),
         }
     }
 
     /// Check if this audio source is a builtin resource
     #[must_use]
     pub fn is_builtin(&self) -> bool {
-        matches!(self.source, AudioSource::Builtin { .. })
+        self.source.current == AudioSourceType::Builtin
+    }
+
+    /// Check if this audio source is a file path
+    #[must_use]
+    pub fn is_file_path(&self) -> bool {
+        self.source.current == AudioSourceType::FilePath
+    }
+
+    /// Check if this audio source is None
+    #[must_use]
+    pub fn is_none(&self) -> bool {
+        self.source.current == AudioSourceType::None
+    }
+}
+
+#[cfg(test)]
+#[allow(clippy::float_cmp)]
+mod tests {
+    use super::*;
+    use serde_json;
+
+    #[test]
+    fn test_audio_source_default() {
+        let source = AudioSource::default();
+        assert_eq!(source.current, AudioSourceType::None);
+        assert!(source.builtin_name.is_none());
+        assert!(source.file_path.is_none());
+    }
+
+    #[test]
+    fn test_audio_source_new_none() {
+        let source = AudioSource::new_none();
+        assert_eq!(source.current, AudioSourceType::None);
+        assert!(source.builtin_name.is_none());
+        assert!(source.file_path.is_none());
+    }
+
+    #[test]
+    fn test_audio_source_new_builtin() {
+        let source = AudioSource::new_builtin("bell".to_string());
+        assert_eq!(source.current, AudioSourceType::Builtin);
+        assert_eq!(source.builtin_name, Some("bell".to_string()));
+        assert!(source.file_path.is_none());
+    }
+
+    #[test]
+    fn test_audio_source_new_file_path() {
+        let source = AudioSource::new_file_path("/path/to/audio.mp3".to_string());
+        assert_eq!(source.current, AudioSourceType::FilePath);
+        assert!(source.builtin_name.is_none());
+        assert_eq!(source.file_path, Some("/path/to/audio.mp3".to_string()));
+    }
+
+    #[test]
+    fn test_audio_source_getters() {
+        let mut source = AudioSource::new_builtin("bell".to_string());
+        assert_eq!(source.get_builtin_name(), Some("bell"));
+        assert_eq!(source.get_file_path(), None);
+
+        source.set_file_path("/test.mp3".to_string());
+        assert_eq!(source.get_file_path(), Some("/test.mp3"));
+    }
+
+    #[test]
+    fn test_audio_source_switch_preserves_values() {
+        let mut source = AudioSource::new_builtin("bell".to_string());
+
+        // Switch to file path
+        source.use_file_path();
+        assert_eq!(source.current, AudioSourceType::FilePath);
+        // Builtin name should be preserved
+        assert_eq!(source.get_builtin_name(), Some("bell"));
+
+        // Set file path
+        source.set_file_path("/custom.mp3".to_string());
+        assert_eq!(source.get_file_path(), Some("/custom.mp3"));
+
+        // Switch back to builtin
+        source.use_builtin();
+        assert_eq!(source.current, AudioSourceType::Builtin);
+        // File path should be preserved
+        assert_eq!(source.get_file_path(), Some("/custom.mp3"));
+        // Builtin name should still be there
+        assert_eq!(source.get_builtin_name(), Some("bell"));
+    }
+
+    #[test]
+    fn test_audio_source_serialize_new_format() {
+        let source = AudioSource {
+            current: AudioSourceType::Builtin,
+            builtin_name: Some("bell".to_string()),
+            file_path: Some("/preserved.mp3".to_string()),
+        };
+
+        let json = serde_json::to_string(&source).unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(parsed["current"], "builtin");
+        assert_eq!(parsed["builtinName"], "bell");
+        assert_eq!(parsed["filePath"], "/preserved.mp3");
+    }
+
+    #[test]
+    fn test_audio_source_deserialize_new_format() {
+        let json = r#"{"current":"builtin","builtinName":"bell","filePath":"/preserved.mp3"}"#;
+        let source: AudioSource = serde_json::from_str(json).unwrap();
+
+        assert_eq!(source.current, AudioSourceType::Builtin);
+        assert_eq!(source.get_builtin_name(), Some("bell"));
+        assert_eq!(source.get_file_path(), Some("/preserved.mp3"));
+    }
+
+    #[test]
+    fn test_audio_settings_default() {
+        let settings = AudioSettings::default();
+        assert_eq!(settings.source.current, AudioSourceType::None);
+        assert_eq!(settings.volume, 0.6);
+    }
+
+    #[test]
+    fn test_audio_settings_get_path_none() {
+        let settings = AudioSettings {
+            source: AudioSource::new_none(),
+            volume: 0.6,
+        };
+        assert!(settings.get_path().is_none());
+    }
+
+    #[test]
+    fn test_audio_settings_get_path_builtin() {
+        let settings = AudioSettings {
+            source: AudioSource::new_builtin("bell".to_string()),
+            volume: 0.6,
+        };
+        assert_eq!(settings.get_path(), Some("sounds/bell.mp3".to_string()));
+    }
+
+    #[test]
+    fn test_audio_settings_get_path_file_path() {
+        let settings = AudioSettings {
+            source: AudioSource::new_file_path("/custom/audio.mp3".to_string()),
+            volume: 0.6,
+        };
+        assert_eq!(settings.get_path(), Some("/custom/audio.mp3".to_string()));
+    }
+
+    #[test]
+    fn test_audio_settings_is_builtin() {
+        let mut settings = AudioSettings {
+            source: AudioSource::new_builtin("bell".to_string()),
+            volume: 0.6,
+        };
+        assert!(settings.is_builtin());
+
+        settings.source.use_none();
+        assert!(!settings.is_builtin());
+
+        settings.source.use_file_path();
+        assert!(!settings.is_builtin());
     }
 }

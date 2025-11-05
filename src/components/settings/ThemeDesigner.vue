@@ -114,11 +114,11 @@ watch(
 
 watch(backgroundType, (mode) => {
   if (mode === "solid") {
-    updateBackground({ solid: lastSolidColor.value });
+    updateBackground(createSolidBackground(lastSolidColor.value));
   } else if (mode === "image") {
-    updateBackground({ imagePath: lastImagePath.value });
+    updateBackground(createImagePathBackground(lastImagePath.value));
   } else {
-    updateBackground({ imageFolder: lastFolder.value });
+    updateBackground(createImageFolderBackground(lastFolder.value));
   }
 });
 
@@ -136,7 +136,7 @@ async function pickImage() {
     multiple: false,
   });
   if (typeof file === "string") {
-    updateBackground({ imagePath: file });
+    updateBackground(createImagePathBackground(file));
   }
 }
 
@@ -146,15 +146,16 @@ async function pickImage() {
 async function pickFolder() {
   const folder = await open({ directory: true, multiple: false });
   if (typeof folder === "string") {
-    updateBackground({ imageFolder: folder });
+    updateBackground(createImageFolderBackground(folder));
   }
 }
 
 const cardStyle = computed(() => {
   const background = props.theme.background;
   if (isSolidBackground(background)) {
+    const color = getSolidColor(background);
     return {
-      background: background.solid,
+      background: color ?? "#1f2937",
     };
   }
   if (imagePreview.value) {
