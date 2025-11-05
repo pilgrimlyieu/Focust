@@ -155,10 +155,7 @@ jobs:
           find src-tauri/target/universal-apple-darwin/release/bundle/macos -name "*.app.tar.gz" -exec cp {} artifacts/focust_${version}_${{ matrix.os_name }}.app.tar.gz \; 2>/dev/null || true
 
           # Copy signature file if exists
-          find src-tauri/target/universal-apple-darwin/release/bundle/dmg -name "*.app.tar.gz.sig" -exec cp {} artifacts/focust_${version}_${{ matrix.os_name }}.app.tar.gz.sig \; 2>/dev/null || true
-
-          # Create tarball of .app (universal binary)
-          find src-tauri/target/universal-apple-darwin/release/bundle/macos -name "*.app" -exec tar -czf artifacts/focust_${version}_${{ matrix.os_name }}.app.tar.gz -C "$(dirname {})" "$(basename {})" \; 2>/dev/null || true
+          find src-tauri/target/universal-apple-darwin/release/bundle/macos -name "*.app.tar.gz.sig" -exec cp {} artifacts/focust_${version}_${{ matrix.os_name }}.app.tar.gz.sig \; 2>/dev/null || true
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
