@@ -151,8 +151,11 @@ jobs:
           # Find and copy DMG (universal binary)
           find src-tauri/target/universal-apple-darwin/release/bundle/dmg -name "*.dmg" -exec cp {} artifacts/focust_${version}_${{ matrix.os_name }}.dmg \; 2>/dev/null || true
 
+          # Find and copy App Tarball
+          find src-tauri/target/universal-apple-darwin/release/bundle/macos -name "*.app.tar.gz" -exec cp {} artifacts/focust_${version}_${{ matrix.os_name }}.app.tar.gz \; 2>/dev/null || true
+
           # Copy signature file if exists
-          find src-tauri/target/universal-apple-darwin/release/bundle/dmg -name "*.dmg.sig" -exec cp {} artifacts/focust_${version}_${{ matrix.os_name }}.dmg.sig \; 2>/dev/null || true
+          find src-tauri/target/universal-apple-darwin/release/bundle/dmg -name "*.app.tar.gz.sig" -exec cp {} artifacts/focust_${version}_${{ matrix.os_name }}.app.tar.gz.sig \; 2>/dev/null || true
 
           # Create tarball of .app (universal binary)
           find src-tauri/target/universal-apple-darwin/release/bundle/macos -name "*.app" -exec tar -czf artifacts/focust_${version}_${{ matrix.os_name }}.app.tar.gz -C "$(dirname {})" "$(basename {})" \; 2>/dev/null || true
@@ -271,15 +274,15 @@ jobs:
           fi
 
           # Add macOS platform if DMG exists (universal binary)
-          if ls artifacts/*_macos.dmg 1> /dev/null 2>&1; then
-            DMG_FILE=$(basename artifacts/*_macos.dmg)
-            DMG_SIG_FILE="${DMG_FILE}.sig"
+          if ls artifacts/*_macos.app.tar.gz 1> /dev/null 2>&1; then
+            TAR_FILE=$(basename artifacts/*_macos.app.tar.gz)
+            DMG_SIG_FILE="${TAR_FILE}.sig"
             
             # Universal binary supports both architectures
             for PLATFORM in "darwin-x86_64" "darwin-aarch64"; do
               echo "    \"${PLATFORM}\": {" >> artifacts/latest.json
               echo "      \"signature\": \"$(cat artifacts/${DMG_SIG_FILE} 2>/dev/null || echo '')\"," >> artifacts/latest.json
-              echo "      \"url\": \"https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${DMG_FILE}\"" >> artifacts/latest.json
+              echo "      \"url\": \"https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${TAR_FILE}\"" >> artifacts/latest.json
               echo '    },' >> artifacts/latest.json
             done
           fi
