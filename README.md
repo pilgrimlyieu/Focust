@@ -126,12 +126,8 @@ Built with performance in mind, Focust offers exceptional resource efficiency:
 
 ### Download Pre-built Binaries
 
-> [!WARNING]
-> Pre-built binaries are not yet available as the project is still in early development. Please [build from source](#building-from-source) for now.
-
-Once available, download the latest release for your platform:
-
-- **Windows**: `.msi` installer
+Download the [latest release for your platform](https://github.com/pilgrimlyieu/Focust/releases/latest):
+- **Windows**: `setup.exe` installer
 - **macOS**: `.dmg` installer
 - **Linux**: `.AppImage`
 

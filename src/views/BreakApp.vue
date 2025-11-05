@@ -124,13 +124,13 @@ const playAudio = async (settings?: AudioSettings | null) => {
 
   try {
     if (isBuiltinAudio(settings)) {
-      const name = settings.name;
+      const name = settings.builtinName;
       await invoke("play_builtin_audio", {
         resourceName: name,
         volume: settings.volume,
       });
     } else if (isFilePathAudio(settings)) {
-      const path = settings.path;
+      const path = settings.filePath;
       await invoke("play_audio", {
         path,
         volume: settings.volume,
