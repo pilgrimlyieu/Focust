@@ -440,25 +440,41 @@ source = "none"
 Theme settings control the appearance of break windows.
 
 ### `background`
-- **Type**: Variant
+- **Type**: Object
 - **Description**: Background source for the break window
 
-**Options:**
+**Structure:**
 
-1. **Solid Color**:
+```toml
+[theme.background]
+current = "solid"                # Currently active background type
+solid = "#1f2937"                # Preserved even when switched to image
+imagePath = "/path/to/image.jpg" # Preserved even when switched to folder
+imageFolder = "/path/to/images/" # Preserved even when switched to solid
+```
+
+**Background Type Options:**
+
+1. **Solid Color** (`current = "solid"`):
    ```toml
-   background = { solid = "#1f2937" }
+   [theme.background]
+   current = "solid"
+   solid = "#1f2937"
    ```
 
-2. **Single Image**:
+2. **Single Image** (`current = "imagePath"`):
    ```toml
-   background = { imagePath = "/path/to/image.jpg" }
+   [theme.background]
+   current = "imagePath"
+   imagePath = "/path/to/image.jpg"
    ```
    - Supported Formats: JPG, PNG, WebP, etc.
 
-3. **Random image from Folder**:
+3. **Random Image from Folder** (`current = "imageFolder"`):
    ```toml
-   background = { imageFolder = "/path/to/images/" }
+   [theme.background]
+   current = "imageFolder"
+   imageFolder = "/path/to/images/"
    ```
 
 ### `textColor`
@@ -493,8 +509,11 @@ Theme settings control the appearance of break windows.
 
 ```toml
 # Minimal dark theme
+[theme.background]
+current = "solid"
+solid = "#0f172a"
+
 [theme]
-background = { solid = "#0f172a" }
 textColor = "#e2e8f0"
 blurRadius = 0
 opacity = 1.0
@@ -502,17 +521,25 @@ fontSize = 20
 fontFamily = "Segoe UI"
 
 # Nature theme with image
+[theme.background]
+current = "imagePath"
+imagePath = "/path/to/forest.jpg"
+
 [theme]
-background = { imagePath = "/path/to/forest.jpg" }
 textColor = "#ffffff"
 blurRadius = 12
 opacity = 0.75
 fontSize = 28
 fontFamily = "Georgia"
 
-# Vibrant theme
+# Vibrant theme with preserved settings
+[theme.background]
+current = "solid"
+solid = "#7c3aed"
+imagePath = "/path/to/sunset.jpg" # Preserved
+imageFolder = "C:\\Wallpapers"    # Preserved
+
 [theme]
-background = { solid = "#7c3aed" }
 textColor = "#fef3c7"
 blurRadius = 0
 opacity = 0.95
@@ -526,36 +553,35 @@ fontFamily = "Tahoma"
 
 Audio settings control sound playback during breaks.
 
-### `source`
-- **Type**: Variant
-- **Description**: Audio source for the break sound
+**Structure**:
 
-**Options:**
+```toml
+[audio]
+current = "builtin"              # Currently active audio type
+builtinName = "gentle-bell"      # Preserved even when switched to filePath
+filePath = "/path/to/custom.mp3" # Preserved even when switched to builtin
+volume = 0.6
+```
 
-1. **No Sound**:
-   ```toml
-   source = "none"
-   ```
+### `current`
+- **Type**: String enum
+- **Default**: `"none"`
+- **Options**: `"none"`, `"builtin"`, `"filePath"`
+- **Description**: Currently active audio type
 
-2. **Built-in Sound**:
-   ```toml
-   source = "builtin"
-   name = "gentle-bell"
-   ```
-   
-   Available built-in sounds:
-   - `"gentle-bell"` - Soft bell chime
-   - `"soft-gong"` - Gentle gong sound
-   - `"notification"` - Simple notification beep
-   - `"bright-notification"` - Upbeat notification
+### `builtinName`
+- **Type**: String (optional)
+- **Description**: Name of the built-in sound effect
+- **Available sounds**:
+  - `"gentle-bell"` - Soft bell chime
+  - `"soft-gong"` - Gentle gong sound
+  - `"notification"` - Simple notification beep
+  - `"bright-notification"` - Upbeat notification
 
-3. **Custom Audio File**:
-   ```toml
-   source = "filePath"
-   path = "/path/to/sound.mp3"
-   ```
-   
-   Supported formats: MP3, WAV, OGG, FLAC
+### `filePath`
+- **Type**: String (optional)
+- **Description**: Absolute path to a custom audio file
+- **Supported formats**: MP3, WAV, OGG, FLAC
 
 ### `volume`
 - **Type**: Float (0.0-1.0)
@@ -569,18 +595,19 @@ Audio settings control sound playback during breaks.
 ```toml
 # No sound
 [audio]
-source = "none"
+current = "none"
+volume = 0.6
 
 # Built-in sound
 [audio]
-source = "builtin"
-name = "gentle-bell"
+current = "builtin"
+builtinName = "gentle-bell"
 volume = 0.7
 
 # Custom audio file
 [audio]
-source = "filePath"
-path = "C:\\Users\\YourName\\Music\\zen-bell.mp3"
+current = "filePath"
+filePath = "C:\\Users\\YourName\\Music\\zen-bell.mp3"
 volume = 0.8
 ```
 

@@ -440,25 +440,41 @@ source = "none"
 主题设置控制休息窗口的外观。
 
 ### `background`
-- **类型**：变体
+- **类型**：对象
 - **说明**：休息窗口的背景源
 
-**选项：**
+**结构：**
 
-1. **纯色**：
+```toml
+[theme.background]
+current = "solid"                # 当前活跃的背景类型
+solid = "#1f2937"                # 即使切换到图片也会保留
+imagePath = "/path/to/image.jpg" # 即使切换到文件夹也会保留
+imageFolder = "/path/to/images/" # 即使切换到纯色也会保留
+```
+
+**背景类型选项：**
+
+1. **纯色**（`current = "solid"`）：
    ```toml
-   background = { solid = "#1f2937" }
+   [theme.background]
+   current = "solid"
+   solid = "#1f2937"
    ```
 
-2. **单张图片**：
+2. **单张图片**（`current = "imagePath"`）：
    ```toml
-   background = { imagePath = "/path/to/image.jpg" }
+   [theme.background]
+   current = "imagePath"
+   imagePath = "/path/to/image.jpg"
    ```
-   - 支持格式：JPG, PNG, WebP 等
+   - 支持格式：JPG、PNG、WebP 等
 
-3. **文件夹中的随机图片**：
+3. **文件夹中的随机图片**（`current = "imageFolder"`）：
    ```toml
-   background = { imageFolder = "/path/to/images/" }
+   [theme.background]
+   current = "imageFolder"
+   imageFolder = "/path/to/images/"
    ```
 
 ### `textColor`
@@ -493,8 +509,11 @@ source = "none"
 
 ```toml
 # 简约深色主题
+[theme.background]
+current = "solid"
+solid = "#0f172a"
+
 [theme]
-background = { solid = "#0f172a" }
 textColor = "#e2e8f0"
 blurRadius = 0
 opacity = 1.0
@@ -502,17 +521,25 @@ fontSize = 20
 fontFamily = "Segoe UI"
 
 # 带图片的自然主题
+[theme.background]
+current = "imagePath"
+imagePath = "/path/to/forest.jpg"
+
 [theme]
-background = { imagePath = "/path/to/forest.jpg" }
 textColor = "#ffffff"
 blurRadius = 12
 opacity = 0.75
 fontSize = 28
 fontFamily = "Georgia"
 
-# 充满活力的主题
+# 充满活力的主题并保留设置
+[theme.background]
+current = "solid"
+solid = "#7c3aed"
+imagePath = "/path/to/sunset.jpg" # 保留
+imageFolder = "C:\\Wallpapers"    # 保留
+
 [theme]
-background = { solid = "#7c3aed" }
 textColor = "#fef3c7"
 blurRadius = 0
 opacity = 0.95
@@ -526,35 +553,35 @@ fontFamily = "Tahoma"
 
 音频设置控制休息通知声音。
 
-### `source`
-- **类型**：变体
-- **说明**：音频文件的源
+**结构：**
 
-**选项：**
+```toml
+[audio]
+current = "builtin"              # 当前活跃的音频类型
+builtinName = "gentle-bell"      # 即使切换到 filePath 也会保留
+filePath = "/path/to/custom.mp3" # 即使切换到 builtin 也会保留
+volume = 0.6
+```
 
-1. **无音频**：
-   ```toml
-   source = "none"
-   ```
+### `current`
+- **类型**：字符串枚举
+- **默认值**：`"none"`
+- **选项**：`"none"`、`"builtin"`、`"filePath"`
+- **说明**：当前活跃的音频类型
 
-2. **内置声音**：
-   ```toml
-   source = "builtin"
-   name = "gentle-bell"
-   ```
-   
-   可用的内置声音：
-   - `"gentle-bell"` - 温和的铃声
-   - `"soft-gong"` - 柔和的锣声
-   - `"notification"` - 简单的通知
-   - `"bright-notification"` - 明亮的通知
+### `builtinName`
+- **类型**：字符串（可选）
+- **说明**：内置音效的名称
+- **可用音效**：
+  - `"gentle-bell"` - 温和的铃声
+  - `"soft-gong"` - 柔和的锣声
+  - `"notification"` - 简单的通知
+  - `"bright-notification"` - 明亮的通知
 
-3. **自定义文件**：
-   ```toml
-   source = "filePath"
-   path = "/path/to/sound.mp3"
-   ```
-   - 支持格式：MP3, WAV, OGG, FLAC
+### `filePath`
+- **类型**：字符串（可选）
+- **说明**：自定义音频文件的绝对路径
+- **支持格式**：MP3、WAV、OGG、FLAC
 
 ### `volume`
 - **类型**：浮点数（0.0-1.0）
@@ -568,18 +595,19 @@ fontFamily = "Tahoma"
 ```toml
 # 无音频
 [audio]
-source = "none"
+current = "none"
+volume = 0.6
 
 # 内置声音
 [audio]
-source = "builtin"
-name = "gentle-bell"
+current = "builtin"
+builtinName = "gentle-bell"
 volume = 0.7
 
 # 自定义声音文件
 [audio]
-source = "filePath"
-path = "C:\\Users\\YourName\\Music\\zen-bell.mp3"
+current = "filePath"
+filePath = "C:\\Users\\YourName\\Music\\zen-bell.mp3"
 volume = 0.8
 ```
 
