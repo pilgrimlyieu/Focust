@@ -50,10 +50,12 @@ pub async fn request_scheduler_status(state: State<'_, SchedulerCmd>) -> Result<
 }
 
 /// Pause the scheduler manually
+///
+/// Pauses the scheduler with [`PauseReason::Manual`].
 #[tauri::command]
 pub async fn pause_scheduler(state: State<'_, SchedulerCmd>) -> Result<(), String> {
     state
-        .send(Command::Pause(PauseReason::Manual)) // TODO: allow specifying reason
+        .send(Command::Pause(PauseReason::Manual))
         .await
         .map_err(|e| e.to_string())
 }

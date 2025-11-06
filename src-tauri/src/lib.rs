@@ -152,10 +152,28 @@ pub fn run() {
                     app_config.inactive_s,
                 )));
 
-                // Spawn idle monitor
+                // Add DND monitor if enabled
                 if app_config.monitor_dnd {
-                    tracing::info!("User idle monitoring is enabled");
-                    spawn_idle_monitor_task(cmd_tx.clone(), handle.clone());
+                    tracing::info!("DND monitoring enabled");
+                    monitors.push(Box::new(scheduler::monitors::DndMonitor::new()));
+                } else {
+                    tracing::info!("DND monitoring disabled");
+                }
+
+                // Add app whitelist monitor if there are exclusion rules
+                if !app_config.app_exclusions.is_empty() {
+                    let active_count = app_config
+                        .app_exclusions
+                        .iter()
+                        .filter(|e| e.active)
+                        .count();
+                    tracing::info!(
+                        "App whitelist monitoring enabled ({active_count} active rule(s))"
+                    );
+                    monitors.push(Box::new(scheduler::monitors::AppWhitelistMonitor::new(
+                        app_config.app_exclusions.clone(),
+                    )));
+                }
 
                 if monitors.is_empty() {
                     tracing::info!("No monitors enabled");

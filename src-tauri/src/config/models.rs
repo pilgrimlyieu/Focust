@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use ts_rs::TS;
 
+use super::app_exclusion::AppExclusion;
 use crate::{
     core::schedule::{AttentionSettings, ScheduleSettings},
     platform::i18n::LANGUAGE_FALLBACK,
@@ -34,6 +35,8 @@ pub struct AppConfig {
     pub schedules: Vec<ScheduleSettings>,
     /// List of attention reminders
     pub attentions: Vec<AttentionSettings>,
+    /// Application exclusion rules
+    pub app_exclusions: Vec<AppExclusion>,
 }
 
 impl Default for AppConfig {
@@ -50,6 +53,7 @@ impl Default for AppConfig {
             window_size: 0.8, // Default 80% of screen size
             schedules: vec![ScheduleSettings::default()],
             attentions: vec![],
+            app_exclusions: vec![],
         }
     }
 }
