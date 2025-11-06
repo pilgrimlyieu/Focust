@@ -42,6 +42,7 @@ const SuggestionsPanel = defineAsyncComponent(
   () => import("@/components/settings/SuggestionsPanel.vue"),
 );
 
+import AppExclusionIcon from "@/components/icons/AppExclusionIcon.vue";
 import BellIcon from "@/components/icons/BellIcon.vue";
 import InfoCircleIcon from "@/components/icons/InfoCircleIcon.vue";
 import SlidersIcon from "@/components/icons/SlidersIcon.vue";
@@ -54,7 +55,6 @@ import {
   isSchedulerLongBreak,
   isSchedulerMiniBreak,
 } from "@/types";
-import AppExclusionIcon from "@/components/icons/AppExclusionIcon.vue";
 
 const { t } = useI18n();
 const configStore = useConfigStore();

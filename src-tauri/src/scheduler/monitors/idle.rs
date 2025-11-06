@@ -4,7 +4,8 @@
 /// and triggers pause/resume actions accordingly.
 use std::future::Future;
 use std::pin::Pin;
-use std::time::Duration;
+
+use user_idle2::UserIdle;
 
 use super::{Monitor, MonitorAction, MonitorError, MonitorResult};
 use crate::scheduler::models::PauseReason;
@@ -58,7 +59,7 @@ impl Monitor for IdleMonitor {
                 return Ok(MonitorAction::None);
             }
 
-            match user_idle::UserIdle::get_time() {
+            match UserIdle::get_time() {
                 Ok(idle_duration) => {
                     // Reset failure counter on success
                     self.consecutive_failures = 0;

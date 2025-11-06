@@ -53,7 +53,7 @@ figment = { version = "0.10", features = ["toml"] }
 toml = "0.9"
 anyhow = "1.0.98"
 thiserror = "2.0.17"
-user-idle = "0.6.0"
+user-idle2 = "0.6.2"
 ts-rs = { version = "11.0.1", features = ["chrono-impl"] }
 rand = "0.9.2"
 rodio = "0.21.1"
