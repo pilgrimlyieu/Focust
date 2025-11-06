@@ -6,23 +6,21 @@
 
 use anyhow::{Context, Result};
 use std::sync::Arc;
-use std::time::Duration;
 use tokio::sync::{Mutex as AsyncMutex, mpsc};
 
-use super::{DndEvent, INTERVAL_SECS};
+use super::DndEvent;
+use crate::platform::dnd::INTERVAL_SECS;
 
 /// macOS DND monitor using polling
 pub struct MacosDndMonitor {
-    enabled: bool,
     is_monitoring: Arc<AsyncMutex<bool>>,
     last_state: Arc<AsyncMutex<bool>>,
 }
 
 impl MacosDndMonitor {
     /// Create a new macOS DND monitor
-    pub fn new(enabled: bool) -> Result<Self> {
+    pub fn new() -> Result<Self> {
         Ok(Self {
-            enabled,
             is_monitoring: Arc::new(AsyncMutex::new(false)),
             last_state: Arc::new(AsyncMutex::new(false)),
         })
@@ -30,11 +28,6 @@ impl MacosDndMonitor {
 
     /// Start monitoring Focus Mode status
     pub async fn start(&mut self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
-        if !self.enabled {
-            tracing::info!("macOS DND monitoring is disabled");
-            return Ok(());
-        }
-
         let mut is_monitoring = self.is_monitoring.lock().await;
         if *is_monitoring {
             tracing::debug!("macOS DND monitoring is already running");
@@ -155,7 +148,7 @@ async fn poll_focus_mode(
                 }
 
                 // Adaptive polling: slower when DND is active
-                let interval =
+                interval =
                     tokio::time::interval(tokio::time::Duration::from_secs(if current_state {
                         INTERVAL_SECS * 3 // 3x slower when active
                     } else {
