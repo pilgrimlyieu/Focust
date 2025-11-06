@@ -13,7 +13,7 @@ use tauri_plugin_autostart::ManagerExt;
 use crate::{
     cmd::{SchedulerCmd, ShutdownTx},
     core::payload::BreakPayloadStore,
-    scheduler::{init_scheduler, monitor::spawn_idle_monitor_task},
+    scheduler::init_scheduler,
 };
 
 pub mod cmd;
@@ -143,12 +143,28 @@ pub fn run() {
 
                 let (cmd_tx, shutdown_tx) = init_scheduler(&handle);
 
+                // Spawn monitors based on configuration
+                let mut monitors: Vec<Box<dyn scheduler::monitors::Monitor>> = vec![];
+
+                // Always add idle monitor (it will self-disable if detection fails)
+                tracing::info!("Idle monitoring enabled (threshold: {}s)", app_config.inactive_s);
+                monitors.push(Box::new(scheduler::monitors::IdleMonitor::new(
+                    app_config.inactive_s,
+                )));
+
                 // Spawn idle monitor
                 if app_config.monitor_dnd {
                     tracing::info!("User idle monitoring is enabled");
                     spawn_idle_monitor_task(cmd_tx.clone(), handle.clone());
+
+                if monitors.is_empty() {
+                    tracing::info!("No monitors enabled");
                 } else {
-                    tracing::info!("User idle monitoring is disabled");
+                    scheduler::monitors::spawn_monitor_tasks(
+                        monitors,
+                        cmd_tx.clone(),
+                        handle.clone(),
+                    );
                 }
 
                 handle.manage(SchedulerCmd(cmd_tx)); // keep alive

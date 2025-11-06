@@ -3,7 +3,7 @@ mod break_scheduler;
 pub mod event;
 pub mod manager;
 pub mod models;
-pub mod monitor;
+pub mod monitors;
 
 // Re-export public API
 pub use manager::init_scheduler;
