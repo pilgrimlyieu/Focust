@@ -11,11 +11,13 @@
 export * from "./factories";
 // Commonly used generated types
 export type { AppConfig } from "./generated/AppConfig";
+export type { AppExclusion } from "./generated/AppExclusion";
 export type { AttentionSettings } from "./generated/AttentionSettings";
 export type { AudioSettings } from "./generated/AudioSettings";
 export type { BackgroundSource } from "./generated/BackgroundSource";
 export type { BreakPayload } from "./generated/BreakPayload";
 export type { EventKind } from "./generated/EventKind";
+export type { ExclusionRule } from "./generated/ExclusionRule";
 export type { FontFamily } from "./generated/FontFamily";
 export type { HexColor } from "./generated/HexColor";
 export type { LongBreakSettings } from "./generated/LongBreakSettings";

@@ -1,7 +1,16 @@
 import { config } from "@vue/test-utils";
 import { beforeEach, vi } from "vitest";
 
-// TODO: Use Tauri mock APIs
+/**
+ * Note: Currently using manual Tauri API mocks instead of @tauri-apps/api-mocks
+ *
+ * The manual mocks below provide sufficient test coverage for our needs.
+ * Using official Tauri mock packages would require additional dependencies
+ * and doesn't provide significant benefits for our current test scenarios.
+ *
+ * If more sophisticated Tauri API testing is needed in the future, consider
+ * migrating to official mocking solutions.
+ */
 
 // Polyfill structuredClone with JSON fallback for tests
 // This is needed because test mocks may contain non-cloneable properties

@@ -272,8 +272,8 @@ const postponeBreak = async () => {
 };
 
 const handleKeydown = (event: KeyboardEvent) => {
-  // TODO: More robust way
-  // Block common browser shortcuts during break
+  // Block common browser shortcuts during break to prevent user from
+  // interacting with the underlying page or escaping the break window
   if (
     event.ctrlKey &&
     (event.key === "a" ||

@@ -26,6 +26,7 @@ const enUS = {
     copy: "Copy",
     delete: "Delete",
     duplicate: "Duplicate",
+    edit: "Edit",
     pause: "Pause",
     postpone: "Postpone",
     reset: "Reset",
@@ -48,6 +49,28 @@ const enUS = {
   },
   app: {
     name: "Focust",
+  },
+  appExclusions: {
+    addRule: "Add Rule",
+    description:
+      "Control when breaks are paused based on which applications are running. Perfect for meetings, presentations, or focus time.",
+    hint: "Rules are checked every 10 seconds when enabled",
+    howItWorks: "How It Works",
+    noRules: "No exclusion rules yet. Add one to get started.",
+    processes: "Process Names",
+    processesHint:
+      "Separate multiple processes with commas, e.g., zoom.exe, teams.exe",
+    processesPlaceholder: "e.g., zoom.exe, chrome.exe, idea",
+    rulePause: "Pause when running",
+    rulePauseExplanation:
+      "Scheduler pauses when any of the specified processes are detected running.",
+    ruleResume: "Only when running",
+    ruleResumeExplanation:
+      "Scheduler pauses when NONE of the specified processes are running.",
+    rules: "Exclusion Rules",
+    ruleType: "Rule Type",
+    title: "Application Exclusions",
+    toggleRule: "Toggle rule type",
   },
   attention: {
     addTime: "Add time",
@@ -164,6 +187,7 @@ const enUS = {
     about: "About",
     advanced: "Advanced Options",
     attentions: "Timed Reminders",
+    exclusions: "App Exclusions",
     general: "General Settings",
     schedules: "Break Schedules",
     suggestions: "Break Suggestions",

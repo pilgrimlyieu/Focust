@@ -26,6 +26,9 @@ const AdvancedPanel = defineAsyncComponent(
 const AboutPanel = defineAsyncComponent(
   () => import("@/components/settings/AboutPanel.vue"),
 );
+const AppExclusionsPanel = defineAsyncComponent(
+  () => import("@/components/settings/AppExclusionsPanel.vue"),
+);
 const AttentionsPanel = defineAsyncComponent(
   () => import("@/components/settings/AttentionsPanel.vue"),
 );
@@ -51,6 +54,7 @@ import {
   isSchedulerLongBreak,
   isSchedulerMiniBreak,
 } from "@/types";
+import AppExclusionIcon from "@/components/icons/AppExclusionIcon.vue";
 
 const { t } = useI18n();
 const configStore = useConfigStore();
@@ -61,6 +65,7 @@ const tabs = [
   { key: "schedules", label: computed(() => t("nav.schedules")) },
   { key: "attentions", label: computed(() => t("nav.attentions")) },
   { key: "suggestions", label: computed(() => t("nav.suggestions")) },
+  { key: "exclusions", label: computed(() => t("nav.exclusions")) },
   { key: "advanced", label: computed(() => t("nav.advanced")) },
   { key: "about", label: computed(() => t("nav.about")) },
 ] as const;
@@ -325,8 +330,9 @@ defineExpose({
                 <CleanCalendar :class-name="'h-5 w-5'" v-else-if="index === 1" />
                 <BellIcon :class-name="'h-5 w-5'" v-else-if="index === 2" />
                 <SuggestionBulb :class-name="'h-5 w-5'" v-else-if="index === 3" />
-                <SlidersIcon :class-name="'h-5 w-5'" v-else-if="index === 4" />
-                <InfoCircleIcon :class-name="'h-5 w-5'" v-else-if="index === 5" />
+                <AppExclusionIcon :class-name="'h-5 w-5'" v-else-if="index === 4" />
+                <SlidersIcon :class-name="'h-5 w-5'" v-else-if="index === 5" />
+                <InfoCircleIcon :class-name="'h-5 w-5'" v-else-if="index === 6" />
                 <span>{{ tab.label }}</span>
               </a>
             </li>
@@ -362,6 +368,7 @@ defineExpose({
                   <AttentionsPanel v-else-if="activeTab === 'attentions'" :key="'attentions'"
                     :config="configStore.draft" />
                   <SuggestionsPanel v-else-if="activeTab === 'suggestions'" :key="'suggestions'" />
+                  <AppExclusionsPanel v-else-if="activeTab === 'exclusions'" :key="'exclusions'" />
                   <AdvancedPanel v-else-if="activeTab === 'advanced'" :key="'advanced'" @notify="handleNotify" />
                   <AboutPanel v-else-if="activeTab === 'about'" :key="'about'" @notify="handleNotify" />
                 </Transition>

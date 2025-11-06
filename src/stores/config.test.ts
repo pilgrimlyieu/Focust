@@ -12,6 +12,7 @@ import { useConfigStore } from "./config";
 
 const mockConfig: RawAppConfig = {
   allScreens: false,
+  appExclusions: [],
   attentions: [
     {
       daysOfWeek: ["Mon", "Tue", "Wed", "Thu", "Fri"],
