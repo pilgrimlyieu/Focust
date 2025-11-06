@@ -1,4 +1,20 @@
 {
+  "de-DE": {
+    "tray": {
+      "show": "Einstellungen anzeigen",
+      "pause": "Pausen pausieren",
+      "resume": "Pausen fortsetzen",
+      "quit": "Beenden",
+      "tooltip": "Focust - Pausenerinnerung"
+    },
+    "notification": {
+      "miniBreak": "Mini-Pause",
+      "longBreak": "Lange Pause",
+      "attention": "Achtung",
+      "startingSoon": "{breakType} in {seconds} Sekunden",
+      "message": "Zeit für eine Pause und ruhen Sie Ihre Augen aus."
+    }
+  },
   "en-US": {
     "tray": {
       "show": "Show Settings",
@@ -13,6 +29,118 @@
       "attention": "Attention",
       "startingSoon": "{breakType} in {seconds} seconds",
       "message": "Time to take a break and rest your eyes."
+    }
+  },
+  "es-ES": {
+    "tray": {
+      "show": "Mostrar configuración",
+      "pause": "Pausar descansos",
+      "resume": "Reanudar descansos",
+      "quit": "Salir",
+      "tooltip": "Focust - Recordatorio de descanso"
+    },
+    "notification": {
+      "miniBreak": "Descanso mini",
+      "longBreak": "Descanso largo",
+      "attention": "Atención",
+      "startingSoon": "{breakType} en {seconds} segundos",
+      "message": "Tiempo de tomar un descanso y descansar tus ojos."
+    }
+  },
+  "fr-FR": {
+    "tray": {
+      "show": "Afficher les paramètres",
+      "pause": "Suspendre les pauses",
+      "resume": "Reprendre les pauses",
+      "quit": "Quitter",
+      "tooltip": "Focust - Rappel de pause"
+    },
+    "notification": {
+      "miniBreak": "Mini-pause",
+      "longBreak": "Pause longue",
+      "attention": "Attention",
+      "startingSoon": "{breakType} dans {seconds} secondes",
+      "message": "Il est temps de faire une pause et de reposer vos yeux."
+    }
+  },
+  "it-IT": {
+    "tray": {
+      "show": "Mostra impostazioni",
+      "pause": "Pausa pause",
+      "resume": "Riprendi pause",
+      "quit": "Esci",
+      "tooltip": "Focust - Promemoria pausa"
+    },
+    "notification": {
+      "miniBreak": "Mini pausa",
+      "longBreak": "Pausa lunga",
+      "attention": "Attenzione",
+      "startingSoon": "{breakType} tra {seconds} secondi",
+      "message": "È ora di fare una pausa e riposare gli occhi."
+    }
+  },
+  "ja-JP": {
+    "tray": {
+      "show": "設定を表示",
+      "pause": "休憩を一時停止",
+      "resume": "休憩を再開",
+      "quit": "終了",
+      "tooltip": "Focust - 休憩リマインダー"
+    },
+    "notification": {
+      "miniBreak": "ミニ休憩",
+      "longBreak": "長い休憩",
+      "attention": "注意",
+      "startingSoon": "{seconds}秒後に{breakType}",
+      "message": "休憩して目を休める時間です。"
+    }
+  },
+  "ko-KR": {
+    "tray": {
+      "show": "설정 표시",
+      "pause": "휴식 일시 정지",
+      "resume": "휴식 재개",
+      "quit": "종료",
+      "tooltip": "Focust - 휴식 알림"
+    },
+    "notification": {
+      "miniBreak": "미니 휴식",
+      "longBreak": "긴 휴식",
+      "attention": "주의",
+      "startingSoon": "{seconds}초 후 {breakType}",
+      "message": "휴식을 취하고 눈을 쉬게 할 시간입니다."
+    }
+  },
+  "pt-BR": {
+    "tray": {
+      "show": "Mostrar configurações",
+      "pause": "Pausar pausas",
+      "resume": "Retomar pausas",
+      "quit": "Sair",
+      "tooltip": "Focust - Lembrete de pausa"
+    },
+    "notification": {
+      "miniBreak": "Mini pausa",
+      "longBreak": "Pausa longa",
+      "attention": "Atenção",
+      "startingSoon": "{breakType} em {seconds} segundos",
+      "message": "Hora de fazer uma pausa e descansar os olhos."
+    }
+  },
+  "ru-RU": {
+    "tray": {
+      "show": "Показать настройки",
+      "pause": "Приостановить перерывы",
+      "resume": "Возобновить перерывы",
+      "quit": "Выход",
+      "tooltip": "Focust - Напоминание о перерыве"
+    },
+    "notification": {
+      "miniBreak": "Мини-перерыв",
+      "longBreak": "Длительный перерыв",
+      "attention": "Внимание",
+      "startingSoon": "{breakType} через {seconds} секунд",
+      "message": "Время сделать перерыв и дать глазам отдохнуть."
     }
   },
   "zh-CN": {
