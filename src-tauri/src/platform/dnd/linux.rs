@@ -1,3 +1,4 @@
+#![allow(clippy::doc_markdown)]
 //! Linux DND monitoring via D-Bus
 //!
 //! This implementation uses D-Bus to monitor DND state across different
@@ -17,6 +18,8 @@ use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use tokio::sync::{Mutex as AsyncMutex, mpsc};
+
+use crate::platform::dnd::INTERVAL_SECS;
 
 use super::DndEvent;
 
@@ -78,14 +81,14 @@ impl LinuxDndMonitor {
 
         // Start monitoring based on desktop environment
         let monitor_result = match self.desktop_env {
-            DesktopEnvironment::Kde => self.monitor_kde(sender.clone()).await,
-            DesktopEnvironment::Xfce => self.monitor_xfce(sender.clone()).await,
+            DesktopEnvironment::Kde => self.monitor_kde(sender.clone()),
+            DesktopEnvironment::Xfce => self.monitor_xfce(sender.clone()),
             DesktopEnvironment::Gnome | DesktopEnvironment::Unity => {
-                self.monitor_gnome(sender.clone()).await
+                self.monitor_gnome(sender.clone())
             }
-            DesktopEnvironment::Cinnamon => self.monitor_cinnamon(sender.clone()).await,
-            DesktopEnvironment::Mate => self.monitor_mate(sender.clone()).await,
-            DesktopEnvironment::LxQt => self.monitor_lxqt(sender.clone()).await,
+            DesktopEnvironment::Cinnamon => self.monitor_cinnamon(sender.clone()),
+            DesktopEnvironment::Mate => self.monitor_mate(sender.clone()),
+            DesktopEnvironment::LxQt => self.monitor_lxqt(sender.clone()),
             DesktopEnvironment::Unknown => {
                 tracing::warn!("Unknown desktop environment, DND monitoring not supported");
                 return Err(anyhow::anyhow!("Unsupported desktop environment"));
@@ -136,7 +139,8 @@ impl LinuxDndMonitor {
     // ========================================================================
 
     /// Monitor KDE Plasma DND via D-Bus
-    async fn monitor_kde(&self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
+    #[allow(clippy::unnecessary_wraps)]
+    fn monitor_kde(&self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
         let last_state = self.last_state.clone();
 
         tokio::spawn(async move {
@@ -151,7 +155,8 @@ impl LinuxDndMonitor {
     }
 
     /// Monitor XFCE DND via D-Bus
-    async fn monitor_xfce(&self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
+    #[allow(clippy::unnecessary_wraps)]
+    fn monitor_xfce(&self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
         let last_state = self.last_state.clone();
 
         tokio::spawn(async move {
@@ -166,7 +171,8 @@ impl LinuxDndMonitor {
     }
 
     /// Monitor GNOME DND via dconf watch
-    async fn monitor_gnome(&self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
+    #[allow(clippy::unnecessary_wraps)]
+    fn monitor_gnome(&self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
         let last_state = self.last_state.clone();
 
         tokio::spawn(async move {
@@ -181,7 +187,8 @@ impl LinuxDndMonitor {
     }
 
     /// Monitor Cinnamon DND via dconf watch
-    async fn monitor_cinnamon(&self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
+    #[allow(clippy::unnecessary_wraps)]
+    fn monitor_cinnamon(&self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
         let last_state = self.last_state.clone();
 
         tokio::spawn(async move {
@@ -196,7 +203,8 @@ impl LinuxDndMonitor {
     }
 
     /// Monitor MATE DND via dconf watch
-    async fn monitor_mate(&self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
+    #[allow(clippy::unnecessary_wraps)]
+    fn monitor_mate(&self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
         let last_state = self.last_state.clone();
 
         tokio::spawn(async move {
@@ -211,12 +219,12 @@ impl LinuxDndMonitor {
     }
 
     /// Monitor LXQt DND via config file polling (fallback)
-    async fn monitor_lxqt(&self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
+    #[allow(clippy::unnecessary_wraps)]
+    fn monitor_lxqt(&self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
         let last_state = self.last_state.clone();
-        let poll_interval = self.config.poll_interval;
 
         tokio::spawn(async move {
-            poll_lxqt_config(sender, last_state, poll_interval)
+            poll_lxqt_config(sender, last_state)
                 .await
                 .unwrap_or_else(|e| {
                     tracing::error!("LXQt config polling error: {e}");
@@ -283,6 +291,7 @@ async fn check_kde_dnd() -> Result<bool> {
 
 /// Check XFCE DND state via D-Bus
 async fn check_xfce_dnd() -> Result<bool> {
+    use zbus::zvariant::{OwnedValue, Value};
     use zbus::{Connection, proxy};
 
     #[proxy(
@@ -291,11 +300,7 @@ async fn check_xfce_dnd() -> Result<bool> {
         default_path = "/org/xfce/Xfconf"
     )]
     trait Xfconf {
-        fn get_property(
-            &self,
-            channel: &str,
-            property: &str,
-        ) -> zbus::Result<zbus::zvariant::Value>;
+        fn get_property(&self, channel: &str, property: &str) -> zbus::Result<OwnedValue>;
     }
 
     let connection = Connection::session().await?;
@@ -304,13 +309,15 @@ async fn check_xfce_dnd() -> Result<bool> {
         .get_property("xfce4-notifyd", "/do-not-disturb")
         .await?;
 
-    Ok(value.downcast::<bool>().unwrap_or(false))
+    Ok(<Value<'_> as Clone>::clone(&value)
+        .downcast::<bool>()
+        .unwrap_or(false))
 }
 
 /// Check GNOME DND state via gsettings
 async fn check_gnome_dnd() -> Result<bool> {
     let output = tokio::process::Command::new("gsettings")
-        .args(&["get", "org.gnome.desktop.notifications", "show-banners"])
+        .args(["get", "org.gnome.desktop.notifications", "show-banners"])
         .output()
         .await?;
 
@@ -321,7 +328,7 @@ async fn check_gnome_dnd() -> Result<bool> {
 /// Check Cinnamon DND state via gsettings
 async fn check_cinnamon_dnd() -> Result<bool> {
     let output = tokio::process::Command::new("gsettings")
-        .args(&[
+        .args([
             "get",
             "org.cinnamon.desktop.notifications",
             "display-notifications",
@@ -336,7 +343,7 @@ async fn check_cinnamon_dnd() -> Result<bool> {
 /// Check MATE DND state via gsettings
 async fn check_mate_dnd() -> Result<bool> {
     let output = tokio::process::Command::new("gsettings")
-        .args(&["get", "org.mate.NotificationDaemon", "do-not-disturb"])
+        .args(["get", "org.mate.NotificationDaemon", "do-not-disturb"])
         .output()
         .await?;
 
@@ -382,7 +389,7 @@ async fn monitor_kde_dbus(
 
     while let Some(msg) = stream.next().await {
         // Parse PropertiesChanged signal for Inhibited property
-        if let Ok(msg) = msg
+        if let Ok(_msg) = msg
             && let Ok(current_state) = check_kde_dnd().await
             && let mut last = last_state.lock().await
             && *last != current_state
@@ -423,7 +430,7 @@ async fn monitor_gnome_dconf(
     use tokio::process::Command;
 
     let mut child = Command::new("dconf")
-        .args(&["watch", "/org/gnome/desktop/notifications/"])
+        .args(["watch", "/org/gnome/desktop/notifications/"])
         .stdout(std::process::Stdio::piped())
         .spawn()?;
 
@@ -438,19 +445,18 @@ async fn monitor_gnome_dconf(
         if let Ok(current_state) = check_gnome_dnd().await
             && let mut last = last_state.lock().await
             && *last != current_state
+            && *last != current_state
         {
-            if *last != current_state {
-                *last = current_state;
+            *last = current_state;
 
-                let event = if current_state {
-                    DndEvent::Started
-                } else {
-                    DndEvent::Finished
-                };
+            let event = if current_state {
+                DndEvent::Started
+            } else {
+                DndEvent::Finished
+            };
 
-                tracing::info!("GNOME DND state changed: {}", event.description());
-                sender.send(event).await?;
-            }
+            tracing::info!("GNOME DND state changed: {}", event.description());
+            sender.send(event).await?;
         }
     }
 
@@ -466,7 +472,7 @@ async fn monitor_cinnamon_dconf(
     use tokio::process::Command;
 
     let mut child = Command::new("dconf")
-        .args(&["watch", "/org/cinnamon/desktop/notifications/"])
+        .args(["watch", "/org/cinnamon/desktop/notifications/"])
         .stdout(std::process::Stdio::piped())
         .spawn()?;
 
@@ -506,7 +512,7 @@ async fn monitor_mate_dconf(
     use tokio::process::Command;
 
     let mut child = Command::new("dconf")
-        .args(&["watch", "/org/mate/NotificationDaemon/"])
+        .args(["watch", "/org/mate/NotificationDaemon/"])
         .stdout(std::process::Stdio::piped())
         .spawn()?;
 
@@ -550,13 +556,12 @@ async fn poll_dnd_state<F, Fut>(
     sender: mpsc::Sender<DndEvent>,
     last_state: Arc<AsyncMutex<bool>>,
     check_fn: F,
-    poll_interval: u64,
 ) -> Result<()>
 where
     F: Fn() -> Fut,
     Fut: std::future::Future<Output = Result<bool>>,
 {
-    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(poll_interval));
+    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(INTERVAL_SECS));
 
     loop {
         interval.tick().await;

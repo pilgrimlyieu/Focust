@@ -48,7 +48,7 @@ tauri-plugin-autostart = "2"
 serde = { version = "^1", features = ["derive"] }
 serde_json = "1"
 chrono = { version = "0.4.42", features = ["serde"] }
-tokio = { version = "*", features = ["time", "macros"] }
+tokio = { version = "*", features = ["time", "macros", "process"] }
 figment = { version = "0.10", features = ["toml"] }
 toml = "0.9"
 anyhow = "1.0.98"
