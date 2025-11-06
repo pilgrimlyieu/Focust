@@ -46,7 +46,14 @@ pub fn init_logging(log_dir: &PathBuf, log_level: &str) -> Result<(), String> {
     };
 
     // Create an environment filter
-    let mut env_filter = EnvFilter::from_default_env().add_directive(level.into());
+    let mut env_filter = EnvFilter::from_default_env()
+        .add_directive(level.into())
+        .add_directive(
+            // https://github.com/tauri-apps/tauri/issues/8494
+            "tao::platform_impl::platform::event_loop::runner=off"
+                .parse()
+                .unwrap(),
+        );
 
     // default log level for our own crate
     if cfg!(debug_assertions) {
