@@ -80,7 +80,6 @@ enabled = true
 - **类型**：布尔值
 - **默认值**：`true`
 - **说明**：检测到系统勿扰模式时暂停所有休息
-- **注意**：尚未实现
 
 ### `inactiveS`
 - **类型**：整数（秒）
@@ -127,12 +126,7 @@ enabled = true
 
 应用程序排除功能允许您根据正在运行的应用程序自动暂停或恢复调度器。这对于在演示、视频通话或使用特定应用程序时防止休息中断非常有用。
 
-### `app_exclusions.enabled`
-- **类型**：布尔值
-- **默认值**：`false`
-- **说明**：启用或禁用应用程序排除监控
-
-### `app_exclusions.exclusions`
+### `appExclusions`
 - **类型**：对象数组
 - **默认值**：`[]`（空数组）
 - **说明**：排除规则列表
@@ -142,9 +136,9 @@ enabled = true
 每个排除规则具有以下结构：
 
 ```toml
-[[app_exclusions.exclusions]]
+[[appExclusions]]
 active = true
-rule = "Pause"  # 或 "Resume"
+rule = "pause"  # 或 "resume"
 patterns = ["chrome.exe", "firefox"]
 ```
 
@@ -155,7 +149,7 @@ patterns = ["chrome.exe", "firefox"]
 
 #### `rule`
 - **类型**：字符串枚举
-- **选项**：`"Pause"`、`"Resume"`
+- **选项**：`"pause"`、`"resume"`
 - **说明**：检测到匹配进程时采取的操作
   - `"Pause"`：当任何模式匹配时暂停调度器
   - `"Resume"`：当任何模式匹配时恢复调度器（如果之前被排除规则暂停）
@@ -171,50 +165,38 @@ patterns = ["chrome.exe", "firefox"]
 
 **演示期间暂停：**
 ```toml
-[app_exclusions]
-enabled = true
-
-[[app_exclusions.exclusions]]
+[[appExclusions]]
 active = true
-rule = "Pause"
+rule = "pause"
 patterns = ["POWERPNT.EXE", "Keynote", "impress"]  # PowerPoint、Keynote、LibreOffice Impress
 ```
 
 **视频通话期间暂停：**
 ```toml
-[app_exclusions]
-enabled = true
-
-[[app_exclusions.exclusions]]
+[[appExclusions]]
 active = true
-rule = "Pause"
+rule = "pause"
 patterns = ["zoom.exe", "Teams.exe", "Slack.exe", "Discord.exe"]
 ```
 
 **使用 IDE 时恢复（覆盖先前的暂停）：**
 ```toml
-[app_exclusions]
-enabled = true
-
-[[app_exclusions.exclusions]]
+[[appExclusions]]
 active = true
-rule = "Pause"
+rule = "pause"
 patterns = ["chrome.exe", "firefox.exe"]  # 浏览时暂停
 
-[[app_exclusions.exclusions]]
+[[appExclusions]]
 active = true
-rule = "Resume"
+rule = "resume"
 patterns = ["code.exe", "idea64.exe", "pycharm64.exe"]  # 编码时恢复
 ```
 
 **跨平台示例：**
 ```toml
-[app_exclusions]
-enabled = true
-
-[[app_exclusions.exclusions]]
+[[appExclusions]]
 active = true
-rule = "Pause"
+rule = "pause"
 patterns = [
     # Windows
     "POWERPNT.EXE", "chrome.exe", "firefox.exe",
@@ -243,17 +225,14 @@ themeMode = "system"
 postponeShortcut = "Ctrl+Shift+P"
 windowSize = 0.8
 
-[app_exclusions]
-enabled = true
-
-[[app_exclusions.exclusions]]
+[[appExclusions]]
 active = true
-rule = "Pause"
+rule = "pause"
 patterns = ["POWERPNT.EXE", "zoom.exe", "Teams.exe"]
 
-[[app_exclusions.exclusions]]
+[[appExclusions]]
 active = true
-rule = "Resume"
+rule = "resume"
 patterns = ["code.exe", "idea64.exe"]
 ```
 

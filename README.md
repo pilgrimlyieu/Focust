@@ -315,7 +315,7 @@ Contributions are warmly welcomed! Whether it's bug reports, feature requests, d
 ## 🗺️ Roadmap
 
 - [x] Whitelist applications (v0.2.0 major goal)
-- [ ] DND mode detection (v0.2.0 goal)
+- [x] DND mode detection (v0.2.0 goal)
 - [ ] Improved error handling and user feedback
 - [ ] Project icon
 - [ ] Comprehensive platform testing (macOS, Linux)
