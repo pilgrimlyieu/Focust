@@ -11,10 +11,11 @@ use crate::platform::create_break_windows;
 use crate::{config::SharedConfig, core::schedule::AttentionId};
 
 /// A simple timer for attention reminders
-/// Unlike breaks, attentions are not affected by scheduler pause state
+/// Attention timer can be paused/resumed like breaks
 pub struct AttentionTimer {
     app_handle: AppHandle,
     shutdown_rx: watch::Receiver<()>,
+    paused: bool,
 }
 
 impl AttentionTimer {
@@ -22,6 +23,7 @@ impl AttentionTimer {
         Self {
             app_handle,
             shutdown_rx,
+            paused: false,
         }
     }
 
@@ -35,6 +37,22 @@ impl AttentionTimer {
                 continue;
             }
 
+            // If paused, wait for commands or shutdown
+            if self.paused {
+                tokio::select! {
+                    biased;
+                    _ = self.shutdown_rx.changed() => {
+                        tracing::info!("AttentionTimer received shutdown signal while paused");
+                        break;
+                    }
+                    Some(cmd) = cmd_rx.recv() => {
+                        self.handle_command(cmd).await;
+                    }
+                }
+                continue;
+            }
+
+            // Calculate next attention time
             let next_attention = {
                 let config = self.app_handle.state::<SharedConfig>();
                 let config_guard = config.read().await;
@@ -66,7 +84,9 @@ impl AttentionTimer {
                         break;
                     }
                     () = sleep(duration_to_wait.to_std().unwrap_or(std::time::Duration::ZERO)) => {
-                        self.trigger_attention(attention_id);
+                        if !self.paused {
+                            self.trigger_attention(attention_id);
+                        }
                     }
                     Some(cmd) = cmd_rx.recv() => {
                         self.handle_command(cmd).await;
@@ -190,6 +210,15 @@ impl AttentionTimer {
         tracing::debug!("AttentionTimer handling command: {cmd}");
 
         match cmd {
+            Command::Pause(reason) => {
+                tracing::info!("Pausing AttentionTimer: {reason}");
+                self.paused = true;
+            }
+            Command::Resume(reason) => {
+                tracing::info!("Resuming AttentionTimer: {reason}");
+                self.paused = false;
+                // Will recalculate next attention on next loop iteration
+            }
             Command::UpdateConfig(new_config) => {
                 tracing::debug!("Updating config in AttentionTimer");
                 {
@@ -204,7 +233,6 @@ impl AttentionTimer {
                 self.trigger_attention(attention_id);
             }
             // AttentionTimer ignores other commands (they're for BreakScheduler)
-            // Maybe handle more commands in the future
             _ => {}
         }
     }

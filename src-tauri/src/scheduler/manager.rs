@@ -66,8 +66,8 @@ impl SchedulerManager {
 
                     // Determine which scheduler(s) should receive this command
                     match &cmd {
-                        Command::UpdateConfig(_) => {
-                            // Both schedulers need config updates
+                        Command::UpdateConfig(_) | Command::Pause(_) | Command::Resume(_) => {
+                            // These commands affect both schedulers
                             let _ = break_cmd_tx.send(cmd.clone()).await;
                             let _ = attention_cmd_tx.send(cmd).await;
                         }
