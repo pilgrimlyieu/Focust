@@ -41,7 +41,7 @@ Focust is a cross-platform break reminder application built with Tauri 2 (Rust b
 
 ### Project Structure
 
-```
+```text
 Focust/
 ├── src/                    # Frontend (Vue 3 + TypeScript)
 │   ├── components/         # Vue components
