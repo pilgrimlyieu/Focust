@@ -33,6 +33,9 @@ lto = true
 panic = "abort"
 strip = "debuginfo"
 
+[target.'cfg(windows)'.profile.release]
+panic = "unwind" # Support catching panics of DND implementation
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 ts-rs = { version = "11.0.1", features = ["chrono-impl"] }

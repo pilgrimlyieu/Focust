@@ -22,6 +22,10 @@ use windows::Win32::Foundation::NTSTATUS;
 
 use super::DndEvent;
 
+const MIN_VALID_POINTER_ADDR: usize = 0x1000;
+const MAX_BUFFER_SIZE: u32 = 1024;
+const EXPECTED_STATE_SIZE: u32 = mem::size_of::<FocusAssistState>() as u32;
+
 /// Wrapper to make `WnfUserSubscription` pointer Send
 /// Safety: The WNF subscription is thread-safe and can be safely sent between threads
 struct SendPtr(*mut WnfUserSubscription);
@@ -100,7 +104,7 @@ impl WindowsDndMonitor {
 
         // Unsubscribe from WNF notifications
         if let Some(subscription) = self.subscription.lock().await.take() {
-            unsubscribe_from_focus_assist(subscription.as_ptr())?;
+            unsubscribe_from_focus_assist(subscription.as_ptr());
         }
 
         *is_monitoring = false;
@@ -124,12 +128,7 @@ impl Drop for WindowsDndMonitor {
             // This is safe because Drop is called when the monitor is being destroyed
             if let Ok(mut subscription_guard) = self.subscription.try_lock() {
                 if let Some(subscription) = subscription_guard.take() {
-                    // Unsubscribe already has panic protection, but this adds another layer
-                    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                        if let Err(e) = unsubscribe_from_focus_assist(subscription.as_ptr()) {
-                            tracing::error!("Failed to unsubscribe during drop: {e}");
-                        }
-                    }));
+                    unsubscribe_from_focus_assist(subscription.as_ptr());
                 }
             } else {
                 // If we can't get the lock, just log and continue
@@ -299,14 +298,7 @@ fn subscribe_to_focus_assist(
             ));
         }
 
-        if subscription.is_null() {
-            let _ = Box::from_raw(context_ptr.cast::<CallbackContext>());
-            tracing::error!("WNF subscription handle is null after successful call");
-            return Err(anyhow::anyhow!("Subscription handle is null"));
-        }
-
-        // Validate that we got a reasonable pointer
-        if (subscription as usize) < 0x1000 {
+        if !is_valid_ptr(subscription) {
             let _ = Box::from_raw(context_ptr.cast::<CallbackContext>());
             tracing::error!("WNF subscription handle appears invalid: {subscription:p}");
             return Err(anyhow::anyhow!("Invalid subscription handle"));
@@ -336,15 +328,10 @@ fn subscribe_to_focus_assist(
 /// This function uses undocumented Windows WNF API. All errors are caught and logged
 /// without propagating. Panics are caught to prevent app crashes during cleanup.
 #[allow(clippy::unnecessary_wraps)]
-fn unsubscribe_from_focus_assist(subscription: *mut WnfUserSubscription) -> Result<()> {
-    if subscription.is_null() {
-        return Ok(());
-    }
-
-    // Validate pointer before dereferencing
-    if (subscription as usize) < 0x1000 {
+fn unsubscribe_from_focus_assist(subscription: *mut WnfUserSubscription) {
+    if !is_valid_ptr(subscription) {
         tracing::warn!("Invalid subscription pointer during unsubscribe: {subscription:p}");
-        return Ok(()); // Non-fatal, just skip unsubscribe
+        return; // Non-fatal, just skip unsubscribe
     }
 
     // Wrap in catch_unwind to prevent panics during cleanup
@@ -362,8 +349,6 @@ fn unsubscribe_from_focus_assist(subscription: *mut WnfUserSubscription) -> Resu
             "Panic caught during WNF unsubscribe: {panic_err:?}. Memory may leak but app continues."
         );
     }
-
-    Ok(())
 }
 
 /// WNF callback invoked when Focus Assist state changes
@@ -391,29 +376,17 @@ unsafe extern "system" fn focus_assist_callback(
 
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unsafe {
         // Validate all pointers before dereferencing
-        if ctx_ptr.is_null() {
-            tracing::error!("WNF callback: null callback_context pointer");
-            return NTSTATUS(0);
-        }
-
-        if buf_ptr.is_null() {
-            tracing::error!("WNF callback: null buffer pointer");
-            return NTSTATUS(0);
-        }
-
-        // Validate pointer addresses are reasonable (not in low memory)
-        if (ctx_ptr as usize) < 0x1000 {
+        if !is_valid_ptr(ctx_ptr) {
             tracing::error!("WNF callback: invalid callback_context pointer: {ctx_ptr:p}");
             return NTSTATUS(0);
         }
-
-        if (buf_ptr as usize) < 0x1000 {
+        if !is_valid_ptr(buf_ptr) {
             tracing::error!("WNF callback: invalid buffer pointer: {buf_ptr:p}");
             return NTSTATUS(0);
         }
 
         // Validate buffer size
-        let expected_size = mem::size_of::<FocusAssistState>() as u32;
+        let expected_size = EXPECTED_STATE_SIZE;
         if buf_len < expected_size {
             tracing::error!(
                 "WNF callback: buffer too small. Expected at least {expected_size} bytes, got {buf_len}"
@@ -422,7 +395,7 @@ unsafe extern "system" fn focus_assist_callback(
         }
 
         // Validate buffer size is not unreasonably large (detect corruption)
-        if buf_len > 1024 {
+        if buf_len > MAX_BUFFER_SIZE {
             tracing::error!(
                 "WNF callback: buffer suspiciously large: {buf_len} bytes. Possible corruption."
             );
@@ -434,7 +407,7 @@ unsafe extern "system" fn focus_assist_callback(
         std::ptr::copy_nonoverlapping(
             buf_ptr,
             (&raw mut state_aligned).cast::<u8>(),
-            mem::size_of::<FocusAssistState>(),
+            EXPECTED_STATE_SIZE as usize,
         );
         let state = state_aligned;
 
@@ -474,15 +447,10 @@ unsafe extern "system" fn focus_assist_callback(
             // Send event asynchronously using Tauri runtime (not tokio::spawn, as we're not in a tokio context)
             // This callback is executed on a Windows thread pool thread, not a tokio thread
             let sender = context.sender.clone();
-            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                tauri::async_runtime::spawn(async move {
-                    sender.send(event).await.unwrap_or_else(|e| {
-                        tracing::error!("Failed to send DND event: {e}");
-                    });
+            tauri::async_runtime::spawn(async move {
+                sender.send(event).await.unwrap_or_else(|e| {
+                    tracing::error!("Failed to send DND event: {e}");
                 });
-            }))
-            .unwrap_or_else(|e| {
-                tracing::error!("Panic while spawning DND event sender: {e:?}");
             });
         }
 
@@ -500,4 +468,8 @@ unsafe extern "system" fn focus_assist_callback(
             NTSTATUS(0)
         }
     }
+}
+
+fn is_valid_ptr<T>(ptr: *const T) -> bool {
+    !ptr.is_null() && (ptr as usize) >= MIN_VALID_POINTER_ADDR
 }
