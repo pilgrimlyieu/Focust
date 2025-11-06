@@ -12,10 +12,9 @@ pub use dnd::DndMonitor;
 pub use idle::IdleMonitor;
 pub use orchestrator::spawn_monitor_tasks;
 
+use std::fmt::Display;
 use std::future::Future;
 use std::pin::Pin;
-use std::time::Duration;
-use std::fmt::Display;
 
 use super::models::{Command, PauseReason};
 
@@ -61,7 +60,7 @@ pub trait Monitor: Send + Sync {
     fn name(&self) -> &'static str;
 
     /// Check interval for this monitor
-    fn interval(&self) -> Duration;
+    fn interval(&self) -> u64;
 
     /// Perform a check and return the action to take
     ///

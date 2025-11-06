@@ -4,7 +4,6 @@
 /// actions based on configured exclusion rules.
 use std::future::Future;
 use std::pin::Pin;
-use std::time::Duration;
 
 use sysinfo::{ProcessRefreshKind, System};
 
@@ -12,7 +11,7 @@ use super::{Monitor, MonitorAction, MonitorResult};
 use crate::config::AppExclusion;
 use crate::scheduler::models::PauseReason;
 
-const CHECK_INTERVAL: Duration = Duration::from_secs(10);
+const INTERVAL_SECS: u64 = 10;
 
 /// Monitor that checks for running applications and applies exclusion rules
 pub struct AppWhitelistMonitor {
@@ -66,9 +65,7 @@ impl AppWhitelistMonitor {
 
             // Check against process name
             if exclusion.matches(&process_name) {
-                tracing::debug!(
-                    "Process '{process_name}' matched exclusion rule",
-                );
+                tracing::debug!("Process '{process_name}' matched exclusion rule",);
                 return true;
             }
 
@@ -76,9 +73,7 @@ impl AppWhitelistMonitor {
             if let Some(path) = exe_path
                 && exclusion.matches(&path)
             {
-                tracing::debug!(
-                    "Process path '{path}' matched exclusion rule",
-                );
+                tracing::debug!("Process path '{path}' matched exclusion rule",);
                 return true;
             }
 
@@ -104,8 +99,8 @@ impl Monitor for AppWhitelistMonitor {
         "AppWhitelistMonitor"
     }
 
-    fn interval(&self) -> Duration {
-        CHECK_INTERVAL
+    fn interval(&self) -> u64 {
+        INTERVAL_SECS
     }
 
     fn check(&mut self) -> Pin<Box<dyn Future<Output = MonitorResult> + Send + '_>> {
@@ -153,7 +148,7 @@ mod tests {
         let monitor = AppWhitelistMonitor::new(exclusions);
 
         assert_eq!(monitor.name(), "AppWhitelistMonitor");
-        assert_eq!(monitor.interval(), CHECK_INTERVAL);
+        assert_eq!(monitor.interval(), INTERVAL_SECS);
         assert!(!monitor.is_paused);
         assert_eq!(monitor.exclusions.len(), 1);
     }

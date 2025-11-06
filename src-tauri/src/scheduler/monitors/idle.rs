@@ -10,7 +10,7 @@ use user_idle2::UserIdle;
 use super::{Monitor, MonitorAction, MonitorError, MonitorResult};
 use crate::scheduler::models::PauseReason;
 
-const CHECK_INTERVAL: Duration = Duration::from_secs(10);
+const INTERVAL_SECS: u64 = 10;
 const MAX_CONSECUTIVE_FAILURES: u32 = 3;
 
 /// Monitor that tracks user idle time
@@ -48,8 +48,8 @@ impl Monitor for IdleMonitor {
         "IdleMonitor"
     }
 
-    fn interval(&self) -> Duration {
-        CHECK_INTERVAL
+    fn interval(&self) -> u64 {
+        INTERVAL_SECS
     }
 
     fn check(&mut self) -> Pin<Box<dyn Future<Output = MonitorResult> + Send + '_>> {

@@ -20,10 +20,10 @@ pub async fn set_autostart_enabled(app: tauri::AppHandle, enabled: bool) -> Resu
         tracing::error!("Failed to check current autostart status: {e}");
         format!("Failed to check current autostart status: {e}")
     })?;
-    tracing::info!("Current autostart status: {}", current_status);
+    tracing::info!("Current autostart status: {current_status}");
 
     if current_status == enabled {
-        tracing::warn!("Autostart is already set to {}", enabled);
+        tracing::warn!("Autostart is already set to {enabled}");
         return Ok(());
     }
 

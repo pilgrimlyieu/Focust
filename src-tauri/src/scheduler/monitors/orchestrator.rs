@@ -1,13 +1,5 @@
-/// Monitor orchestrator that manages multiple monitors
-///
-/// This module provides functionality to run multiple monitors concurrently,
-/// each checking system state at their own interval and sending commands
-/// to the scheduler as needed.
-use std::time::Duration;
-
 use tauri::AppHandle;
 use tokio::sync::mpsc;
-use tokio::time::sleep;
 
 use super::{Monitor, MonitorAction, action_to_command};
 use crate::scheduler::models::Command;
@@ -44,59 +36,40 @@ async fn run_monitors(mut monitors: Vec<Box<dyn Monitor>>, cmd_tx: mpsc::Sender<
         monitor.on_start().await;
     }
 
-    // Track last check time for each monitor
-    let mut last_check_times: Vec<tokio::time::Instant> = monitors
-        .iter()
-        .map(|_| tokio::time::Instant::now())
-        .collect();
+    // Find minimum interval for check duration
+    let check_interval = monitors.iter().map(|m| m.interval()).min().unwrap_or(1);
 
-    // Find minimum interval for sleep duration
-    let check_interval = monitors
-        .iter()
-        .map(|m| m.interval())
-        .min()
-        .unwrap_or(Duration::from_secs(1));
+    let mut interval_timer =
+        tokio::time::interval(tokio::time::Duration::from_secs(check_interval));
 
-    tracing::debug!("Monitor check interval: {check_interval:?}");
+    tracing::debug!("Monitor check interval: {check_interval}s");
 
     loop {
-        let now = tokio::time::Instant::now();
+        interval_timer.tick().await;
 
         // Check each monitor if its interval has elapsed
-        for (i, monitor) in monitors.iter_mut().enumerate() {
-            let elapsed = now.duration_since(last_check_times[i]);
+        for monitor in &mut monitors {
+            match monitor.check().await {
+                Ok(action) => {
+                    if action != MonitorAction::None {
+                        tracing::debug!("Monitor '{}' triggered action: {action}", monitor.name());
 
-            if elapsed >= monitor.interval() {
-                last_check_times[i] = now;
-
-                match monitor.check().await {
-                    Ok(action) => {
-                        if action != MonitorAction::None {
-                            tracing::debug!(
-                                "Monitor '{}' triggered action: {action}",
+                        if let Some(cmd) = action_to_command(action)
+                            && let Err(e) = cmd_tx.send(cmd).await
+                        {
+                            tracing::error!(
+                                "Failed to send command from monitor '{}': {e}",
                                 monitor.name()
                             );
-
-                            if let Some(cmd) = action_to_command(action)
-                                && let Err(e) = cmd_tx.send(cmd).await
-                            {
-                                tracing::error!(
-                                    "Failed to send command from monitor '{}': {e}",
-                                    monitor.name()
-                                );
-                                // Channel closed, exit
-                                return;
-                            }
+                            // Channel closed, exit
+                            return;
                         }
                     }
-                    Err(e) => {
-                        tracing::debug!("Monitor '{}' check error: {e}", monitor.name());
-                    }
+                }
+                Err(e) => {
+                    tracing::debug!("Monitor '{}' check error: {e}", monitor.name());
                 }
             }
         }
-
-        // Sleep for the check interval
-        sleep(check_interval).await;
     }
 }
