@@ -143,8 +143,7 @@ const jaJP: LocaleStrings = {
   },
   general: {
     allScreens: "すべてのモニターに休憩を表示",
-    allScreensHint:
-      "マルチモニター設定で各画面に休憩ウィンドウを表示",
+    allScreensHint: "マルチモニター設定で各画面に休憩ウィンドウを表示",
     autostart: "システム起動時に起動",
     autostartDisabled: "自動起動が正常に無効化されました",
     autostartEnabled: "自動起動が正常に有効化されました",
@@ -202,7 +201,8 @@ const jaJP: LocaleStrings = {
     description: "休憩スケジュールとタイミングを設定",
     disabledStatus: "無効",
     durationSeconds: "期間",
-    empty: "スケジュールはまだありません。最初のスケジュールを追加して休憩の計画を始めましょう。",
+    empty:
+      "スケジュールはまだありません。最初のスケジュールを追加して休憩の計画を始めましょう。",
     enabled: "スケジュールを有効にする",
     enabledStatus: "有効",
     end: "終了",
@@ -252,8 +252,7 @@ const jaJP: LocaleStrings = {
     background: "背景設定",
     backgroundType: "背景タイプ",
     blur: "背景のぼかし半径",
-    blurHint:
-      "背景にフロストガラス効果を適用してテキストの読みやすさを向上",
+    blurHint: "背景にフロストガラス効果を適用してテキストの読みやすさを向上",
     folderPath: "フォルダパス",
     fontFamily: "フォントファミリー",
     fontPlaceholder: "Inter",

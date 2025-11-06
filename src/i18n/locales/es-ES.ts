@@ -39,7 +39,8 @@ const esES: LocaleStrings = {
     breakWindow: "Ventana de descanso",
     breakWindowHint:
       "La ventana de descanso se crea bajo demanda y se mantiene siempre visible.",
-    description: "Ubicación del archivo de configuración y comportamiento de la ventana",
+    description:
+      "Ubicación del archivo de configuración y comportamiento de la ventana",
     openConfigDir: "Abrir directorio de configuración",
     openConfigDirDescription:
       "Abre la carpeta de configuración de la aplicación para edición manual o respaldo",
@@ -76,7 +77,8 @@ const esES: LocaleStrings = {
   },
   attention: {
     addTime: "Agregar hora",
-    addTimeHint: "Haz clic en el botón de arriba para agregar horas de recordatorio",
+    addTimeHint:
+      "Haz clic en el botón de arriba para agregar horas de recordatorio",
     create: "Agregar recordatorio",
     days: "Días activos",
     description:
@@ -122,7 +124,8 @@ const esES: LocaleStrings = {
     attentionMessage: "Concéntrate en el presente, elimina distracciones.",
     gotIt: "Entendido",
     longBreakMessage: "Toma un descanso más largo y recarga energías.",
-    miniBreakMessage: "Tiempo para una pausa rápida—estírate, hidrátate, respira.",
+    miniBreakMessage:
+      "Tiempo para una pausa rápida—estírate, hidrátate, respira.",
     postpone: "Posponer",
     preparing: "Preparando tu descanso…",
     resume: "Volver al trabajo",
@@ -170,7 +173,8 @@ const esES: LocaleStrings = {
     nextBreakNotification: "Notificación de {kind} en {time}",
     notification: "Notificación",
     paused: "Programador pausado",
-    postponeHint: "Posponer retrasa el siguiente descanso por la duración configurada",
+    postponeHint:
+      "Posponer retrasa el siguiente descanso por la duración configurada",
     postponeShortcut: "Atajo de posponer",
     postponeShortcutHint: "Haz clic para capturar teclas, p. ej., Ctrl+Shift+P",
     running: "Programador en ejecución",
@@ -202,7 +206,8 @@ const esES: LocaleStrings = {
     description: "Configura horarios y tiempos de descanso",
     disabledStatus: "Deshabilitado",
     durationSeconds: "Duración",
-    empty: "Aún no hay horarios. Agrega el primero para comenzar a planificar descansos.",
+    empty:
+      "Aún no hay horarios. Agrega el primero para comenzar a planificar descansos.",
     enabled: "Habilitar horario",
     enabledStatus: "Habilitado",
     end: "Fin",
@@ -236,7 +241,8 @@ const esES: LocaleStrings = {
     customTitle: "Sugerencias personalizadas",
     description: "Gestiona las sugerencias mostradas durante los descansos",
     disabled: "No se mostrarán sugerencias",
-    emptyList: "Aún no hay sugerencias, haz clic en el botón agregar arriba para comenzar",
+    emptyList:
+      "Aún no hay sugerencias, haz clic en el botón agregar arriba para comenzar",
     enabled: "Las sugerencias se mostrarán durante los descansos",
     importAndSave: "Importar y guardar",
     label: "Sugerencias",
@@ -263,7 +269,8 @@ const esES: LocaleStrings = {
     opacity: "Opacidad de superposición",
     opacityHint: "Valores más altos hacen el fondo más visible",
     preview: "Vista previa",
-    randomImageHint: "Selecciona aleatoriamente una imagen de la carpeta para cada descanso",
+    randomImageHint:
+      "Selecciona aleatoriamente una imagen de la carpeta para cada descanso",
     singleImage: "Imagen única",
     solidColor: "Color sólido",
     textAndOverlay: "Texto y superposición",

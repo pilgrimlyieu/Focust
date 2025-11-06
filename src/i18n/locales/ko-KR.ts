@@ -37,8 +37,7 @@ const koKR: LocaleStrings = {
   },
   advanced: {
     breakWindow: "휴식 창",
-    breakWindowHint:
-      "휴식 창은 필요할 때 생성되며 항상 최상위에 유지됩니다.",
+    breakWindowHint: "휴식 창은 필요할 때 생성되며 항상 최상위에 유지됩니다.",
     description: "구성 파일 위치 및 창 동작",
     openConfigDir: "구성 디렉토리 열기",
     openConfigDirDescription:
@@ -60,8 +59,7 @@ const koKR: LocaleStrings = {
     howItWorks: "작동 방식",
     noRules: "아직 제외 규칙이 없습니다. 하나를 추가하여 시작하세요.",
     processes: "프로세스 이름",
-    processesHint:
-      "여러 프로세스를 쉼표로 구분하세요. 예: zoom.exe, teams.exe",
+    processesHint: "여러 프로세스를 쉼표로 구분하세요. 예: zoom.exe, teams.exe",
     processesPlaceholder: "예: zoom.exe, chrome.exe, idea",
     rulePause: "실행 시 일시 정지",
     rulePauseExplanation:
@@ -143,8 +141,7 @@ const koKR: LocaleStrings = {
   },
   general: {
     allScreens: "모든 모니터에 휴식 표시",
-    allScreensHint:
-      "멀티 모니터 설정에서 각 화면에 휴식 창 표시",
+    allScreensHint: "멀티 모니터 설정에서 각 화면에 휴식 창 표시",
     autostart: "시스템 시작 시 실행",
     autostartDisabled: "자동 시작이 성공적으로 비활성화되었습니다",
     autostartEnabled: "자동 시작이 성공적으로 활성화되었습니다",
@@ -202,7 +199,8 @@ const koKR: LocaleStrings = {
     description: "휴식 일정 및 타이밍 구성",
     disabledStatus: "비활성화됨",
     durationSeconds: "기간",
-    empty: "아직 일정이 없습니다. 첫 번째 일정을 추가하여 휴식 계획을 시작하세요.",
+    empty:
+      "아직 일정이 없습니다. 첫 번째 일정을 추가하여 휴식 계획을 시작하세요.",
     enabled: "일정 활성화",
     enabledStatus: "활성화됨",
     end: "종료",
@@ -252,8 +250,7 @@ const koKR: LocaleStrings = {
     background: "배경 설정",
     backgroundType: "배경 유형",
     blur: "배경 흐림 반경",
-    blurHint:
-      "더 나은 텍스트 가독성을 위해 배경에 프로스트 글래스 효과 적용",
+    blurHint: "더 나은 텍스트 가독성을 위해 배경에 프로스트 글래스 효과 적용",
     folderPath: "폴더 경로",
     fontFamily: "글꼴 패밀리",
     fontPlaceholder: "Inter",

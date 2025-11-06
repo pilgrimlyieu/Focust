@@ -58,7 +58,8 @@ const deDE: LocaleStrings = {
       "Steuern Sie, wann Pausen basierend auf laufenden Anwendungen pausiert werden. Perfekt für Besprechungen, Präsentationen oder Fokuszeiten.",
     hint: "Regeln werden alle 10 Sekunden überprüft, wenn aktiviert",
     howItWorks: "Wie es funktioniert",
-    noRules: "Noch keine Ausschlussregeln. Fügen Sie eine hinzu, um zu beginnen.",
+    noRules:
+      "Noch keine Ausschlussregeln. Fügen Sie eine hinzu, um zu beginnen.",
     processes: "Prozessnamen",
     processesHint:
       "Trennen Sie mehrere Prozesse durch Kommas, z.B. zoom.exe, teams.exe",
@@ -76,7 +77,8 @@ const deDE: LocaleStrings = {
   },
   attention: {
     addTime: "Zeit hinzufügen",
-    addTimeHint: "Klicken Sie auf die Schaltfläche oben, um Erinnerungszeiten hinzuzufügen",
+    addTimeHint:
+      "Klicken Sie auf die Schaltfläche oben, um Erinnerungszeiten hinzuzufügen",
     create: "Erinnerung hinzufügen",
     days: "Aktive Tage",
     description:
@@ -90,7 +92,8 @@ const deDE: LocaleStrings = {
     example: "Beispiel: Täglich um 10:00 und 15:00 an Wassertrinken erinnern",
     message: "Nachricht",
     messageHint: "Woran Sie erinnert werden möchten",
-    messagePlaceholder: "Konzentrieren Sie sich auf die Gegenwart, eliminieren Sie Ablenkungen.",
+    messagePlaceholder:
+      "Konzentrieren Sie sich auf die Gegenwart, eliminieren Sie Ablenkungen.",
     name: "Erinnerungsname",
     nameHint: "z.B. Wassererinnerung, Steh-auf-Alarm",
     times: "Erinnerungszeiten",
@@ -119,14 +122,18 @@ const deDE: LocaleStrings = {
   },
   break: {
     attention: "Achtung",
-    attentionMessage: "Konzentrieren Sie sich auf die Gegenwart, eliminieren Sie Ablenkungen.",
+    attentionMessage:
+      "Konzentrieren Sie sich auf die Gegenwart, eliminieren Sie Ablenkungen.",
     gotIt: "Verstanden",
-    longBreakMessage: "Machen Sie eine längere Pause und tanken Sie neue Energie.",
-    miniBreakMessage: "Zeit für eine kurze Pause—strecken, hydratisieren, atmen.",
+    longBreakMessage:
+      "Machen Sie eine längere Pause und tanken Sie neue Energie.",
+    miniBreakMessage:
+      "Zeit für eine kurze Pause—strecken, hydratisieren, atmen.",
     postpone: "Verschieben",
     preparing: "Ihre Pause wird vorbereitet…",
     resume: "Zurück zur Arbeit",
-    shortcutHint: "Tastenkombinationen: Enter zum Beenden · {postpone} zum Verschieben",
+    shortcutHint:
+      "Tastenkombinationen: Enter zum Beenden · {postpone} zum Verschieben",
     skip: "Überspringen",
     strict: "Strikter Modus - Kann nicht übersprungen werden",
     suggestion: "Vorschlag",
@@ -170,9 +177,11 @@ const deDE: LocaleStrings = {
     nextBreakNotification: "Benachrichtigung für {kind} in {time}",
     notification: "Benachrichtigung",
     paused: "Planer pausiert",
-    postponeHint: "Verschieben schiebt die nächste Pause um die konfigurierte Dauer hinaus",
+    postponeHint:
+      "Verschieben schiebt die nächste Pause um die konfigurierte Dauer hinaus",
     postponeShortcut: "Verschieben-Tastenkombination",
-    postponeShortcutHint: "Klicken Sie, um Tasten zu erfassen, z.B. Strg+Umschalt+P",
+    postponeShortcutHint:
+      "Klicken Sie, um Tasten zu erfassen, z.B. Strg+Umschalt+P",
     running: "Planer läuft",
     scheduler: "Planer-Steuerungen",
     secondsRemaining: "{seconds} Sek",
@@ -202,7 +211,8 @@ const deDE: LocaleStrings = {
     description: "Pausenpläne und -zeiten konfigurieren",
     disabledStatus: "Deaktiviert",
     durationSeconds: "Dauer",
-    empty: "Noch keine Pläne. Fügen Sie Ihren ersten hinzu, um Pausen zu planen.",
+    empty:
+      "Noch keine Pläne. Fügen Sie Ihren ersten hinzu, um Pausen zu planen.",
     enabled: "Plan aktivieren",
     enabledStatus: "Aktiviert",
     end: "Ende",
@@ -234,9 +244,11 @@ const deDE: LocaleStrings = {
     cancel: "Abbrechen",
     currentLanguage: "Aktuelle Sprache: {language}",
     customTitle: "Benutzerdefinierte Vorschläge",
-    description: "Verwalten Sie Vorschläge, die während Pausen angezeigt werden",
+    description:
+      "Verwalten Sie Vorschläge, die während Pausen angezeigt werden",
     disabled: "Es werden keine Vorschläge angezeigt",
-    emptyList: "Noch keine Vorschläge, klicken Sie oben auf die Hinzufügen-Schaltfläche, um zu beginnen",
+    emptyList:
+      "Noch keine Vorschläge, klicken Sie oben auf die Hinzufügen-Schaltfläche, um zu beginnen",
     enabled: "Vorschläge werden während Pausen angezeigt",
     importAndSave: "Importieren und speichern",
     label: "Vorschläge",
@@ -263,7 +275,8 @@ const deDE: LocaleStrings = {
     opacity: "Überlagerungsopazität",
     opacityHint: "Höhere Werte machen den Hintergrund sichtbarer",
     preview: "Vorschau",
-    randomImageHint: "Wählen Sie zufällig ein Bild aus dem Ordner für jede Pause",
+    randomImageHint:
+      "Wählen Sie zufällig ein Bild aus dem Ordner für jede Pause",
     singleImage: "Einzelnes Bild",
     solidColor: "Volltonfarbe",
     textAndOverlay: "Text und Überlagerung",

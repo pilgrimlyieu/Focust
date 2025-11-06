@@ -39,7 +39,8 @@ const ptBR: LocaleStrings = {
     breakWindow: "Janela de pausa",
     breakWindowHint:
       "A janela de pausa é criada sob demanda e forçada a permanecer no topo.",
-    description: "Localização do arquivo de configuração e comportamento da janela",
+    description:
+      "Localização do arquivo de configuração e comportamento da janela",
     openConfigDir: "Abrir diretório de configuração",
     openConfigDirDescription:
       "Abrir a pasta de configuração do aplicativo para edição manual ou backup",
@@ -122,7 +123,8 @@ const ptBR: LocaleStrings = {
     attentionMessage: "Concentre-se no presente, elimine distrações.",
     gotIt: "Entendi",
     longBreakMessage: "Faça uma pausa mais longa e recarregue as energias.",
-    miniBreakMessage: "Hora de uma pausa rápida—alongue-se, hidrate-se, respire.",
+    miniBreakMessage:
+      "Hora de uma pausa rápida—alongue-se, hidrate-se, respire.",
     postpone: "Adiar",
     preparing: "Preparando sua pausa…",
     resume: "Voltar ao trabalho",
@@ -151,7 +153,8 @@ const ptBR: LocaleStrings = {
     autostartHint: "Iniciar o Focust automaticamente quando você fizer login",
     behaviorSettings: "Comportamento do aplicativo",
     checkUpdates: "Verificar atualizações na inicialização",
-    checkUpdatesHint: "Verificar automaticamente novas versões na inicialização",
+    checkUpdatesHint:
+      "Verificar automaticamente novas versões na inicialização",
     fullscreen: "Tela cheia",
     hoursMinutes: "{hours}h {minutes}m",
     imminent: "começando em breve",
@@ -172,7 +175,8 @@ const ptBR: LocaleStrings = {
     paused: "Agendador pausado",
     postponeHint: "Adiar empurra a próxima pausa pela duração configurada",
     postponeShortcut: "Atalho de adiamento",
-    postponeShortcutHint: "Clique para capturar teclas, por exemplo, Ctrl+Shift+P",
+    postponeShortcutHint:
+      "Clique para capturar teclas, por exemplo, Ctrl+Shift+P",
     running: "Agendador em execução",
     scheduler: "Controles do agendador",
     secondsRemaining: "{seconds} seg",
@@ -202,7 +206,8 @@ const ptBR: LocaleStrings = {
     description: "Configurar agendamentos e horários de pausas",
     disabledStatus: "Desabilitado",
     durationSeconds: "Duração",
-    empty: "Ainda não há agendamentos. Adicione o primeiro para começar a planejar pausas.",
+    empty:
+      "Ainda não há agendamentos. Adicione o primeiro para começar a planejar pausas.",
     enabled: "Habilitar agendamento",
     enabledStatus: "Habilitado",
     end: "Fim",
@@ -236,7 +241,8 @@ const ptBR: LocaleStrings = {
     customTitle: "Sugestões personalizadas",
     description: "Gerenciar sugestões mostradas durante as pausas",
     disabled: "Nenhuma sugestão será mostrada",
-    emptyList: "Ainda não há sugestões, clique no botão adicionar acima para começar",
+    emptyList:
+      "Ainda não há sugestões, clique no botão adicionar acima para começar",
     enabled: "Sugestões serão exibidas durante as pausas",
     importAndSave: "Importar e salvar",
     label: "Sugestões",
@@ -263,7 +269,8 @@ const ptBR: LocaleStrings = {
     opacity: "Opacidade da sobreposição",
     opacityHint: "Valores mais altos tornam o fundo mais visível",
     preview: "Visualizar",
-    randomImageHint: "Escolher aleatoriamente uma imagem da pasta para cada pausa",
+    randomImageHint:
+      "Escolher aleatoriamente uma imagem da pasta para cada pausa",
     singleImage: "Imagem única",
     solidColor: "Cor sólida",
     textAndOverlay: "Texto e sobreposição",

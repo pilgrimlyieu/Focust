@@ -39,7 +39,8 @@ const frFR: LocaleStrings = {
     breakWindow: "Fenêtre de pause",
     breakWindowHint:
       "La fenêtre de pause est créée à la demande et forcée à rester au premier plan.",
-    description: "Emplacement du fichier de configuration et comportement de la fenêtre",
+    description:
+      "Emplacement du fichier de configuration et comportement de la fenêtre",
     openConfigDir: "Ouvrir le répertoire de configuration",
     openConfigDirDescription:
       "Ouvrir le dossier de configuration de l'application pour modification manuelle ou sauvegarde",
@@ -76,7 +77,8 @@ const frFR: LocaleStrings = {
   },
   attention: {
     addTime: "Ajouter une heure",
-    addTimeHint: "Cliquez sur le bouton ci-dessus pour ajouter des heures de rappel",
+    addTimeHint:
+      "Cliquez sur le bouton ci-dessus pour ajouter des heures de rappel",
     create: "Ajouter un rappel",
     days: "Jours actifs",
     description:
@@ -87,10 +89,12 @@ const frFR: LocaleStrings = {
       "Pas encore de rappels chronométrés. Ajoutez-en un pour vous rappeler de boire de l'eau, de vous lever ou d'autres tâches à des moments spécifiques.",
     enabled: "Activer le rappel",
     enabledStatus: "Activé",
-    example: "Exemple : Rappeler de boire de l'eau à 10:00 et 15:00 quotidiennement",
+    example:
+      "Exemple : Rappeler de boire de l'eau à 10:00 et 15:00 quotidiennement",
     message: "Message",
     messageHint: "Ce que vous voulez qu'on vous rappelle",
-    messagePlaceholder: "Concentrez-vous sur le présent, éliminez les distractions.",
+    messagePlaceholder:
+      "Concentrez-vous sur le présent, éliminez les distractions.",
     name: "Nom du rappel",
     nameHint: "par ex., Rappel d'eau, Alerte debout",
     times: "Heures de rappel",
@@ -119,14 +123,17 @@ const frFR: LocaleStrings = {
   },
   break: {
     attention: "Attention",
-    attentionMessage: "Concentrez-vous sur le présent, éliminez les distractions.",
+    attentionMessage:
+      "Concentrez-vous sur le présent, éliminez les distractions.",
     gotIt: "Compris",
     longBreakMessage: "Prenez un repos plus long et rechargez vos batteries.",
-    miniBreakMessage: "Temps pour une pause rapide—étirez-vous, hydratez-vous, respirez.",
+    miniBreakMessage:
+      "Temps pour une pause rapide—étirez-vous, hydratez-vous, respirez.",
     postpone: "Reporter",
     preparing: "Préparation de votre pause…",
     resume: "Retour au travail",
-    shortcutHint: "Raccourcis : Entrée pour terminer · {postpone} pour reporter",
+    shortcutHint:
+      "Raccourcis : Entrée pour terminer · {postpone} pour reporter",
     skip: "Ignorer",
     strict: "Mode strict - Impossible d'ignorer",
     suggestion: "Suggestion",
@@ -148,10 +155,12 @@ const frFR: LocaleStrings = {
     autostart: "Lancer au démarrage du système",
     autostartDisabled: "Démarrage automatique désactivé avec succès",
     autostartEnabled: "Démarrage automatique activé avec succès",
-    autostartHint: "Démarrer automatiquement Focust lorsque vous vous connectez",
+    autostartHint:
+      "Démarrer automatiquement Focust lorsque vous vous connectez",
     behaviorSettings: "Comportement de l'application",
     checkUpdates: "Vérifier les mises à jour au démarrage",
-    checkUpdatesHint: "Vérifier automatiquement les nouvelles versions au démarrage",
+    checkUpdatesHint:
+      "Vérifier automatiquement les nouvelles versions au démarrage",
     fullscreen: "Plein écran",
     hoursMinutes: "{hours}h {minutes}m",
     imminent: "commence bientôt",
@@ -172,7 +181,8 @@ const frFR: LocaleStrings = {
     paused: "Planificateur suspendu",
     postponeHint: "Reporter repousse la prochaine pause de la durée configurée",
     postponeShortcut: "Raccourci de report",
-    postponeShortcutHint: "Cliquez pour capturer les touches, par ex., Ctrl+Maj+P",
+    postponeShortcutHint:
+      "Cliquez pour capturer les touches, par ex., Ctrl+Maj+P",
     running: "Planificateur en cours d'exécution",
     scheduler: "Contrôles du planificateur",
     secondsRemaining: "{seconds} sec",
@@ -202,7 +212,8 @@ const frFR: LocaleStrings = {
     description: "Configurer les horaires et les temps de pause",
     disabledStatus: "Désactivé",
     durationSeconds: "Durée",
-    empty: "Pas encore d'horaires. Ajoutez-en un pour commencer à planifier des pauses.",
+    empty:
+      "Pas encore d'horaires. Ajoutez-en un pour commencer à planifier des pauses.",
     enabled: "Activer l'horaire",
     enabledStatus: "Activé",
     end: "Fin",
@@ -236,7 +247,8 @@ const frFR: LocaleStrings = {
     customTitle: "Suggestions personnalisées",
     description: "Gérer les suggestions affichées pendant les pauses",
     disabled: "Aucune suggestion ne sera affichée",
-    emptyList: "Pas encore de suggestions, cliquez sur le bouton ajouter ci-dessus pour commencer",
+    emptyList:
+      "Pas encore de suggestions, cliquez sur le bouton ajouter ci-dessus pour commencer",
     enabled: "Les suggestions seront affichées pendant les pauses",
     importAndSave: "Importer et enregistrer",
     label: "Suggestions",
@@ -263,7 +275,8 @@ const frFR: LocaleStrings = {
     opacity: "Opacité de superposition",
     opacityHint: "Des valeurs plus élevées rendent l'arrière-plan plus visible",
     preview: "Aperçu",
-    randomImageHint: "Choisir aléatoirement une image du dossier pour chaque pause",
+    randomImageHint:
+      "Choisir aléatoirement une image du dossier pour chaque pause",
     singleImage: "Image unique",
     solidColor: "Couleur unie",
     textAndOverlay: "Texte et superposition",

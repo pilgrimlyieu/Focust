@@ -39,7 +39,8 @@ const itIT: LocaleStrings = {
     breakWindow: "Finestra di pausa",
     breakWindowHint:
       "La finestra di pausa viene creata su richiesta e forzata a rimanere in primo piano.",
-    description: "Posizione del file di configurazione e comportamento della finestra",
+    description:
+      "Posizione del file di configurazione e comportamento della finestra",
     openConfigDir: "Apri directory di configurazione",
     openConfigDirDescription:
       "Apri la cartella di configurazione dell'applicazione per la modifica manuale o il backup",
@@ -58,7 +59,8 @@ const itIT: LocaleStrings = {
       "Controlla quando le pause vengono sospese in base alle applicazioni in esecuzione. Perfetto per riunioni, presentazioni o tempo di concentrazione.",
     hint: "Le regole vengono controllate ogni 10 secondi quando abilitate",
     howItWorks: "Come funziona",
-    noRules: "Nessuna regola di esclusione ancora. Aggiungine una per iniziare.",
+    noRules:
+      "Nessuna regola di esclusione ancora. Aggiungine una per iniziare.",
     processes: "Nomi dei processi",
     processesHint:
       "Separa più processi con virgole, ad es. zoom.exe, teams.exe",
@@ -76,7 +78,8 @@ const itIT: LocaleStrings = {
   },
   attention: {
     addTime: "Aggiungi orario",
-    addTimeHint: "Fai clic sul pulsante sopra per aggiungere orari di promemoria",
+    addTimeHint:
+      "Fai clic sul pulsante sopra per aggiungere orari di promemoria",
     create: "Aggiungi promemoria",
     days: "Giorni attivi",
     description:
@@ -87,7 +90,8 @@ const itIT: LocaleStrings = {
       "Nessun promemoria temporizzato ancora. Aggiungine uno per ricordarti di bere acqua, alzarti in piedi o gestire altre attività in orari specifici.",
     enabled: "Abilita promemoria",
     enabledStatus: "Abilitato",
-    example: "Esempio: Ricorda di bere acqua alle 10:00 e 15:00 quotidianamente",
+    example:
+      "Esempio: Ricorda di bere acqua alle 10:00 e 15:00 quotidianamente",
     message: "Messaggio",
     messageHint: "Cosa vuoi che ti venga ricordato",
     messagePlaceholder: "Concentrati sul presente, elimina le distrazioni.",
@@ -122,11 +126,13 @@ const itIT: LocaleStrings = {
     attentionMessage: "Concentrati sul presente, elimina le distrazioni.",
     gotIt: "Capito",
     longBreakMessage: "Fai una pausa più lunga e ricaricati.",
-    miniBreakMessage: "Tempo per una pausa veloce—stiracchiati, idratati, respira.",
+    miniBreakMessage:
+      "Tempo per una pausa veloce—stiracchiati, idratati, respira.",
     postpone: "Posticipa",
     preparing: "Preparazione della tua pausa…",
     resume: "Torna al lavoro",
-    shortcutHint: "Scorciatoie: Invio per terminare · {postpone} per posticipare",
+    shortcutHint:
+      "Scorciatoie: Invio per terminare · {postpone} per posticipare",
     skip: "Salta",
     strict: "Modalità rigorosa - Non può saltare",
     suggestion: "Suggerimento",
@@ -170,9 +176,11 @@ const itIT: LocaleStrings = {
     nextBreakNotification: "Notifica per {kind} tra {time}",
     notification: "Notifica",
     paused: "Scheduler in pausa",
-    postponeHint: "Posticipare sposta la prossima pausa della durata configurata",
+    postponeHint:
+      "Posticipare sposta la prossima pausa della durata configurata",
     postponeShortcut: "Scorciatoia posticipa",
-    postponeShortcutHint: "Fai clic per acquisire i tasti, ad es. Ctrl+Maiusc+P",
+    postponeShortcutHint:
+      "Fai clic per acquisire i tasti, ad es. Ctrl+Maiusc+P",
     running: "Scheduler in esecuzione",
     scheduler: "Controlli scheduler",
     secondsRemaining: "{seconds} sec",
@@ -202,7 +210,8 @@ const itIT: LocaleStrings = {
     description: "Configura programmi e tempistiche delle pause",
     disabledStatus: "Disabilitato",
     durationSeconds: "Durata",
-    empty: "Nessun programma ancora. Aggiungi il primo per iniziare a pianificare le pause.",
+    empty:
+      "Nessun programma ancora. Aggiungi il primo per iniziare a pianificare le pause.",
     enabled: "Abilita programma",
     enabledStatus: "Abilitato",
     end: "Fine",
@@ -236,7 +245,8 @@ const itIT: LocaleStrings = {
     customTitle: "Suggerimenti personalizzati",
     description: "Gestisci i suggerimenti mostrati durante le pause",
     disabled: "Nessun suggerimento verrà mostrato",
-    emptyList: "Nessun suggerimento ancora, fai clic sul pulsante aggiungi sopra per iniziare",
+    emptyList:
+      "Nessun suggerimento ancora, fai clic sul pulsante aggiungi sopra per iniziare",
     enabled: "I suggerimenti verranno visualizzati durante le pause",
     importAndSave: "Importa e salva",
     label: "Suggerimenti",
@@ -263,7 +273,8 @@ const itIT: LocaleStrings = {
     opacity: "Opacità sovrapposizione",
     opacityHint: "Valori più alti rendono lo sfondo più visibile",
     preview: "Anteprima",
-    randomImageHint: "Scegli casualmente un'immagine dalla cartella per ogni pausa",
+    randomImageHint:
+      "Scegli casualmente un'immagine dalla cartella per ogni pausa",
     singleImage: "Immagine singola",
     solidColor: "Colore solido",
     textAndOverlay: "Testo e sovrapposizione",
