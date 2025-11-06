@@ -251,8 +251,23 @@ mod tests {
     fn test_suggestions_config_default() {
         let config = SuggestionsConfig::default();
 
-        assert!(config.by_language.contains_key("en-US"));
-        assert!(config.by_language.contains_key("zh-CN"));
+        // Test that all supported languages have suggestions
+        let expected_languages = [
+            "en-US", "zh-CN", "de-DE", "es-ES", "fr-FR",
+            "it-IT", "ja-JP", "ko-KR", "pt-BR", "ru-RU",
+        ];
+
+        for lang in expected_languages {
+            assert!(
+                config.by_language.contains_key(lang),
+                "Missing language: {lang}"
+            );
+            let suggestions = &config.by_language[lang].suggestions;
+            assert!(
+                !suggestions.is_empty(),
+                "No suggestions for language: {lang}"
+            );
+        }
 
         let en_suggestions = &config.by_language["en-US"].suggestions;
         assert!(!en_suggestions.is_empty());
@@ -262,14 +277,22 @@ mod tests {
     fn test_get_suggestions_for_language() {
         let config = SuggestionsConfig::default();
 
-        // Test existing language
+        // Test all supported languages
+        let test_languages = [
+            "en-US", "zh-CN", "de-DE", "es-ES", "fr-FR",
+            "it-IT", "ja-JP", "ko-KR", "pt-BR", "ru-RU",
+        ];
+
+        for lang in test_languages {
+            let suggestions = get_suggestions_for_language(&config, lang);
+            assert!(
+                !suggestions.is_empty(),
+                "Expected non-empty suggestions for {lang}"
+            );
+        }
+
+        // Test fallback to en-US for unknown language
         let en_suggestions = get_suggestions_for_language(&config, "en-US");
-        assert!(!en_suggestions.is_empty());
-
-        let zh_suggestions = get_suggestions_for_language(&config, "zh-CN");
-        assert!(!zh_suggestions.is_empty());
-
-        // Test fallback to en-US
         let unknown_suggestions = get_suggestions_for_language(&config, "unknown");
         assert_eq!(unknown_suggestions, en_suggestions);
     }
