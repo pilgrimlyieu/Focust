@@ -268,9 +268,6 @@ mod tests {
                 "No suggestions for language: {lang}"
             );
         }
-
-        let en_suggestions = &config.by_language["en-US"].suggestions;
-        assert!(!en_suggestions.is_empty());
     }
 
     #[test]
