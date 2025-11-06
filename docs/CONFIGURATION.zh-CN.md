@@ -121,6 +121,142 @@ enabled = true
   - `0.8` = 80%（默认）
   - `1.0` = 100%（全屏）
 
+---
+
+## 应用程序排除设置
+
+应用程序排除功能允许您根据正在运行的应用程序自动暂停或恢复调度器。这对于在演示、视频通话或使用特定应用程序时防止休息中断非常有用。
+
+### `app_exclusions.enabled`
+- **类型**：布尔值
+- **默认值**：`false`
+- **说明**：启用或禁用应用程序排除监控
+
+### `app_exclusions.exclusions`
+- **类型**：对象数组
+- **默认值**：`[]`（空数组）
+- **说明**：排除规则列表
+
+### 排除规则结构
+
+每个排除规则具有以下结构：
+
+```toml
+[[app_exclusions.exclusions]]
+active = true
+rule = "Pause"  # 或 "Resume"
+patterns = ["chrome.exe", "firefox"]
+```
+
+#### `active`
+- **类型**：布尔值
+- **默认值**：`true`
+- **说明**：此排除规则是否活动
+
+#### `rule`
+- **类型**：字符串枚举
+- **选项**：`"Pause"`、`"Resume"`
+- **说明**：检测到匹配进程时采取的操作
+  - `"Pause"`：当任何模式匹配时暂停调度器
+  - `"Resume"`：当任何模式匹配时恢复调度器（如果之前被排除规则暂停）
+
+#### `patterns`
+- **类型**：字符串数组
+- **说明**：要匹配的进程名称模式列表。匹配不区分大小写，使用子串匹配。
+  - 可以是进程名称（例如 `"chrome.exe"`、`"firefox"`）
+  - 可以是部分名称（例如 `"chrome"` 匹配 `"chrome.exe"`）
+  - 可以是完整路径（例如 `"C:\\Program Files\\App\\app.exe"`）
+
+### 配置示例
+
+**演示期间暂停：**
+```toml
+[app_exclusions]
+enabled = true
+
+[[app_exclusions.exclusions]]
+active = true
+rule = "Pause"
+patterns = ["POWERPNT.EXE", "Keynote", "impress"]  # PowerPoint、Keynote、LibreOffice Impress
+```
+
+**视频通话期间暂停：**
+```toml
+[app_exclusions]
+enabled = true
+
+[[app_exclusions.exclusions]]
+active = true
+rule = "Pause"
+patterns = ["zoom.exe", "Teams.exe", "Slack.exe", "Discord.exe"]
+```
+
+**使用 IDE 时恢复（覆盖先前的暂停）：**
+```toml
+[app_exclusions]
+enabled = true
+
+[[app_exclusions.exclusions]]
+active = true
+rule = "Pause"
+patterns = ["chrome.exe", "firefox.exe"]  # 浏览时暂停
+
+[[app_exclusions.exclusions]]
+active = true
+rule = "Resume"
+patterns = ["code.exe", "idea64.exe", "pycharm64.exe"]  # 编码时恢复
+```
+
+**跨平台示例：**
+```toml
+[app_exclusions]
+enabled = true
+
+[[app_exclusions.exclusions]]
+active = true
+rule = "Pause"
+patterns = [
+    # Windows
+    "POWERPNT.EXE", "chrome.exe", "firefox.exe",
+    # macOS
+    "Keynote", "Google Chrome", "Firefox",
+    # Linux
+    "chrome", "firefox", "libreoffice"
+]
+```
+
+### 平台特定说明
+
+- **Windows**：进程名称通常包含 `.exe` 扩展名（例如 `"chrome.exe"`）
+- **macOS**：应用程序名称匹配 `.app` 名称，不含扩展名（例如 `"Google Chrome"`）
+- **Linux**：进程名称通常为小写，不含扩展名（例如 `"chrome"`、`"firefox"`）
+
+**示例：**
+```toml
+checkForUpdates = true
+autostart = false
+monitorDnd = true
+inactiveS = 300
+allScreens = false
+language = "zh-CN"
+themeMode = "system"
+postponeShortcut = "Ctrl+Shift+P"
+windowSize = 0.8
+
+[app_exclusions]
+enabled = true
+
+[[app_exclusions.exclusions]]
+active = true
+rule = "Pause"
+patterns = ["POWERPNT.EXE", "zoom.exe", "Teams.exe"]
+
+[[app_exclusions.exclusions]]
+active = true
+rule = "Resume"
+patterns = ["code.exe", "idea64.exe"]
+```
+
 **示例：**
 ```toml
 checkForUpdates = true

@@ -95,7 +95,8 @@ See the [QUICKSTART.md](docs/QUICKSTART.md) for a step-by-step guide to getting 
 - **Strict Mode**: Force breaks when you really need them (cannot be skipped)
 - **Break Notifications**: Get notified before breaks start (configurable lead time)
 - **Automatic Pausing**: Detects system idle time and pauses the scheduler
-- **DND Detection**(TODO): Planned feature to detect Do Not Disturb mode
+- **DND Detection**: Automatically pauses breaks when Do Not Disturb/Focus Assist is enabled (Windows, macOS, Linux)
+- **Application Exclusions**: Pause or resume scheduler based on active applications (e.g., pause during presentations, resume when coding)
 - **Theme Modes**: Light, dark, or system-based theme for settings UI
 - **Detailed Logging**: Debug logs for troubleshooting
 
@@ -313,10 +314,11 @@ Contributions are warmly welcomed! Whether it's bug reports, feature requests, d
 
 ## 🗺️ Roadmap
 
-- [ ] Project icon
+- [x] Whitelist applications (v0.2.0 major goal)
+- [ ] DND mode detection (v0.2.0 goal)
 - [ ] Improved error handling and user feedback
+- [ ] Project icon
 - [ ] Comprehensive platform testing (macOS, Linux)
-- [ ] Whitelist applications (v0.2.0 major goal)
 
 ---
 

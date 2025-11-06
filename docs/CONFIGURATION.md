@@ -121,6 +121,142 @@ enabled = true
   - `0.8` = 80% (default)
   - `1.0` = 100% (fullscreen)
 
+---
+
+## Application Exclusions Settings
+
+Application exclusions allow you to automatically pause or resume the scheduler based on which applications are running. This is useful for preventing break interruptions during presentations, video calls, or when using specific applications.
+
+### `app_exclusions.enabled`
+- **Type**: Boolean
+- **Default**: `false`
+- **Description**: Enable or disable application exclusion monitoring
+
+### `app_exclusions.exclusions`
+- **Type**: Array of objects
+- **Default**: `[]` (empty array)
+- **Description**: List of exclusion rules
+
+### Exclusion Rule Structure
+
+Each exclusion rule has the following structure:
+
+```toml
+[[app_exclusions.exclusions]]
+active = true
+rule = "Pause"  # or "Resume"
+patterns = ["chrome.exe", "firefox"]
+```
+
+#### `active`
+- **Type**: Boolean
+- **Default**: `true`
+- **Description**: Whether this exclusion rule is active
+
+#### `rule`
+- **Type**: String enum
+- **Options**: `"Pause"`, `"Resume"`
+- **Description**: Action to take when a matching process is detected
+  - `"Pause"`: Pause the scheduler when any of the patterns match
+  - `"Resume"`: Resume the scheduler when any of the patterns match (if previously paused by exclusions)
+
+#### `patterns`
+- **Type**: Array of strings
+- **Description**: List of process name patterns to match. Matching is case-insensitive and uses substring matching.
+  - Can be process names (e.g., `"chrome.exe"`, `"firefox"`)
+  - Can be partial names (e.g., `"chrome"` matches `"chrome.exe"`)
+  - Can be full paths (e.g., `"C:\\Program Files\\App\\app.exe"`)
+
+### Example Configurations
+
+**Pause during presentations:**
+```toml
+[app_exclusions]
+enabled = true
+
+[[app_exclusions.exclusions]]
+active = true
+rule = "Pause"
+patterns = ["POWERPNT.EXE", "Keynote", "impress"]  # PowerPoint, Keynote, LibreOffice Impress
+```
+
+**Pause during video calls:**
+```toml
+[app_exclusions]
+enabled = true
+
+[[app_exclusions.exclusions]]
+active = true
+rule = "Pause"
+patterns = ["zoom.exe", "Teams.exe", "Slack.exe", "Discord.exe"]
+```
+
+**Resume when using IDEs (override previous pauses):**
+```toml
+[app_exclusions]
+enabled = true
+
+[[app_exclusions.exclusions]]
+active = true
+rule = "Pause"
+patterns = ["chrome.exe", "firefox.exe"]  # Pause during browsing
+
+[[app_exclusions.exclusions]]
+active = true
+rule = "Resume"
+patterns = ["code.exe", "idea64.exe", "pycharm64.exe"]  # Resume when coding
+```
+
+**Multi-platform example:**
+```toml
+[app_exclusions]
+enabled = true
+
+[[app_exclusions.exclusions]]
+active = true
+rule = "Pause"
+patterns = [
+    # Windows
+    "POWERPNT.EXE", "chrome.exe", "firefox.exe",
+    # macOS
+    "Keynote", "Google Chrome", "Firefox",
+    # Linux
+    "chrome", "firefox", "libreoffice"
+]
+```
+
+### Platform-Specific Notes
+
+- **Windows**: Process names typically include `.exe` extension (e.g., `"chrome.exe"`)
+- **macOS**: Application names match the `.app` name without extension (e.g., `"Google Chrome"`)
+- **Linux**: Process names are typically lowercase without extensions (e.g., `"chrome"`, `"firefox"`)
+
+**Example:**
+```toml
+checkForUpdates = true
+autostart = false
+monitorDnd = true
+inactiveS = 300
+allScreens = false
+language = "en-US"
+themeMode = "system"
+postponeShortcut = "Ctrl+Shift+P"
+windowSize = 0.8
+
+[app_exclusions]
+enabled = true
+
+[[app_exclusions.exclusions]]
+active = true
+rule = "Pause"
+patterns = ["POWERPNT.EXE", "zoom.exe", "Teams.exe"]
+
+[[app_exclusions.exclusions]]
+active = true
+rule = "Resume"
+patterns = ["code.exe", "idea64.exe"]
+```
+
 **Example:**
 ```toml
 checkForUpdates = true
