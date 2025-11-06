@@ -33,4 +33,5 @@ dist-ssr
 !public.key
 
 AGENTS.md
-docs/agentpackage-lock.json
+docs/agent
+package-lock.json
