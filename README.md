@@ -160,15 +160,17 @@ Before you begin, ensure you have the following installed:
    **Linux (Debian/Ubuntu):**
    ```bash
    sudo apt update
-   sudo apt install libwebkit2gtk-4.1-dev \
-     build-essential \
+   sudo apt install build-essential \
      curl \
      wget \
      file \
-     libxdo-dev \
-     libssl-dev \
-     libayatana-appindicator3-dev \
-     librsvg2-dev
+     libwebkit2gtk-4.1-dev \
+     libsoup-2.0-dev \
+     libappindicator2-dev \
+     librsvg1-dev \
+     patchelf \
+     libasound1-dev \
+     libxss-dev
    ```
 
 4. **Just** (optional but recommended) - Command runner
