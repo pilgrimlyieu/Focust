@@ -596,36 +596,11 @@ Updated Tauri and related plugins to the latest versions.
    - Add screenshots for UI changes
    - List any breaking changes
 
-3. **PR Template** (TODO):
-
-   ```markdown
-   ## Description
-   Brief description of the changes
-
-   ## Type of Change
-   - [ ] Bug fix
-   - [ ] New feature
-   - [ ] Breaking change
-   - [ ] Documentation update
-
-   ## Related Issues
-   Closes #123
-
-   ## Testing
-   - [ ] All existing tests pass
-   - [ ] Added new tests for changes
-   - [ ] Manually tested on [platform]
-
-   ## Screenshots (if applicable)
-   [Add screenshots]
-
-   ## Checklist
-   - [ ] Code follows project style guidelines
-   - [ ] Self-review completed
-   - [ ] Comments added for complex code
-   - [ ] Documentation updated
-   - [ ] No new warnings generated
-   ```
+3. **Fill out the PR template**:
+   - The PR template will automatically appear when you create a pull request
+   - Complete all relevant sections (description, type of change, testing, checklist)
+   - Check all applicable boxes in the checklist before requesting review
+   - See `.github/pull_request_template.md` for the full template
 
 ### Review Process
 
