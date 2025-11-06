@@ -253,8 +253,8 @@ mod tests {
 
         // Test that all supported languages have suggestions
         let expected_languages = [
-            "en-US", "zh-CN", "de-DE", "es-ES", "fr-FR",
-            "it-IT", "ja-JP", "ko-KR", "pt-BR", "ru-RU",
+            "en-US", "zh-CN", "de-DE", "es-ES", "fr-FR", "it-IT", "ja-JP", "ko-KR", "pt-BR",
+            "ru-RU",
         ];
 
         for lang in expected_languages {
@@ -276,8 +276,8 @@ mod tests {
 
         // Test all supported languages
         let test_languages = [
-            "en-US", "zh-CN", "de-DE", "es-ES", "fr-FR",
-            "it-IT", "ja-JP", "ko-KR", "pt-BR", "ru-RU",
+            "en-US", "zh-CN", "de-DE", "es-ES", "fr-FR", "it-IT", "ja-JP", "ko-KR", "pt-BR",
+            "ru-RU",
         ];
 
         for lang in test_languages {

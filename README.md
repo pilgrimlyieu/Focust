@@ -70,7 +70,7 @@ See the [QUICKSTART.md](docs/QUICKSTART.md) for a step-by-step guide to getting 
 ### 💡 Break Suggestions
 
 - **Motivational Messages**: Get helpful suggestions during breaks (stretch exercises, eye exercises, hydration reminders)
-- **Multi-Language Support**: Built-in suggestions in English and Chinese, with easy customization
+- **Multi-Language Support**: Built-in suggestions in English, Chinese and other 8 common languages, with easy customization
 - **TOML-Based Configuration**: Add your own custom suggestion lists
 - **Random Selection**: Fresh suggestions every break to keep things interesting
 
@@ -105,7 +105,7 @@ See the [QUICKSTART.md](docs/QUICKSTART.md) for a step-by-step guide to getting 
 
 ### 🌍 Internationalization
 
-- Currently supported: English (en-US), Simplified Chinese (zh-CN)
+- Currently supported: English (en-US), Simplified Chinese (zh-CN), Japanese (ja-JP), German (de-DE), French (fr-FR), Spanish (es-ES), Russian (ru-RU), Portuguese (pt-BR), Italian (it-IT), Korean (ko-KR)
 - Automatic language detection based on system locale
 - Easy to add new languages (contributions welcome!)
 
