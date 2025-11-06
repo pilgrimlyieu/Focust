@@ -23,7 +23,8 @@ const emit =
 const { t } = useI18n();
 const configStore = useConfigStore();
 
-// TODO: Hide debug section in production builds
+// Debug section visibility (hidden in production builds)
+const isDebugVisible = !import.meta.env.PROD;
 
 /**
  * Open the configuration directory in the system's file explorer.
@@ -183,8 +184,8 @@ async function skipCurrentBreak() {
       </button>
     </div>
 
-    <!-- Debug/Test Section -->
-    <div class="rounded-2xl border border-base-300 bg-base-100/70 p-6 shadow-md">
+    <!-- Debug/Test Section (development only) -->
+    <div v-if="isDebugVisible" class="rounded-2xl border border-base-300 bg-base-100/70 p-6 shadow-md">
       <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
         <MonitorIcon class-name="h-5 w-5 text-warning" />
         🧪 Debug
