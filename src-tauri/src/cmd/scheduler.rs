@@ -42,9 +42,9 @@ pub struct ShutdownTx(pub watch::Sender<()>);
 
 /// Request the scheduler to emit its current status
 #[tauri::command]
-pub async fn request_scheduler_status(state: State<'_, SchedulerCmd>) -> Result<(), String> {
+pub async fn request_break_status(state: State<'_, SchedulerCmd>) -> Result<(), String> {
     state
-        .send(Command::RequestStatus)
+        .send(Command::RequestBreakStatus)
         .await
         .map_err(|e| e.to_string())
 }
@@ -73,14 +73,14 @@ pub async fn resume_scheduler(state: State<'_, SchedulerCmd>) -> Result<(), Stri
 #[tauri::command]
 pub async fn postpone_break(state: State<'_, SchedulerCmd>) -> Result<(), String> {
     state
-        .send(Command::Postpone)
+        .send(Command::PostponeBreak)
         .await
         .map_err(|e| e.to_string())
 }
 
 /// Manually trigger a break for testing purposes
 #[tauri::command]
-pub async fn trigger_break(
+pub async fn trigger_event(
     state: State<'_, SchedulerCmd>,
     break_kind: SchedulerEvent,
 ) -> Result<(), String> {
@@ -101,12 +101,12 @@ pub async fn skip_break(state: State<'_, SchedulerCmd>) -> Result<(), String> {
 
 /// Notify that a break has finished normally
 #[tauri::command]
-pub async fn break_finished(
+pub async fn prompt_finished(
     state: State<'_, SchedulerCmd>,
     event: SchedulerEvent,
 ) -> Result<(), String> {
     state
-        .send(Command::BreakFinished(event))
+        .send(Command::PromptFinished(event))
         .await
         .map_err(|e| e.to_string())
 }

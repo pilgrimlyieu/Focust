@@ -12,7 +12,7 @@ pub use autostart::{is_autostart_enabled, set_autostart_enabled};
 pub use config::{get_config, pick_background_image, save_config};
 pub use payload::{get_break_payload, remove_break_payload, store_break_payload};
 pub use scheduler::{
-    SchedulerCmd, ShutdownTx, break_finished, pause_scheduler, postpone_break, resume_scheduler,
+    SchedulerCmd, ShutdownTx, pause_scheduler, postpone_break, prompt_finished, resume_scheduler,
 };
 pub use suggestions::{get_suggestions, get_suggestions_for_language, save_suggestions};
 pub use system::{open_config_directory, open_log_directory};

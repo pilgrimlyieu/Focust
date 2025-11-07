@@ -139,7 +139,7 @@ src-tauri/src/
 src/
 ├── views/              # Main views
 │   ├── SettingsApp.vue # Settings window
-│   └── BreakApp.vue    # Break window
+│   └── PromptApp.vue    # Break window
 ├── components/
 │   ├── settings/       # Settings panels (lazy-loaded)
 │   ├── ui/             # Reusable components

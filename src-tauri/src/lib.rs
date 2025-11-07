@@ -13,7 +13,7 @@ use tauri_plugin_autostart::ManagerExt;
 use crate::{
     cmd::{SchedulerCmd, ShutdownTx},
     core::payload::BreakPayloadStore,
-    scheduler::init_scheduler,
+    scheduler::manager::SchedulerManager,
 };
 
 pub mod cmd;
@@ -141,7 +141,7 @@ pub fn run() {
                     core::suggestions::SharedSuggestions::new(suggestions_config);
                 handle.manage(shared_suggestions);
 
-                let (cmd_tx, shutdown_tx) = init_scheduler(&handle);
+                let (cmd_tx, shutdown_tx, shared_state) = SchedulerManager::init(&handle);
 
                 // Spawn monitors based on configuration
                 let mut monitors: Vec<Box<dyn scheduler::monitors::Monitor>> = vec![];
@@ -155,7 +155,8 @@ pub fn run() {
                 // Add DND monitor if enabled
                 if app_config.monitor_dnd {
                     tracing::info!("DND monitoring enabled");
-                    monitors.push(Box::new(scheduler::monitors::DndMonitor::new()));
+                    let dnd_monitor = scheduler::monitors::DndMonitor::new(shared_state.clone());
+                    monitors.push(Box::new(dnd_monitor));
                 } else {
                     tracing::info!("DND monitoring disabled");
                 }
@@ -182,6 +183,7 @@ pub fn run() {
                         monitors,
                         cmd_tx.clone(),
                         handle.clone(),
+                        shared_state.clone(),
                     );
                 }
 
@@ -203,13 +205,13 @@ pub fn run() {
             cmd::payload::get_break_payload,
             cmd::payload::remove_break_payload,
             cmd::payload::store_break_payload,
-            cmd::scheduler::break_finished,
+            cmd::scheduler::prompt_finished,
             cmd::scheduler::pause_scheduler,
             cmd::scheduler::postpone_break,
-            cmd::scheduler::request_scheduler_status,
+            cmd::scheduler::request_break_status,
             cmd::scheduler::resume_scheduler,
             cmd::scheduler::skip_break,
-            cmd::scheduler::trigger_break,
+            cmd::scheduler::trigger_event,
             cmd::suggestions::get_suggestions,
             cmd::suggestions::get_suggestions_for_language,
             cmd::suggestions::save_suggestions,

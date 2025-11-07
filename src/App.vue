@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { getErrorMessage } from "@/utils/handleError";
-import BreakApp from "@/views/BreakApp.vue";
+import PromptApp from "@/views/PromptApp.vue";
 
 const ready = ref(false);
 const error = ref<string | null>(null);
 
 // Break app is the only view in the main window now
-const currentView = computed(() => BreakApp);
+const currentView = computed(() => PromptApp);
 
 function reload() {
   window.location.reload();

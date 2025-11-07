@@ -158,8 +158,8 @@ const preloadBackground = async (data: BreakPayload): Promise<void> => {
  * @param {BreakPayload} data The break payload data.
  */
 const handlePayload = async (data: BreakPayload) => {
-  console.log("[BreakApp] Handling payload:", data);
-  console.log("[BreakApp] Suggestion field:", data.suggestion);
+  console.log("[PromptApp] Handling payload:", data);
+  console.log("[PromptApp] Suggestion field:", data.suggestion);
   isClosing.value = false;
   payload.value = data;
 
@@ -177,24 +177,24 @@ const handlePayload = async (data: BreakPayload) => {
   const isPrimaryWindow = windowLabel.endsWith("-0");
 
   if (isPrimaryWindow) {
-    console.log("[BreakApp] Playing break audio (primary window)");
+    console.log("[PromptApp] Playing break audio (primary window)");
     playAudio(data.audio).catch((err) => {
-      console.warn("[BreakApp] Audio playback error:", err);
+      console.warn("[PromptApp] Audio playback error:", err);
     });
   } else {
-    console.log("[BreakApp] Skipping audio playback (secondary window)");
+    console.log("[PromptApp] Skipping audio playback (secondary window)");
   }
 
   // Show window after everything is ready
-  console.log("[BreakApp] Content rendered, showing window...");
+  console.log("[PromptApp] Content rendered, showing window...");
 
   try {
     await currentWindow.show();
     await currentWindow.setFocus();
     isRendered.value = true;
-    console.log("[BreakApp] Window shown successfully");
+    console.log("[PromptApp] Window shown successfully");
   } catch (err) {
-    console.error("[BreakApp] Failed to show window:", err);
+    console.error("[PromptApp] Failed to show window:", err);
   }
 };
 
@@ -214,10 +214,10 @@ const finishBreak = async (isAutoFinish = false) => {
   if (payload.value) {
     try {
       const event = constructSchedulerEvent(payload.value);
-      await invoke("break_finished", { event });
+      await invoke("prompt_finished", { event });
     } catch (err) {
       console.error(
-        "[BreakApp] Failed to notify backend about break finish:",
+        "[PromptApp] Failed to notify backend about break finish:",
         err,
       );
     }
@@ -229,20 +229,20 @@ const finishBreak = async (isAutoFinish = false) => {
     const payloadId = params.get("payloadId");
     if (payloadId) {
       console.log(
-        "[BreakApp] Closing all break windows for payload:",
+        "[PromptApp] Closing all break windows for payload:",
         payloadId,
       );
       await invoke("close_all_break_windows", { payloadId });
     } else {
       // Fallback: close only current window
       console.warn(
-        "[BreakApp] No payloadId found, closing current window only",
+        "[PromptApp] No payloadId found, closing current window only",
       );
       const window = getCurrentWindow();
       await window.close();
     }
   } catch (err) {
-    console.error("[BreakApp] Failed to close windows:", err);
+    console.error("[PromptApp] Failed to close windows:", err);
   }
 };
 
@@ -330,37 +330,37 @@ watch(payload, (next) => {
 });
 
 onMounted(async () => {
-  console.log("[BreakApp] Component mounted");
+  console.log("[PromptApp] Component mounted");
   window.addEventListener("keydown", handleKeydown);
   window.addEventListener("contextmenu", handleContextMenu);
 
   // Get payloadId from URL
   const params = new URLSearchParams(window.location.search);
   const payloadId = params.get("payloadId");
-  console.log("[BreakApp] Payload ID from URL:", payloadId);
+  console.log("[PromptApp] Payload ID from URL:", payloadId);
 
   if (!payloadId) {
-    console.error("[BreakApp] No payloadId found in URL");
+    console.error("[PromptApp] No payloadId found in URL");
     return;
   }
 
   // Fetch payload from backend immediately
   try {
-    console.log("[BreakApp] Fetching payload from backend...");
+    console.log("[PromptApp] Fetching payload from backend...");
     const fetchedPayload = await invoke<BreakPayload>("get_break_payload", {
       payloadId,
     });
-    console.log("[BreakApp] Payload fetched successfully:", fetchedPayload);
+    console.log("[PromptApp] Payload fetched successfully:", fetchedPayload);
 
     // Set the language from payload before handling payload
     if (fetchedPayload.language) {
-      console.log("[BreakApp] Setting language to:", fetchedPayload.language);
+      console.log("[PromptApp] Setting language to:", fetchedPayload.language);
       setI18nLocale(fetchedPayload.language);
     }
 
     await handlePayload(fetchedPayload);
   } catch (err) {
-    console.error("[BreakApp] Failed to fetch payload from backend:", err);
+    console.error("[PromptApp] Failed to fetch payload from backend:", err);
   }
 });
 

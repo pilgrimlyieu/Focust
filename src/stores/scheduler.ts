@@ -28,7 +28,7 @@ export const useSchedulerStore = defineStore("scheduler", () => {
 
     // Request initial status after listeners are set up
     try {
-      await invoke("request_scheduler_status");
+      await invoke("request_break_status");
       console.log("[Scheduler] Requested initial status");
     } catch (err) {
       console.error("[Scheduler] Failed to request initial status:", err);

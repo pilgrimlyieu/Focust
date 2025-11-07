@@ -259,7 +259,7 @@ impl BreakScheduler {
                     self.transition_to_calculating().await;
                 }
             }
-            Command::Postpone => {
+            Command::PostponeBreak => {
                 tracing::info!("Postponing current break");
                 let postpone_s = self.get_postpone_duration_s().await;
                 self.postponed_until = Some(Utc::now() + Duration::seconds(i64::from(postpone_s)));
@@ -283,7 +283,7 @@ impl BreakScheduler {
                 self.close_break_windows();
                 self.transition_to_calculating().await;
             }
-            Command::BreakFinished(event) => {
+            Command::PromptFinished(event) => {
                 if let BreakSchedulerState::InBreak(current_event) = self.state {
                     if event == current_event {
                         tracing::info!("Break finished normally: {event}");
@@ -291,11 +291,11 @@ impl BreakScheduler {
                         self.transition_to_calculating().await;
                     } else {
                         tracing::warn!(
-                            "Received BreakFinished for different event: expected {current_event}, got {event}"
+                            "Received PromptFinished for different event: expected {current_event}, got {event}"
                         );
                     }
                 } else {
-                    tracing::warn!("Unexpected BreakFinished command in state: {}", self.state);
+                    tracing::warn!("Unexpected PromptFinished command in state: {}", self.state);
                 }
             }
             Command::TriggerEvent(event) => {
@@ -311,7 +311,7 @@ impl BreakScheduler {
                 }
                 self.transition_to_calculating().await;
             }
-            Command::RequestStatus => {
+            Command::RequestBreakStatus => {
                 tracing::debug!("Status request received");
                 self.emit_current_status();
             }

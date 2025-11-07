@@ -86,15 +86,15 @@ pub enum Command {
     /// Resume the break scheduler
     Resume(PauseReason),
     /// Postpone the current break
-    Postpone,
+    PostponeBreak,
     /// Skip the current break immediately
     SkipBreak,
     /// Manually trigger a break for testing/debugging
     TriggerEvent(SchedulerEvent),
-    /// Request the scheduler to emit its current status
-    RequestStatus,
-    /// Notify that a break has finished normally (from frontend)
-    BreakFinished(SchedulerEvent),
+    /// Request the break scheduler to emit its current status
+    RequestBreakStatus,
+    /// Notify that a break or an attention (i.e., a prompt) has finished normally
+    PromptFinished(SchedulerEvent),
 }
 
 impl Display for Command {
@@ -103,11 +103,11 @@ impl Display for Command {
             Command::UpdateConfig(_) => write!(f, "UpdateConfig"),
             Command::Pause(reason) => write!(f, "Pause({reason})"),
             Command::Resume(reason) => write!(f, "Resume({reason})"),
-            Command::Postpone => write!(f, "Postpone"),
+            Command::PostponeBreak => write!(f, "PostponeBreak"),
             Command::TriggerEvent(event) => write!(f, "TriggerBreak({event})"),
             Command::SkipBreak => write!(f, "SkipBreak"),
-            Command::RequestStatus => write!(f, "RequestStatus"),
-            Command::BreakFinished(event) => write!(f, "BreakFinished({event})"),
+            Command::RequestBreakStatus => write!(f, "RequestBreakStatus"),
+            Command::PromptFinished(event) => write!(f, "PromptFinished({event})"),
         }
     }
 }
@@ -116,7 +116,7 @@ impl Display for Command {
 // State Types
 // ============================================================================
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PauseReason {
     UserIdle,
     Dnd,
@@ -195,9 +195,12 @@ mod tests {
     // Command tests
     #[test]
     fn test_command_display() {
-        assert_eq!(Command::Postpone.to_string(), "Postpone");
+        assert_eq!(Command::PostponeBreak.to_string(), "PostponeBreak");
         assert_eq!(Command::SkipBreak.to_string(), "SkipBreak");
-        assert_eq!(Command::RequestStatus.to_string(), "RequestStatus");
+        assert_eq!(
+            Command::RequestBreakStatus.to_string(),
+            "RequestBreakStatus"
+        );
     }
 
     #[test]

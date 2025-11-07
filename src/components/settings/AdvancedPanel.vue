@@ -65,7 +65,7 @@ async function triggerMiniBreak() {
     // Use the first schedule's mini break, whether it's enabled.
     const breakKind = createMiniBreakEvent(config.schedules[0].miniBreaks.id);
     console.log("Triggering mini break with:", breakKind);
-    await invoke("trigger_break", { breakKind });
+    await invoke("trigger_event", { breakKind });
     emit("notify", "success", t("toast.miniBreakTriggered"));
   } catch (err) {
     console.error("Failed to trigger mini break:", err);
@@ -85,7 +85,7 @@ async function triggerLongBreak() {
     }
     const breakKind = createLongBreakEvent(config.schedules[0].longBreaks.id);
     console.log("Triggering long break with:", breakKind);
-    await invoke("trigger_break", { breakKind });
+    await invoke("trigger_event", { breakKind });
     emit("notify", "success", t("toast.longBreakTriggered"));
   } catch (err) {
     console.error("Failed to trigger long break:", err);
@@ -105,7 +105,7 @@ async function triggerAttention() {
     }
     const breakKind = createAttentionEvent(config.attentions[0].id);
     console.log("Triggering attention with:", breakKind);
-    await invoke("trigger_break", { breakKind });
+    await invoke("trigger_event", { breakKind });
     emit("notify", "success", t("toast.attentionTriggered"));
   } catch (err) {
     console.error("Failed to trigger attention:", err);

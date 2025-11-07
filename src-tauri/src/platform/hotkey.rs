@@ -46,7 +46,7 @@ fn register_postpone_shortcut<R: Runtime>(
 
                 // Send postpone command to scheduler
                 if let Some(scheduler_cmd) = app_handle.try_state::<SchedulerCmd>() {
-                    scheduler_cmd.try_send_command(&Command::Postpone);
+                    scheduler_cmd.try_send_command(&Command::PostponeBreak);
                 } else {
                     tracing::warn!("SchedulerCmd state not found");
                 }

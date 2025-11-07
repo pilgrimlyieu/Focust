@@ -1,9 +1,10 @@
-use tauri::AppHandle;
+use tauri::{AppHandle, Emitter};
 use tokio::sync::{mpsc, watch};
 
 use super::attention_timer::AttentionTimer;
 use super::break_scheduler::BreakScheduler;
 use super::models::Command;
+use super::shared_state::{SharedState, create_shared_state};
 use crate::scheduler::SchedulerEvent;
 
 /// Top-level scheduler manager that coordinates break scheduling and attention timers
@@ -11,9 +12,17 @@ pub struct SchedulerManager;
 
 impl SchedulerManager {
     /// Initialize and start the scheduler system
-    pub fn init(app_handle: &AppHandle) -> (mpsc::Sender<Command>, watch::Sender<()>) {
+    ///
+    /// Returns:
+    /// - Command sender for external control
+    /// - Shutdown sender for graceful shutdown
+    /// - Shared scheduler state for monitors and status queries
+    pub fn init(app_handle: &AppHandle) -> (mpsc::Sender<Command>, watch::Sender<()>, SharedState) {
         let (cmd_tx, cmd_rx) = mpsc::channel::<Command>(32);
         let (shutdown_tx, shutdown_rx) = watch::channel(());
+
+        // Create shared state
+        let shared_state = create_shared_state();
 
         // Create separate channels for each scheduler
         let (break_cmd_tx, break_cmd_rx) = mpsc::channel::<Command>(32);
@@ -22,6 +31,7 @@ impl SchedulerManager {
         // Spawn break scheduler
         let break_scheduler_handle = app_handle.clone();
         let break_shutdown_rx = shutdown_rx.clone();
+        let _break_shared_state = shared_state.clone(); // TODO: Pass to scheduler if needed
         tokio::spawn(async move {
             let mut scheduler = BreakScheduler::new(break_scheduler_handle, break_shutdown_rx);
             scheduler.run(break_cmd_rx).await;
@@ -30,6 +40,7 @@ impl SchedulerManager {
         // Spawn attention timer
         let attention_timer_handle = app_handle.clone();
         let attention_shutdown_rx = shutdown_rx.clone();
+        let _attention_shared_state = shared_state.clone(); // TODO: Pass to scheduler if needed
         tokio::spawn(async move {
             let mut timer = AttentionTimer::new(attention_timer_handle, attention_shutdown_rx);
             timer.run(attention_cmd_rx).await;
@@ -37,22 +48,37 @@ impl SchedulerManager {
 
         // Spawn command broadcaster
         let router_shutdown_rx = shutdown_rx.clone();
+        let router_shared_state = shared_state.clone();
+        let router_app_handle = app_handle.clone();
         tokio::spawn(async move {
-            Self::broadcast_commands(cmd_rx, break_cmd_tx, attention_cmd_tx, router_shutdown_rx)
-                .await;
+            Self::broadcast_commands(
+                cmd_rx,
+                break_cmd_tx,
+                attention_cmd_tx,
+                router_shutdown_rx,
+                router_shared_state,
+                router_app_handle,
+            )
+            .await;
         });
 
-        tracing::info!("SchedulerManager initialized");
-        (cmd_tx, shutdown_tx)
+        tracing::info!("SchedulerManager initialized with shared state management");
+        (cmd_tx, shutdown_tx, shared_state)
     }
 
     /// Broadcast incoming commands to appropriate schedulers
-    /// Some commands go to both schedulers, some only to one
+    ///
+    /// This is the central command processing hub that:
+    /// - Manages shared pause/resume state
+    /// - Tracks session state (break/attention)
+    /// - Routes commands to appropriate schedulers
     async fn broadcast_commands(
         mut cmd_rx: mpsc::Receiver<Command>,
         break_cmd_tx: mpsc::Sender<Command>,
         attention_cmd_tx: mpsc::Sender<Command>,
         mut shutdown_rx: watch::Receiver<()>,
+        shared_state: SharedState,
+        app_handle: AppHandle,
     ) {
         loop {
             tokio::select! {
@@ -62,25 +88,85 @@ impl SchedulerManager {
                     break;
                 }
                 Some(cmd) = cmd_rx.recv() => {
-                    tracing::debug!("Broadcasting command: {cmd}");
+                    tracing::debug!("Processing command: {cmd}");
 
-                    // Determine which scheduler(s) should receive this command
-                    match &cmd {
-                        Command::UpdateConfig(_) | Command::Pause(_) | Command::Resume(_) => {
+                    // Handle state management commands centrally
+                    match cmd {
+                        Command::Pause(reason) => {
+                            let should_pause = shared_state.write()
+                                .add_pause_reason(reason);
+
+                            if should_pause {
+                                // State transition: Running -> Paused
+                                tracing::info!("Scheduler paused (reason: {reason})");
+                                // Emit status change event
+                                let _ = app_handle.emit("scheduler-paused", ());
+                            }
+                            // Don't forward to schedulers - they query shared state
+                        }
+
+                        Command::Resume(reason) => {
+                            let should_resume = shared_state.write()
+                                .remove_pause_reason(reason);
+
+                            if should_resume {
+                                // State transition: Paused -> Running
+                                tracing::info!("Scheduler resumed (all pause reasons cleared)");
+                                // Emit status change event
+                                let _ = app_handle.emit("scheduler-resumed", ());
+                                // Forward resume to schedulers
+                                let _ = break_cmd_tx.send(Command::Resume(reason)).await;
+                                let _ = attention_cmd_tx.send(Command::Resume(reason)).await;
+                            }
+                            // If still paused, don't forward
+                        }
+
+                        Command::TriggerEvent(event) => {
+                            // Mark session start
+                            {
+                                let mut state = shared_state.write();
+                                if matches!(event, SchedulerEvent::MiniBreak(_) | SchedulerEvent::LongBreak(_)) {
+                                    state.start_break_session();
+                                } else if matches!(event, SchedulerEvent::Attention(_)) {
+                                    state.start_attention_session();
+                                }
+                            }
+
+                            // Route to appropriate scheduler
+                            if matches!(event, SchedulerEvent::Attention(_)) {
+                                let _ = attention_cmd_tx.send(cmd).await;
+                            } else {
+                                let _ = break_cmd_tx.send(cmd).await;
+                            }
+                        }
+
+                        Command::PromptFinished(event) => {
+                            // Mark session end
+                            {
+                                let mut state = shared_state.write();
+                                if matches!(event, SchedulerEvent::MiniBreak(_) | SchedulerEvent::LongBreak(_)) {
+                                    state.end_break_session();
+                                } else if matches!(event, SchedulerEvent::Attention(_)) {
+                                    state.end_attention_session();
+                                }
+                            }
+
+                            // Route to appropriate scheduler
+                            if matches!(event, SchedulerEvent::Attention(_)) {
+                                let _ = attention_cmd_tx.send(cmd).await;
+                            } else {
+                                let _ = break_cmd_tx.send(cmd).await;
+                            }
+                        }
+
+                        // Other commands forward as before
+                        Command::UpdateConfig(_) => {
                             // These commands affect both schedulers
                             let _ = break_cmd_tx.send(cmd.clone()).await;
                             let _ = attention_cmd_tx.send(cmd).await;
                         }
-                        Command::TriggerEvent(SchedulerEvent::Attention(_)) => {
-                            // Attention-specific
-                            let _ = attention_cmd_tx.send(cmd).await;
-                        }
-                        Command::TriggerEvent(_) => {
-                            // Break-specific
-                            let _ = break_cmd_tx.send(cmd).await;
-                        }
-                        // All other commands are break-specific
-                        _ => {
+                        Command::RequestBreakStatus | Command::PostponeBreak | Command::SkipBreak => {
+                            // Break-specific commands
                             let _ = break_cmd_tx.send(cmd).await;
                         }
                     }
@@ -92,10 +178,4 @@ impl SchedulerManager {
             }
         }
     }
-}
-
-/// Public API function to initialize the scheduler (for backward compatibility)
-#[must_use]
-pub fn init_scheduler(app_handle: &AppHandle) -> (mpsc::Sender<Command>, watch::Sender<()>) {
-    SchedulerManager::init(app_handle)
 }
