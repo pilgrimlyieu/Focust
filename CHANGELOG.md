@@ -6,13 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## 0.2.2 (2025.11.7)
+
+### 🐛 Bug Fixes
+
+- Fix critical bug that when prompt window is set to fullscreen, DND mode will be enabled (this's Focus Assist default behavior on Windows), which causes scheduler pause immediately.
+
+### 🚀 Improvements
+
+- DND feature will not cause panic on Windows platform anymore. (Firstly mentioned in 0.2.1)
+
 ## 0.2.1 (2025.11.6)
 
 ### 🚀 Improvements
 
 - Update 8 languages support: Japanese, German, French, Spanish, Russian, Portuguese, Italian, Korean.
 - Disable noisy upstream logs.
-- DND feature will not cause panic on Windows platform anymore.
+- ~~DND feature will not cause panic on Windows platform anymore.~~ (Fixed in 0.2.2)
 
 ## 0.2.0 (2025.11.6)
 

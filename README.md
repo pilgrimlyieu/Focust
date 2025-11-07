@@ -319,6 +319,7 @@ Contributions are warmly welcomed! Whether it's bug reports, feature requests, d
 - [x] Whitelist applications (v0.2.0 major goal)
 - [x] DND mode detection (v0.2.0 goal)
 - [ ] Improved error handling and user feedback
+- [ ] Improved code comments and documentation
 - [ ] Project icon
 - [ ] Comprehensive platform testing (macOS, Linux)
 

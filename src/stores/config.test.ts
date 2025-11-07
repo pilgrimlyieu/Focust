@@ -34,7 +34,6 @@ const mockConfig: RawAppConfig = {
     },
   ],
   autostart: false,
-  checkForUpdates: true,
   inactiveS: 300,
   language: "en",
   monitorDnd: false,

@@ -1,4 +1,4 @@
-# Version 0.2.1
+# Version 0.2.2
 
 > [!WARNING]
 >
@@ -15,8 +15,10 @@
 > - **macOS**: `~/Library/Logs/com.fesmoph.focust`
 > - **Linux**: `~/.local/share/com.fesmoph.focust/logs`
 
+## 🐛 Bug Fixes
+
+- Fix critical bug that when prompt window is set to fullscreen, DND mode will be enabled (this's Focus Assist default behavior on Windows), which causes scheduler pause immediately.
+
 ## 🚀 Improvements
 
-- Update 8 languages support: Japanese, German, French, Spanish, Russian, Portuguese, Italian, Korean.
-- Disable noisy upstream logs.
-- DND feature will not cause panic on Windows platform anymore.
+- DND feature will not cause panic on Windows platform anymore. (Firstly mentioned in 0.2.1)
