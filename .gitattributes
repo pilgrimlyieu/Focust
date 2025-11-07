@@ -1,2 +1,2 @@
-src/i18n/**.ts linguist-generated=true
+src/i18n/locales/**.ts linguist-generated=true
 src/types/generated/**.ts linguist-generated=true
