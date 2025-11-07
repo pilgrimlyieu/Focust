@@ -14,11 +14,7 @@ on:
       - '**.vue'
       - 'package.json'
       - 'src-tauri/Cargo.toml'
-    paths-ignore:
-      - 'docs/**'
-      - '**.md'
-      - 'src/i18n/locales/**.ts'
-      - '.github/workflows/**'
+      - '!src/i18n/locales/**.ts'
 
 jobs:
   check:
