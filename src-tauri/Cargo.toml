@@ -30,11 +30,8 @@ overflow-checks = false
 debug-assertions = false
 codegen-units = 1
 lto = true
-panic = "abort"
+panic = "abort" # Support catching panics of DND implementation on Windows platform
 strip = "debuginfo"
-
-[target.'cfg(windows)'.profile.release]
-panic = "unwind" # Support catching panics of DND implementation
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
