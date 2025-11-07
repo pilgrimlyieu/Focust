@@ -5,6 +5,20 @@ on:
     branches:
       - main
       - dev
+    paths:
+      - '**.ts'
+      - '**.tsx'
+      - '**.js'
+      - '**.jsx'
+      - '**.rs'
+      - '**.vue'
+      - 'package.json'
+      - 'src-tauri/Cargo.toml'
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - 'src/i18n/**.ts'
+      - '.github/workflows/**'
 
 jobs:
   check:
