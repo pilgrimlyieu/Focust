@@ -13,8 +13,6 @@ use crate::{
 #[serde(default, rename_all = "camelCase")]
 #[ts(export, rename_all = "camelCase")]
 pub struct AppConfig {
-    /// If auto check for updates on startup
-    pub check_for_updates: bool,
     /// If launch on system startup
     pub autostart: bool,
     /// If monitor DND status and pause breaks
@@ -42,7 +40,6 @@ pub struct AppConfig {
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
-            check_for_updates: true,
             autostart: false,
             monitor_dnd: true,
             inactive_s: 300,
@@ -100,7 +97,7 @@ mod tests {
         let json_string = serde_json::to_string(&config).expect("Failed to serialize");
 
         // Verify camelCase naming
-        assert!(json_string.contains("\"checkForUpdates\""));
+        assert!(json_string.contains("\"autostart\""));
         assert!(json_string.contains("\"monitorDnd\""));
         assert!(json_string.contains("\"inactiveS\""));
         assert!(json_string.contains("\"allScreens\""));
@@ -112,7 +109,7 @@ mod tests {
     fn test_config_default_values() {
         let config = AppConfig::default();
 
-        assert!(config.check_for_updates);
+        assert!(!config.autostart);
         assert!(config.monitor_dnd);
         assert_eq!(config.inactive_s, 300);
         assert!(!config.all_screens);

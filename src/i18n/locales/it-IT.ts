@@ -156,8 +156,6 @@ const itIT: LocaleStrings = {
     autostartEnabled: "Avvio automatico abilitato con successo",
     autostartHint: "Avvia automaticamente Focust quando accedi",
     behaviorSettings: "Comportamento dell'applicazione",
-    checkUpdates: "Controlla aggiornamenti all'avvio",
-    checkUpdatesHint: "Controlla automaticamente nuove versioni all'avvio",
     fullscreen: "Schermo intero",
     hoursMinutes: "{hours}h {minutes}m",
     imminent: "inizierà presto",

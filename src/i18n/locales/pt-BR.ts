@@ -152,9 +152,6 @@ const ptBR: LocaleStrings = {
     autostartEnabled: "Inicialização automática habilitada com sucesso",
     autostartHint: "Iniciar o Focust automaticamente quando você fizer login",
     behaviorSettings: "Comportamento do aplicativo",
-    checkUpdates: "Verificar atualizações na inicialização",
-    checkUpdatesHint:
-      "Verificar automaticamente novas versões na inicialização",
     fullscreen: "Tela cheia",
     hoursMinutes: "{hours}h {minutes}m",
     imminent: "começando em breve",

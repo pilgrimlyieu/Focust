@@ -164,7 +164,7 @@ use ts_rs::TS;
 #[serde(rename_all = "camelCase")]  // JavaScript convention
 #[ts(export, rename_all = "camelCase")]
 pub struct AppConfig {
-    pub check_for_updates: bool,
+    pub autostart: bool,
     pub theme_mode: String,
 }
 ```

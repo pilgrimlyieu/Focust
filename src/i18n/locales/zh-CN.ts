@@ -142,8 +142,6 @@ const zhCN: LocaleStrings = {
     autostartEnabled: "已启用开机自启动",
     autostartHint: "登录系统时自动启动 Focust",
     behaviorSettings: "应用行为",
-    checkUpdates: "启动时检查更新",
-    checkUpdatesHint: "启动时自动检查是否有新版本可用",
     fullscreen: "全屏",
     hoursMinutes: "{hours} 小时 {minutes} 分钟",
     imminent: "即将开始",

@@ -43,7 +43,6 @@ Focust 将其配置存储在特定于平台的位置：
 
 ```toml
 # 通用应用程序设置
-checkForUpdates = true
 autostart = false
 monitorDnd = true
 # ...
@@ -64,12 +63,6 @@ enabled = true
 ---
 
 ## 通用设置
-
-### `checkForUpdates`
-- **类型**：布尔值
-- **默认值**：`true`
-- **说明**：启动时自动检查应用程序更新
-- **注意**：尚未实现
 
 ### `autostart`
 - **类型**：布尔值
@@ -215,7 +208,6 @@ patterns = [
 
 **示例：**
 ```toml
-checkForUpdates = true
 autostart = false
 monitorDnd = true
 inactiveS = 300
@@ -238,7 +230,6 @@ patterns = ["code.exe", "idea64.exe"]
 
 **示例：**
 ```toml
-checkForUpdates = true
 autostart = false
 monitorDnd = true
 inactiveS = 300
@@ -770,7 +761,6 @@ suggestions = [
 
 ```toml
 # 通用设置
-checkForUpdates = true
 autostart = false
 monitorDnd = true
 inactiveS = 300
@@ -853,7 +843,6 @@ show = true
 ### 示例二：综合工作设置
 
 ```toml
-checkForUpdates = true
 monitorDnd = true
 inactiveS = 300
 allScreens = true

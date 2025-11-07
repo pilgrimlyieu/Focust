@@ -157,8 +157,6 @@ const deDE: LocaleStrings = {
     autostartEnabled: "Autostart erfolgreich aktiviert",
     autostartHint: "Focust automatisch beim Anmelden starten",
     behaviorSettings: "Anwendungsverhalten",
-    checkUpdates: "Beim Start nach Updates suchen",
-    checkUpdatesHint: "Automatisch beim Start nach neuen Versionen suchen",
     fullscreen: "Vollbild",
     hoursMinutes: "{hours}h {minutes}m",
     imminent: "beginnt bald",

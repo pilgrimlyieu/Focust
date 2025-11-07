@@ -165,19 +165,6 @@ onMounted(() => {
 
         <div class="flex items-center justify-between gap-4 p-4 rounded-lg hover:bg-base-200/50 transition-all">
           <div class="flex-1 min-w-0">
-            <div class="font-medium text-sm">{{ t("general.checkUpdates") }}</div>
-            <p class="text-xs text-base-content/50 mt-1">
-              {{ t("general.checkUpdatesHint") }}
-            </p>
-          </div>
-          <input v-model="config.checkForUpdates" type="checkbox"
-            class="toggle toggle-primary toggle-lg shrink-0 transition-all" />
-        </div>
-
-        <div class="divider my-0"></div>
-
-        <div class="flex items-center justify-between gap-4 p-4 rounded-lg hover:bg-base-200/50 transition-all">
-          <div class="flex-1 min-w-0">
             <div class="font-medium text-sm">{{ t("general.monitorDnd") }}</div>
             <p class="text-xs text-base-content/50 mt-1">
               {{ t("general.monitorDndHint") }}

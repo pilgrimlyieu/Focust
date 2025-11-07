@@ -149,8 +149,6 @@ const jaJP: LocaleStrings = {
     autostartEnabled: "自動起動が正常に有効化されました",
     autostartHint: "ログイン時にFocustを自動的に起動",
     behaviorSettings: "アプリケーションの動作",
-    checkUpdates: "起動時にアップデートを確認",
-    checkUpdatesHint: "起動時に新しいバージョンを自動的に確認",
     fullscreen: "フルスクリーン",
     hoursMinutes: "{hours}時間{minutes}分",
     imminent: "まもなく開始",

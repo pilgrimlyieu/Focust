@@ -158,9 +158,6 @@ const frFR: LocaleStrings = {
     autostartHint:
       "Démarrer automatiquement Focust lorsque vous vous connectez",
     behaviorSettings: "Comportement de l'application",
-    checkUpdates: "Vérifier les mises à jour au démarrage",
-    checkUpdatesHint:
-      "Vérifier automatiquement les nouvelles versions au démarrage",
     fullscreen: "Plein écran",
     hoursMinutes: "{hours}h {minutes}m",
     imminent: "commence bientôt",

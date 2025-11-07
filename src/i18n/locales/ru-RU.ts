@@ -152,9 +152,6 @@ const ruRU: LocaleStrings = {
     autostartEnabled: "Автозапуск успешно включен",
     autostartHint: "Автоматически запускать Focust при входе в систему",
     behaviorSettings: "Поведение приложения",
-    checkUpdates: "Проверять обновления при запуске",
-    checkUpdatesHint:
-      "Автоматически проверять наличие новых версий при запуске",
     fullscreen: "Полноэкранный режим",
     hoursMinutes: "{hours}ч {minutes}м",
     imminent: "скоро начнется",

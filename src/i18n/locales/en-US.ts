@@ -148,8 +148,6 @@ const enUS = {
     autostartEnabled: "Autostart enabled successfully",
     autostartHint: "Automatically start Focust when you log in",
     behaviorSettings: "Application Behavior",
-    checkUpdates: "Check for updates on startup",
-    checkUpdatesHint: "Automatically check for new versions on startup",
     fullscreen: "Fullscreen",
     hoursMinutes: "{hours}h {minutes}m",
     imminent: "starting soon",

@@ -237,7 +237,7 @@ Loop
 #[serde(rename_all = "camelCase")]
 #[ts(export, rename_all = "camelCase")]
 pub struct AppConfig {
-    pub check_for_updates: bool,
+    pub autostart: bool,
     // ...
 }
 ```
@@ -245,7 +245,7 @@ pub struct AppConfig {
 Generated TypeScript:
 ```typescript
 export interface AppConfig {
-  checkForUpdates: boolean;
+  autostart: boolean;
   // ...
 }
 ```

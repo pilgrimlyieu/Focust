@@ -147,8 +147,6 @@ const koKR: LocaleStrings = {
     autostartEnabled: "자동 시작이 성공적으로 활성화되었습니다",
     autostartHint: "로그인 시 Focust를 자동으로 시작",
     behaviorSettings: "애플리케이션 동작",
-    checkUpdates: "시작 시 업데이트 확인",
-    checkUpdatesHint: "시작 시 자동으로 새 버전 확인",
     fullscreen: "전체 화면",
     hoursMinutes: "{hours}시간 {minutes}분",
     imminent: "곧 시작",

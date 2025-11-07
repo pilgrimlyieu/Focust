@@ -44,7 +44,6 @@ The configuration file is divided into several main sections:
 
 ```toml
 # General application settings
-checkForUpdates = true
 autostart = false
 monitorDnd = true
 # ...
@@ -65,12 +64,6 @@ enabled = true
 ---
 
 ## General Settings
-
-### `checkForUpdates`
-- **Type**: Boolean
-- **Default**: `true`
-- **Description**: Automatically check for application updates on startup
-- **NOTE**: Unimplemented yet
 
 ### `autostart`
 - **Type**: Boolean
@@ -216,7 +209,6 @@ patterns = [
 
 **Example:**
 ```toml
-checkForUpdates = true
 autostart = false
 monitorDnd = true
 inactiveS = 300
@@ -239,7 +231,6 @@ patterns = ["code.exe", "idea64.exe"]
 
 **Example:**
 ```toml
-checkForUpdates = true
 autostart = false
 monitorDnd = true
 inactiveS = 300
@@ -773,7 +764,6 @@ You can add your own suggestions under the appropriate language section. The app
 
 ```toml
 # General settings
-checkForUpdates = true
 autostart = false
 monitorDnd = true
 inactiveS = 300
@@ -856,7 +846,6 @@ show = true
 ### Example 2: Comprehensive Work Setup
 
 ```toml
-checkForUpdates = true
 monitorDnd = true
 inactiveS = 300
 allScreens = true

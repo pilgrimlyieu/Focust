@@ -100,7 +100,7 @@ mod tests {
         assert_eq!(config.window_size, 0.7);
 
         // Missing fields should use defaults
-        assert!(config.check_for_updates); // default is true
+        assert!(!config.autostart); // default is false
         assert_eq!(config.inactive_s, 300); // default value
         assert_eq!(config.schedules.len(), 1); // default schedule
     }
@@ -108,7 +108,7 @@ mod tests {
     #[test]
     fn test_figment_error_handling() {
         let invalid_toml = r#"
-            checkForUpdates = "not a boolean"
+            autostart = "not a boolean"
         "#;
 
         let result = Figment::new()

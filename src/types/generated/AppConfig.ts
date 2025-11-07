@@ -8,10 +8,6 @@ import type { ScheduleSettings } from "./ScheduleSettings";
  */
 export type AppConfig = { 
 /**
- * If auto check for updates on startup
- */
-checkForUpdates: boolean, 
-/**
  * If launch on system startup
  */
 autostart: boolean, 

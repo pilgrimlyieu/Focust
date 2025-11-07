@@ -153,8 +153,6 @@ const esES: LocaleStrings = {
     autostartEnabled: "Inicio automático habilitado exitosamente",
     autostartHint: "Inicia Focust automáticamente cuando inicies sesión",
     behaviorSettings: "Comportamiento de la aplicación",
-    checkUpdates: "Buscar actualizaciones al iniciar",
-    checkUpdatesHint: "Busca automáticamente nuevas versiones al iniciar",
     fullscreen: "Pantalla completa",
     hoursMinutes: "{hours}h {minutes}m",
     imminent: "comenzando pronto",
