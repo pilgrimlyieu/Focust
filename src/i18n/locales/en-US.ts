@@ -216,6 +216,7 @@ const enUS = {
     suggestions: "Suggestions",
     theme: "Theme",
     timeRange: "Active time range",
+    title: "Break Schedules",
     totalCount: "schedules",
   },
   suggestions: {

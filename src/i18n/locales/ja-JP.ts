@@ -218,6 +218,7 @@ const jaJP: LocaleStrings = {
     suggestions: "提案",
     theme: "テーマ",
     timeRange: "有効時間範囲",
+    title: "休憩スケジュール",
     totalCount: "件のスケジュール",
   },
   suggestions: {

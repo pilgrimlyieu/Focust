@@ -222,6 +222,7 @@ const ruRU: LocaleStrings = {
     suggestions: "Предложения",
     theme: "Тема",
     timeRange: "Активный диапазон времени",
+    title: "Расписание перерывов",
     totalCount: "расписаний",
   },
   suggestions: {

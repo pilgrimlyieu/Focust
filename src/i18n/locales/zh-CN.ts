@@ -176,7 +176,7 @@ const zhCN: LocaleStrings = {
   },
   nav: {
     about: "关于",
-    advanced: "高级选项",
+    advanced: "高级设置",
     attentions: "定时提醒",
     exclusions: "应用排除",
     general: "通用设置",
@@ -209,6 +209,7 @@ const zhCN: LocaleStrings = {
     suggestions: "休息建议",
     theme: "主题",
     timeRange: "生效时间段",
+    title: "休息计划",
     totalCount: "个计划",
   },
   suggestions: {

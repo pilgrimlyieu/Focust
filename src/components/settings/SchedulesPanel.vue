@@ -100,7 +100,7 @@ function removeSchedule(id: number) {
         </div>
         <div class="flex-1 min-w-0">
           <h2 class="text-2xl font-bold text-base-content mb-2.5">
-            {{ t("nav.schedules") }}
+            {{ t("schedule.title") }}
           </h2>
           <p class="text-sm text-base-content/70 leading-relaxed mb-4">
             {{ t("schedule.description") }}

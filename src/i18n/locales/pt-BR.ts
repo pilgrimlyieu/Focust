@@ -222,6 +222,7 @@ const ptBR: LocaleStrings = {
     suggestions: "Sugestões",
     theme: "Tema",
     timeRange: "Intervalo de tempo ativo",
+    title: "Agendamentos de pausas",
     totalCount: "agendamentos",
   },
   suggestions: {

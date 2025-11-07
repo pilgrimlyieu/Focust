@@ -227,6 +227,7 @@ const itIT: LocaleStrings = {
     suggestions: "Suggerimenti",
     theme: "Tema",
     timeRange: "Intervallo temporale attivo",
+    title: "Programmi di pausa",
     totalCount: "programmi",
   },
   suggestions: {

@@ -216,6 +216,7 @@ const koKR: LocaleStrings = {
     suggestions: "제안",
     theme: "테마",
     timeRange: "활성 시간 범위",
+    title: "휴식 일정",
     totalCount: "개 일정",
   },
   suggestions: {

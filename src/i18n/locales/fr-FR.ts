@@ -228,6 +228,7 @@ const frFR: LocaleStrings = {
     suggestions: "Suggestions",
     theme: "Thème",
     timeRange: "Plage horaire active",
+    title: "Horaires de pause",
     totalCount: "horaires",
   },
   suggestions: {

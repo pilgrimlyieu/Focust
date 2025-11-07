@@ -134,6 +134,11 @@ Try different background images that relax you. Nature scenes, minimalist patter
 
 ## Common Questions
 
+### "How do I test break reminders without waiting?"
+- You can use the **Preview** feature in the **Break Schedules** tab to see how your breaks will look and feel without waiting for the actual reminders
+- If you want to see the real break/reminder window, or if you have selected "Image Folder" for backgrounds and want to see the random effect:
+- Go to the **Advanced Settings** tab and click the icon to show the Debug area, where you can manually enable short breaks, long breaks, reminder windows, or skip the current break (v0.2.3+)
+
 ### "The breaks are interrupting important work!"
 - Use the **Postpone** feature liberally at first
 - Set a **global postpone shortcut** for quick delays
@@ -161,6 +166,11 @@ Try different background images that relax you. Nature scenes, minimalist patter
 - Select "Custom File"
 - Click **Browse** and select your MP3/WAV/OGG file
 - Adjust volume and save
+
+### "Scheduler status frequently pauses on Windows"
+- This may be due to the "Do Not Disturb Mode Detection" option being enabled, as Windows automatically enables "Do Not Disturb" in certain scenarios by default
+- You can open settings with `Win` + `I`, navigate to "System" → "Notifications", and configure the automatic rules for "Do Not Disturb" yourself
+- Or disable this detection option in Focust
 
 ## Next Steps
 

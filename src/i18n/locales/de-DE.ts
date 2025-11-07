@@ -228,6 +228,7 @@ const deDE: LocaleStrings = {
     suggestions: "Vorschläge",
     theme: "Design",
     timeRange: "Aktiver Zeitbereich",
+    title: "Pausenpläne",
     totalCount: "Pläne",
   },
   suggestions: {

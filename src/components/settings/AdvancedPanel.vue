@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
+import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import AdvancedOption from "@/components/icons/AdvancedOption.vue";
 import BellIcon from "@/components/icons/BellIcon.vue";
@@ -23,8 +24,8 @@ const emit =
 const { t } = useI18n();
 const configStore = useConfigStore();
 
-// Debug section visibility (hidden in production builds)
-const isDebugVisible = !import.meta.env.PROD;
+// Debug section visibility (hidden in production builds by default, but can be toggled)
+const showDebugSection = ref(!import.meta.env.PROD);
 
 /**
  * Open the configuration directory in the system's file explorer.
@@ -125,6 +126,11 @@ async function skipCurrentBreak() {
     emit("notify", "error", t("toast.breakSkipFailed"));
   }
 }
+
+/** Toggle debug section visibility (hidden feature for release builds) */
+function toggleDebugSection() {
+  showDebugSection.value = !showDebugSection.value;
+}
 </script>
 
 <template>
@@ -134,7 +140,8 @@ async function skipCurrentBreak() {
       class="rounded-2xl border border-warning/30 bg-linear-to-br from-warning/10 via-warning/5 to-transparent p-6 shadow-sm backdrop-blur-sm">
       <div class="flex flex-col sm:flex-row items-start gap-5">
         <div
-          class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-warning to-warning/80 shadow-lg">
+          class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-warning to-warning/80 shadow-lg cursor-pointer transition-all hover:scale-105"
+          @click="toggleDebugSection">
           <AdvancedOption class-name="h-7 w-7 text-white" />
         </div>
         <div class="flex-1 min-w-0">
@@ -185,7 +192,7 @@ async function skipCurrentBreak() {
     </div>
 
     <!-- Debug/Test Section (development only) -->
-    <div v-if="isDebugVisible" class="rounded-2xl border border-base-300 bg-base-100/70 p-6 shadow-md">
+    <div v-if="showDebugSection" class="rounded-2xl border border-base-300 bg-base-100/70 p-6 shadow-md">
       <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
         <MonitorIcon class-name="h-5 w-5 text-warning" />
         🧪 Debug

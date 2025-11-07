@@ -223,6 +223,7 @@ const esES: LocaleStrings = {
     suggestions: "Sugerencias",
     theme: "Tema",
     timeRange: "Rango de tiempo activo",
+    title: "Horarios de descanso",
     totalCount: "horarios",
   },
   suggestions: {
