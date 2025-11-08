@@ -12,10 +12,10 @@
 //! ref: <https://stackoverflow.com/questions/53407374/is-there-a-way-to-detect-changes-in-focus-assist-formerly-quiet-hours-in-windo>
 
 use std::mem;
+use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use parking_lot::Mutex as ParkingMutex;
-use std::sync::Arc;
 use tokio::sync::Mutex as TokioMutex;
 use tokio::sync::mpsc;
 use windows::Win32::Foundation::NTSTATUS;

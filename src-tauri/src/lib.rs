@@ -19,6 +19,7 @@ use crate::{
 pub mod cmd;
 pub mod config;
 pub mod core;
+pub mod monitors;
 pub mod platform;
 pub mod scheduler;
 pub mod utils;
@@ -144,18 +145,18 @@ pub fn run() {
                 let (cmd_tx, shutdown_tx, shared_state) = SchedulerManager::init(&handle);
 
                 // Spawn monitors based on configuration
-                let mut monitors: Vec<Box<dyn scheduler::monitors::Monitor>> = vec![];
+                let mut monitors: Vec<Box<dyn monitors::Monitor>> = vec![];
 
                 // Always add idle monitor (it will self-disable if detection fails)
                 tracing::info!("Idle monitoring enabled (threshold: {}s)", app_config.inactive_s);
-                monitors.push(Box::new(scheduler::monitors::IdleMonitor::new(
+                monitors.push(Box::new(monitors::IdleMonitor::new(
                     app_config.inactive_s,
                 )));
 
                 // Add DND monitor if enabled
                 if app_config.monitor_dnd {
                     tracing::info!("DND monitoring enabled");
-                    let dnd_monitor = scheduler::monitors::DndMonitor::new(shared_state.clone());
+                    let dnd_monitor = monitors::DndMonitor::new(shared_state.clone());
                     monitors.push(Box::new(dnd_monitor));
                 } else {
                     tracing::info!("DND monitoring disabled");
@@ -171,7 +172,7 @@ pub fn run() {
                     tracing::info!(
                         "App whitelist monitoring enabled ({active_count} active rule(s))"
                     );
-                    monitors.push(Box::new(scheduler::monitors::AppWhitelistMonitor::new(
+                    monitors.push(Box::new(monitors::AppWhitelistMonitor::new(
                         app_config.app_exclusions.clone(),
                     )));
                 }
@@ -179,7 +180,7 @@ pub fn run() {
                 if monitors.is_empty() {
                     tracing::info!("No monitors enabled");
                 } else {
-                    scheduler::monitors::spawn_monitor_tasks(
+                    monitors::spawn_monitor_tasks(
                         monitors,
                         cmd_tx.clone(),
                         handle.clone(),

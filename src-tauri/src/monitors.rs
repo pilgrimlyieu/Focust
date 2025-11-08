@@ -29,7 +29,7 @@
 //! # Example
 //!
 //! ```rust,ignore
-//! use focust::scheduler::monitors::{Monitor, MonitorAction, MonitorResult};
+//! use focust::monitors::{Monitor, MonitorAction, MonitorResult};
 //!
 //! struct CustomMonitor {
 //!     interval_secs: u64,
@@ -71,7 +71,7 @@ use std::fmt::Display;
 use std::future::Future;
 use std::pin::Pin;
 
-use super::models::{Command, PauseReason};
+use crate::scheduler::models::{Command, PauseReason};
 
 /// Result type for monitor check operations
 pub type MonitorResult = Result<MonitorAction, MonitorError>;

@@ -19,9 +19,8 @@ use std::sync::Arc;
 use anyhow::{Context, Result};
 use tokio::sync::{Mutex as AsyncMutex, mpsc};
 
-use crate::platform::dnd::INTERVAL_SECS;
-
 use super::DndEvent;
+use crate::platform::dnd::INTERVAL_SECS;
 
 /// Linux DND monitor using D-Bus
 pub struct LinuxDndMonitor {

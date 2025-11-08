@@ -123,39 +123,34 @@ impl SchedulerManager {
 
                         Command::TriggerEvent(event) => {
                             // Mark session start
-                            {
-                                let mut state = shared_state.write();
-                                if matches!(event, SchedulerEvent::MiniBreak(_) | SchedulerEvent::LongBreak(_)) {
+                            if matches!(event, SchedulerEvent::MiniBreak(_) | SchedulerEvent::LongBreak(_)) {
+                                {
+                                    let mut state = shared_state.write();
                                     state.start_break_session();
-                                } else if matches!(event, SchedulerEvent::Attention(_)) {
+                                }
+                                let _ = break_cmd_tx.send(cmd).await;
+                            } else if matches!(event, SchedulerEvent::Attention(_)) {
+                                {
+                                    let mut state = shared_state.write();
                                     state.start_attention_session();
                                 }
-                            }
-
-                            // Route to appropriate scheduler
-                            if matches!(event, SchedulerEvent::Attention(_)) {
-                                let _ = attention_cmd_tx.send(cmd).await;
-                            } else {
-                                let _ = break_cmd_tx.send(cmd).await;
                             }
                         }
 
                         Command::PromptFinished(event) => {
                             // Mark session end
-                            {
-                                let mut state = shared_state.write();
-                                if matches!(event, SchedulerEvent::MiniBreak(_) | SchedulerEvent::LongBreak(_)) {
+                            if matches!(event, SchedulerEvent::MiniBreak(_) | SchedulerEvent::LongBreak(_)) {
+                                {
+                                    let mut state = shared_state.write();
                                     state.end_break_session();
-                                } else if matches!(event, SchedulerEvent::Attention(_)) {
+                                }
+                                let _ = break_cmd_tx.send(cmd).await;
+                            } else if matches!(event, SchedulerEvent::Attention(_)) {
+                                {
+                                    let mut state = shared_state.write();
                                     state.end_attention_session();
                                 }
-                            }
-
-                            // Route to appropriate scheduler
-                            if matches!(event, SchedulerEvent::Attention(_)) {
                                 let _ = attention_cmd_tx.send(cmd).await;
-                            } else {
-                                let _ = break_cmd_tx.send(cmd).await;
                             }
                         }
 

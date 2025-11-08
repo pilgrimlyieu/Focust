@@ -3,7 +3,6 @@ mod break_scheduler;
 pub mod event;
 pub mod manager;
 pub mod models;
-pub mod monitors;
 pub mod shared_state;
 
 // Re-export public API
