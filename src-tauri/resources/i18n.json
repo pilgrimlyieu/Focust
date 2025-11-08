@@ -4,6 +4,7 @@
       "show": "Einstellungen anzeigen",
       "pause": "Pausen pausieren",
       "resume": "Pausen fortsetzen",
+      "restart": "Neu starten",
       "quit": "Beenden",
       "tooltip": "Focust - Pausenerinnerung"
     },
@@ -20,6 +21,7 @@
       "show": "Show Settings",
       "pause": "Pause Breaks",
       "resume": "Resume Breaks",
+      "restart": "Restart",
       "quit": "Quit",
       "tooltip": "Focust - Break Reminder"
     },
@@ -36,6 +38,7 @@
       "show": "Mostrar configuración",
       "pause": "Pausar descansos",
       "resume": "Reanudar descansos",
+      "restart": "Reiniciar",
       "quit": "Salir",
       "tooltip": "Focust - Recordatorio de descanso"
     },
@@ -52,6 +55,7 @@
       "show": "Afficher les paramètres",
       "pause": "Suspendre les pauses",
       "resume": "Reprendre les pauses",
+      "restart": "Redémarrer",
       "quit": "Quitter",
       "tooltip": "Focust - Rappel de pause"
     },
@@ -68,6 +72,7 @@
       "show": "Mostra impostazioni",
       "pause": "Pausa pause",
       "resume": "Riprendi pause",
+      "restart": "Riavvia",
       "quit": "Esci",
       "tooltip": "Focust - Promemoria pausa"
     },
@@ -84,6 +89,7 @@
       "show": "設定を表示",
       "pause": "休憩を一時停止",
       "resume": "休憩を再開",
+      "restart": "再起動",
       "quit": "終了",
       "tooltip": "Focust - 休憩リマインダー"
     },
@@ -100,6 +106,7 @@
       "show": "설정 표시",
       "pause": "휴식 일시 정지",
       "resume": "휴식 재개",
+      "restart": "다시 시작",
       "quit": "종료",
       "tooltip": "Focust - 휴식 알림"
     },
@@ -116,6 +123,7 @@
       "show": "Mostrar configurações",
       "pause": "Pausar pausas",
       "resume": "Retomar pausas",
+      "restart": "Reiniciar",
       "quit": "Sair",
       "tooltip": "Focust - Lembrete de pausa"
     },
@@ -132,6 +140,7 @@
       "show": "Показать настройки",
       "pause": "Приостановить перерывы",
       "resume": "Возобновить перерывы",
+      "restart": "Перезапустить",
       "quit": "Выход",
       "tooltip": "Focust - Напоминание о перерыве"
     },
@@ -148,6 +157,7 @@
       "show": "显示设置",
       "pause": "暂停休息",
       "resume": "恢复休息",
+      "restart": "重启",
       "quit": "退出",
       "tooltip": "Focust - 休息提醒"
     },

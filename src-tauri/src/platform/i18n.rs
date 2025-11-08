@@ -20,6 +20,7 @@ pub struct TrayStrings {
     pub show: String,
     pub pause: String,
     pub resume: String,
+    pub restart: String,
     pub quit: String,
     pub tooltip: String,
 }
@@ -40,6 +41,7 @@ impl Default for TrayStrings {
             show: "Show Settings".to_string(),
             pause: "Pause Breaks".to_string(),
             resume: "Resume Breaks".to_string(),
+            restart: "Restart".to_string(),
             quit: "Quit".to_string(),
             tooltip: "Focust - Break Reminder".to_string(),
         }
