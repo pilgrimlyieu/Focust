@@ -263,7 +263,7 @@ impl BreakScheduler {
                     PauseReason::Manual => {}
                 }
                 self.close_break_windows();
-                self.emit_paused_status(true);
+                // Note: SchedulerManager already emitted paused status, no need to emit again
             }
             Command::Resume(_reason) => {
                 tracing::info!("Resuming BreakScheduler");

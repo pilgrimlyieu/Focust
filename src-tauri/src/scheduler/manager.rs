@@ -3,7 +3,7 @@ use tokio::sync::{mpsc, watch};
 
 use super::attention_timer::AttentionTimer;
 use super::break_scheduler::BreakScheduler;
-use super::models::Command;
+use super::models::{Command, SchedulerStatus};
 use super::shared_state::{SharedState, create_shared_state};
 use crate::scheduler::SchedulerEvent;
 
@@ -99,10 +99,21 @@ impl SchedulerManager {
                             if should_pause {
                                 // State transition: Running -> Paused
                                 tracing::info!("Scheduler paused (reason: {reason})");
-                                // Emit status change event
+
+                                // Emit scheduler-status event for compatibility with tray and UI
+                                let status = SchedulerStatus {
+                                    paused: true,
+                                    next_event: None,
+                                };
+                                let _ = app_handle.emit("scheduler-status", &status);
+
+                                // Also emit specific pause event
                                 let _ = app_handle.emit("scheduler-paused", ());
+
+                                // Forward to schedulers so they can update internal state
+                                let _ = break_cmd_tx.send(Command::Pause(reason)).await;
+                                let _ = attention_cmd_tx.send(Command::Pause(reason)).await;
                             }
-                            // Don't forward to schedulers - they query shared state
                         }
 
                         Command::Resume(reason) => {
@@ -112,16 +123,16 @@ impl SchedulerManager {
                             if should_resume {
                                 // State transition: Paused -> Running
                                 tracing::info!("Scheduler resumed (all pause reasons cleared)");
-                                // Emit status change event
+                                
+                                // Emit specific resume event
                                 let _ = app_handle.emit("scheduler-resumed", ());
-                                // Forward resume to schedulers
+                                
+                                // Forward resume to schedulers (they will emit detailed status with next_event)
                                 let _ = break_cmd_tx.send(Command::Resume(reason)).await;
                                 let _ = attention_cmd_tx.send(Command::Resume(reason)).await;
                             }
                             // If still paused, don't forward
-                        }
-
-                        Command::TriggerEvent(event) => {
+                        }                        Command::TriggerEvent(event) => {
                             // Mark session start
                             if matches!(event, SchedulerEvent::MiniBreak(_) | SchedulerEvent::LongBreak(_)) {
                                 {
