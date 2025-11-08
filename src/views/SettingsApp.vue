@@ -42,6 +42,7 @@ const SuggestionsPanel = defineAsyncComponent(
   () => import("@/components/settings/SuggestionsPanel.vue"),
 );
 
+import { listen } from "@tauri-apps/api/event";
 import AppExclusionIcon from "@/components/icons/AppExclusionIcon.vue";
 import BellIcon from "@/components/icons/BellIcon.vue";
 import InfoCircleIcon from "@/components/icons/InfoCircleIcon.vue";
@@ -88,15 +89,26 @@ const currentTime = ref<number>(Date.now());
 // Update current time every second for live countdown
 let intervalId: ReturnType<typeof setInterval> | null = null;
 
-onMounted(() => {
+// Listen for postpone limit reached event
+let unlistenPostponeLimit: (() => void) | null = null;
+
+onMounted(async () => {
   intervalId = setInterval(() => {
     currentTime.value = Date.now();
   }, 1000);
+
+  unlistenPostponeLimit = await listen("postpone-limit-reached", () => {
+    console.log("[PromptApp] Postpone limit reached");
+    show("info", t("break.noMorePostpone"), 3000);
+  });
 });
 
 onBeforeUnmount(() => {
   if (intervalId) {
     clearInterval(intervalId);
+  }
+  if (unlistenPostponeLimit) {
+    unlistenPostponeLimit();
   }
 });
 
@@ -202,10 +214,8 @@ async function togglePause() {
 async function handlePostpone() {
   try {
     await invoke("postpone_break");
-    show("info", t("actions.postpone"));
   } catch (err) {
     console.error(err);
-    show("error", "Failed to postpone");
   }
 }
 

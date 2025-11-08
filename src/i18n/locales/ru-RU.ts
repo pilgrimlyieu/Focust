@@ -124,8 +124,11 @@ const ruRU: LocaleStrings = {
     longBreakMessage: "Сделайте более длительный перерыв и перезарядитесь.",
     miniBreakMessage:
       "Время для быстрой паузы—потянитесь, попейте воды, подышите.",
+    noMorePostpone:
+      "Достигнут максимальный лимит отсрочек, нельзя отложить еще",
     postpone: "Отложить",
     preparing: "Подготовка вашего перерыва…",
+    remainingCount: "Осталось {count}",
     resume: "Вернуться к работе",
     shortcutHint:
       "Горячие клавиши: Enter для завершения · {postpone} для отсрочки",
@@ -211,7 +214,8 @@ const ruRU: LocaleStrings = {
     hint: "Создайте несколько расписаний, например, разные времена для будних дней и выходных",
     intervalMinutes: "Интервал",
     longBreak: "Длительный перерыв",
-    miniBreak: "Мини-перерыв",
+    maxPostponeCount: "Максимальное количество отсрочек",
+    miniBreak: "Короткий перерыв",
     minutesUnit: "мин",
     name: "Название расписания",
     notifyBefore: "Уведомить за",

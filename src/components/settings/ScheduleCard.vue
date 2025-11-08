@@ -185,7 +185,12 @@ const longPostponeMinutes = useSecondsToMinutes(
                 }}</span>
             </div>
           </label>
-          <label class="label cursor-pointer justify-start gap-2 py-2">
+          <label class="form-control">
+            <span class="label-text text-xs font-medium mb-1.5">{{ t("schedule.maxPostponeCount") }}</span>
+            <input v-model.number="schedule.miniBreaks.maxPostponeCount" type="number" min="1"
+              class="input input-sm input-bordered transition-all focus:input-primary" />
+          </label>
+          <label class="label cursor-pointer justify-start gap-2 py-2 sm:col-span-2">
             <input v-model="schedule.miniBreaks.strictMode" type="checkbox"
               class="checkbox checkbox-sm transition-all" />
             <span class="label-text text-xs font-medium">{{ t("schedule.strictMode") }}</span>
@@ -231,7 +236,12 @@ const longPostponeMinutes = useSecondsToMinutes(
             <input v-model.number="schedule.longBreaks.afterMiniBreaks" type="number" min="1"
               class="input input-sm input-bordered transition-all focus:input-primary" />
           </label>
-          <label class="label cursor-pointer justify-start gap-2 py-2">
+          <label class="form-control">
+            <span class="label-text text-xs font-medium mb-1.5">{{ t("schedule.maxPostponeCount") }}</span>
+            <input v-model.number="schedule.longBreaks.maxPostponeCount" type="number" min="1"
+              class="input input-sm input-bordered transition-all focus:input-primary" />
+          </label>
+          <label class="label cursor-pointer justify-start gap-2 py-2 sm:col-span-2">
             <input v-model="schedule.longBreaks.strictMode" type="checkbox"
               class="checkbox checkbox-sm transition-all" />
             <span class="label-text text-xs font-medium">{{ t("schedule.strictMode") }}</span>

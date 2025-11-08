@@ -70,6 +70,8 @@ pub(crate) struct BreakInfo {
     pub break_time: DateTime<Utc>,
     pub notification_time: Option<DateTime<Utc>>,
     pub event: SchedulerEvent,
+    /// Number of times this break has been postponed (for future limit enforcement)
+    pub postpone_count: u8,
 }
 
 // ============================================================================

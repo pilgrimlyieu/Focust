@@ -12,7 +12,7 @@ use tauri_plugin_autostart::ManagerExt;
 
 use crate::{
     cmd::{SchedulerCmd, ShutdownTx},
-    core::payload::BreakPayloadStore,
+    core::payload::PromptPayloadStore,
     scheduler::manager::SchedulerManager,
 };
 
@@ -111,8 +111,8 @@ pub fn run() {
                     }
                 }
 
-                // Initialize break payload store
-                handle.manage(BreakPayloadStore::new());
+                // Initialize prompt payload store
+                handle.manage(PromptPayloadStore::new());
 
                 // Load app config first
                 let app_config = config::load_config(&handle).await;
@@ -203,9 +203,9 @@ pub fn run() {
             cmd::config::get_config,
             cmd::config::pick_background_image,
             cmd::config::save_config,
-            cmd::payload::get_break_payload,
-            cmd::payload::remove_break_payload,
-            cmd::payload::store_break_payload,
+            cmd::payload::get_prompt_payload,
+            cmd::payload::remove_prompt_payload,
+            cmd::payload::store_prompt_payload,
             cmd::scheduler::prompt_finished,
             cmd::scheduler::pause_scheduler,
             cmd::scheduler::postpone_break,

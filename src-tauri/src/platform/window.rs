@@ -12,17 +12,21 @@ use crate::core::{
     theme::BackgroundType,
 };
 use crate::core::{
-    payload::{BreakPayload, EventKind},
+    payload::{EventKind, PromptPayload},
     theme::{BackgroundSource, ResolvedBackground},
 };
 use crate::scheduler::SchedulerEvent;
 use crate::{config::AppConfig, core::suggestions::SuggestionsConfig};
-use crate::{config::SharedConfig, core::payload::BreakPayloadStore};
+use crate::{config::SharedConfig, core::payload::PromptPayloadStore};
 
 const ALLOWED_EXTENSIONS_LOWERCASE: &[&str] = &["jpg", "jpeg", "png", "webp", "bmp", "gif"];
 
-/// Create break windows for monitors based on configuration
-pub async fn create_break_windows(app: &AppHandle, event: SchedulerEvent) -> Result<(), String> {
+/// Create prompt windows for monitors based on configuration
+pub async fn create_prompt_windows(
+    app: &AppHandle,
+    event: SchedulerEvent,
+    postpone_count: u8,
+) -> Result<(), String> {
     tracing::debug!("Creating break windows for event: {event}");
 
     let (payload_id, window_size, all_screens) = {
@@ -32,17 +36,18 @@ pub async fn create_break_windows(app: &AppHandle, event: SchedulerEvent) -> Res
         let suggestions = app.state::<SharedSuggestions>();
         let suggestions_guard = suggestions.read().await;
 
-        // Build break payload
-        let payload = build_break_payload(&config_guard, &suggestions_guard, event)?;
+        // Build prompt payload
+        let payload =
+            build_prompt_payload(&config_guard, &suggestions_guard, event, postpone_count)?;
 
         // Generate unique payload ID
         let payload_id = format!("break-{}", chrono::Utc::now().timestamp_millis());
 
         // Store payload for frontend retrieval
-        let payload_store = app.state::<BreakPayloadStore>();
+        let payload_store = app.state::<PromptPayloadStore>();
         store_payload_internal(&payload_store, payload.clone(), payload_id.clone())
             .await
-            .map_err(|e| format!("Failed to store break payload: {e}"))?;
+            .map_err(|e| format!("Failed to store prompt payload: {e}"))?;
 
         let window_size = config_guard.window_size;
         let all_screens = config_guard.all_screens;
@@ -214,12 +219,13 @@ fn create_break_window_for_monitor(
     Ok(())
 }
 
-/// Build break payload from configuration and event
-fn build_break_payload(
+/// Build prompt payload from configuration and event
+fn build_prompt_payload(
     config: &AppConfig,
     suggestions: &SuggestionsConfig,
     event: SchedulerEvent,
-) -> Result<BreakPayload, String> {
+    postpone_count: u8,
+) -> Result<PromptPayload, String> {
     let (break_settings, schedule_name, kind) = match event {
         SchedulerEvent::MiniBreak(id) => {
             let schedule = config
@@ -253,7 +259,7 @@ fn build_break_payload(
                 .ok_or_else(|| format!("No attention found for id: {id}"))?;
 
             // Build payload for attention
-            return Ok(BreakPayload {
+            return Ok(PromptPayload {
                 id: attention.id.into(),
                 kind: EventKind::Attention,
                 title: attention.title.clone(),
@@ -273,6 +279,8 @@ fn build_break_payload(
                 },
                 all_screens: config.all_screens,
                 language: config.language.clone(),
+                postpone_count: 0, // Attention reminders cannot be postponed
+                max_postpone_count: 0,
             });
         }
     };
@@ -284,7 +292,7 @@ fn build_break_payload(
         .flatten();
     let background = resolve_background(&break_settings.theme.background);
 
-    Ok(BreakPayload {
+    Ok(PromptPayload {
         id: break_settings.id.into(),
         kind,
         title: schedule_name.clone(),
@@ -308,6 +316,8 @@ fn build_break_payload(
         },
         all_screens: config.all_screens,
         language: config.language.clone(),
+        postpone_count,
+        max_postpone_count: break_settings.max_postpone_count,
     })
 }
 

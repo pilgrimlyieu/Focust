@@ -129,8 +129,11 @@ const deDE: LocaleStrings = {
       "Machen Sie eine längere Pause und tanken Sie neue Energie.",
     miniBreakMessage:
       "Zeit für eine kurze Pause—strecken, hydratisieren, atmen.",
+    noMorePostpone:
+      "Maximale Verschiebungsgrenze erreicht, kann nicht mehr verschoben werden",
     postpone: "Verschieben",
     preparing: "Ihre Pause wird vorbereitet…",
+    remainingCount: "{count} übrig",
     resume: "Zurück zur Arbeit",
     shortcutHint:
       "Tastenkombinationen: Enter zum Beenden · {postpone} zum Verschieben",
@@ -217,6 +220,7 @@ const deDE: LocaleStrings = {
     hint: "Erstellen Sie mehrere Pläne, z.B. unterschiedliche Zeiten für Wochentage und Wochenenden",
     intervalMinutes: "Intervall",
     longBreak: "Lange Pause",
+    maxPostponeCount: "Maximale Verschiebungsanzahl",
     miniBreak: "Mini-Pause",
     minutesUnit: "Min",
     name: "Planname",

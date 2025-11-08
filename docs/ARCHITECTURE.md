@@ -126,7 +126,7 @@ src-tauri/src/
 
 **Break Payload:**
 - Created when break triggers
-- Stored by UUID in `BreakPayloadStore`
+- Stored by UUID in `PromptPayloadStore`
 - Frontend fetches via command with UUID
 
 ---
@@ -212,9 +212,9 @@ Wait until event (tokio::select!)
   ↓
 Send notification (if configured)
   ↓
-Create break payload
+Create prompt payload
   ↓
-Emit "show-break" event
+Emit "show-prompt" event
   ↓
 Frontend creates break windows
   ↓

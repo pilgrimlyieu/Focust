@@ -7,7 +7,7 @@ use tokio::time::sleep;
 
 use super::models::{Command, SchedulerEvent};
 use crate::core::schedule::AttentionSettings;
-use crate::platform::create_break_windows;
+use crate::platform::create_prompt_windows;
 use crate::{config::SharedConfig, core::schedule::AttentionId};
 
 /// A simple timer for attention reminders
@@ -197,7 +197,7 @@ impl AttentionTimer {
 
         let app_handle = self.app_handle.clone();
         tokio::spawn(async move {
-            create_break_windows(&app_handle, event)
+            create_prompt_windows(&app_handle, event, 0)
                 .await
                 .unwrap_or_else(|e| {
                     tracing::error!("Failed to create attention windows: {e}");

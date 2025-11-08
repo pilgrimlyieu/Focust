@@ -422,10 +422,10 @@ try {
 }
 
 // Type guards for generated types
-import { isBreakPayload } from "@/types";
+import { isPromptPayload } from "@/types";
 
-if (isBreakPayload(data)) {
-  // TypeScript knows data is BreakPayload
+if (isPromptPayload(data)) {
+  // TypeScript knows data is PromptPayload
   startBreak(data);
 }
 ```

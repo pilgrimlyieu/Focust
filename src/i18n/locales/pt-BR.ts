@@ -125,8 +125,11 @@ const ptBR: LocaleStrings = {
     longBreakMessage: "Faça uma pausa mais longa e recarregue as energias.",
     miniBreakMessage:
       "Hora de uma pausa rápida—alongue-se, hidrate-se, respire.",
+    noMorePostpone:
+      "Limite máximo de adiamento atingido, não é possível adiar mais",
     postpone: "Adiar",
     preparing: "Preparando sua pausa…",
+    remainingCount: "{count} restante",
     resume: "Voltar ao trabalho",
     shortcutHint: "Atalhos: Enter para finalizar · {postpone} para adiar",
     skip: "Pular",
@@ -211,6 +214,7 @@ const ptBR: LocaleStrings = {
     hint: "Crie vários agendamentos, por exemplo, horários diferentes para dias úteis e fins de semana",
     intervalMinutes: "Intervalo",
     longBreak: "Pausa longa",
+    maxPostponeCount: "Número máximo de adiamentos",
     miniBreak: "Mini pausa",
     minutesUnit: "min",
     name: "Nome do agendamento",

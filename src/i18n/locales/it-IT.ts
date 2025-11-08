@@ -128,8 +128,11 @@ const itIT: LocaleStrings = {
     longBreakMessage: "Fai una pausa più lunga e ricaricati.",
     miniBreakMessage:
       "Tempo per una pausa veloce—stiracchiati, idratati, respira.",
+    noMorePostpone:
+      "Limite massimo di posticipazione raggiunto, impossibile posticipare ulteriormente",
     postpone: "Posticipa",
     preparing: "Preparazione della tua pausa…",
+    remainingCount: "{count} rimanente",
     resume: "Torna al lavoro",
     shortcutHint:
       "Scorciatoie: Invio per terminare · {postpone} per posticipare",
@@ -216,6 +219,7 @@ const itIT: LocaleStrings = {
     hint: "Crea più programmi, ad es. orari diversi per giorni feriali e fine settimana",
     intervalMinutes: "Intervallo",
     longBreak: "Pausa lunga",
+    maxPostponeCount: "Numero massimo di rinvii",
     miniBreak: "Mini pausa",
     minutesUnit: "min",
     name: "Nome programma",

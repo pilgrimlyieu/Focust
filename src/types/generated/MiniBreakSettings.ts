@@ -41,6 +41,10 @@ durationS: number,
  */
 postponedS: number, 
 /**
+ * Maximum number of times a break can be postponed
+ */
+maxPostponeCount: number, 
+/**
  * If the break should be strictly followed
  */
 strictMode: boolean, };

@@ -41,7 +41,7 @@ impl Default for BreakId {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 #[ts(rename_all = "camelCase")]
 pub struct BaseBreakSettings {
     /// Unique identifier for the break settings
@@ -58,6 +58,8 @@ pub struct BaseBreakSettings {
     pub duration_s: u32,
     /// Postponed time in seconds
     pub postponed_s: u32,
+    /// Maximum number of times a break can be postponed
+    pub max_postpone_count: u8,
     /// If the break should be strictly followed
     pub strict_mode: bool,
 }
@@ -70,8 +72,9 @@ impl Default for BaseBreakSettings {
             theme: ThemeSettings::default(),
             audio: AudioSettings::default(),
             suggestions: SuggestionsSettings::default(),
-            duration_s: 20,   // Last default to 20 seconds
-            postponed_s: 300, // Postpone default to 5 minutes
+            duration_s: 20,        // Last default to 20 seconds
+            postponed_s: 300,      // Postpone default to 5 minutes
+            max_postpone_count: 2, // Default: allow 2 postpones
             strict_mode: false,
         }
     }
@@ -79,7 +82,7 @@ impl Default for BaseBreakSettings {
 
 /// Settings for mini breaks
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 #[ts(rename_all = "camelCase")]
 pub struct MiniBreakSettings {
     /// Base break settings
@@ -101,7 +104,7 @@ impl Default for MiniBreakSettings {
 
 /// Settings for long breaks
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 #[ts(rename_all = "camelCase")]
 pub struct LongBreakSettings {
     /// Base break settings
@@ -126,7 +129,7 @@ impl Default for LongBreakSettings {
 
 /// Settings for a break schedule
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 #[ts(rename_all = "camelCase")]
 pub struct ScheduleSettings {
     /// Unique identifier for the break settings

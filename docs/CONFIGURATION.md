@@ -35,7 +35,7 @@ Focust stores its configuration in a platform-specific location:
 - **Linux**: `~/.config/com.fesmoph.focust/config.toml`
 
 You can quickly open the configuration directory from the settings UI:
-1. Go to **Advanced** tab
+1. Go to **Advanced Options** tab
 2. Click **Open configuration directory**
 
 ## Configuration Structure
@@ -58,6 +58,13 @@ enabled = true
 [[attentions]]
 name = "Water Reminder"
 enabled = true
+# ...
+
+# Application exclusions (array of tables)
+[[appExclusions]]
+active = true
+rule = "pause"
+patterns = ["chrome.exe", "firefox"]
 # ...
 ```
 
@@ -113,133 +120,6 @@ enabled = true
   - `0.5` = 50% (half screen)
   - `0.8` = 80% (default)
   - `1.0` = 100% (fullscreen)
-
----
-
-## Application Exclusions Settings
-
-Application exclusions allow you to automatically pause or resume the scheduler based on which applications are running. This is useful for preventing break interruptions during presentations, video calls, or when using specific applications.
-
-### `appExclusions`
-- **Type**: Array of objects
-- **Default**: `[]` (empty array)
-- **Description**: List of exclusion rules
-
-### Exclusion Rule Structure
-
-Each exclusion rule has the following structure:
-
-```toml
-[[appExclusions]]
-active = true
-rule = "pause"  # or "resume"
-patterns = ["chrome.exe", "firefox"]
-```
-
-#### `active`
-- **Type**: Boolean
-- **Default**: `true`
-- **Description**: Whether this exclusion rule is active
-
-#### `rule`
-- **Type**: String enum
-- **Options**: `"pause"`, `"resume"`
-- **Description**: Action to take when a matching process is detected
-  - `"pause"`: Pause the scheduler when any of the patterns match
-  - `"resume"`: Resume the scheduler when any of the patterns match (if previously paused by exclusions)
-
-#### `patterns`
-- **Type**: Array of strings
-- **Description**: List of process name patterns to match. Matching is case-insensitive and uses substring matching.
-  - Can be process names (e.g., `"chrome.exe"`, `"firefox"`)
-  - Can be partial names (e.g., `"chrome"` matches `"chrome.exe"`)
-  - Can be full paths (e.g., `"C:\\Program Files\\App\\app.exe"`)
-
-### Example Configurations
-
-**Pause during presentations:**
-```toml
-[[appExclusions]]
-active = true
-rule = "pause"
-patterns = ["POWERPNT.EXE", "Keynote", "impress"]  # PowerPoint, Keynote, LibreOffice Impress
-```
-
-**Pause during video calls:**
-```toml
-[[appExclusions]]
-active = true
-rule = "Pause"
-patterns = ["zoom.exe", "Teams.exe", "Slack.exe", "Discord.exe"]
-```
-
-**Resume when using IDEs (override previous pauses):**
-```toml
-[[appExclusions]]
-active = true
-rule = "pause"
-patterns = ["chrome.exe", "firefox.exe"]  # Pause during browsing
-
-[[appExclusions]]
-active = true
-rule = "resume"
-patterns = ["code.exe", "idea64.exe", "pycharm64.exe"]  # Resume when coding
-```
-
-**Multi-platform example:**
-```toml
-[[appExclusions]]
-active = true
-rule = "pause"
-patterns = [
-    # Windows
-    "POWERPNT.EXE", "chrome.exe", "firefox.exe",
-    # macOS
-    "Keynote", "Google Chrome", "Firefox",
-    # Linux
-    "chrome", "firefox", "libreoffice"
-]
-```
-
-### Platform-Specific Notes
-
-- **Windows**: Process names typically include `.exe` extension (e.g., `"chrome.exe"`)
-- **macOS**: Application names match the `.app` name without extension (e.g., `"Google Chrome"`)
-- **Linux**: Process names are typically lowercase without extensions (e.g., `"chrome"`, `"firefox"`)
-
-**Example:**
-```toml
-autostart = false
-monitorDnd = true
-inactiveS = 300
-allScreens = false
-language = "en-US"
-themeMode = "system"
-postponeShortcut = "Ctrl+Shift+P"
-windowSize = 0.8
-
-[[appExclusions]]
-active = true
-rule = "Pause"
-patterns = ["POWERPNT.EXE", "zoom.exe", "Teams.exe"]
-
-[[appExclusions]]
-active = true
-rule = "Resume"
-patterns = ["code.exe", "idea64.exe"]
-```
-
-**Example:**
-```toml
-autostart = false
-monitorDnd = true
-inactiveS = 300
-allScreens = false
-language = "en-US"
-themeMode = "system"
-postponeShortcut = "Ctrl+Shift+P"
-windowSize = 0.8
-```
 
 ---
 
@@ -315,6 +195,11 @@ Mini breaks are short reminders (typically lasting 20 seconds) that occur freque
 - **Default**: `300` (5 minutes)
 - **Description**: How long to postpone the break when using the postpone function
 
+#### `miniBreaks.maxPostponeCount`
+- **Type**: Integer
+- **Default**: `2`
+- **Description**: Maximum number of times a mini break can be postponed
+
 #### `miniBreaks.strictMode`
 - **Type**: Boolean
 - **Default**: `false`
@@ -375,6 +260,11 @@ Long breaks are extended rest periods (typically 5 minutes) that occur less freq
 - **Type**: Integer (seconds)
 - **Default**: `300` (5 minutes)
 
+#### `longBreaks.maxPostponeCount`
+- **Type**: Integer
+- **Default**: `2`
+- **Description**: Maximum number of times a long break can be postponed
+
 #### `longBreaks.strictMode`
 - **Type**: Boolean
 - **Default**: `false`
@@ -405,6 +295,7 @@ end = "17:00"
 enabled = true
 durationS = 20
 postponedS = 300
+maxPostponeCount = 2
 strictMode = false
 intervalS = 1200
 
@@ -428,6 +319,7 @@ show = true
 enabled = true
 durationS = 300
 postponedS = 600
+maxPostponeCount = 2
 strictMode = false
 afterMiniBreaks = 4
 
@@ -758,6 +650,133 @@ You can add your own suggestions under the appropriate language section. The app
 
 ---
 
+## Application Exclusions Settings
+
+Application exclusions allow you to automatically pause or resume the scheduler based on which applications are running. This is useful for preventing break interruptions during presentations, video calls, or when using specific applications.
+
+### `appExclusions`
+- **Type**: Array of objects
+- **Default**: `[]` (empty array)
+- **Description**: List of exclusion rules
+
+### Exclusion Rule Structure
+
+Each exclusion rule has the following structure:
+
+```toml
+[[appExclusions]]
+active = true
+rule = "pause"  # or "resume"
+patterns = ["chrome.exe", "firefox"]
+```
+
+#### `active`
+- **Type**: Boolean
+- **Default**: `true`
+- **Description**: Whether this exclusion rule is active
+
+#### `rule`
+- **Type**: String enum
+- **Options**: `"pause"`, `"resume"`
+- **Description**: Action to take when a matching process is detected
+  - `"pause"`: Pause the scheduler when any of the patterns match
+  - `"resume"`: Resume the scheduler when any of the patterns match (if previously paused by exclusions)
+
+#### `patterns`
+- **Type**: Array of strings
+- **Description**: List of process name patterns to match. Matching is case-insensitive and uses substring matching.
+  - Can be process names (e.g., `"chrome.exe"`, `"firefox"`)
+  - Can be partial names (e.g., `"chrome"` matches `"chrome.exe"`)
+  - Can be full paths (e.g., `"C:\\Program Files\\App\\app.exe"`)
+
+### Example Configurations
+
+**Pause during presentations:**
+```toml
+[[appExclusions]]
+active = true
+rule = "pause"
+patterns = ["POWERPNT.EXE", "Keynote", "impress"]  # PowerPoint, Keynote, LibreOffice Impress
+```
+
+**Pause during video calls:**
+```toml
+[[appExclusions]]
+active = true
+rule = "Pause"
+patterns = ["zoom.exe", "Teams.exe", "Slack.exe", "Discord.exe"]
+```
+
+**Resume when using IDEs (override previous pauses):**
+```toml
+[[appExclusions]]
+active = true
+rule = "pause"
+patterns = ["chrome.exe", "firefox.exe"]  # Pause during browsing
+
+[[appExclusions]]
+active = true
+rule = "resume"
+patterns = ["code.exe", "idea64.exe", "pycharm64.exe"]  # Resume when coding
+```
+
+**Multi-platform example:**
+```toml
+[[appExclusions]]
+active = true
+rule = "pause"
+patterns = [
+    # Windows
+    "POWERPNT.EXE", "chrome.exe", "firefox.exe",
+    # macOS
+    "Keynote", "Google Chrome", "Firefox",
+    # Linux
+    "chrome", "firefox", "libreoffice"
+]
+```
+
+### Platform-Specific Notes
+
+- **Windows**: Process names typically include `.exe` extension (e.g., `"chrome.exe"`)
+- **macOS**: Application names match the `.app` name without extension (e.g., `"Google Chrome"`)
+- **Linux**: Process names are typically lowercase without extensions (e.g., `"chrome"`, `"firefox"`)
+
+**Example:**
+```toml
+autostart = false
+monitorDnd = true
+inactiveS = 300
+allScreens = false
+language = "en-US"
+themeMode = "system"
+postponeShortcut = "Ctrl+Shift+P"
+windowSize = 0.8
+
+[[appExclusions]]
+active = true
+rule = "Pause"
+patterns = ["POWERPNT.EXE", "zoom.exe", "Teams.exe"]
+
+[[appExclusions]]
+active = true
+rule = "Resume"
+patterns = ["code.exe", "idea64.exe"]
+```
+
+**Example:**
+```toml
+autostart = false
+monitorDnd = true
+inactiveS = 300
+allScreens = false
+language = "en-US"
+themeMode = "system"
+postponeShortcut = "Ctrl+Shift+P"
+windowSize = 0.8
+```
+
+---
+
 ## Examples
 
 ### Example 1: Minimal Configuration
@@ -797,6 +816,7 @@ id = 0
 enabled = true
 durationS = 20
 postponedS = 300
+maxPostponeCount = 2
 strictMode = false
 intervalS = 1200
 
@@ -822,6 +842,7 @@ id = 1
 enabled = true
 durationS = 300
 postponedS = 300
+maxPostponeCount = 2
 strictMode = false
 afterMiniBreaks = 4
 
@@ -869,6 +890,7 @@ end = "17:30"
 enabled = true
 durationS = 20
 postponedS = 300
+maxPostponeCount = 2
 strictMode = false
 intervalS = 1200  # 20 min
 
@@ -892,6 +914,7 @@ show = true
 enabled = true
 durationS = 600  # 10 min
 postponedS = 600
+maxPostponeCount = 2
 strictMode = true
 afterMiniBreaks = 3
 
@@ -926,6 +949,7 @@ end = "22:00"
 enabled = true
 durationS = 15
 postponedS = 600
+maxPostponeCount = 2
 strictMode = false
 intervalS = 1800  # 30 min
 

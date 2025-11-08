@@ -126,8 +126,11 @@ const esES: LocaleStrings = {
     longBreakMessage: "Toma un descanso más largo y recarga energías.",
     miniBreakMessage:
       "Tiempo para una pausa rápida—estírate, hidrátate, respira.",
+    noMorePostpone:
+      "Límite máximo de posposición alcanzado, no se puede posponer más",
     postpone: "Posponer",
     preparing: "Preparando tu descanso…",
+    remainingCount: "{count} restante",
     resume: "Volver al trabajo",
     shortcutHint: "Atajos: Enter para finalizar · {postpone} para posponer",
     skip: "Omitir",
@@ -212,6 +215,7 @@ const esES: LocaleStrings = {
     hint: "Crea múltiples horarios, p. ej., diferentes tiempos para días laborables y fines de semana",
     intervalMinutes: "Intervalo",
     longBreak: "Descanso largo",
+    maxPostponeCount: "Máximo número de aplazamientos",
     miniBreak: "Descanso mini",
     minutesUnit: "min",
     name: "Nombre del horario",

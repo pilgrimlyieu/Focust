@@ -286,7 +286,7 @@ app_handle.emit("break-started", payload)?;
 // Frontend - listen to event
 import { listen } from "@tauri-apps/api/event";
 
-const unlisten = await listen<BreakPayload>("break-started", (event) => {
+const unlisten = await listen<PromptPayload>("break-started", (event) => {
   console.log("Break started:", event.payload);
 });
 ```

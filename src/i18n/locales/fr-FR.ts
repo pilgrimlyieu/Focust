@@ -129,8 +129,11 @@ const frFR: LocaleStrings = {
     longBreakMessage: "Prenez un repos plus long et rechargez vos batteries.",
     miniBreakMessage:
       "Temps pour une pause rapide—étirez-vous, hydratez-vous, respirez.",
+    noMorePostpone:
+      "Limite maximale de report atteinte, impossible de reporter davantage",
     postpone: "Reporter",
     preparing: "Préparation de votre pause…",
+    remainingCount: "{count} restant",
     resume: "Retour au travail",
     shortcutHint:
       "Raccourcis : Entrée pour terminer · {postpone} pour reporter",
@@ -217,6 +220,7 @@ const frFR: LocaleStrings = {
     hint: "Créez plusieurs horaires, par ex., différents temps pour les jours de semaine et les week-ends",
     intervalMinutes: "Intervalle",
     longBreak: "Pause longue",
+    maxPostponeCount: "Nombre maximum de reports",
     miniBreak: "Mini-pause",
     minutesUnit: "min",
     name: "Nom de l'horaire",

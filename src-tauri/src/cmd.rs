@@ -10,7 +10,7 @@ pub mod window;
 pub use audio::{play_audio, play_builtin_audio, stop_audio};
 pub use autostart::{is_autostart_enabled, set_autostart_enabled};
 pub use config::{get_config, pick_background_image, save_config};
-pub use payload::{get_break_payload, remove_break_payload, store_break_payload};
+pub use payload::{get_prompt_payload, remove_prompt_payload, store_prompt_payload};
 pub use scheduler::{
     SchedulerCmd, ShutdownTx, pause_scheduler, postpone_break, prompt_finished, resume_scheduler,
 };

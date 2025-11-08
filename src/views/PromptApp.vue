@@ -11,7 +11,7 @@ import {
 } from "vue";
 import { useI18n } from "vue-i18n";
 import { setI18nLocale } from "@/i18n";
-import type { AudioSettings, BreakPayload, SchedulerEvent } from "@/types";
+import type { AudioSettings, PromptPayload, SchedulerEvent } from "@/types";
 import {
   createAttentionEvent,
   createLongBreakEvent,
@@ -25,7 +25,7 @@ import {
 
 const { t } = useI18n();
 
-const payload = ref<BreakPayload | null>(null);
+const payload = ref<PromptPayload | null>(null);
 const remaining = ref(0);
 const intervalId = ref<number | null>(null);
 const isClosing = ref(false);
@@ -107,6 +107,17 @@ const controlsDisabled = computed(() => payload.value?.strictMode ?? false);
 
 const isAttention = computed(() => payload.value?.kind === "attention");
 
+const remainingPostpones = computed(() => {
+  if (!payload.value?.maxPostponeCount) return null;
+  return payload.value.maxPostponeCount - payload.value.postponeCount;
+});
+
+const canPostpone = computed(() => {
+  if (controlsDisabled.value || isAttention.value) return false;
+  if (!payload.value?.maxPostponeCount) return true; // No limit
+  return payload.value.postponeCount < payload.value.maxPostponeCount;
+});
+
 /** Stop the active audio playback */
 const stopAudio = async () => {
   await invoke("stop_audio").catch((err) => {
@@ -141,7 +152,7 @@ const playAudio = async (settings?: AudioSettings | null) => {
   }
 };
 
-const preloadBackground = async (data: BreakPayload): Promise<void> => {
+const preloadBackground = async (data: PromptPayload): Promise<void> => {
   if (isResolvedImageBackground(data.background)) {
     return new Promise((resolve) => {
       const img = new Image();
@@ -154,10 +165,10 @@ const preloadBackground = async (data: BreakPayload): Promise<void> => {
 };
 
 /**
- * Handle incoming break payload and start the break.
- * @param {BreakPayload} data The break payload data.
+ * Handle incoming prompt payload and start the break.
+ * @param {PromptPayload} data The prompt payload data.
  */
-const handlePayload = async (data: BreakPayload) => {
+const handlePayload = async (data: PromptPayload) => {
   console.log("[PromptApp] Handling payload:", data);
   console.log("[PromptApp] Suggestion field:", data.suggestion);
   isClosing.value = false;
@@ -247,11 +258,11 @@ const finishBreak = async (isAutoFinish = false) => {
 };
 
 /**
- * Construct a SchedulerEvent from the current break payload using factory functions
- * @param {BreakPayload} payload The break payload
+ * Construct a SchedulerEvent from the current prompt payload using factory functions
+ * @param {PromptPayload} payload The prompt payload
  * @returns {SchedulerEvent} SchedulerEvent object
  */
-const constructSchedulerEvent = (payload: BreakPayload): SchedulerEvent => {
+const constructSchedulerEvent = (payload: PromptPayload): SchedulerEvent => {
   switch (payload.kind) {
     case "mini":
       return createMiniBreakEvent(payload.id);
@@ -265,8 +276,8 @@ const constructSchedulerEvent = (payload: BreakPayload): SchedulerEvent => {
 };
 
 const postponeBreak = async () => {
-  // Attention reminders cannot be postponed - they are just notifications
-  if (!payload.value || controlsDisabled.value || isAttention.value) return;
+  // Check if postpone is allowed (button should already be disabled, but double-check)
+  if (!payload.value || !canPostpone.value) return;
   await invoke("postpone_break");
   await finishBreak();
 };
@@ -347,7 +358,7 @@ onMounted(async () => {
   // Fetch payload from backend immediately
   try {
     console.log("[PromptApp] Fetching payload from backend...");
-    const fetchedPayload = await invoke<BreakPayload>("get_break_payload", {
+    const fetchedPayload = await invoke<PromptPayload>("get_prompt_payload", {
       payloadId,
     });
     console.log("[PromptApp] Payload fetched successfully:", fetchedPayload);
@@ -404,7 +415,7 @@ defineExpose({
           <div class="space-y-2">
             <p class="text-xs uppercase tracking-[0.35em] opacity-60">
               {{ payload.scheduleName ?? (payload.kind === "attention" ? t("break.attention") : payload.kind === "long"
-                ? t("schedule.longBreak") : t("schedule.miniBreak")) }}
+  ? t("schedule.longBreak") : t("schedule.miniBreak")) }}
             </p>
             <h1 class="text-4xl font-semibold">{{ payload.title }}</h1>
             <p class="text-base opacity-80">
@@ -434,9 +445,12 @@ defineExpose({
               @click="() => finishBreak()">
               {{ isAttention ? t("break.gotIt") : t("break.resume") }}
             </button>
-            <button v-if="!isAttention" class="btn btn-outline btn-wide sm:btn-lg" :disabled="controlsDisabled"
+            <button v-if="!isAttention" class="btn btn-outline btn-wide sm:btn-lg" :disabled="!canPostpone"
               @click="postponeBreak">
               {{ t("break.postpone") }}
+              <span v-if="remainingPostpones !== null" class="text-xs opacity-70">
+                ({{ t("break.remainingCount", { count: remainingPostpones }) }})
+              </span>
             </button>
           </div>
 
