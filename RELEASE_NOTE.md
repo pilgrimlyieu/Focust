@@ -1,4 +1,4 @@
-# Version 0.2.2
+# Version 0.2.3
 
 > [!WARNING]
 >
@@ -15,10 +15,20 @@
 > - **macOS**: `~/Library/Logs/com.fesmoph.focust`
 > - **Linux**: `~/.local/share/com.fesmoph.focust/logs`
 
+## 🎉 Features
+
+- Support showing debug section in Advanced Options panel.
+- Add `maxPostponeCount` setting to limit the maximum number of postpones for a break.
+
 ## 🐛 Bug Fixes
 
-- Fix critical bug that when prompt window is set to fullscreen, DND mode will be enabled (this's Focus Assist default behavior on Windows), which causes scheduler pause immediately.
+- Fix the issue that nested vacant settings is not fallback to default values.
+- Fix the issue that postpone behavior doesn't meet user expectation.
 
 ## 🚀 Improvements
 
-- DND feature will not cause panic on Windows platform anymore. (Firstly mentioned in 0.2.1)
+- Make error logs when loading configuration fails more accurate.
+
+## 📝 Documentation
+
+- Update related documentation for new `maxPostponeCount` setting.

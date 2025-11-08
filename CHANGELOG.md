@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## 0.2.3 (2025.11.8)
+
+### 🎉 Features
+
+- Support showing debug section in Advanced Options panel.
+- Add `maxPostponeCount` setting to limit the maximum number of postpones for a break.
+
+### 🐛 Bug Fixes
+
+- Fix the issue that nested vacant settings is not fallback to default values.
+- Fix the issue that postpone behavior doesn't meet user expectation.
+
+### 🚀 Improvements
+
+- Make error logs when loading configuration fails more accurate.
+
+### 📝 Documentation
+
+- Update related documentation for new `maxPostponeCount` setting.
+
 ## 0.2.2 (2025.11.7)
 
 ### 🐛 Bug Fixes
