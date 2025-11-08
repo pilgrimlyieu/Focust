@@ -69,7 +69,17 @@ async fn try_load_or_create_config(app_handle: &AppHandle) -> Result<AppConfig> 
         .merge(Serialized::defaults(AppConfig::default()))
         .merge(Toml::file(&config_path))
         .extract()
-        .with_context(|| format!("Failed to extract config from {}", config_path.display()))?;
+        .map_err(|e| {
+            tracing::error!(
+                "Failed to parse config file at {}: {e:#}",
+                config_path.display(),
+            );
+
+            anyhow::Error::new(e).context(format!(
+                "Failed to load config from {}",
+                config_path.display()
+            ))
+        })?;
 
     tracing::info!("Config loaded successfully from {}", config_path.display());
     Ok(config)
