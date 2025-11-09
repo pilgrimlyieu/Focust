@@ -34,6 +34,7 @@ alias fif := fix-front
 alias fib := fix-back
 
 alias ta := test-all
+alias tl := test-lib
 alias tfa := test-front-all
 alias tf := test-front
 alias tba := test-back-all
@@ -207,12 +208,20 @@ alias adb := add-dep-back
 # -----------------------------------------------------------------------------
 
 # Run all tests
+# Note: Back-end tests use --test-threads=1 due to tokio::time::pause()
 [group: "test"]
 @test-all:
     echo "🧪 Running tests..."
     -bun run test:run
-    cargo test --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace
+    cargo test --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace -- --test-threads=1
     echo "✅ Tests complete!"
+
+# Run library tests only
+[group: "test"]
+@test-lib *tests:
+    echo "🧪 Running library tests..."
+    cargo test --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace --lib {{ tests }}
+    echo "✅ Library tests complete!"
 
 # Run all front-end tests
 [group: "test"]
@@ -229,10 +238,12 @@ alias adb := add-dep-back
     echo "✅ Front-end tests complete!"
 
 # Run all back-end tests
+# Note: Uses --test-threads=1 because scheduler tests use tokio::time::pause()
+# which affects global time and cannot run concurrently
 [group: "test"]
 @test-back-all:
     echo "🧪 Running back-end tests..."
-    cargo test --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace
+    cargo test --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace -- --test-threads=1
     echo "✅ Back-end tests complete!"
 
 # Run back-end tests

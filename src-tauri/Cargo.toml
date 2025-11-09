@@ -69,6 +69,8 @@ sysinfo = "0.37.2"
 
 [dev-dependencies]
 tempfile = "3.23.0"
+tauri = { version = "2", features = ["test"] }
+tokio = { version = "*", features = ["test-util"] }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"
