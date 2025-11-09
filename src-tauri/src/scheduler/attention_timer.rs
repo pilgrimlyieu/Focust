@@ -6,6 +6,7 @@ use tokio::sync::{mpsc, watch};
 use tokio::time::sleep;
 
 use super::models::{Command, SchedulerEvent};
+use super::shared_state::SharedState;
 use crate::core::schedule::AttentionSettings;
 use crate::platform::create_prompt_windows;
 use crate::{config::SharedConfig, core::schedule::AttentionId};
@@ -16,14 +17,20 @@ pub struct AttentionTimer {
     app_handle: AppHandle,
     shutdown_rx: watch::Receiver<()>,
     paused: bool,
+    shared_state: SharedState,
 }
 
 impl AttentionTimer {
-    pub fn new(app_handle: AppHandle, shutdown_rx: watch::Receiver<()>) -> Self {
+    pub fn new(
+        app_handle: AppHandle,
+        shutdown_rx: watch::Receiver<()>,
+        shared_state: SharedState,
+    ) -> Self {
         Self {
             app_handle,
             shutdown_rx,
             paused: false,
+            shared_state,
         }
     }
 
@@ -193,6 +200,9 @@ impl AttentionTimer {
     fn trigger_attention(&self, attention_id: AttentionId) {
         tracing::info!("Triggering attention: {attention_id}");
 
+        // Mark attention session as started
+        self.shared_state.write().start_attention_session();
+
         let event = SchedulerEvent::Attention(attention_id);
 
         let app_handle = self.app_handle.clone();
@@ -231,6 +241,10 @@ impl AttentionTimer {
             Command::TriggerEvent(SchedulerEvent::Attention(attention_id)) => {
                 tracing::info!("Manually triggering attention: {attention_id}");
                 self.trigger_attention(attention_id);
+            }
+            Command::PromptFinished(SchedulerEvent::Attention(_)) => {
+                tracing::debug!("Attention prompt finished, ending session");
+                self.shared_state.write().end_attention_session();
             }
             // AttentionTimer ignores other commands (they're for BreakScheduler)
             _ => {}

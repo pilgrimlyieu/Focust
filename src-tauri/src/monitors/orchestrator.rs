@@ -91,11 +91,40 @@ pub fn spawn_monitor_tasks(
 
 /// Run all monitors in a single task
 ///
-/// This is the main monitoring loop that:
-/// 1. Initializes all monitors
-/// 2. Creates a timer with the minimum interval
-/// 3. Periodically checks all monitors
-/// 4. Sends actions to the scheduler
+/// # Overview
+///
+/// This is the main monitoring loop that coordinates all environment monitors
+/// (idle detection, DND status, app exclusions) and converts their actions
+/// into scheduler commands.
+///
+/// # Integration with Scheduler System
+///
+/// ```text
+/// Monitor.check() → MonitorAction → action_to_command() → Command
+///                                                             ↓
+///                                                    cmd_tx channel
+///                                                             ↓
+///                                              SchedulerManager.broadcast_commands()
+///                                                             ↓
+///                                                Update SharedState + Route to schedulers
+/// ```
+///
+/// **Key Integration Points:**
+///
+/// 1. **`MonitorAction` → Command Conversion**:
+///    - `MonitorAction::Pause(reason)` → `Command::Pause(reason)`
+///    - `MonitorAction::Resume(reason)` → `Command::Resume(reason)`
+///    - `MonitorAction::None` → No command sent
+///
+/// 2. **`SharedState` Coordination**:
+///    - Monitors can read `SharedState` to check session status
+///    - Example: `DndMonitor` checks `in_any_session()` to avoid self-triggering
+///    - Commands update `SharedState` through `SchedulerManager`
+///
+/// 3. **Pause Reason Tracking**:
+///    - Each monitor has a unique `PauseReason` (`UserIdle`, Dnd, `AppExclusion`)
+///    - Multiple reasons can coexist (managed by `SharedState`)
+///    - Scheduler resumes only when all reasons cleared
 ///
 /// # Arguments
 ///
@@ -105,38 +134,69 @@ pub fn spawn_monitor_tasks(
 /// # Lifecycle
 ///
 /// 1. **Initialization Phase**:
-///    - Call `on_start()` on each monitor
-///    - Calculate minimum interval
-///    - Create interval timer
+///    - Call `on_start()` on each monitor (async initialization)
+///    - Calculate minimum interval across all monitors
+///    - Create interval timer with that period
 ///
 /// 2. **Monitoring Loop**:
 ///    - Wait for timer tick
 ///    - Check each monitor sequentially
-///    - Convert actions to commands
-///    - Send commands to scheduler
-///    - Handle errors gracefully
+///    - Convert actions to commands using `action_to_command()`
+///    - Send commands to scheduler via `cmd_tx`
+///    - Handle errors gracefully (log but continue)
 ///
 /// 3. **Shutdown**:
-///    - Exits when command channel closes
+///    - Exits when command channel closes (scheduler shutdown)
 ///    - Currently does NOT call `on_stop()` (future improvement)
 ///
-/// # Performance
+/// # Performance Considerations
 ///
-/// - Monitors are checked **sequentially** in the order provided
-/// - Fast monitors should be placed first for better responsiveness
-/// - Average iteration time should be much less than the check interval
+/// - **Sequential Checking**: Monitors checked one after another (not parallel)
+/// - **Minimum Interval**: Uses fastest monitor's interval for timer period
+/// - **Fast Monitors First**: Order monitors by check speed for best responsiveness
+/// - **Average Iteration**: Should be << check interval (typically ~1ms per monitor)
 ///
 /// # Error Handling
 ///
 /// - `MonitorError::CheckFailed`: Logged and ignored, will retry next interval
 /// - `MonitorError::Unavailable`: Logged and ignored, monitor self-disables
-/// - Command send failure: Logged and exits (channel closed)
+/// - Command send failure: Logged and exits gracefully (channel closed)
+///
+/// # Monitor Responsibilities
+///
+/// Each monitor should:
+/// - Return quickly from `check()` (avoid blocking)
+/// - Handle its own errors (return `MonitorError` if needed)
+/// - Self-disable after repeated failures (don't spam logs)
+/// - Check [`SharedState`] if needed to avoid interfering with sessions
+///
+/// # Example Monitor Flow
+///
+/// ```text
+/// IdleMonitor.check()
+///   ↓ User idle for 120s (threshold)
+/// MonitorAction::Pause(UserIdle)
+///   ↓ action_to_command()
+/// Command::Pause(UserIdle)
+///   ↓ cmd_tx.send()
+/// SchedulerManager receives command
+///   ↓ Updates SharedState
+///   ↓ Forwards to schedulers
+/// BreakScheduler pauses (stops timers)
+/// AttentionTimer pauses (stops timers)
+/// ```
+///
+/// # See Also
+///
+/// - [`Monitor`] trait - Interface all monitors implement
+/// - [`action_to_command()`] - Conversion function
 ///
 /// # Future Improvements
 ///
-/// - Track last check time per monitor (only check when interval elapsed)
+/// - Per-monitor interval tracking (only check when interval elapsed)
 /// - Call `on_stop()` during graceful shutdown
-/// - Report monitor health metrics
+/// - Monitor health metrics and auto-restart
+/// - Parallel monitor checking (if safe)
 async fn run_monitors(mut monitors: Vec<Box<dyn Monitor>>, cmd_tx: mpsc::Sender<Command>) {
     tracing::info!(
         "Starting monitor orchestrator with {} monitor(s)",

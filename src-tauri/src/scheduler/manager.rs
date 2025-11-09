@@ -3,7 +3,7 @@ use tokio::sync::{mpsc, watch};
 
 use super::attention_timer::AttentionTimer;
 use super::break_scheduler::BreakScheduler;
-use super::models::{Command, SchedulerStatus};
+use super::models::{Command, PauseReason, SchedulerStatus};
 use super::shared_state::{SharedState, create_shared_state};
 use crate::scheduler::SchedulerEvent;
 
@@ -31,18 +31,26 @@ impl SchedulerManager {
         // Spawn break scheduler
         let break_scheduler_handle = app_handle.clone();
         let break_shutdown_rx = shutdown_rx.clone();
-        let _break_shared_state = shared_state.clone(); // TODO: Pass to scheduler if needed
+        let break_shared_state = shared_state.clone();
         tokio::spawn(async move {
-            let mut scheduler = BreakScheduler::new(break_scheduler_handle, break_shutdown_rx);
+            let mut scheduler = BreakScheduler::new(
+                break_scheduler_handle,
+                break_shutdown_rx,
+                break_shared_state,
+            );
             scheduler.run(break_cmd_rx).await;
         });
 
         // Spawn attention timer
         let attention_timer_handle = app_handle.clone();
         let attention_shutdown_rx = shutdown_rx.clone();
-        let _attention_shared_state = shared_state.clone(); // TODO: Pass to scheduler if needed
+        let attention_shared_state = shared_state.clone();
         tokio::spawn(async move {
-            let mut timer = AttentionTimer::new(attention_timer_handle, attention_shutdown_rx);
+            let mut timer = AttentionTimer::new(
+                attention_timer_handle,
+                attention_shutdown_rx,
+                attention_shared_state,
+            );
             timer.run(attention_cmd_rx).await;
         });
 
@@ -68,10 +76,40 @@ impl SchedulerManager {
 
     /// Broadcast incoming commands to appropriate schedulers
     ///
-    /// This is the central command processing hub that:
-    /// - Manages shared pause/resume state
-    /// - Tracks session state (break/attention)
-    /// - Routes commands to appropriate schedulers
+    /// # Command Processing Architecture
+    ///
+    /// This is the central command router that coordinates all scheduler communication.
+    /// Commands are categorized into three types:
+    ///
+    /// ## 1. Global Commands (Processed + Forwarded)
+    ///
+    /// These commands affect global state and all schedulers:
+    /// - **Pause(reason)**: Updates [`SharedState`], forwards to all schedulers
+    /// - **Resume(reason)**: Updates [`SharedState`], forwards only if all reasons cleared
+    ///
+    /// Flow: Command → Update [`SharedState`] → Forward to schedulers → Emit events
+    ///
+    /// ## 2. Broadcast Commands (Forwarded to All)
+    ///
+    /// These commands are sent to all schedulers for processing:
+    /// - **`UpdateConfig`**: All schedulers recalculate next events
+    ///
+    /// Flow: Command → Forward to all schedulers
+    ///
+    /// ## 3. Targeted Commands (Routed to Specific Scheduler)
+    ///
+    /// These commands are routed based on event type or functionality:
+    /// - **TriggerEvent(event)**: Routed by event type (Break → [`BreakScheduler`], Attention → [`AttentionTimer`])
+    /// - **PromptFinished(event)**: Routed by event type
+    /// - **PostponeBreak/SkipBreak/RequestBreakStatus**: Only to [`BreakScheduler`]
+    ///
+    /// Flow: Command → Pattern match → Forward to appropriate scheduler
+    ///
+    /// # State Management
+    ///
+    /// - **[`SharedState`]**: Single source of truth for pause reasons and sessions
+    /// - **Schedulers**: Implement business logic and internal state machines
+    /// - **Manager**: Coordinates state updates and command routing
     async fn broadcast_commands(
         mut cmd_rx: mpsc::Receiver<Command>,
         break_cmd_tx: mpsc::Sender<Command>,
@@ -88,91 +126,49 @@ impl SchedulerManager {
                     break;
                 }
                 Some(cmd) = cmd_rx.recv() => {
-                    tracing::debug!("Processing command: {cmd}");
+                    tracing::debug!("Routing command: {cmd}");
 
-                    // Handle state management commands centrally
                     match cmd {
+                        // === GLOBAL COMMANDS: Process + Forward ===
+
                         Command::Pause(reason) => {
-                            let should_pause = shared_state.write()
-                                .add_pause_reason(reason);
-
-                            if should_pause {
-                                // State transition: Running -> Paused
-                                tracing::info!("Scheduler paused (reason: {reason})");
-
-                                // Emit scheduler-status event for compatibility with tray and UI
-                                let status = SchedulerStatus {
-                                    paused: true,
-                                    next_event: None,
-                                };
-                                let _ = app_handle.emit("scheduler-status", &status);
-
-                                // Also emit specific pause event
-                                let _ = app_handle.emit("scheduler-paused", ());
-
-                                // Forward to schedulers so they can update internal state
-                                let _ = break_cmd_tx.send(Command::Pause(reason)).await;
-                                let _ = attention_cmd_tx.send(Command::Pause(reason)).await;
-                            }
+                            Self::handle_pause_command(
+                                reason,
+                                &shared_state,
+                                &break_cmd_tx,
+                                &attention_cmd_tx,
+                                &app_handle,
+                            ).await;
                         }
 
                         Command::Resume(reason) => {
-                            let should_resume = shared_state.write()
-                                .remove_pause_reason(reason);
-
-                            if should_resume {
-                                // State transition: Paused -> Running
-                                tracing::info!("Scheduler resumed (all pause reasons cleared)");
-                                
-                                // Emit specific resume event
-                                let _ = app_handle.emit("scheduler-resumed", ());
-                                
-                                // Forward resume to schedulers (they will emit detailed status with next_event)
-                                let _ = break_cmd_tx.send(Command::Resume(reason)).await;
-                                let _ = attention_cmd_tx.send(Command::Resume(reason)).await;
-                            }
-                            // If still paused, don't forward
-                        }                        Command::TriggerEvent(event) => {
-                            // Mark session start
-                            if matches!(event, SchedulerEvent::MiniBreak(_) | SchedulerEvent::LongBreak(_)) {
-                                {
-                                    let mut state = shared_state.write();
-                                    state.start_break_session();
-                                }
-                                let _ = break_cmd_tx.send(cmd).await;
-                            } else if matches!(event, SchedulerEvent::Attention(_)) {
-                                {
-                                    let mut state = shared_state.write();
-                                    state.start_attention_session();
-                                }
-                            }
+                            Self::handle_resume_command(
+                                reason,
+                                &shared_state,
+                                &break_cmd_tx,
+                                &attention_cmd_tx,
+                                &app_handle,
+                            ).await;
                         }
 
-                        Command::PromptFinished(event) => {
-                            // Mark session end
-                            if matches!(event, SchedulerEvent::MiniBreak(_) | SchedulerEvent::LongBreak(_)) {
-                                {
-                                    let mut state = shared_state.write();
-                                    state.end_break_session();
-                                }
-                                let _ = break_cmd_tx.send(cmd).await;
-                            } else if matches!(event, SchedulerEvent::Attention(_)) {
-                                {
-                                    let mut state = shared_state.write();
-                                    state.end_attention_session();
-                                }
-                                let _ = attention_cmd_tx.send(cmd).await;
-                            }
-                        }
+                        // === BROADCAST COMMANDS: Forward to All ===
 
-                        // Other commands forward as before
                         Command::UpdateConfig(_) => {
-                            // These commands affect both schedulers
+                            tracing::debug!("Broadcasting UpdateConfig to all schedulers");
                             let _ = break_cmd_tx.send(cmd.clone()).await;
                             let _ = attention_cmd_tx.send(cmd).await;
                         }
+
+                        // === TARGETED COMMANDS: Route by Event Type ===
+
+                        Command::TriggerEvent(event) | Command::PromptFinished(event)  => {
+                            Self::route_event_command(cmd, event, &break_cmd_tx, &attention_cmd_tx).await;
+                        }
+
+                        // === BREAK-SPECIFIC COMMANDS ===
+
                         Command::RequestBreakStatus | Command::PostponeBreak | Command::SkipBreak => {
-                            // Break-specific commands
+                            tracing::debug!("Forwarding break-specific command to BreakScheduler");
                             let _ = break_cmd_tx.send(cmd).await;
                         }
                     }
@@ -182,6 +178,93 @@ impl SchedulerManager {
                     break;
                 }
             }
+        }
+    }
+
+    /// Handle Pause command: Update `SharedState` and forward if needed
+    ///
+    /// This implements the "add pause reason" logic:
+    /// - If first pause reason → forward to schedulers (trigger pause)
+    /// - If additional reason → only update `SharedState` (already paused)
+    async fn handle_pause_command(
+        reason: PauseReason,
+        shared_state: &SharedState,
+        break_cmd_tx: &mpsc::Sender<Command>,
+        attention_cmd_tx: &mpsc::Sender<Command>,
+        app_handle: &AppHandle,
+    ) {
+        let should_pause = shared_state.write().add_pause_reason(reason);
+
+        if should_pause {
+            // State transition: Running → Paused
+            tracing::info!("Scheduler paused (first reason: {reason})");
+
+            // Emit events for frontend
+            let status = SchedulerStatus {
+                paused: true,
+                next_event: None,
+            };
+            let _ = app_handle.emit("scheduler-status", &status);
+            let _ = app_handle.emit("scheduler-paused", ());
+
+            // Forward to all schedulers to update their internal state
+            let _ = break_cmd_tx.send(Command::Pause(reason)).await;
+            let _ = attention_cmd_tx.send(Command::Pause(reason)).await;
+        } else {
+            // Already paused, just added another reason
+            tracing::debug!("Added pause reason {reason} (already paused)");
+        }
+    }
+
+    /// Handle Resume command: Update `SharedState` and forward if all reasons cleared
+    ///
+    /// This implements the "remove pause reason" logic:
+    /// - If last reason removed → forward to schedulers (trigger resume)
+    /// - If reasons remain → only update `SharedState` (stay paused)
+    async fn handle_resume_command(
+        reason: PauseReason,
+        shared_state: &SharedState,
+        break_cmd_tx: &mpsc::Sender<Command>,
+        attention_cmd_tx: &mpsc::Sender<Command>,
+        app_handle: &AppHandle,
+    ) {
+        let should_resume = shared_state.write().remove_pause_reason(reason);
+
+        if should_resume {
+            // State transition: Paused → Running
+            tracing::info!("Scheduler resumed (all pause reasons cleared)");
+
+            // Emit resume event (schedulers will emit detailed status)
+            let _ = app_handle.emit("scheduler-resumed", ());
+
+            // Forward to all schedulers to recalculate next events
+            let _ = break_cmd_tx.send(Command::Resume(reason)).await;
+            let _ = attention_cmd_tx.send(Command::Resume(reason)).await;
+        } else {
+            // Still paused (other reasons remain)
+            tracing::debug!("Removed pause reason {reason} (still paused)");
+        }
+    }
+
+    /// Route event-based commands to appropriate scheduler
+    ///
+    /// - Break events (MiniBreak/LongBreak) → `BreakScheduler`
+    /// - Attention events → `AttentionTimer`
+    async fn route_event_command(
+        cmd: Command,
+        event: SchedulerEvent,
+        break_cmd_tx: &mpsc::Sender<Command>,
+        attention_cmd_tx: &mpsc::Sender<Command>,
+    ) {
+        if matches!(
+            event,
+            SchedulerEvent::MiniBreak(_) | SchedulerEvent::LongBreak(_)
+        ) {
+            tracing::debug!("Routing {event} command to BreakScheduler");
+            let _ = break_cmd_tx.send(cmd).await;
+        } else if matches!(event, SchedulerEvent::Attention(_)) {
+            tracing::debug!("Routing {event} command to AttentionTimer");
+            let _ = attention_cmd_tx.send(cmd).await;
         }
     }
 }

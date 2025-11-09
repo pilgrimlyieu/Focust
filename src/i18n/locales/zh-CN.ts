@@ -43,7 +43,7 @@ const zhCN: LocaleStrings = {
     openConfigDirDescription: "打开应用的配置文件夹以进行手动编辑或备份",
     openLogDir: "打开日志目录",
     openLogDirDescription: "打开应用的日志文件夹以进行查看或调试",
-    title: "高级设置",
+    title: "高级选项",
     window: "窗口行为",
   },
   app: {
@@ -178,7 +178,7 @@ const zhCN: LocaleStrings = {
   },
   nav: {
     about: "关于",
-    advanced: "高级设置",
+    advanced: "高级选项",
     attentions: "定时提醒",
     exclusions: "应用排除",
     general: "通用设置",

@@ -1,14 +1,131 @@
 //! Shared state management for all schedulers and monitors
 //!
+//! # Overview
+//!
 //! This module provides a centralized state management system that coordinates
-//! pause/resume behavior across all schedulers (Break and Attention) and monitors.
+//! pause/resume behavior and session tracking across all schedulers and monitors.
+//!
+//! # Architecture
+//!
+//! ```text
+//!                     ┌─────────────────┐
+//!                     │  SharedState    │
+//!                     │                 │
+//!                     │ pause_reasons   │ ◄─── Manager (add/remove)
+//!                     │ in_break_..    │ ◄─── BreakScheduler (start/end)
+//!                     │ in_attention_.. │ ◄─── AttentionTimer (start/end)
+//!                     └────────┬────────┘
+//!                              │
+//!                 ┌────────────┼────────────┐
+//!                 ▼            ▼            ▼
+//!          IdleMonitor   DndMonitor   AppWhitelist
+//!          (read only)   (read only)  (read only)
+//! ```
 //!
 //! # Design Goals
 //!
-//! - **Single Source of Truth**: All pause reasons are managed in one place
-//! - **Consistency**: Break and Attention schedulers share the same pause state
-//! - **Session Protection**: Monitors don't interfere during active Break/Attention sessions
-//! - **Thread Safety**: All state access is synchronized via `RwLock`
+//! 1. **Single Source of Truth**: All pause reasons managed in one place
+//! 2. **Consistency**: All schedulers share the same pause state
+//! 3. **Session Protection**: Monitors can query session state to avoid interference
+//! 4. **Thread Safety**: All state access synchronized via `RwLock`
+//! 5. **Composability**: Multiple pause reasons can coexist
+//!
+//! # Core Concepts
+//!
+//! ## Pause Reasons
+//!
+//! Multiple pause reasons can be active simultaneously (e.g., user idle + DND mode).
+//! The scheduler is paused when **any** reason exists, and resumes only when **all**
+//! reasons are cleared.
+//!
+//! ```text
+//! pause_reasons = {}                    → Scheduler: Running
+//! pause_reasons = {UserIdle}            → Scheduler: Paused
+//! pause_reasons = {UserIdle, Dnd}       → Scheduler: Paused
+//! pause_reasons = {Dnd}                 → Scheduler: Paused
+//! pause_reasons = {}                    → Scheduler: Running
+//! ```
+//!
+//! ## Sessions
+//!
+//! Sessions represent active user interactions (break window or attention prompt).
+//! During a session, monitors should avoid triggering pause commands to prevent
+//! self-interference (e.g., break window triggering DND mode).
+//!
+//! **Session Types:**
+//! - **Break Session**: Short/long break window is open
+//! - **Attention Session**: Attention reminder is displayed
+//!
+//! **Why Track Sessions?**
+//! - Break windows may trigger system DND mode
+//! - We don't want DND monitor to pause the scheduler during breaks
+//! - Monitors check `in_any_session()` to filter out such events
+//!
+//! # Usage Patterns
+//!
+//! ## For Monitors (Read-Only)
+//!
+//! ```rust,ignore
+//! // Check if in session (avoid self-triggering)
+//! if shared_state.read().in_any_session() {
+//!     return Ok(MonitorAction::None);
+//! }
+//!
+//! // Check if already paused (avoid duplicate commands)
+//! if shared_state.read().is_paused() {
+//!     // Don't send another Pause command
+//! }
+//! ```
+//!
+//! ## For Manager (Write)
+//!
+//! ```rust,ignore
+//! // Handle Pause command
+//! let should_pause = shared_state.write().add_pause_reason(reason);
+//! if should_pause {
+//!     // First pause reason, forward to schedulers
+//! }
+//!
+//! // Handle Resume command
+//! let should_resume = shared_state.write().remove_pause_reason(reason);
+//! if should_resume {
+//!     // All reasons cleared, forward to schedulers
+//! }
+//! ```
+//!
+//! ## For Schedulers (Write)
+//!
+//! ```rust,ignore
+//! // Mark break session start
+//! shared_state.write().start_break_session();
+//! create_break_windows(...);
+//! // ... break window open ...
+//! shared_state.write().end_break_session();
+//!
+//! // Mark attention session start
+//! shared_state.write().start_attention_session();
+//! show_attention_prompt(...);
+//! // ... prompt displayed ...
+//! shared_state.write().end_attention_session();
+//! ```
+//!
+//! # Thread Safety
+//!
+//! - Uses `Arc<RwLock<SharedSchedulerState>>` for shared ownership
+//! - Multiple readers can access simultaneously (`.read()`)
+//! - Writers get exclusive access (`.write()`)
+//! - Lock guards are short-lived (don't hold across `.await` points)
+//!
+//! # Performance
+//!
+//! - `RwLock` allows concurrent reads (all monitors can check simultaneously)
+//! - Writes are rare (only on pause/resume transitions and session changes)
+//! - `HashSet` operations are O(1) average case
+//!
+//! # See Also
+//!
+//! - `scheduler::manager`] - Command routing and state management
+//! - `monitors::dnd` - Example of session-aware monitoring
 
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -78,9 +195,16 @@ impl SharedSchedulerState {
         let inserted = self.pause_reasons.insert(reason);
 
         if was_running {
-            tracing::info!("Scheduler paused: {reason}");
+            tracing::info!("🔴 SharedState: Scheduler PAUSED (first reason: {reason})");
+            tracing::trace!("SharedState: pause_reasons = {:?}", self.pause_reasons);
         } else if inserted {
-            tracing::info!("Additional pause reason: {reason}");
+            tracing::info!(
+                "SharedState: Added pause reason {reason} (already paused, total: {})",
+                self.pause_reasons.len()
+            );
+            tracing::trace!("SharedState: pause_reasons = {:?}", self.pause_reasons);
+        } else {
+            tracing::trace!("SharedState: Duplicate pause reason {reason} (ignored)");
         }
 
         was_running
@@ -102,9 +226,19 @@ impl SharedSchedulerState {
         let is_now_running = self.pause_reasons.is_empty();
 
         if is_now_running {
-            tracing::info!("Scheduler resumed: all pause reasons cleared");
+            tracing::info!("🟢 SharedState: Scheduler RESUMED (all pause reasons cleared)");
+            tracing::trace!("SharedState: pause_reasons = {:?}", self.pause_reasons);
         } else if removed {
-            tracing::info!("Pause reason removed: {reason} (still paused by other reasons)");
+            tracing::info!(
+                "SharedState: Removed pause reason {reason} (still paused by {} other reason(s))",
+                self.pause_reasons.len()
+            );
+            tracing::trace!(
+                "SharedState: remaining pause_reasons = {:?}",
+                self.pause_reasons
+            );
+        } else {
+            tracing::trace!("SharedState: Tried to remove non-existent reason {reason}");
         }
 
         is_now_running
@@ -149,10 +283,16 @@ impl SharedSchedulerState {
     ///
     /// Called when a break (mini or long) begins.
     pub fn start_break_session(&mut self) {
-        if !self.in_break_session {
+        if self.in_break_session {
+            tracing::trace!("SharedState: Break session already active (ignored)");
+        } else {
             self.in_break_session = true;
             self.break_session_start = Some(Instant::now());
-            tracing::debug!("Break session started");
+            tracing::debug!("🪟 SharedState: Break session STARTED");
+            tracing::trace!(
+                "SharedState: in_break_session = true, in_attention_session = {}",
+                self.in_attention_session
+            );
         }
     }
 
@@ -164,9 +304,17 @@ impl SharedSchedulerState {
             self.in_break_session = false;
             if let Some(start) = self.break_session_start {
                 let duration = start.elapsed();
-                tracing::debug!("Break session ended (duration: {duration:?})");
+                tracing::debug!("🪟 SharedState: Break session ENDED (duration: {duration:?})");
+            } else {
+                tracing::debug!("🪟 SharedState: Break session ENDED");
             }
+            tracing::trace!(
+                "SharedState: in_break_session = false, in_attention_session = {}",
+                self.in_attention_session
+            );
             self.break_session_start = None;
+        } else {
+            tracing::trace!("SharedState: No active break session to end (ignored)");
         }
     }
 
@@ -174,10 +322,16 @@ impl SharedSchedulerState {
     ///
     /// Called when an attention reminder begins.
     pub fn start_attention_session(&mut self) {
-        if !self.in_attention_session {
+        if self.in_attention_session {
+            tracing::trace!("SharedState: Attention session already active (ignored)");
+        } else {
             self.in_attention_session = true;
             self.attention_session_start = Some(Instant::now());
-            tracing::debug!("Attention session started");
+            tracing::debug!("💡 SharedState: Attention session STARTED");
+            tracing::trace!(
+                "SharedState: in_attention_session = true, in_break_session = {}",
+                self.in_break_session
+            );
         }
     }
 
@@ -189,9 +343,17 @@ impl SharedSchedulerState {
             self.in_attention_session = false;
             if let Some(start) = self.attention_session_start {
                 let duration = start.elapsed();
-                tracing::debug!("Attention session ended (duration: {duration:?})");
+                tracing::debug!("💡 SharedState: Attention session ENDED (duration: {duration:?})");
+            } else {
+                tracing::debug!("💡 SharedState: Attention session ENDED");
             }
+            tracing::trace!(
+                "SharedState: in_attention_session = false, in_break_session = {}",
+                self.in_break_session
+            );
             self.attention_session_start = None;
+        } else {
+            tracing::trace!("SharedState: No active attention session to end (ignored)");
         }
     }
 }
