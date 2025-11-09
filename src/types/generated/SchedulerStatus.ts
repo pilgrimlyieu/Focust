@@ -12,4 +12,8 @@ paused: boolean,
 /**
  * The next scheduled break event (if any)
  */
-nextEvent: SchedulerEventInfo | null, };
+nextEvent: SchedulerEventInfo | null, 
+/**
+ * The current mini break counter (for tracking long break triggers)
+ */
+miniBreakCounter: number, };

@@ -203,6 +203,7 @@ impl SchedulerManager {
             let status = SchedulerStatus {
                 paused: true,
                 next_event: None,
+                mini_break_counter: 0, // Counter is not relevant when paused
             };
             let _ = app_handle.emit("scheduler-status", &status);
             let _ = app_handle.emit("scheduler-paused", ());

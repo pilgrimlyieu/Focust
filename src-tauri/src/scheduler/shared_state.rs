@@ -12,7 +12,7 @@
 //!                     │  SharedState    │
 //!                     │                 │
 //!                     │ pause_reasons   │ ◄─── Manager (add/remove)
-//!                     │ in_break_..    │ ◄─── BreakScheduler (start/end)
+//!                     │ in_break_...    │ ◄─── BreakScheduler (start/end)
 //!                     │ in_attention_.. │ ◄─── AttentionTimer (start/end)
 //!                     └────────┬────────┘
 //!                              │

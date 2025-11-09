@@ -418,6 +418,7 @@ impl BreakScheduler {
                 time: break_info.break_time.to_rfc3339(),
                 seconds_until: duration_to_wait.num_seconds() as i32,
             }),
+            mini_break_counter: self.mini_break_counter,
         };
 
         self.app_handle
@@ -432,6 +433,7 @@ impl BreakScheduler {
         let status = SchedulerStatus {
             paused,
             next_event: None,
+            mini_break_counter: self.mini_break_counter,
         };
 
         self.app_handle
