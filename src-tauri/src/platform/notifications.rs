@@ -1,5 +1,4 @@
-use tauri::AppHandle;
-use tauri::Manager;
+use tauri::{AppHandle, Manager, Runtime};
 use tauri_plugin_notification::NotificationExt;
 
 use crate::platform::i18n;
@@ -11,7 +10,11 @@ use crate::{config::SharedConfig, platform::i18n::LANGUAGE_FALLBACK};
 /// * `app` - Tauri app handle
 /// * `title` - Notification title
 /// * `body` - Notification body text
-pub fn send_notification(app: &AppHandle, title: &str, body: &str) -> Result<(), String> {
+pub fn send_notification<R: Runtime>(
+    app: &AppHandle<R>,
+    title: &str,
+    body: &str,
+) -> Result<(), String> {
     app.notification()
         .builder()
         .title(title)
@@ -29,8 +32,8 @@ pub fn send_notification(app: &AppHandle, title: &str, body: &str) -> Result<(),
 /// * `app` - Tauri app handle
 /// * `break_type` - Type of break (e.g., "`MiniBreak`", "`LongBreak`", "Attention")
 /// * `seconds` - Seconds until the break starts
-pub async fn send_break_notification(
-    app: &AppHandle,
+pub async fn send_break_notification<R: Runtime>(
+    app: &AppHandle<R>,
     break_type: &str,
     seconds: u32,
 ) -> Result<(), String> {

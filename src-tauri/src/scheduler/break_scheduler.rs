@@ -4,10 +4,11 @@ use std::pin::Pin;
 
 use chrono::{DateTime, Datelike, Duration, Local, Utc};
 use futures::future::pending;
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Manager, Runtime};
 use tokio::sync::{mpsc, watch};
 use tokio::time::sleep;
 
+use super::event_emitter::EventEmitter;
 use super::models::{
     BreakInfo, Command, PauseReason, SchedulerEvent, SchedulerEventInfo, SchedulerStatus,
 };
@@ -46,8 +47,13 @@ impl Display for BreakSchedulerState {
 }
 
 /// Main break scheduler responsible for managing mini and long breaks
-pub struct BreakScheduler {
-    app_handle: AppHandle,
+pub struct BreakScheduler<E, R = tauri::Wry>
+where
+    E: EventEmitter,
+    R: Runtime,
+{
+    app_handle: AppHandle<R>,
+    event_emitter: E,
     shutdown_rx: watch::Receiver<()>,
     state: BreakSchedulerState,
 
@@ -59,14 +65,20 @@ pub struct BreakScheduler {
     shared_state: SharedState,
 }
 
-impl BreakScheduler {
+impl<E, R> BreakScheduler<E, R>
+where
+    E: EventEmitter,
+    R: Runtime,
+{
     pub fn new(
-        app_handle: AppHandle,
+        app_handle: AppHandle<R>,
+        event_emitter: E,
         shutdown_rx: watch::Receiver<()>,
         shared_state: SharedState,
     ) -> Self {
         Self {
             app_handle,
+            event_emitter,
             shutdown_rx,
             state: BreakSchedulerState::Paused(PauseReason::Manual),
             mini_break_counter: 0,

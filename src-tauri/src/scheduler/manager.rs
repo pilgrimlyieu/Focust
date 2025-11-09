@@ -3,6 +3,7 @@ use tokio::sync::{mpsc, watch};
 
 use super::attention_timer::AttentionTimer;
 use super::break_scheduler::BreakScheduler;
+use super::event_emitter::TauriEventEmitter;
 use super::models::{Command, PauseReason, SchedulerStatus};
 use super::shared_state::{SharedState, create_shared_state};
 use crate::scheduler::SchedulerEvent;
@@ -30,11 +31,13 @@ impl SchedulerManager {
 
         // Spawn break scheduler
         let break_scheduler_handle = app_handle.clone();
+        let break_event_emitter = TauriEventEmitter::new(app_handle.clone());
         let break_shutdown_rx = shutdown_rx.clone();
         let break_shared_state = shared_state.clone();
         tokio::spawn(async move {
             let mut scheduler = BreakScheduler::new(
                 break_scheduler_handle,
+                break_event_emitter,
                 break_shutdown_rx,
                 break_shared_state,
             );
@@ -43,11 +46,13 @@ impl SchedulerManager {
 
         // Spawn attention timer
         let attention_timer_handle = app_handle.clone();
+        let attention_event_emitter = TauriEventEmitter::new(app_handle.clone());
         let attention_shutdown_rx = shutdown_rx.clone();
         let attention_shared_state = shared_state.clone();
         tokio::spawn(async move {
             let mut timer = AttentionTimer::new(
                 attention_timer_handle,
+                attention_event_emitter,
                 attention_shutdown_rx,
                 attention_shared_state,
             );

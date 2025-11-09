@@ -22,8 +22,8 @@ use crate::{config::SharedConfig, core::payload::PromptPayloadStore};
 const ALLOWED_EXTENSIONS_LOWERCASE: &[&str] = &["jpg", "jpeg", "png", "webp", "bmp", "gif"];
 
 /// Create prompt windows for monitors based on configuration
-pub async fn create_prompt_windows(
-    app: &AppHandle,
+pub async fn create_prompt_windows<R: Runtime>(
+    app: &AppHandle<R>,
     event: SchedulerEvent,
     postpone_count: u8,
 ) -> Result<(), String> {
@@ -164,8 +164,8 @@ fn is_allowed_image_extension(path: &Path) -> bool {
 }
 
 /// Create a single break window for a specific monitor
-fn create_break_window_for_monitor(
-    app: &AppHandle,
+fn create_break_window_for_monitor<R: Runtime>(
+    app: &AppHandle<R>,
     label: &str,
     payload_id: &str,
     window_size: f64,

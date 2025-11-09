@@ -1,10 +1,11 @@
 use chrono::offset::LocalResult;
 use chrono::{DateTime, Duration, Local, Utc};
 use chrono::{Datelike, NaiveDate, NaiveTime};
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Manager, Runtime};
 use tokio::sync::{mpsc, watch};
 use tokio::time::sleep;
 
+use super::event_emitter::EventEmitter;
 use super::models::{Command, SchedulerEvent};
 use super::shared_state::SharedState;
 use crate::core::schedule::AttentionSettings;
@@ -13,21 +14,33 @@ use crate::{config::SharedConfig, core::schedule::AttentionId};
 
 /// A simple timer for attention reminders
 /// Attention timer can be paused/resumed like breaks
-pub struct AttentionTimer {
-    app_handle: AppHandle,
+#[allow(dead_code)]
+pub struct AttentionTimer<E, R = tauri::Wry>
+where
+    E: EventEmitter,
+    R: Runtime,
+{
+    app_handle: AppHandle<R>,
+    event_emitter: E,
     shutdown_rx: watch::Receiver<()>,
     paused: bool,
     shared_state: SharedState,
 }
 
-impl AttentionTimer {
+impl<E, R> AttentionTimer<E, R>
+where
+    E: EventEmitter,
+    R: Runtime,
+{
     pub fn new(
-        app_handle: AppHandle,
+        app_handle: AppHandle<R>,
+        event_emitter: E,
         shutdown_rx: watch::Receiver<()>,
         shared_state: SharedState,
     ) -> Self {
         Self {
             app_handle,
+            event_emitter,
             shutdown_rx,
             paused: false,
             shared_state,
