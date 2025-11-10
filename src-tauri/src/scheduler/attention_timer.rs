@@ -278,7 +278,7 @@ mod tests {
     use crate::core::schedule::AttentionSettings;
     use crate::core::time::ShortTimes;
     use crate::scheduler::test_helpers::*;
-    use chrono::{NaiveTime, Timelike, Weekday};
+    use chrono::{Timelike, Weekday};
 
     mod get_next_attention_time_tests {
         use super::*;
@@ -287,10 +287,7 @@ mod tests {
         fn returns_next_time_today() {
             let attention = AttentionSettings {
                 enabled: true,
-                times: ShortTimes::new(vec![
-                    NaiveTime::from_hms_opt(10, 0, 0).unwrap(),
-                    NaiveTime::from_hms_opt(14, 0, 0).unwrap(),
-                ]),
+                times: ShortTimes::new(vec![naive_time(10, 0, 0), naive_time(14, 0, 0)]),
                 days_of_week: all_weekdays(),
                 ..Default::default()
             };
@@ -308,7 +305,7 @@ mod tests {
         fn returns_next_time_tomorrow() {
             let attention = AttentionSettings {
                 enabled: true,
-                times: ShortTimes::new(vec![NaiveTime::from_hms_opt(10, 0, 0).unwrap()]),
+                times: ShortTimes::new(vec![naive_time(10, 0, 0)]),
                 days_of_week: all_weekdays(),
                 ..Default::default()
             };
@@ -326,7 +323,7 @@ mod tests {
         fn returns_none_when_disabled() {
             let attention = AttentionSettings {
                 enabled: false,
-                times: ShortTimes::new(vec![NaiveTime::from_hms_opt(10, 0, 0).unwrap()]),
+                times: ShortTimes::new(vec![naive_time(10, 0, 0)]),
                 days_of_week: all_weekdays(),
                 ..Default::default()
             };
@@ -356,7 +353,7 @@ mod tests {
         fn skips_to_next_matching_day() {
             let attention = AttentionSettings {
                 enabled: true,
-                times: ShortTimes::new(vec![NaiveTime::from_hms_opt(10, 0, 0).unwrap()]),
+                times: ShortTimes::new(vec![naive_time(10, 0, 0)]),
                 days_of_week: vec![Weekday::Mon, Weekday::Wed, Weekday::Fri],
                 ..Default::default()
             };
@@ -374,9 +371,9 @@ mod tests {
             let attention = AttentionSettings {
                 enabled: true,
                 times: ShortTimes::new(vec![
-                    NaiveTime::from_hms_opt(9, 0, 0).unwrap(),
-                    NaiveTime::from_hms_opt(12, 0, 0).unwrap(),
-                    NaiveTime::from_hms_opt(15, 0, 0).unwrap(),
+                    naive_time(9, 0, 0),
+                    naive_time(12, 0, 0),
+                    naive_time(15, 0, 0),
                 ]),
                 days_of_week: all_weekdays(),
                 ..Default::default()
@@ -400,14 +397,14 @@ mod tests {
         fn returns_none_when_all_disabled() {
             let attention1 = AttentionSettings {
                 enabled: false,
-                times: ShortTimes::new(vec![NaiveTime::from_hms_opt(10, 0, 0).unwrap()]),
+                times: ShortTimes::new(vec![naive_time(10, 0, 0)]),
                 days_of_week: all_weekdays(),
                 ..Default::default()
             };
 
             let attention2 = AttentionSettings {
                 enabled: false,
-                times: ShortTimes::new(vec![NaiveTime::from_hms_opt(14, 0, 0).unwrap()]),
+                times: ShortTimes::new(vec![naive_time(14, 0, 0)]),
                 days_of_week: all_weekdays(),
                 ..Default::default()
             };
@@ -429,7 +426,7 @@ mod tests {
         fn ignores_invalid_attentions() {
             let valid_attention = AttentionSettings {
                 enabled: true,
-                times: ShortTimes::new(vec![NaiveTime::from_hms_opt(10, 0, 0).unwrap()]),
+                times: ShortTimes::new(vec![naive_time(10, 0, 0)]),
                 days_of_week: all_weekdays(),
                 ..Default::default()
             };
@@ -443,7 +440,7 @@ mod tests {
 
             let no_days_attention = AttentionSettings {
                 enabled: true,
-                times: ShortTimes::new(vec![NaiveTime::from_hms_opt(10, 0, 0).unwrap()]),
+                times: ShortTimes::new(vec![naive_time(10, 0, 0)]),
                 days_of_week: vec![],
                 ..Default::default()
             };
@@ -466,21 +463,21 @@ mod tests {
         fn returns_earliest_attention() {
             let attention_morning = AttentionSettings {
                 enabled: true,
-                times: ShortTimes::new(vec![NaiveTime::from_hms_opt(9, 0, 0).unwrap()]),
+                times: ShortTimes::new(vec![naive_time(9, 0, 0)]),
                 days_of_week: all_weekdays(),
                 ..Default::default()
             };
 
             let attention_afternoon = AttentionSettings {
                 enabled: true,
-                times: ShortTimes::new(vec![NaiveTime::from_hms_opt(14, 0, 0).unwrap()]),
+                times: ShortTimes::new(vec![naive_time(14, 0, 0)]),
                 days_of_week: all_weekdays(),
                 ..Default::default()
             };
 
             let attention_evening = AttentionSettings {
                 enabled: true,
-                times: ShortTimes::new(vec![NaiveTime::from_hms_opt(18, 0, 0).unwrap()]),
+                times: ShortTimes::new(vec![naive_time(18, 0, 0)]),
                 days_of_week: all_weekdays(),
                 ..Default::default()
             };
@@ -508,14 +505,14 @@ mod tests {
         fn filters_disabled_attentions() {
             let attention_disabled = AttentionSettings {
                 enabled: false,
-                times: ShortTimes::new(vec![NaiveTime::from_hms_opt(9, 0, 0).unwrap()]),
+                times: ShortTimes::new(vec![naive_time(9, 0, 0)]),
                 days_of_week: all_weekdays(),
                 ..Default::default()
             };
 
             let attention_enabled = AttentionSettings {
                 enabled: true,
-                times: ShortTimes::new(vec![NaiveTime::from_hms_opt(14, 0, 0).unwrap()]),
+                times: ShortTimes::new(vec![naive_time(14, 0, 0)]),
                 days_of_week: all_weekdays(),
                 ..Default::default()
             };
@@ -539,10 +536,7 @@ mod tests {
         fn returns_next_time_when_exact_match() {
             let attention = AttentionSettings {
                 enabled: true,
-                times: ShortTimes::new(vec![
-                    NaiveTime::from_hms_opt(10, 0, 0).unwrap(),
-                    NaiveTime::from_hms_opt(14, 0, 0).unwrap(),
-                ]),
+                times: ShortTimes::new(vec![naive_time(10, 0, 0), naive_time(14, 0, 0)]),
                 days_of_week: all_weekdays(),
                 ..Default::default()
             };
@@ -562,10 +556,7 @@ mod tests {
         fn wraps_to_next_day_when_all_times_passed() {
             let attention = AttentionSettings {
                 enabled: true,
-                times: ShortTimes::new(vec![
-                    NaiveTime::from_hms_opt(9, 0, 0).unwrap(),
-                    NaiveTime::from_hms_opt(14, 0, 0).unwrap(),
-                ]),
+                times: ShortTimes::new(vec![naive_time(9, 0, 0), naive_time(14, 0, 0)]),
                 days_of_week: all_weekdays(),
                 ..Default::default()
             };
@@ -586,7 +577,7 @@ mod tests {
         fn skips_to_weekend_when_weekday_only() {
             let attention = AttentionSettings {
                 enabled: true,
-                times: ShortTimes::new(vec![NaiveTime::from_hms_opt(10, 0, 0).unwrap()]),
+                times: ShortTimes::new(vec![naive_time(10, 0, 0)]),
                 days_of_week: weekend_days(),
                 ..Default::default()
             };
@@ -606,7 +597,7 @@ mod tests {
         fn handles_single_day_attention() {
             let attention = AttentionSettings {
                 enabled: true,
-                times: ShortTimes::new(vec![NaiveTime::from_hms_opt(10, 0, 0).unwrap()]),
+                times: ShortTimes::new(vec![naive_time(10, 0, 0)]),
                 days_of_week: vec![Weekday::Fri],
                 ..Default::default()
             };
@@ -628,9 +619,9 @@ mod tests {
             let attention = AttentionSettings {
                 enabled: true,
                 times: ShortTimes::new(vec![
-                    NaiveTime::from_hms_opt(0, 30, 0).unwrap(), // 00:30
-                    NaiveTime::from_hms_opt(6, 0, 0).unwrap(),  // 06:00
-                    NaiveTime::from_hms_opt(23, 0, 0).unwrap(), // 23:00
+                    naive_time(0, 30, 0), // 00:30
+                    naive_time(6, 0, 0),  // 06:00
+                    naive_time(23, 0, 0), // 23:00
                 ]),
                 days_of_week: all_weekdays(),
                 ..Default::default()
@@ -653,7 +644,7 @@ mod tests {
         fn returns_none_when_no_days_configured() {
             let attention = AttentionSettings {
                 enabled: true,
-                times: ShortTimes::new(vec![NaiveTime::from_hms_opt(10, 0, 0).unwrap()]),
+                times: ShortTimes::new(vec![naive_time(10, 0, 0)]),
                 days_of_week: vec![],
                 ..Default::default()
             };
@@ -669,7 +660,7 @@ mod tests {
         fn wraps_around_week_when_no_matching_days() {
             let attention = AttentionSettings {
                 enabled: true,
-                times: ShortTimes::new(vec![NaiveTime::from_hms_opt(10, 0, 0).unwrap()]),
+                times: ShortTimes::new(vec![naive_time(10, 0, 0)]),
                 days_of_week: vec![Weekday::Mon],
                 ..Default::default()
             };
@@ -689,7 +680,7 @@ mod tests {
         fn wraps_around_week_when_exactly_one_week_ahead() {
             let attention = AttentionSettings {
                 enabled: true,
-                times: ShortTimes::new(vec![NaiveTime::from_hms_opt(10, 0, 0).unwrap()]),
+                times: ShortTimes::new(vec![naive_time(10, 0, 0)]),
                 days_of_week: vec![Weekday::Mon],
                 ..Default::default()
             };

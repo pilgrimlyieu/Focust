@@ -32,10 +32,7 @@ use crate::core::time::TimeRange;
 /// let config = TestConfigBuilder::new()
 ///     .mini_break_interval_s(60)
 ///     .mini_break_duration_s(20)
-///     .time_range(TimeRange::new(
-///         NaiveTime::from_hms_opt(9, 0, 0).unwrap(),
-///         NaiveTime::from_hms_opt(17, 0, 0).unwrap(),
-///     ))
+///     .time_range(time_range(9, 0, 17, 0))
 ///     .build();
 /// ```
 pub struct TestConfigBuilder {
@@ -264,6 +261,11 @@ pub fn test_local_datetime(
         .expect("Invalid test datetime")
 }
 
+/// Create a duration from milliseconds
+pub fn duration_ms(milliseconds: i64) -> Duration {
+    Duration::milliseconds(milliseconds)
+}
+
 /// Create a duration from seconds
 pub fn duration_s(seconds: i64) -> Duration {
     Duration::seconds(seconds)
@@ -279,11 +281,24 @@ pub fn duration_h(hours: i64) -> Duration {
     Duration::hours(hours)
 }
 
+/// Create a time helper
+pub fn naive_time(hour: u32, min: u32, sec: u32) -> NaiveTime {
+    NaiveTime::from_hms_opt(hour, min, sec).unwrap()
+}
+
 /// Create a time range helper
 pub fn time_range(start_hour: u32, start_min: u32, end_hour: u32, end_min: u32) -> TimeRange {
     TimeRange {
-        start: NaiveTime::from_hms_opt(start_hour, start_min, 0).unwrap(),
-        end: NaiveTime::from_hms_opt(end_hour, end_min, 0).unwrap(),
+        start: naive_time(start_hour, start_min, 0),
+        end: naive_time(end_hour, end_min, 0),
+    }
+}
+
+/// Create a full-day time range
+pub fn full_time_range() -> TimeRange {
+    TimeRange {
+        start: NaiveTime::MIN,
+        end: NaiveTime::MIN,
     }
 }
 

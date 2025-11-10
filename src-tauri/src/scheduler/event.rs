@@ -29,11 +29,12 @@ pub fn get_active_schedule(
 
 #[cfg(test)]
 mod tests {
-    use chrono::{NaiveTime, Weekday};
-
     use super::*;
     use crate::core::schedule::ScheduleSettings;
-    use crate::{config::AppConfig, core::time::TimeRange};
+    use crate::scheduler::test_helpers::*;
+    use crate::config::AppConfig;
+
+    use chrono::Weekday;
 
     fn create_test_config() -> AppConfig {
         AppConfig {
@@ -41,11 +42,7 @@ mod tests {
                 ScheduleSettings {
                     name: "Weekday Schedule".to_string(),
                     enabled: true,
-                    time_range: TimeRange {
-                        // 09:00 - 17:00
-                        start: NaiveTime::from_hms_opt(9, 0, 0).unwrap(),
-                        end: NaiveTime::from_hms_opt(17, 0, 0).unwrap(),
-                    },
+                    time_range: time_range(9, 0, 17, 0),
                     days_of_week: vec![
                         Weekday::Mon,
                         Weekday::Tue,
@@ -58,22 +55,14 @@ mod tests {
                 ScheduleSettings {
                     name: "Weekend Schedule".to_string(),
                     enabled: true,
-                    time_range: TimeRange {
-                        // 10:00 - 14:00
-                        start: NaiveTime::from_hms_opt(10, 0, 0).unwrap(),
-                        end: NaiveTime::from_hms_opt(14, 0, 0).unwrap(),
-                    },
+                    time_range: time_range(10, 0, 14, 0),
                     days_of_week: vec![Weekday::Sat, Weekday::Sun],
                     ..Default::default()
                 },
                 ScheduleSettings {
                     name: "Disabled Schedule".to_string(),
                     enabled: false, // DISABLED
-                    time_range: TimeRange {
-                        // 00:00 - 23:59
-                        start: NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
-                        end: NaiveTime::from_hms_opt(23, 59, 59).unwrap(),
-                    },
+                    time_range: full_time_range(),
                     days_of_week: vec![Weekday::Mon],
                     ..Default::default()
                 },
@@ -85,7 +74,7 @@ mod tests {
     #[test]
     fn test_get_active_schedule_during_weekday() {
         let config = create_test_config();
-        let now_time = NaiveTime::from_hms_opt(10, 30, 0).unwrap();
+        let now_time = naive_time(10, 30, 0);
         let now_day = Weekday::Mon;
 
         let active_schedule = get_active_schedule(&config, now_time, now_day);
@@ -97,7 +86,7 @@ mod tests {
     fn test_get_active_schedule_outside_time_range() {
         let config = create_test_config();
         // Too late
-        let now_time = NaiveTime::from_hms_opt(8, 0, 0).unwrap();
+        let now_time = naive_time(8, 0, 0);
         let now_day = Weekday::Tue;
 
         let active_schedule = get_active_schedule(&config, now_time, now_day);
@@ -108,7 +97,7 @@ mod tests {
     fn test_get_active_schedule_on_weekend() {
         let config = create_test_config();
         // Weekend
-        let now_time = NaiveTime::from_hms_opt(11, 0, 0).unwrap();
+        let now_time = naive_time(11, 0, 0);
         let now_day = Weekday::Sat;
 
         let active_schedule = get_active_schedule(&config, now_time, now_day);
@@ -119,7 +108,7 @@ mod tests {
     fn test_get_active_schedule_ignores_disabled() {
         let config = create_test_config();
         // Match Weekday and Disabled schedule, but Disabled should be ignored
-        let now_time = NaiveTime::from_hms_opt(10, 0, 0).unwrap();
+        let now_time = naive_time(10, 0, 0);
         let now_day = Weekday::Mon;
 
         let active_schedule = get_active_schedule(&config, now_time, now_day);
@@ -130,7 +119,7 @@ mod tests {
     fn test_get_active_schedule_no_match_day() {
         let config = create_test_config();
         // Disabled
-        let now_time = NaiveTime::from_hms_opt(21, 0, 0).unwrap();
+        let now_time = naive_time(21, 0, 0);
         let now_day = Weekday::Mon;
 
         let active_schedule = get_active_schedule(&config, now_time, now_day);
@@ -143,7 +132,7 @@ mod tests {
             schedules: vec![],
             ..Default::default()
         };
-        let now_time = NaiveTime::from_hms_opt(10, 0, 0).unwrap();
+        let now_time = naive_time(10, 0, 0);
         let now_day = Weekday::Mon;
 
         let active_schedule = get_active_schedule(&config, now_time, now_day);
