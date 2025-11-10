@@ -8,14 +8,14 @@ pub async fn open_settings_window<R: Runtime>(app: AppHandle<R>) -> Result<(), S
     create_settings_window(&app)
 }
 
-/// Close all break windows with the given payload ID prefix
+/// Close all prompt windows with the given payload ID prefix
 #[allow(clippy::needless_pass_by_value)]
 #[tauri::command]
-pub fn close_all_break_windows<R: Runtime>(
+pub fn close_all_prompt_windows<R: Runtime>(
     app: AppHandle<R>,
     payload_id: &str,
 ) -> Result<(), String> {
-    tracing::debug!("Closing all break windows for payload: {payload_id}");
+    tracing::debug!("Closing all prompt windows for payload: {payload_id}");
 
     // Get all windows
     let windows = app.webview_windows();
@@ -23,7 +23,7 @@ pub fn close_all_break_windows<R: Runtime>(
     // Close all windows that start with the payload_id
     for (label, window) in windows {
         if label.starts_with(payload_id) {
-            tracing::debug!("Closing break window: {label}");
+            tracing::debug!("Closing prompt window: {label}");
             window.close().unwrap_or_else(|e| {
                 tracing::warn!("Failed to close window {label}: {e}");
             });

@@ -2,6 +2,6 @@
 import type { BackgroundKind } from "./BackgroundKind";
 
 /**
- * Resolved background for break window
+ * Resolved background for prompt window
  */
 export type ResolvedBackground = { kind: BackgroundKind, value: string, };

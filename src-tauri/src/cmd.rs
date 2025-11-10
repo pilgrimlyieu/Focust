@@ -16,4 +16,4 @@ pub use scheduler::{
 };
 pub use suggestions::{get_suggestions, get_suggestions_for_language, save_suggestions};
 pub use system::{open_config_directory, open_log_directory};
-pub use window::{close_all_break_windows, open_settings_window};
+pub use window::{close_all_prompt_windows, open_settings_window};

@@ -36,7 +36,7 @@ themeMode: string,
  */
 postponeShortcut: string, 
 /**
- * Break window size percentage (0.1 to 1.0, where 1.0 is fullscreen)
+ * Prompt window size percentage (0.1 to 1.0, where 1.0 is fullscreen)
  */
 windowSize: number, 
 /**

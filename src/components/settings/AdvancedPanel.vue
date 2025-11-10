@@ -198,7 +198,7 @@ function toggleDebugSection() {
         🧪 Debug
       </h3>
       <p class="text-sm text-base-content/60 mb-4">
-        Manually trigger break windows for testing
+        Manually trigger prompt windows for testing
       </p>
       <div class="flex gap-2 flex-wrap">
         <button class="btn btn-sm btn-secondary gap-2 shadow-sm hover:shadow-md transition-all"

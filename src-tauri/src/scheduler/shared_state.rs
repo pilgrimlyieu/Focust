@@ -48,7 +48,7 @@
 //!
 //! ## Sessions
 //!
-//! Sessions represent active user interactions (break window or attention prompt).
+//! Sessions represent active user interactions (break or attention window).
 //! During a session, monitors should avoid triggering pause commands to prevent
 //! self-interference (e.g., break window triggering DND mode).
 //!

@@ -30,7 +30,7 @@ enum BreakSchedulerState {
     WaitingForNotification(BreakInfo),
     /// Waiting for break to start (notification has been sent or not needed)
     WaitingForBreak(BreakInfo),
-    /// In break (break window is open)
+    /// In break (prompt window is open)
     InBreak(BreakInfo),
 }
 
@@ -233,6 +233,10 @@ where
                 let _ = window.close();
             }
         }
+
+        // CRITICAL: Always clean up session state when closing break windows
+        self.shared_state.write().end_break_session();
+        tracing::debug!("Break session ended (windows closed), monitors will resume monitoring");
     }
 
     /// Get postpone duration based on current break type

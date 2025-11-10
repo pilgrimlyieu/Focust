@@ -11,6 +11,7 @@
 //! - **Concrete monitors**: `IdleMonitor`, `DndMonitor`, `AppWhitelistMonitor`
 //! - **Orchestrator**: Runs all monitors in a single task, checking at configured intervals
 //! - **Action conversion**: Converts `MonitorAction` to `Command` for the scheduler
+//! - **Session protection**: Unified session checking to prevent self-interference
 //!
 //! # Monitor Lifecycle
 //!
@@ -19,12 +20,26 @@
 //! 3. **Monitoring Loop**: `check()` is called periodically at the monitor's interval
 //! 4. **Shutdown**: `on_stop()` is called when the monitor stops (currently unused)
 //!
+//! # Session Protection
+//!
+//! During active sessions (break or attention prompts), monitors are typically skipped
+//! to avoid self-interference. For example:
+//!
+//! - A break window may trigger system DND mode
+//! - Without session protection, `DndMonitor` would detect this and pause the scheduler
+//! - This would interrupt the break, causing unexpected behavior
+//!
+//! **Implementation**: The orchestrator checks `SharedState::in_any_session()` before
+//! calling each monitor's `check()` method. Monitors with `skip_during_session() == true`
+//! (the default) are automatically skipped during sessions.
+//!
 //! # Design Patterns
 //!
 //! - **Trait-based polymorphism**: All monitors implement the same interface
 //! - **Event-driven where possible**: `DndMonitor` uses OS events instead of polling
 //! - **Graceful degradation**: Monitors that fail to initialize return `Unavailable`
 //! - **Non-blocking**: All checks must be fast and non-blocking
+//! - **Unified session protection**: Orchestrator handles session checking, not monitors
 //!
 //! # Example
 //!
@@ -291,6 +306,57 @@ pub trait Monitor: Send + Sync {
     /// is never called. This method is provided for future use.
     fn on_stop(&mut self) -> Pin<Box<dyn Future<Output = ()> + Send + '_>> {
         Box::pin(async {})
+    }
+
+    /// Whether to skip this monitor's checks during active sessions
+    ///
+    /// # Session Protection
+    ///
+    /// During an active session (break window or attention prompt), the scheduler
+    /// is already interacting with the user. Environment changes detected by monitors
+    /// are often **side effects** of the session itself:
+    ///
+    /// - **Break windows** may trigger system DND mode
+    /// - **User leaving computer** during break is expected (goal of break)
+    /// - **Excluded apps** may still be running during break
+    ///
+    /// If monitors send Pause commands during sessions, it can cause:
+    /// - Self-interruption (break window triggers DND → pauses break)
+    /// - Unexpected behavior (user expects break to continue)
+    /// - State machine confusion (pausing an already-active session)
+    ///
+    /// # Default Behavior
+    ///
+    /// Returns `true` by default (skip checks during sessions).
+    /// Most monitors should keep this default.
+    ///
+    /// # When to Override
+    ///
+    /// Only override to return `false` if the monitor needs to detect
+    /// critical system conditions that should interrupt sessions
+    /// (e.g., low battery, system shutdown).
+    ///
+    /// # Implementation Note
+    ///
+    /// Session checking is enforced at the orchestrator level, not in
+    /// individual monitor implementations. This ensures consistent behavior
+    /// and reduces code duplication.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,ignore
+    /// // Default: skip during sessions (most monitors)
+    /// fn skip_during_session(&self) -> bool {
+    ///     true
+    /// }
+    ///
+    /// // Override: continue during sessions (rare cases)
+    /// fn skip_during_session(&self) -> bool {
+    ///     false
+    /// }
+    /// ```
+    fn skip_during_session(&self) -> bool {
+        true
     }
 }
 

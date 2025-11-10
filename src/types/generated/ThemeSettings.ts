@@ -4,11 +4,11 @@ import type { FontFamily } from "./FontFamily";
 import type { HexColor } from "./HexColor";
 
 /**
- * Theme settings for break windows
+ * Theme settings for prompt windows
  */
 export type ThemeSettings = { 
 /**
- * Background source for the break window (solid color, image path, or image folder)
+ * Background source for the prompt window (solid color, image path, or image folder)
  */
 background: BackgroundSource, 
 /**
