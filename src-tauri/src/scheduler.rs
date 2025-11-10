@@ -7,6 +7,9 @@ mod attention_timer;
 mod break_scheduler;
 mod event_emitter;
 
+#[cfg(test)]
+mod test_helpers;
+
 // Re-export public API
 pub use models::*;
 pub use shared_state::{SharedSchedulerState, SharedState, create_shared_state};
