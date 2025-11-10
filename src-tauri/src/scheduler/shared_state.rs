@@ -485,7 +485,208 @@ mod tests {
 
         // Ending same session multiple times
         state.end_break_session();
+        assert!(!state.in_break_session());
         state.end_break_session();
         assert!(!state.in_break_session());
+    }
+
+    #[test]
+    fn test_multiple_pause_reasons_simultaneously() {
+        let mut state = SharedSchedulerState::new();
+
+        // Add three different pause reasons
+        assert!(state.add_pause_reason(PauseReason::UserIdle)); // Transition to Paused
+        assert!(!state.add_pause_reason(PauseReason::Dnd)); // No transition
+        assert!(!state.add_pause_reason(PauseReason::Manual)); // No transition
+
+        assert!(state.is_paused());
+        assert_eq!(state.pause_reasons().len(), 3);
+
+        // Remove middle reason - still paused
+        assert!(!state.remove_pause_reason(PauseReason::Dnd));
+        assert!(state.is_paused());
+        assert_eq!(state.pause_reasons().len(), 2);
+
+        // Remove all remaining reasons one by one
+        assert!(!state.remove_pause_reason(PauseReason::Manual));
+        assert!(state.is_paused());
+        assert_eq!(state.pause_reasons().len(), 1);
+
+        // Remove last reason - transition to Running
+        assert!(state.remove_pause_reason(PauseReason::UserIdle));
+        assert!(!state.is_paused());
+        assert!(state.pause_reasons().is_empty());
+    }
+
+    #[test]
+    fn test_pause_during_active_sessions() {
+        let mut state = SharedSchedulerState::new();
+
+        // Start both sessions
+        state.start_break_session();
+        state.start_attention_session();
+        assert!(state.in_any_session());
+
+        // Pause should not affect session state
+        state.add_pause_reason(PauseReason::Dnd);
+        assert!(state.is_paused());
+        assert!(state.in_break_session());
+        assert!(state.in_attention_session());
+
+        // Remove pause reason - sessions still active
+        state.remove_pause_reason(PauseReason::Dnd);
+        assert!(!state.is_paused());
+        assert!(state.in_break_session());
+        assert!(state.in_attention_session());
+    }
+
+    #[test]
+    fn test_session_operations_during_pause() {
+        let mut state = SharedSchedulerState::new();
+
+        // Pause first
+        state.add_pause_reason(PauseReason::Manual);
+        assert!(state.is_paused());
+
+        // Session operations work during pause
+        state.start_break_session();
+        assert!(state.in_break_session());
+        assert!(state.is_paused()); // Still paused
+
+        state.end_break_session();
+        assert!(!state.in_break_session());
+        assert!(state.is_paused()); // Still paused
+
+        // Resume
+        state.remove_pause_reason(PauseReason::Manual);
+        assert!(!state.is_paused());
+    }
+
+    #[test]
+    fn test_rapid_pause_resume_cycles() {
+        let mut state = SharedSchedulerState::new();
+
+        // Rapid cycling should maintain consistency
+        for _ in 0..10 {
+            assert!(state.add_pause_reason(PauseReason::UserIdle));
+            assert!(state.is_paused());
+            assert!(state.remove_pause_reason(PauseReason::UserIdle));
+            assert!(!state.is_paused());
+        }
+
+        // Final state should be consistent
+        assert!(!state.is_paused());
+        assert!(state.pause_reasons().is_empty());
+    }
+
+    #[test]
+    fn test_alternating_pause_reasons() {
+        let mut state = SharedSchedulerState::new();
+
+        // Add reason A
+        state.add_pause_reason(PauseReason::UserIdle);
+        assert!(state.is_paused());
+
+        // Add reason B while A is active
+        state.add_pause_reason(PauseReason::Dnd);
+        assert_eq!(state.pause_reasons().len(), 2);
+
+        // Remove reason A - still paused by B
+        state.remove_pause_reason(PauseReason::UserIdle);
+        assert!(state.is_paused());
+        assert_eq!(state.pause_reasons().len(), 1);
+
+        // Add reason A back while B is active
+        state.add_pause_reason(PauseReason::UserIdle);
+        assert_eq!(state.pause_reasons().len(), 2);
+
+        // Remove reason B - still paused by A
+        state.remove_pause_reason(PauseReason::Dnd);
+        assert!(state.is_paused());
+        assert_eq!(state.pause_reasons().len(), 1);
+    }
+
+    #[test]
+    fn test_session_overlap_scenarios() {
+        let mut state = SharedSchedulerState::new();
+
+        // Scenario 1: Start break, then attention, end break
+        state.start_break_session();
+        state.start_attention_session();
+        state.end_break_session();
+        assert!(state.in_attention_session());
+        assert!(!state.in_break_session());
+
+        // Scenario 2: Start another break while attention is active
+        state.start_break_session();
+        assert!(state.in_break_session());
+        assert!(state.in_attention_session());
+
+        // Scenario 3: End attention, break remains
+        state.end_attention_session();
+        assert!(state.in_break_session());
+        assert!(!state.in_attention_session());
+
+        // Clean up
+        state.end_break_session();
+        assert!(!state.in_any_session());
+    }
+
+    #[test]
+    fn test_session_end_without_start() {
+        let mut state = SharedSchedulerState::new();
+
+        // Ending a session that was never started should be idempotent
+        state.end_break_session();
+        state.end_attention_session();
+        assert!(!state.in_any_session());
+    }
+
+    #[test]
+    fn test_complex_interleaved_operations() {
+        let mut state = SharedSchedulerState::new();
+
+        // Complex sequence: pause, session, unpause, session, pause
+        state.add_pause_reason(PauseReason::Dnd);
+        state.start_break_session();
+        state.add_pause_reason(PauseReason::UserIdle);
+        state.start_attention_session();
+        state.remove_pause_reason(PauseReason::Dnd);
+        state.end_break_session();
+        state.remove_pause_reason(PauseReason::UserIdle);
+        state.end_attention_session();
+
+        // Final state should be clean
+        assert!(!state.is_paused());
+        assert!(!state.in_any_session());
+        assert!(state.pause_reasons().is_empty());
+    }
+
+    #[test]
+    fn test_all_pause_reasons_types() {
+        let mut state = SharedSchedulerState::new();
+
+        // Test all enum variants
+        let all_reasons = vec![
+            PauseReason::Manual,
+            PauseReason::UserIdle,
+            PauseReason::Dnd,
+            PauseReason::AppExclusion,
+        ];
+
+        // Add all reasons
+        for reason in &all_reasons {
+            state.add_pause_reason(*reason);
+            assert!(state.is_paused());
+        }
+        assert_eq!(state.pause_reasons().len(), all_reasons.len());
+
+        // Remove all reasons
+        for reason in &all_reasons {
+            assert!(state.is_paused());
+            state.remove_pause_reason(*reason);
+        }
+        assert!(state.pause_reasons().is_empty());
+        assert!(!state.is_paused());
     }
 }
