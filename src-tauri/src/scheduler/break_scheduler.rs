@@ -694,3 +694,392 @@ pub(crate) fn get_active_schedule(
         s.enabled && s.days_of_week.contains(&now_day) && s.time_range.contains(&now_time)
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::AppConfig;
+    use crate::core::schedule::{MiniBreakSettings, ScheduleSettings};
+    use crate::scheduler::test_helpers::*;
+
+    use chrono::Weekday;
+
+    mod get_active_schedule_tests {
+        use super::*;
+
+        #[test]
+        fn returns_schedule_within_time_range() {
+            let mut config = AppConfig::default();
+            config.schedules[0].time_range = time_range(9, 0, 17, 0);
+            config.schedules[0].days_of_week = workdays();
+            config.schedules[0].enabled = true;
+
+            let time = naive_time(10, 30, 0);
+            let day = Weekday::Mon;
+
+            let result = get_active_schedule(&config, time, day);
+            assert!(result.is_some());
+        }
+
+        #[test]
+        fn returns_none_outside_time_range() {
+            let mut config = AppConfig::default();
+            config.schedules[0].time_range = time_range(9, 0, 17, 0);
+            config.schedules[0].days_of_week = workdays();
+            config.schedules[0].enabled = true;
+
+            let time = naive_time(20, 0, 0);
+            let day = Weekday::Mon;
+
+            let result = get_active_schedule(&config, time, day);
+            assert!(result.is_none());
+        }
+
+        #[test]
+        fn returns_none_on_non_working_day() {
+            let mut config = AppConfig::default();
+            config.schedules[0].time_range = time_range(9, 0, 17, 0);
+            config.schedules[0].days_of_week = workdays();
+            config.schedules[0].enabled = true;
+
+            let time = naive_time(10, 0, 0);
+            let day = Weekday::Sat;
+
+            let result = get_active_schedule(&config, time, day);
+            assert!(result.is_none());
+        }
+
+        #[test]
+        fn ignores_disabled_schedules() {
+            let mut config = AppConfig::default();
+            config.schedules[0].time_range = time_range(9, 0, 17, 0);
+            config.schedules[0].days_of_week = workdays();
+            config.schedules[0].enabled = false;
+
+            let time = naive_time(10, 0, 0);
+            let day = Weekday::Mon;
+
+            let result = get_active_schedule(&config, time, day);
+            assert!(result.is_none());
+        }
+    }
+
+    mod calculate_next_break_tests {
+        use super::*;
+
+        #[test]
+        fn calculates_first_break_from_now() {
+            let mut config = AppConfig::default();
+            config.schedules[0].days_of_week = all_weekdays();
+            config.schedules[0].mini_breaks.interval_s = 60;
+            config.schedules[0].notification_before_s = 10;
+
+            let now = Utc::now();
+            let result = calculate_next_break_pure(&config, now, 0, None);
+
+            let break_info = result.unwrap();
+            let expected_time = now + duration_s(60);
+            assert_time_near(break_info.break_time, expected_time, duration_s(1));
+        }
+
+        #[test]
+        fn calculates_next_break_after_previous() {
+            let mut config = AppConfig::default();
+            config.schedules[0].days_of_week = all_weekdays();
+            config.schedules[0].mini_breaks.interval_s = 60;
+
+            let now = Utc::now();
+            let last_break = now - duration_s(30);
+
+            let result = calculate_next_break_pure(&config, now, 0, Some(last_break));
+
+            let break_info = result.unwrap();
+            let expected_time = last_break + duration_s(60);
+            assert_time_near(break_info.break_time, expected_time, duration_s(1));
+        }
+
+        #[test]
+        fn schedules_long_break_after_threshold() {
+            let mut config = AppConfig::default();
+            config.schedules[0].days_of_week = all_weekdays();
+            config.schedules[0].long_breaks.after_mini_breaks = 4;
+
+            let now = Utc::now();
+
+            // Counter is 3 - should schedule mini break
+            let result = calculate_next_break_pure(&config, now, 3, None);
+            assert!(matches!(
+                result.unwrap().event,
+                SchedulerEvent::MiniBreak(_)
+            ));
+
+            // Counter is 4 - should schedule long break
+            let result = calculate_next_break_pure(&config, now, 4, None);
+            assert!(matches!(
+                result.unwrap().event,
+                SchedulerEvent::LongBreak(_)
+            ));
+        }
+
+        #[test]
+        fn returns_none_when_mini_breaks_disabled() {
+            let mut config = AppConfig::default();
+            config.schedules[0].days_of_week = all_weekdays();
+            config.schedules[0].mini_breaks.base.enabled = false;
+
+            let now = Utc::now();
+            let result = calculate_next_break_pure(&config, now, 0, None);
+
+            assert!(result.is_none());
+        }
+
+        #[test]
+        fn returns_none_outside_active_schedule() {
+            let mut config = AppConfig::default();
+            config.schedules[0].time_range = time_range(9, 0, 17, 0);
+            config.schedules[0].days_of_week = workdays();
+
+            // Saturday at 10:00
+            let now = test_datetime(2025, 9, 6, 10, 0, 0);
+
+            let result = calculate_next_break_pure(&config, now, 0, None);
+            assert!(result.is_none());
+        }
+
+        #[test]
+        fn includes_notification_time_when_enabled() {
+            let mut config = AppConfig::default();
+            config.schedules[0].days_of_week = all_weekdays();
+            config.schedules[0].mini_breaks.interval_s = 60;
+            config.schedules[0].notification_before_s = 10;
+
+            let now = Utc::now();
+            let result = calculate_next_break_pure(&config, now, 0, None);
+
+            let break_info = result.unwrap();
+
+            let notif_time = break_info.notification_time.unwrap();
+            let expected_notif = break_info.break_time - duration_s(10);
+            assert_time_near(notif_time, expected_notif, duration_s(1));
+        }
+
+        #[test]
+        fn omits_notification_when_disabled() {
+            let mut config = AppConfig::default();
+            config.schedules[0].days_of_week = all_weekdays();
+            config.schedules[0].mini_breaks.interval_s = 60;
+            config.schedules[0].notification_before_s = 0;
+
+            let now = Utc::now();
+            let result = calculate_next_break_pure(&config, now, 0, None);
+
+            let break_info = result.unwrap();
+            assert!(break_info.notification_time.is_none());
+        }
+
+        #[test]
+        fn omits_notification_when_too_late() {
+            let mut config = AppConfig::default();
+            config.schedules[0].days_of_week = all_weekdays();
+            config.schedules[0].mini_breaks.interval_s = 20;
+            config.schedules[0].notification_before_s = 30;
+
+            let now = Utc::now();
+            let result = calculate_next_break_pure(&config, now, 0, None);
+
+            // Notification time would be before now, so should be omitted
+            let break_info = result.unwrap();
+            assert!(break_info.notification_time.is_none());
+        }
+
+        // ===================================================================
+        // Time Scheduling Tests
+        // ===================================================================
+
+        /// Cross-midnight time range support
+        /// NOTE: Current implementation of [`TimeRange::contains()`] does NOT support cross-midnight ranges.
+        /// This test is ignored until the feature is implemented.
+        /// Expected behavior: schedules spanning across midnight (e.g., 22:00-02:00) should work correctly
+        #[test]
+        #[ignore = "TimeRange::contains() does not support cross-midnight ranges yet"]
+        fn handles_cross_midnight_time_range() {
+            let config = TestConfigBuilder::new()
+                .time_range(time_range(22, 0, 2, 0)) // 22:00-02:00 (night shift)
+                .mini_break_interval_s(60)
+                .build();
+
+            // Test during active time (23:00)
+            let now_23h = test_datetime(2025, 9, 3, 23, 0, 0);
+            let result = calculate_next_break_pure(&config, now_23h, 0, None);
+            assert!(
+                result.is_some(),
+                "Should schedule break at 23:00 (within range)"
+            );
+
+            // Test after midnight but still in range (01:00)
+            let now_01h = test_datetime(2025, 9, 4, 1, 0, 0);
+            let result = calculate_next_break_pure(&config, now_01h, 0, None);
+            assert!(
+                result.is_some(),
+                "Should schedule break at 01:00 (within range)"
+            );
+
+            // Test outside range (10:00)
+            let now_10h = test_datetime(2025, 9, 3, 10, 0, 0);
+            let result = calculate_next_break_pure(&config, now_10h, 0, None);
+            assert!(
+                result.is_none(),
+                "Should not schedule break at 10:00 (outside range)"
+            );
+        }
+
+        /// Notification time of zero (disabled notifications)
+        /// Verifies that when `notification_before_s` = 0, no notification time is calculated
+        #[test]
+        fn notification_time_zero_disables_notifications() {
+            let config = TestConfigBuilder::new()
+                .mini_break_interval_s(120)
+                .notification_before_s(0)
+                .build();
+
+            let now = Utc::now();
+            let result = calculate_next_break_pure(&config, now, 0, None);
+
+            let break_info = result.unwrap();
+            assert!(
+                break_info.notification_time.is_none(),
+                "Notification time should be None when notification_before_s = 0"
+            );
+        }
+
+        /// Notification time exceeding interval
+        /// Tests graceful handling when notification time is longer than break interval
+        #[test]
+        fn notification_time_exceeding_interval_omits_notification() {
+            let config = TestConfigBuilder::new()
+                .mini_break_interval_s(60) // 1 minute interval
+                .notification_before_s(120) // 2 minutes notification (exceeds interval)
+                .build();
+
+            let now = Utc::now();
+            let result = calculate_next_break_pure(&config, now, 0, None);
+
+            let break_info = result.unwrap();
+            assert!(
+                break_info.notification_time.is_none(),
+                "Notification should be omitted when notification_before_s > interval_s"
+            );
+        }
+
+        /// Multiple schedule configurations switching
+        /// Tests that only the first matching enabled schedule is used
+        #[test]
+        fn uses_first_matching_schedule() {
+            // Schedule 1: 09:00-12:00, 30-minute intervals
+            let schedule1 = ScheduleSettings {
+                name: "Morning".to_string(),
+                enabled: true,
+                time_range: time_range(9, 0, 12, 0),
+                days_of_week: workdays(),
+                notification_before_s: 10,
+                mini_breaks: MiniBreakSettings {
+                    interval_s: 1800, // 30 minutes
+                    ..Default::default()
+                },
+                ..Default::default()
+            };
+
+            // Schedule 2: 13:00-17:00, 20-minute intervals
+            let schedule2 = ScheduleSettings {
+                name: "Afternoon".to_string(),
+                enabled: true,
+                time_range: time_range(13, 0, 17, 0),
+                days_of_week: workdays(),
+                notification_before_s: 5,
+                mini_breaks: MiniBreakSettings {
+                    interval_s: 1200, // 20 minutes
+                    ..Default::default()
+                },
+                ..Default::default()
+            };
+
+            let config = AppConfig {
+                schedules: vec![schedule1, schedule2],
+                ..Default::default()
+            };
+
+            // Test at 10:00 local time (should use schedule1)
+            let now_morning = test_datetime_with_local(2025, 9, 3, 10, 0, 0);
+
+            let result = calculate_next_break_pure(&config, now_morning, 0, None);
+            let break_info = result.unwrap();
+            let break_duration = (break_info.break_time - now_morning).num_seconds();
+            // Should be around 1800 seconds (30 minutes) from schedule1
+            assert_duration_near(break_duration, 1800, 5);
+
+            // Test at 14:00 local time (should use schedule2)
+            let now_afternoon = test_datetime_with_local(2025, 9, 3, 14, 0, 0);
+
+            let result = calculate_next_break_pure(&config, now_afternoon, 0, None);
+            let break_info = result.unwrap();
+            let break_duration = (break_info.break_time - now_afternoon).num_seconds();
+            // Should be around 1200 seconds (20 minutes) from schedule2
+            assert_duration_near(break_duration, 1200, 5);
+
+            // Test at 12:30 local time (between schedules, should be None)
+            let now_between = test_datetime_with_local(2025, 9, 3, 12, 30, 0);
+
+            let result = calculate_next_break_pure(&config, now_between, 0, None);
+            assert!(
+                result.is_none(),
+                "Should not find a schedule at 12:30 local time"
+            );
+        }
+
+        /// Additional test: Long break triggering with different thresholds
+        #[test]
+        fn long_break_triggers_at_correct_threshold() {
+            let config = TestConfigBuilder::new()
+                .mini_break_interval_s(60)
+                .long_break_after_mini_breaks(3) // Trigger after 3 mini breaks
+                .build();
+
+            let now = Utc::now();
+
+            // Counter = 0,1,2 should give mini breaks
+            for counter in 0..=2 {
+                let result = calculate_next_break_pure(&config, now, counter, None);
+                assert!(
+                    matches!(result.unwrap().event, SchedulerEvent::MiniBreak(_)),
+                    "Counter {counter} should trigger mini break"
+                );
+            }
+
+            // Counter = 3 should give long break
+            let result = calculate_next_break_pure(&config, now, 3, None);
+            assert!(
+                matches!(result.unwrap().event, SchedulerEvent::LongBreak(_)),
+                "Counter 3 should trigger long break"
+            );
+        }
+
+        /// Test: Disabled long breaks should never trigger
+        #[test]
+        fn disabled_long_breaks_never_trigger() {
+            let config = TestConfigBuilder::new()
+                .mini_break_interval_s(60)
+                .long_break_after_mini_breaks(2)
+                .long_breaks_enabled(false)
+                .build();
+
+            let now = Utc::now();
+
+            // Even with counter >= threshold, should still give mini break
+            let result = calculate_next_break_pure(&config, now, 5, None);
+            assert!(
+                matches!(result.unwrap().event, SchedulerEvent::MiniBreak(_)),
+                "Should trigger mini break when long breaks are disabled"
+            );
+        }
+    }
+}
