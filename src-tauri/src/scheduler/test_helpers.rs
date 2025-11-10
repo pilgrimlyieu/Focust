@@ -11,7 +11,7 @@
 //! - **Flexibility**: Support diverse test scenarios
 //! - **Stability**: Depend on public APIs, not internal implementation
 
-use chrono::{DateTime, Datelike, Duration, NaiveTime, TimeZone, Timelike, Utc, Weekday};
+use chrono::{DateTime, Datelike, Duration, Local, NaiveTime, TimeZone, Timelike, Utc, Weekday};
 use tauri::Manager;
 
 use crate::config::AppConfig;
@@ -229,6 +229,37 @@ pub fn test_datetime(
     sec: u32,
 ) -> DateTime<Utc> {
     Utc.with_ymd_and_hms(year, month, day, hour, min, sec)
+        .single()
+        .expect("Invalid test datetime")
+}
+
+/// Create a UTC datetime from local datetime for testing
+pub fn test_datetime_with_local(
+    year: i32,
+    month: u32,
+    day: u32,
+    hour: u32,
+    min: u32,
+    sec: u32,
+) -> DateTime<Utc> {
+    Local
+        .with_ymd_and_hms(year, month, day, hour, min, sec)
+        .single()
+        .expect("Invalid test datetime")
+        .with_timezone(&Utc)
+}
+
+/// Create a Local datetime for testing
+pub fn test_local_datetime(
+    year: i32,
+    month: u32,
+    day: u32,
+    hour: u32,
+    min: u32,
+    sec: u32,
+) -> DateTime<Local> {
+    Local
+        .with_ymd_and_hms(year, month, day, hour, min, sec)
         .single()
         .expect("Invalid test datetime")
 }

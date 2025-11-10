@@ -90,7 +90,6 @@ mod tests {
 
         let active_schedule = get_active_schedule(&config, now_time, now_day);
 
-        assert!(active_schedule.is_some());
         assert_eq!(active_schedule.unwrap().name, "Weekday Schedule");
     }
 
@@ -113,7 +112,6 @@ mod tests {
         let now_day = Weekday::Sat;
 
         let active_schedule = get_active_schedule(&config, now_time, now_day);
-        assert!(active_schedule.is_some());
         assert_eq!(active_schedule.unwrap().name, "Weekend Schedule");
     }
 
@@ -125,7 +123,6 @@ mod tests {
         let now_day = Weekday::Mon;
 
         let active_schedule = get_active_schedule(&config, now_time, now_day);
-        assert!(active_schedule.is_some());
         assert_eq!(active_schedule.unwrap().name, "Weekday Schedule");
     }
 
