@@ -597,10 +597,7 @@ pub mod state_machine {
                 panic!("Expected event {expected}, but status has no next_event");
             }
             (Some(event_info), None) => {
-                panic!(
-                    "Expected no next_event, but status has {}",
-                    event_info.kind
-                );
+                panic!("Expected no next_event, but status has {}", event_info.kind);
             }
         }
     }

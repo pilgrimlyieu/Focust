@@ -15,6 +15,7 @@ use super::models::{
 use super::shared_state::SharedState;
 use crate::config::{AppConfig, SharedConfig};
 use crate::core::schedule::ScheduleSettings;
+#[cfg(not(test))]
 use crate::platform::create_prompt_windows;
 use crate::platform::send_break_notification;
 
@@ -87,11 +88,37 @@ where
         }
     }
 
+    /// Get current state as string (for testing)
+    #[cfg(test)]
+    #[allow(dead_code)]
+    pub fn get_state(&self) -> String {
+        format!("{}", self.state)
+    }
+
+    /// Get mini break counter (for testing)
+    #[cfg(test)]
+    #[allow(dead_code)]
+    pub fn get_mini_break_counter(&self) -> u8 {
+        self.mini_break_counter
+    }
+
+    /// Get last break time (for testing)
+    #[cfg(test)]
+    #[allow(dead_code)]
+    pub fn get_last_break_time(&self) -> Option<DateTime<Utc>> {
+        self.last_break_time
+    }
+
     /// Main run loop
     pub async fn run(&mut self, mut cmd_rx: mpsc::Receiver<Command>) {
         tracing::info!("BreakScheduler started");
 
-        self.transition_to_calculating().await;
+        // Only transition to calculating if not paused
+        // If paused, wait for Resume command to start scheduling
+        if !matches!(self.state, BreakSchedulerState::Paused(_)) {
+            self.transition_to_calculating().await;
+        }
+
         loop {
             let timer_duration = self.get_duration_for_current_state();
             let mut sleep_fut: Pin<Box<dyn Future<Output = ()> + Send>> =
@@ -338,58 +365,15 @@ where
     /// Calculate the next break based on current state and configuration
     fn calculate_next_break(&self, config: &AppConfig) -> Option<BreakInfo> {
         let now = Utc::now();
-        let now_local = now.with_timezone(&Local);
-
-        // Check if we're in an active schedule
-        let active_schedule = get_active_schedule(config, now_local.time(), now_local.weekday())?;
-
-        // Determine if it's time for a long break
-        let is_long_break_due = active_schedule.long_breaks.base.enabled
-            && self.mini_break_counter >= active_schedule.long_breaks.after_mini_breaks;
-
-        let (event, break_settings) = if is_long_break_due {
-            (
-                SchedulerEvent::LongBreak(active_schedule.long_breaks.base.id),
-                &active_schedule.long_breaks.base,
-            )
-        } else {
-            (
-                SchedulerEvent::MiniBreak(active_schedule.mini_breaks.base.id),
-                &active_schedule.mini_breaks.base,
-            )
-        };
-
-        if !break_settings.enabled {
-            return None;
-        }
-
-        // Calculate break time
-        let interval = Duration::seconds(i64::from(active_schedule.mini_breaks.interval_s));
-        let base_time = self.last_break_time.unwrap_or(now);
-        let break_time = base_time + interval;
-
-        // Calculate notification time if enabled
-        let notification_time = active_schedule
-            .has_notification()
-            .then(|| {
-                let notif_time = break_time
-                    - Duration::seconds(i64::from(active_schedule.notification_before_s));
-                (notif_time > now).then_some(notif_time)
-            })
-            .flatten();
-
-        Some(BreakInfo {
-            break_time,
-            notification_time,
-            event,
-            postpone_count: 0,
-        })
+        calculate_next_break_pure(config, now, self.mini_break_counter, self.last_break_time)
     }
 
     /// Execute a break: create window and play audio, then wait for completion
+    #[allow(clippy::unused_async)]
     async fn execute_break(&mut self, info: BreakInfo) {
         tracing::info!("Executing break: {}", info.event);
         let event = info.event;
+        #[cfg(not(test))]
         let postpone_count = info.postpone_count;
         self.state = BreakSchedulerState::InBreak(info);
 
@@ -399,15 +383,31 @@ where
         self.shared_state.write().start_break_session();
         tracing::info!("Break session started, DND monitor will ignore DND changes during break");
 
-        if let Err(e) = create_prompt_windows(&self.app_handle, event, postpone_count).await {
-            tracing::error!("Failed to create break windows: {e}");
+        // Emit event to notify tests/frontend that break is starting
+        if let Err(e) = self.event_emitter.emit("scheduler-event", event) {
+            tracing::warn!("Failed to emit scheduler-event: {e}");
+        }
 
-            // Clean up session state on error
-            self.shared_state.write().end_break_session();
-            tracing::info!("Break session ended (error cleanup)");
+        // In tests with MockRuntime, skip window creation as it's not supported
+        // The test can still verify that we entered InBreak state via events
+        #[cfg(not(test))]
+        {
+            if let Err(e) = create_prompt_windows(&self.app_handle, event, postpone_count).await {
+                tracing::error!("Failed to create break windows: {e}");
 
-            self.update_state_after_break(event);
-            Box::pin(self.transition_to_calculating()).await;
+                // Clean up session state on error
+                self.shared_state.write().end_break_session();
+                tracing::info!("Break session ended (error cleanup)");
+
+                self.update_state_after_break(event);
+                Box::pin(self.transition_to_calculating()).await;
+            }
+        }
+
+        #[cfg(test)]
+        {
+            // In tests, just log that we would create windows
+            tracing::debug!("Test mode: skipping window creation for event: {event}");
         }
     }
     /// Reset break timers
@@ -433,7 +433,7 @@ where
             mini_break_counter: self.mini_break_counter,
         };
 
-        self.app_handle
+        self.event_emitter
             .emit("scheduler-status", &status)
             .unwrap_or_else(|e| {
                 tracing::warn!("Failed to emit scheduler status: {e}");
@@ -448,7 +448,7 @@ where
             mini_break_counter: self.mini_break_counter,
         };
 
-        self.app_handle
+        self.event_emitter
             .emit("scheduler-status", &status)
             .unwrap_or_else(|e| {
                 tracing::warn!("Failed to emit scheduler status: {e}");
@@ -473,7 +473,7 @@ where
             PauseReason::Manual => {}
         }
         self.close_break_windows();
-        // Note: SchedulerManager already emitted paused status, no need to emit again
+        self.emit_paused_status(true);
     }
 
     /// Handle Resume command
@@ -502,9 +502,9 @@ where
 
         // Check if limit reached
         if current_count >= max_count {
-            tracing::warn!("Max postpone count ({max_count}) reached, cannot postpone further",);
+            tracing::warn!("Max postpone count ({max_count}) reached, cannot postpone further");
             // Emit event to notify frontend
-            let _ = self.app_handle.emit("postpone-limit-reached", ());
+            let _ = self.event_emitter.emit("postpone-limit-reached", ());
             return;
         }
 
@@ -623,8 +623,69 @@ where
     }
 }
 
+/// Pure function version of `calculate_next_break` for testing
+///
+/// This function has no side effects and can be tested independently.
+/// All inputs are explicit parameters.
+pub(crate) fn calculate_next_break_pure(
+    config: &AppConfig,
+    now: DateTime<Utc>,
+    mini_break_counter: u8,
+    last_break_time: Option<DateTime<Utc>>,
+) -> Option<BreakInfo> {
+    let now_local = now.with_timezone(&Local);
+
+    // Check if we're in an active schedule
+    let active_schedule = get_active_schedule(config, now_local.time(), now_local.weekday())?;
+
+    // Determine if it's time for a long break
+    let is_long_break_due = active_schedule.long_breaks.base.enabled
+        && mini_break_counter >= active_schedule.long_breaks.after_mini_breaks;
+
+    let (event, break_settings) = if is_long_break_due {
+        (
+            SchedulerEvent::LongBreak(active_schedule.long_breaks.base.id),
+            &active_schedule.long_breaks.base,
+        )
+    } else {
+        (
+            SchedulerEvent::MiniBreak(active_schedule.mini_breaks.base.id),
+            &active_schedule.mini_breaks.base,
+        )
+    };
+
+    if !break_settings.enabled {
+        return None;
+    }
+
+    // Calculate break time
+    let interval = Duration::seconds(i64::from(active_schedule.mini_breaks.interval_s));
+    let base_time = last_break_time.unwrap_or(now);
+    let break_time = base_time + interval;
+
+    // Calculate notification time if enabled
+    let notification_time = active_schedule
+        .has_notification()
+        .then(|| {
+            let notif_time =
+                break_time - Duration::seconds(i64::from(active_schedule.notification_before_s));
+            (notif_time > now).then_some(notif_time)
+        })
+        .flatten();
+
+    Some(BreakInfo {
+        break_time,
+        notification_time,
+        event,
+        postpone_count: 0,
+    })
+}
+
 /// Helper function to get active schedule
-fn get_active_schedule(
+///
+/// Returns the first enabled schedule that matches the current time and day.
+/// Used by the break scheduler to determine if breaks should be scheduled.
+pub(crate) fn get_active_schedule(
     config: &AppConfig,
     now_time: chrono::NaiveTime,
     now_day: chrono::Weekday,

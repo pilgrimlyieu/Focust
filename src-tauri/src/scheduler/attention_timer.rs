@@ -47,6 +47,13 @@ where
         }
     }
 
+    /// Check if paused (for testing)
+    #[cfg(test)]
+    #[allow(dead_code)]
+    pub fn is_paused(&self) -> bool {
+        self.paused
+    }
+
     pub async fn run(&mut self, mut cmd_rx: mpsc::Receiver<Command>) {
         tracing::info!("AttentionTimer started");
 
@@ -76,7 +83,7 @@ where
             let next_attention = {
                 let config = self.app_handle.state::<SharedConfig>();
                 let config_guard = config.read().await;
-                Self::calculate_next_attention(&config_guard.attentions)
+                calculate_next_attention(&config_guard.attentions)
             };
 
             if let Some((attention_id, attention_time)) = next_attention {
@@ -130,83 +137,6 @@ where
         }
 
         tracing::info!("AttentionTimer shutting down");
-    }
-
-    /// Calculate the next attention time across all enabled attentions
-    fn calculate_next_attention(
-        attentions: &[AttentionSettings],
-    ) -> Option<(AttentionId, DateTime<Utc>)> {
-        let now = Utc::now();
-        let now_local = now.with_timezone(&Local);
-
-        attentions
-            .iter()
-            .filter_map(|attention| {
-                Self::get_next_attention_time(attention, now_local).map(|time| (attention.id, time))
-            })
-            .min_by_key(|(_, time)| *time)
-    }
-
-    /// Get the next occurrence time for a specific attention
-    fn get_next_attention_time(
-        attention: &AttentionSettings,
-        now: DateTime<Local>,
-    ) -> Option<DateTime<Utc>> {
-        if (!attention.enabled) || attention.times.is_empty() || attention.days_of_week.is_empty() {
-            tracing::debug!(
-                "Attention '{}' is disabled or has no times/days configured.",
-                attention.name
-            );
-            return None;
-        }
-
-        let now_date = now.date_naive();
-        let now_time = now.time();
-
-        let to_utc = |dt_local: DateTime<Local>| -> Option<DateTime<Utc>> {
-            tracing::debug!(
-                "Found potential attention '{}' time: {} (local)",
-                attention.name,
-                dt_local.to_rfc2822()
-            );
-            Some(dt_local.with_timezone(&Utc))
-        };
-
-        let build_datetime = |date: NaiveDate, time: NaiveTime| -> Option<DateTime<Local>> {
-            match date.and_time(time).and_local_timezone(Local) {
-                LocalResult::Single(dt) => Some(dt),
-                LocalResult::Ambiguous(dt1, _) => {
-                    tracing::warn!(
-                        "Ambiguous local time encountered for {time} on {date}. Using the first one."
-                    );
-                    Some(dt1)
-                }
-                LocalResult::None => {
-                    tracing::error!("No valid local time found for {time} on {date}.");
-                    None
-                }
-            }
-        };
-
-        // Check if there's a time today
-        if attention.days_of_week.contains(&now.weekday())
-            && let Some(next_time_today) = attention.times.earliest_after(&now_time)
-            && let Some(dt_local) = build_datetime(now_date, next_time_today)
-        {
-            return to_utc(dt_local);
-        }
-
-        // Check next 7 days
-        for i in 1..=7 {
-            let next_date = now_date + chrono::Duration::days(i);
-            if attention.days_of_week.contains(&next_date.weekday())
-                && let Some(first_time) = attention.times.first()
-                && let Some(dt_local) = build_datetime(next_date, first_time)
-            {
-                return to_utc(dt_local);
-            }
-        }
-        unreachable!("Impossible if attention has times and days configured");
     }
 
     /// Trigger an attention reminder
@@ -263,4 +193,81 @@ where
             _ => {}
         }
     }
+}
+
+/// Calculate the next attention time across all enabled attentions
+pub(crate) fn calculate_next_attention(
+    attentions: &[AttentionSettings],
+) -> Option<(AttentionId, DateTime<Utc>)> {
+    let now = Utc::now();
+    let now_local = now.with_timezone(&Local);
+
+    attentions
+        .iter()
+        .filter_map(|attention| {
+            get_next_attention_time(attention, now_local).map(|time| (attention.id, time))
+        })
+        .min_by_key(|(_, time)| *time)
+}
+
+/// Get the next occurrence time for a specific attention
+pub(crate) fn get_next_attention_time(
+    attention: &AttentionSettings,
+    now: DateTime<Local>,
+) -> Option<DateTime<Utc>> {
+    if (!attention.enabled) || attention.times.is_empty() || attention.days_of_week.is_empty() {
+        tracing::debug!(
+            "Attention '{}' is disabled or has no times/days configured.",
+            attention.name
+        );
+        return None;
+    }
+
+    let now_date = now.date_naive();
+    let now_time = now.time();
+
+    let to_utc = |dt_local: DateTime<Local>| -> Option<DateTime<Utc>> {
+        tracing::debug!(
+            "Found potential attention '{}' time: {} (local)",
+            attention.name,
+            dt_local.to_rfc2822()
+        );
+        Some(dt_local.with_timezone(&Utc))
+    };
+
+    let build_datetime = |date: NaiveDate, time: NaiveTime| -> Option<DateTime<Local>> {
+        match date.and_time(time).and_local_timezone(Local) {
+            LocalResult::Single(dt) => Some(dt),
+            LocalResult::Ambiguous(dt1, _) => {
+                tracing::warn!(
+                    "Ambiguous local time encountered for {time} on {date}. Using the first one."
+                );
+                Some(dt1)
+            }
+            LocalResult::None => {
+                tracing::error!("No valid local time found for {time} on {date}.");
+                None
+            }
+        }
+    };
+
+    // Check if there's a time today
+    if attention.days_of_week.contains(&now.weekday())
+        && let Some(next_time_today) = attention.times.earliest_after(&now_time)
+        && let Some(dt_local) = build_datetime(now_date, next_time_today)
+    {
+        return to_utc(dt_local);
+    }
+
+    // Check next 7 days
+    for i in 1..=7 {
+        let next_date = now_date + chrono::Duration::days(i);
+        if attention.days_of_week.contains(&next_date.weekday())
+            && let Some(first_time) = attention.times.first()
+            && let Some(dt_local) = build_datetime(next_date, first_time)
+        {
+            return to_utc(dt_local);
+        }
+    }
+    unreachable!("Impossible if attention has times and days configured");
 }
