@@ -81,7 +81,7 @@ where
             app_handle,
             event_emitter,
             shutdown_rx,
-            state: BreakSchedulerState::Paused(PauseReason::Manual),
+            state: BreakSchedulerState::Idle,
             mini_break_counter: 0,
             last_break_time: None,
             shared_state,

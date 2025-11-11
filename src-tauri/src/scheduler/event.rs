@@ -30,9 +30,9 @@ pub fn get_active_schedule(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::AppConfig;
     use crate::core::schedule::ScheduleSettings;
     use crate::scheduler::test_helpers::*;
-    use crate::config::AppConfig;
 
     use chrono::Weekday;
 
