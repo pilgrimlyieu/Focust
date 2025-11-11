@@ -269,7 +269,11 @@ pub(crate) fn get_next_attention_time(
             return to_utc(dt_local);
         }
     }
-    unreachable!("Impossible if attention has times and days configured");
+    tracing::error!(
+        "No valid attention time found for '{}' within the next 7 days. This may indicate a bug or edge case in date calculations.",
+        attention.name
+    );
+    None
 }
 
 #[cfg(test)]

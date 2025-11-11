@@ -474,7 +474,7 @@ pub mod state_machine {
 
     /// Create a test break scheduler with mock dependencies
     ///
-    /// Returns (scheduler, `event_emitter`, `shutdown_tx`, `app_handle`)
+    /// Returns (`scheduler`, `event_emitter`, `shutdown_tx`, `app_handle`)
     pub fn create_test_break_scheduler(
         config: AppConfig,
     ) -> (
@@ -763,7 +763,7 @@ pub mod manager {
 
         // Spawn break scheduler (using TestEventEmitter for tests)
         let break_scheduler_handle = env.app_handle.clone();
-        let break_event_emitter = TestEventEmitter::new(); // Use TestEventEmitter in tests
+        let break_event_emitter = env.event_emitter.clone();
         let break_shutdown_rx = env.shutdown_tx.subscribe();
         let break_shared_state = env.shared_state.clone();
         tokio::spawn(async move {
@@ -778,7 +778,7 @@ pub mod manager {
 
         // Spawn attention timer (using TestEventEmitter for tests)
         let attention_timer_handle = env.app_handle.clone();
-        let attention_event_emitter = TestEventEmitter::new(); // Use TestEventEmitter in tests
+        let attention_event_emitter = env.event_emitter.clone();
         let attention_shutdown_rx = env.shutdown_tx.subscribe();
         let attention_shared_state = env.shared_state.clone();
         tokio::spawn(async move {
