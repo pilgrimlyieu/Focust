@@ -44,8 +44,8 @@ impl TestConfigBuilder {
     /// Create a new builder with default test configuration
     ///
     /// Default values:
-    /// - Mini break: 60s interval, 20s duration, enabled
-    /// - Long break: after 4 mini breaks, 40s duration, enabled
+    /// - Mini break: 20min interval, 20s duration, enabled
+    /// - Long break: after 4 mini breaks, 5min duration, enabled
     /// - Time range: 00:00-00:00 (all day)
     /// - Days: Monday-Sunday (all week)
     /// - Notification: 0s before (disabled)
@@ -67,12 +67,12 @@ impl TestConfigBuilder {
                     max_postpone_count: 2,
                     ..BaseBreakSettings::default()
                 },
-                interval_s: 60,
+                interval_s: 1200,
             },
             long_breaks: LongBreakSettings {
                 base: BaseBreakSettings {
                     enabled: true,
-                    duration_s: 40,
+                    duration_s: 300,
                     postponed_s: 300,
                     max_postpone_count: 2,
                     ..BaseBreakSettings::default()
@@ -395,7 +395,7 @@ mod tests {
 
         assert_eq!(config.schedules.len(), 1);
         assert!(config.schedules[0].enabled);
-        assert_eq!(config.schedules[0].mini_breaks.interval_s, 60);
+        assert_eq!(config.schedules[0].mini_breaks.interval_s, 1200);
         assert_eq!(config.schedules[0].mini_breaks.base.duration_s, 20);
     }
 
@@ -665,5 +665,146 @@ pub mod state_machine {
             state_str.contains(expected_substr),
             "Expected state to contain '{expected_substr}', but got: {state_str}"
         );
+    }
+}
+
+// ============================================================================
+// Manager Testing Helpers
+// ============================================================================
+
+#[cfg(test)]
+pub mod manager {
+    use super::*;
+    use crate::config::SharedConfig;
+    use crate::core::payload::PromptPayloadStore;
+    use crate::core::suggestions::{SharedSuggestions, SuggestionsConfig};
+    use crate::scheduler::event_emitter::TestEventEmitter;
+    use crate::scheduler::models::Command;
+    use crate::scheduler::shared_state::SharedState;
+
+    use tauri::AppHandle;
+    use tauri::test::{MockRuntime, mock_builder, mock_context, noop_assets};
+    use tokio::sync::mpsc;
+    use tokio::sync::watch;
+
+    /// Test environment for `SchedulerManager` integration tests
+    ///
+    /// Contains all necessary components to test the full scheduler system
+    /// including monitors, event routing, and state management.
+    #[allow(dead_code)] // Some fields used conditionally in tests
+    pub struct ManagerTestEnv {
+        pub app_handle: AppHandle<MockRuntime>,
+        pub event_emitter: TestEventEmitter,
+        pub cmd_tx: mpsc::Sender<Command>,
+        pub shutdown_tx: watch::Sender<()>,
+        pub shared_state: SharedState,
+    }
+
+    /// Create a complete test environment for `SchedulerManager`
+    ///
+    /// This sets up:
+    /// - Mock Tauri app with all required plugins and state
+    /// - `TestEventEmitter` for capturing events
+    /// - Command channel for sending commands
+    /// - Shutdown channel for graceful shutdown
+    /// - `SharedState` for pause reason tracking
+    ///
+    /// Returns the environment struct with all components
+    pub fn create_manager_test_env(config: AppConfig) -> ManagerTestEnv {
+        let app = mock_builder()
+            .plugin(tauri_plugin_notification::init())
+            .build(mock_context(noop_assets()))
+            .expect("Failed to create mock app");
+        let app_handle = app.handle().clone();
+
+        // Install config
+        let shared_config = SharedConfig::from(config);
+        app_handle.manage(shared_config);
+
+        // Install suggestions
+        let suggestions_config = SuggestionsConfig::default();
+        let shared_suggestions = SharedSuggestions::new(suggestions_config);
+        app_handle.manage(shared_suggestions);
+
+        // Install prompt payload store
+        let prompt_payload_store = PromptPayloadStore::new();
+        app_handle.manage(prompt_payload_store);
+
+        // Create channels
+        let (cmd_tx, _cmd_rx) = mpsc::channel(32);
+        let (shutdown_tx, _shutdown_rx) = watch::channel(());
+        let shared_state = crate::scheduler::shared_state::create_shared_state();
+
+        // Note: We don't spawn SchedulerManager here - each test will do that
+        // This gives tests full control over the lifecycle
+
+        let event_emitter = TestEventEmitter::new();
+
+        ManagerTestEnv {
+            app_handle,
+            event_emitter,
+            cmd_tx,
+            shutdown_tx,
+            shared_state,
+        }
+    }
+
+    /// Spawn a minimal scheduler manager for testing
+    ///
+    /// This spawns break scheduler and attention timer with command broadcasting,
+    /// but does NOT spawn monitors (tests will add monitors manually if needed).
+    pub async fn spawn_test_manager(env: &ManagerTestEnv, cmd_rx: mpsc::Receiver<Command>) {
+        use crate::scheduler::attention_timer::AttentionTimer;
+        use crate::scheduler::break_scheduler::BreakScheduler;
+        use crate::scheduler::manager::broadcast_commands;
+
+        let (break_cmd_tx, break_cmd_rx) = mpsc::channel::<Command>(32);
+        let (attention_cmd_tx, attention_cmd_rx) = mpsc::channel::<Command>(32);
+
+        // Spawn break scheduler (using TestEventEmitter for tests)
+        let break_scheduler_handle = env.app_handle.clone();
+        let break_event_emitter = TestEventEmitter::new(); // Use TestEventEmitter in tests
+        let break_shutdown_rx = env.shutdown_tx.subscribe();
+        let break_shared_state = env.shared_state.clone();
+        tokio::spawn(async move {
+            let mut scheduler = BreakScheduler::new(
+                break_scheduler_handle,
+                break_event_emitter,
+                break_shutdown_rx,
+                break_shared_state,
+            );
+            scheduler.run(break_cmd_rx).await;
+        });
+
+        // Spawn attention timer (using TestEventEmitter for tests)
+        let attention_timer_handle = env.app_handle.clone();
+        let attention_event_emitter = TestEventEmitter::new(); // Use TestEventEmitter in tests
+        let attention_shutdown_rx = env.shutdown_tx.subscribe();
+        let attention_shared_state = env.shared_state.clone();
+        tokio::spawn(async move {
+            let mut timer = AttentionTimer::new(
+                attention_timer_handle,
+                attention_event_emitter,
+                attention_shutdown_rx,
+                attention_shared_state,
+            );
+            timer.run(attention_cmd_rx).await;
+        });
+
+        // Spawn command broadcaster (simplified version without monitors)
+        let router_shutdown_rx = env.shutdown_tx.subscribe();
+        let router_shared_state = env.shared_state.clone();
+        let router_app_handle = env.app_handle.clone();
+        tokio::spawn(async move {
+            broadcast_commands(
+                cmd_rx,
+                break_cmd_tx,
+                attention_cmd_tx,
+                router_shutdown_rx,
+                router_shared_state,
+                router_app_handle,
+            )
+            .await;
+        });
     }
 }

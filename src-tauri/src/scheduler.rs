@@ -8,6 +8,8 @@ mod break_scheduler;
 mod event_emitter;
 
 #[cfg(test)]
+mod attention_timer_tests;
+#[cfg(test)]
 mod test_helpers;
 
 // Re-export public API
