@@ -16,6 +16,8 @@ mod manager_integration_tests;
 #[cfg(test)]
 mod monitor_integration_tests;
 #[cfg(test)]
+mod stress_tests;
+#[cfg(test)]
 mod test_helpers;
 
 // Re-export public API
