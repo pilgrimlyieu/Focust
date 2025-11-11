@@ -12,9 +12,6 @@ linker = "rust-lld"
 [target.aarch64-pc-windows-msvc]
 linker = "rust-lld"
 
-[build]
-rustc-wrapper = "sccache"
-
 [env]
 TS_RS_EXPORT_DIR = { value = "src/types/generated", relative = true }
 # workaround needed to prevent `STATUS_ENTRYPOINT_NOT_FOUND` error in tests
