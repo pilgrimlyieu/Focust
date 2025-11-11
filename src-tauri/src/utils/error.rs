@@ -8,7 +8,6 @@
 /// - **Application code**: Use `anyhow::Result` for convenience
 /// - **Tauri commands**: Always return `Result<T, String>` (required by Tauri)
 /// - **Conversions**: Use `IntoTauriError` trait to convert at boundaries
-
 use std::io;
 use std::path::PathBuf;
 

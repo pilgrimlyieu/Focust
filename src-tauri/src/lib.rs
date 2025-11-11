@@ -68,16 +68,19 @@ pub fn run() {
                 .app_log_dir()
                 .expect("Failed to get app log directory");
 
-            // Initialize logging with default level first
-            // Will be updated after config is loaded
-            let default_log_level = utils::LogLevel::default_for_build();
-            utils::init_logging(&log_dir, default_log_level).unwrap_or_else(|e| {
-                eprintln!("Failed to initialize logging: {e}");
-            });
-
             let handle = app.handle().clone();
 
             tauri::async_runtime::spawn(async move {
+                // Load app config first to get log level
+                let app_config = config::load_config(&handle).await;
+
+                // Initialize logging with configured level
+                utils::init_logging(&log_dir, app_config.advanced.log_level).unwrap_or_else(|e| {
+                    eprintln!("Failed to initialize logging: {e}");
+                });
+
+                tracing::info!("Logging initialized with level: {}", app_config.advanced.log_level);
+
                 // Audio initialization (platform-dependent)
                 //
                 // macOS: Audio temporarily disabled due to cpal Send trait issue
@@ -111,20 +114,6 @@ pub fn run() {
 
                 // Initialize prompt payload store
                 handle.manage(PromptPayloadStore::new());
-
-                // Load app config first
-                let app_config = config::load_config(&handle).await;
-
-                // Log the configured log level (from advanced section)
-                tracing::info!("Configured log level: {}", app_config.advanced.log_level);
-                if app_config.advanced.log_level != utils::LogLevel::default_for_build() {
-                    tracing::warn!(
-                        "Log level override detected: {} (default would be {})",
-                        app_config.advanced.log_level,
-                        utils::LogLevel::default_for_build()
-                    );
-                    tracing::warn!("Note: Log level can only be set at startup. Restart the app for changes to take effect.");
-                }
 
                 let shared_config = config::SharedConfig::new(app_config.clone());
                 handle.manage(shared_config);
