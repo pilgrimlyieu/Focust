@@ -1,11 +1,25 @@
 use serde::{Deserialize, Serialize};
+use strum_macros::{Display, EnumIter, EnumString};
 use ts_rs::TS;
 
 /// Type of audio source currently active
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, TS)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    Serialize,
+    Deserialize,
+    PartialEq,
+    Eq,
+    Default,
+    Display,
+    EnumString,
+    EnumIter,
+    TS,
+)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, rename_all = "camelCase")]
-#[derive(Default)]
+#[strum(serialize_all = "camelCase")]
 pub enum AudioSourceType {
     #[default]
     None,

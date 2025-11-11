@@ -1,6 +1,7 @@
 use std::{fmt::Display, ops::Deref, str::FromStr};
 
 use serde::{Deserialize, Serialize};
+use strum_macros::{Display, EnumIter, EnumString};
 use ts_rs::TS;
 
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
@@ -91,24 +92,28 @@ impl ResolvedBackground {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, TS)]
+/// Type of background for resolved background
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    Serialize,
+    Deserialize,
+    PartialEq,
+    Eq,
+    Default,
+    Display,
+    EnumString,
+    EnumIter,
+    TS,
+)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, rename_all = "camelCase")]
-#[derive(Default)]
+#[strum(serialize_all = "camelCase")]
 pub enum BackgroundKind {
     #[default]
     Solid,
     Image,
-}
-
-impl Display for BackgroundKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let kind_str = match self {
-            BackgroundKind::Solid => "solid",
-            BackgroundKind::Image => "image",
-        };
-        write!(f, "{kind_str}")
-    }
 }
 impl Deref for FontFamily {
     type Target = String;
@@ -119,10 +124,23 @@ impl Deref for FontFamily {
 }
 
 /// Type of background source currently active
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, TS)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    Serialize,
+    Deserialize,
+    PartialEq,
+    Eq,
+    Default,
+    Display,
+    EnumString,
+    EnumIter,
+    TS,
+)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, rename_all = "camelCase")]
-#[derive(Default)]
+#[strum(serialize_all = "camelCase")]
 pub enum BackgroundType {
     #[default]
     Solid,

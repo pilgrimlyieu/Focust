@@ -6,7 +6,21 @@ use super::app_exclusion::AppExclusion;
 use crate::{
     core::schedule::{AttentionSettings, ScheduleSettings},
     platform::i18n::LANGUAGE_FALLBACK,
+    utils::LogLevel,
 };
+
+/// Advanced configuration settings
+///
+/// These settings are for advanced users and debugging.
+/// They are stored in a separate `[advanced]` section in the TOML config file.
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
+#[serde(default, rename_all = "camelCase")]
+pub struct AdvancedConfig {
+    /// Log level for the application
+    /// Overrides the default log level (info in release, trace in debug)
+    #[serde(default = "LogLevel::default_for_build")]
+    pub log_level: LogLevel,
+}
 
 /// Application configuration structure
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
@@ -35,6 +49,10 @@ pub struct AppConfig {
     pub attentions: Vec<AttentionSettings>,
     /// Application exclusion rules
     pub app_exclusions: Vec<AppExclusion>,
+    /// Advanced configuration (not exported to TypeScript, internal only)
+    #[serde(skip)]
+    #[ts(skip)]
+    pub advanced: AdvancedConfig,
 }
 
 impl Default for AppConfig {
@@ -51,6 +69,7 @@ impl Default for AppConfig {
             schedules: vec![ScheduleSettings::default()],
             attentions: vec![],
             app_exclusions: vec![],
+            advanced: AdvancedConfig::default(),
         }
     }
 }

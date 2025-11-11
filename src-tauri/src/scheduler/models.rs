@@ -1,8 +1,8 @@
-use std::fmt::Display;
-
 use bitflags::bitflags;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::fmt::Display;
+use strum_macros::{Display as StrumDisplay, EnumIter, EnumString};
 use ts_rs::TS;
 
 use crate::config::AppConfig;
@@ -119,23 +119,14 @@ impl Display for Command {
 // State Types
 // ============================================================================
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+/// Reason for pausing the scheduler
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, StrumDisplay, EnumString, EnumIter)]
+#[strum(serialize_all = "PascalCase")]
 pub enum PauseReason {
     UserIdle,
     Dnd,
     Manual,
     AppExclusion,
-}
-
-impl Display for PauseReason {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            PauseReason::UserIdle => write!(f, "UserIdle"),
-            PauseReason::Dnd => write!(f, "Dnd"),
-            PauseReason::Manual => write!(f, "Manual"),
-            PauseReason::AppExclusion => write!(f, "AppExclusion"),
-        }
-    }
 }
 
 bitflags! {

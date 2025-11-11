@@ -6,10 +6,11 @@ use figment::{
     Figment,
     providers::{Format, Serialized, Toml},
 };
+use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 use tokio::fs as a_fs;
 
-use crate::config::AppConfig;
+use crate::config::{AdvancedConfig, AppConfig};
 
 pub async fn load_config(app_handle: &AppHandle) -> AppConfig {
     try_load_or_create_config(app_handle)
@@ -23,11 +24,24 @@ pub async fn load_config(app_handle: &AppHandle) -> AppConfig {
 }
 
 pub async fn save_config(app_handle: &AppHandle, config: &AppConfig) -> Result<()> {
+    // Create a wrapper struct to properly serialize with advanced section
+    #[derive(Serialize)]
+    struct ConfigFile<'a> {
+        #[serde(flatten)]
+        config: &'a AppConfig,
+        advanced: &'a AdvancedConfig,
+    }
+
     let config_path = get_config_path(app_handle)?;
+
+    let config_file = ConfigFile {
+        config,
+        advanced: &config.advanced,
+    };
 
     // Serialize config to TOML string
     let toml_string =
-        toml::to_string_pretty(config).context("Failed to serialize config to TOML")?;
+        toml::to_string_pretty(&config_file).context("Failed to serialize config to TOML")?;
 
     // Write to file
     a_fs::write(&config_path, toml_string)
@@ -65,7 +79,8 @@ async fn try_load_or_create_config(app_handle: &AppHandle) -> Result<AppConfig> 
         return Ok(config);
     }
 
-    let config = Figment::new()
+    // Load main config (without advanced section)
+    let mut config: AppConfig = Figment::new()
         .merge(Serialized::defaults(AppConfig::default()))
         .merge(Toml::file(&config_path))
         .extract()
@@ -81,8 +96,32 @@ async fn try_load_or_create_config(app_handle: &AppHandle) -> Result<AppConfig> 
             ))
         })?;
 
+    // Load advanced config from separate section
+    config.advanced = load_advanced_config(&config_path).await?;
+
     tracing::info!("Config loaded successfully from {}", config_path.display());
+    tracing::debug!("Advanced config: {:?}", config.advanced);
+
     Ok(config)
+}
+
+/// Load advanced configuration from the `[advanced]` section
+async fn load_advanced_config(config_path: &PathBuf) -> Result<AdvancedConfig> {
+    // Try to extract the advanced section, fall back to default if not present
+    #[derive(Deserialize)]
+    struct ConfigFile {
+        #[serde(default)]
+        advanced: AdvancedConfig,
+    }
+
+    let file_content = a_fs::read_to_string(config_path)
+        .await
+        .context("Failed to read config file for advanced section")?;
+
+    let config_file: ConfigFile = toml::from_str(&file_content)
+        .context("Failed to parse advanced section from config file")?;
+
+    Ok(config_file.advanced)
 }
 
 #[cfg(test)]

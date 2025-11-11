@@ -68,13 +68,10 @@ pub fn run() {
                 .app_log_dir()
                 .expect("Failed to get app log directory");
 
-            let log_level = if cfg!(debug_assertions) {
-                "info"
-            } else {
-                "warn"
-            };
-
-            utils::init_logging(&log_dir, log_level).unwrap_or_else(|e| {
+            // Initialize logging with default level first
+            // Will be updated after config is loaded
+            let default_log_level = utils::LogLevel::default_for_build();
+            utils::init_logging(&log_dir, default_log_level).unwrap_or_else(|e| {
                 eprintln!("Failed to initialize logging: {e}");
             });
 
@@ -117,6 +114,18 @@ pub fn run() {
 
                 // Load app config first
                 let app_config = config::load_config(&handle).await;
+
+                // Log the configured log level (from advanced section)
+                tracing::info!("Configured log level: {}", app_config.advanced.log_level);
+                if app_config.advanced.log_level != utils::LogLevel::default_for_build() {
+                    tracing::warn!(
+                        "Log level override detected: {} (default would be {})",
+                        app_config.advanced.log_level,
+                        utils::LogLevel::default_for_build()
+                    );
+                    tracing::warn!("Note: Log level can only be set at startup. Restart the app for changes to take effect.");
+                }
+
                 let shared_config = config::SharedConfig::new(app_config.clone());
                 handle.manage(shared_config);
 

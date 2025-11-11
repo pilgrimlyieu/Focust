@@ -1,7 +1,7 @@
-use std::{collections::HashMap, ops::Deref};
-use std::{fmt::Display, sync::Arc};
+use std::{collections::HashMap, ops::Deref, sync::Arc};
 
 use serde::{Deserialize, Serialize};
+use strum_macros::{Display, EnumIter, EnumString};
 use tokio::sync::RwLock;
 use ts_rs::TS;
 
@@ -9,24 +9,18 @@ use crate::core::audio::AudioSettings;
 use crate::core::theme::{ResolvedBackground, ThemeSettings};
 
 /// Break kind type
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, TS)]
+#[derive(
+    Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Display, EnumString, EnumIter, TS,
+)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, rename_all = "camelCase")]
+#[strum(serialize_all = "PascalCase")]
 pub enum EventKind {
+    #[strum(serialize = "MiniBreak")]
     Mini,
+    #[strum(serialize = "LongBreak")]
     Long,
     Attention,
-}
-
-impl Display for EventKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let kind_str = match self {
-            EventKind::Mini => "MiniBreak",
-            EventKind::Long => "LongBreak",
-            EventKind::Attention => "Attention",
-        };
-        write!(f, "{kind_str}")
-    }
 }
 
 impl EventKind {

@@ -1,9 +1,12 @@
 //! DND event definitions
 
+use strum_macros::{Display, EnumIter, EnumString};
+
 /// DND state change event
 ///
 /// Emitted when the system DND/Focus Assist state changes.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Display, EnumString, EnumIter)]
+#[strum(serialize_all = "PascalCase")]
 pub enum DndEvent {
     /// DND/Focus Assist was enabled
     Started,

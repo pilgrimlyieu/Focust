@@ -4,8 +4,9 @@
 //! status from system preferences. While not as efficient as event-driven
 //! monitoring, it uses adaptive polling to minimize CPU usage.
 
-use anyhow::{Context, Result};
 use std::sync::Arc;
+
+use anyhow::{Context, Result};
 use tokio::sync::{Mutex as AsyncMutex, mpsc};
 
 use super::DndEvent;

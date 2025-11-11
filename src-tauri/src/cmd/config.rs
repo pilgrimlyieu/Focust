@@ -1,6 +1,7 @@
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
+use anyhow::Context;
 use rand::Rng;
 use tauri::{AppHandle, State};
 use tauri_plugin_global_shortcut::GlobalShortcutExt;
@@ -35,9 +36,8 @@ pub async fn save_config(
     config::save_config(&app_handle, &config)
         .await
         .map_err(|e| {
-            let err_msg = format!("Failed to save config file: {e}");
-            tracing::error!("{err_msg}");
-            err_msg
+            tracing::error!("Failed to save config file: {e}");
+            e.to_string()
         })?;
 
     // Update the scheduler with the new config
@@ -45,9 +45,8 @@ pub async fn save_config(
         .send(Command::UpdateConfig(config.clone()))
         .await
         .map_err(|e| {
-            let err_msg = format!("Failed to send update_config command to scheduler: {e}");
-            tracing::error!("{err_msg}");
-            err_msg
+            tracing::error!("Failed to send update_config command to scheduler: {e}");
+            e.to_string()
         })?;
 
     // Update the shared config state
@@ -74,9 +73,9 @@ pub async fn save_config(
 
         // Re-register with new shortcut
         register_shortcuts(&app_handle).await.map_err(|e| {
-            let err_msg = format!("Failed to re-register shortcuts: {e}");
-            tracing::error!("{err_msg}");
-            err_msg
+            let err_str = e.clone();
+            tracing::error!("Failed to re-register shortcuts: {err_str}");
+            err_str
         })?;
 
         tracing::info!("Shortcuts re-registered successfully");
@@ -87,15 +86,17 @@ pub async fn save_config(
 
 #[tauri::command]
 pub async fn pick_background_image(folder: String) -> Result<Option<String>, String> {
+    use anyhow::{Result as AnyhowResult, anyhow};
+
     let folder = PathBuf::from(folder);
     if !folder.exists() {
         tracing::warn!("Background folder does not exist: {}", folder.display());
         return Ok(None);
     }
 
-    let result = task::spawn_blocking(move || -> Result<Option<PathBuf>, String> {
+    let result = task::spawn_blocking(move || -> AnyhowResult<Option<PathBuf>> {
         let mut entries: Vec<PathBuf> = std::fs::read_dir(&folder)
-            .map_err(|err| format!("Failed to read folder {}: {err}", folder.display()))?
+            .with_context(|| format!("Failed to read folder {}", folder.display()))?
             .filter_map(|entry| entry.ok().map(|e| e.path()))
             .filter(|path| path.is_file() && is_image(path))
             .collect();
@@ -109,9 +110,11 @@ pub async fn pick_background_image(folder: String) -> Result<Option<String>, Str
         Ok(Some(entries.swap_remove(index)))
     })
     .await
-    .map_err(|err| format!("Background picker task panicked: {err}"))?;
+    .map_err(|e| anyhow!("Background picker task panicked: {e}"))
+    .and_then(|r| r)
+    .map_err(|e| e.to_string())?;
 
-    Ok(result?.map(|path| path.to_string_lossy().to_string()))
+    Ok(result.map(|path| path.to_string_lossy().to_string()))
 }
 
 fn is_image(path: &Path) -> bool {
