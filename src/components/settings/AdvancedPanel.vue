@@ -249,7 +249,8 @@ function toggleDebugSection() {
           <BellIcon class-name="h-4 w-4" />
           Trigger Attention
         </button>
-        <button class="btn btn-sm btn-error gap-2 shadow-sm hover:shadow-md transition-all" @click="skipCurrentBreak">
+        <button class="btn btn-sm btn-error gap-2 shadow-sm hover:shadow-md transition-all" :disabled="schedulerPaused"
+          @click="skipCurrentBreak">
           <CloseIcon class-name="h-4 w-4" />
           Skip Current Break
         </button>

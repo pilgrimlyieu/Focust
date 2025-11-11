@@ -72,7 +72,23 @@ pub async fn resume_scheduler(state: State<'_, SchedulerCmd>) -> Result<(), Stri
 
 /// Postpone the current or next break
 #[tauri::command]
-pub async fn postpone_break(state: State<'_, SchedulerCmd>) -> Result<(), String> {
+pub async fn postpone_break(
+    state: State<'_, SchedulerCmd>,
+    shared_state: State<'_, SharedState>,
+) -> Result<(), String> {
+    // Validate pause state before sending command
+    if shared_state.read().is_paused() {
+        let reasons = shared_state
+            .read()
+            .pause_reasons()
+            .iter()
+            .map(std::string::ToString::to_string)
+            .collect::<Vec<_>>()
+            .join(", ");
+        return Err(format!(
+            "Cannot postpone break while scheduler is paused (reasons: {reasons})"
+        ));
+    }
     state
         .send(Command::PostponeBreak)
         .await
@@ -110,7 +126,23 @@ pub async fn trigger_event(
 
 /// Skip the current break immediately
 #[tauri::command]
-pub async fn skip_break(state: State<'_, SchedulerCmd>) -> Result<(), String> {
+pub async fn skip_break(
+    state: State<'_, SchedulerCmd>,
+    shared_state: State<'_, SharedState>,
+) -> Result<(), String> {
+    // Validate pause state before sending command
+    if shared_state.read().is_paused() {
+        let reasons = shared_state
+            .read()
+            .pause_reasons()
+            .iter()
+            .map(std::string::ToString::to_string)
+            .collect::<Vec<_>>()
+            .join(", ");
+        return Err(format!(
+            "Cannot skip break while scheduler is paused (reasons: {reasons})"
+        ));
+    }
     state
         .send(Command::SkipBreak)
         .await

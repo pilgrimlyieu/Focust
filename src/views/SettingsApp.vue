@@ -312,7 +312,7 @@ defineExpose({
             <PauseIcon v-else class-name="h-4 w-4" />
             <span class="hidden sm:inline">{{ schedulerPaused ? t("actions.resume") : t("actions.pause") }}</span>
           </button>
-          <button class="btn btn-sm gap-2 btn-ghost hover:btn-info" @click="handlePostpone">
+          <button class="btn btn-sm gap-2 btn-ghost hover:btn-info" :disabled="schedulerPaused" @click="handlePostpone">
             <ClockIcon class-name="h-4 w-4" />
             <span class="hidden sm:inline">{{ t("actions.postpone") }}</span>
           </button>
