@@ -57,7 +57,7 @@ pub fn init_logging(log_dir: &PathBuf, log_level: &str) -> Result<(), String> {
 
     // default log level for our own crate
     if cfg!(debug_assertions) {
-        env_filter = env_filter.add_directive("focust=debug".parse().unwrap());
+        env_filter = env_filter.add_directive("focust=trace".parse().unwrap());
     } else {
         env_filter = env_filter.add_directive("focust=info".parse().unwrap());
     }

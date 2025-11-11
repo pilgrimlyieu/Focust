@@ -120,20 +120,19 @@
 //!
 //! - `RwLock` allows concurrent reads (all monitors can check simultaneously)
 //! - Writes are rare (only on pause/resume transitions and session changes)
-//! - `HashSet` operations are O(1) average case
+//! - Bitflags operations are O(1) with constant time complexity
 //!
 //! # See Also
 //!
 //! - `scheduler::manager`] - Command routing and state management
 //! - `monitors::dnd` - Example of session-aware monitoring
 
-use std::collections::HashSet;
 use std::sync::Arc;
 use std::time::Instant;
 
 use parking_lot::RwLock;
 
-use super::models::PauseReason;
+use super::models::{PauseReason, PauseReasons};
 
 /// Shared state between all schedulers and monitors
 ///
@@ -145,7 +144,7 @@ pub struct SharedSchedulerState {
     ///
     /// When this set is non-empty, the scheduler is paused.
     /// Multiple reasons can be active simultaneously.
-    pause_reasons: HashSet<PauseReason>,
+    pause_reasons: PauseReasons,
 
     /// Whether currently in a break session (mini or long)
     ///
@@ -171,7 +170,7 @@ impl SharedSchedulerState {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            pause_reasons: HashSet::new(),
+            pause_reasons: PauseReasons::empty(),
             in_break_session: false,
             in_attention_session: false,
             break_session_start: None,
@@ -192,12 +191,13 @@ impl SharedSchedulerState {
     /// ```
     pub fn add_pause_reason(&mut self, reason: PauseReason) -> bool {
         let was_running = self.pause_reasons.is_empty();
-        let inserted = self.pause_reasons.insert(reason);
+        let was_already_set = self.pause_reasons.contains(reason.into());
+        self.pause_reasons.insert(reason.into());
 
         if was_running {
             tracing::info!("🔴 SharedState: Scheduler PAUSED (first reason: {reason})");
             tracing::trace!("SharedState: pause_reasons = {:?}", self.pause_reasons);
-        } else if inserted {
+        } else if !was_already_set {
             tracing::info!(
                 "SharedState: Added pause reason {reason} (already paused, total: {})",
                 self.pause_reasons.len()
@@ -222,13 +222,14 @@ impl SharedSchedulerState {
     /// Reasons: {Dnd}       -> remove(Dnd)  -> Reasons: {}     [Returns: true]
     /// ```
     pub fn remove_pause_reason(&mut self, reason: PauseReason) -> bool {
-        let removed = self.pause_reasons.remove(&reason);
+        let was_set = self.pause_reasons.contains(reason.into());
+        self.pause_reasons.remove(reason.into());
         let is_now_running = self.pause_reasons.is_empty();
 
         if is_now_running {
             tracing::info!("🟢 SharedState: Scheduler RESUMED (all pause reasons cleared)");
             tracing::trace!("SharedState: pause_reasons = {:?}", self.pause_reasons);
-        } else if removed {
+        } else if was_set {
             tracing::info!(
                 "SharedState: Removed pause reason {reason} (still paused by {} other reason(s))",
                 self.pause_reasons.len()
@@ -254,8 +255,8 @@ impl SharedSchedulerState {
 
     /// Get the set of active pause reasons (for debugging/status display)
     #[must_use]
-    pub fn pause_reasons(&self) -> &HashSet<PauseReason> {
-        &self.pause_reasons
+    pub fn pause_reasons(&self) -> Vec<PauseReason> {
+        self.pause_reasons.to_vec()
     }
 
     /// Check if in any session (break or attention)

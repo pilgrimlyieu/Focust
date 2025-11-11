@@ -414,6 +414,7 @@ where
             tracing::debug!("Test mode: skipping window creation for event: {event}");
         }
     }
+
     /// Reset break timers
     fn reset_last_break_time(&mut self) {
         self.last_break_time = None;

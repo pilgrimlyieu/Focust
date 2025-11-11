@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use bitflags::bitflags;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -137,6 +138,54 @@ impl Display for PauseReason {
     }
 }
 
+bitflags! {
+    /// Flags representing the current pause reasons
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub struct PauseReasons: u8 {
+        const USER_IDLE     = 1 << 0; // 0b0001
+        const DND           = 1 << 1; // 0b0010
+        const MANUAL        = 1 << 2; // 0b0100
+        const APP_EXCLUSION = 1 << 3; // 0b1000
+    }
+}
+
+impl From<PauseReason> for PauseReasons {
+    fn from(reason: PauseReason) -> Self {
+        match reason {
+            PauseReason::UserIdle => PauseReasons::USER_IDLE,
+            PauseReason::Dnd => PauseReasons::DND,
+            PauseReason::Manual => PauseReasons::MANUAL,
+            PauseReason::AppExclusion => PauseReasons::APP_EXCLUSION,
+        }
+    }
+}
+
+impl PauseReasons {
+    /// Returns the number of active pause reasons
+    #[must_use]
+    #[allow(clippy::len_without_is_empty)]
+    pub fn len(self) -> usize {
+        self.bits().count_ones() as usize
+    }
+
+    /// Returns an iterator over all active pause reasons
+    pub fn active_reasons(self) -> impl Iterator<Item = PauseReason> {
+        self.iter().map(|flag| match flag {
+            PauseReasons::USER_IDLE => PauseReason::UserIdle,
+            PauseReasons::DND => PauseReason::Dnd,
+            PauseReasons::MANUAL => PauseReason::Manual,
+            PauseReasons::APP_EXCLUSION => PauseReason::AppExclusion,
+            _ => unreachable!(),
+        })
+    }
+
+    /// Returns a vector of all active pause reasons
+    #[must_use]
+    pub fn to_vec(self) -> Vec<PauseReason> {
+        self.active_reasons().collect()
+    }
+}
+
 // ============================================================================
 // Status Types - For UI Display
 // ============================================================================
@@ -226,5 +275,39 @@ mod tests {
         assert_eq!(PauseReason::Dnd.to_string(), "Dnd");
         assert_eq!(PauseReason::Manual.to_string(), "Manual");
         assert_eq!(PauseReason::AppExclusion.to_string(), "AppExclusion");
+    }
+
+    // PauseReasons tests
+    #[test]
+    fn test_pause_reasons_len() {
+        assert_eq!(PauseReasons::empty().len(), 0);
+        assert_eq!(PauseReasons::USER_IDLE.len(), 1);
+        assert_eq!((PauseReasons::USER_IDLE | PauseReasons::DND).len(), 2);
+        assert_eq!(PauseReasons::all().len(), 4);
+    }
+
+    #[test]
+    fn test_pause_reasons_active_reasons() {
+        let empty: Vec<_> = PauseReasons::empty().active_reasons().collect();
+        assert_eq!(empty, vec![]);
+
+        let single: Vec<_> = PauseReasons::USER_IDLE.active_reasons().collect();
+        assert_eq!(single, vec![PauseReason::UserIdle]);
+
+        let multiple: Vec<_> = (PauseReasons::USER_IDLE | PauseReasons::DND)
+            .active_reasons()
+            .collect();
+        assert_eq!(multiple.len(), 2);
+        assert!(multiple.contains(&PauseReason::UserIdle));
+        assert!(multiple.contains(&PauseReason::Dnd));
+    }
+
+    #[test]
+    fn test_pause_reasons_to_vec() {
+        assert_eq!(PauseReasons::empty().to_vec(), vec![]);
+        assert_eq!(
+            PauseReasons::USER_IDLE.to_vec(),
+            vec![PauseReason::UserIdle]
+        );
     }
 }
