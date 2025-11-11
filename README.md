@@ -103,6 +103,9 @@ See the [QUICKSTART.md](docs/QUICKSTART.md) for a step-by-step guide to getting 
 ![General Settings](docs/images/screenshot-general.png)
 *General settings with language, theme, and behavior options*
 
+![App Exclusions](docs/images/screenshot-appexclusions.png)
+*Automatically pause or resume break scheduler based on active applications*
+
 ### 🌍 Internationalization
 
 - Currently supported: English (en-US), Simplified Chinese (zh-CN), Japanese (ja-JP), German (de-DE), French (fr-FR), Spanish (es-ES), Russian (ru-RU), Portuguese (pt-BR), Italian (it-IT), Korean (ko-KR)

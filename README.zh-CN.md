@@ -103,6 +103,9 @@
 ![通用设置](docs/images/screenshot-general.png)
 *具有语言、主题和行为选项的通用设置*
 
+![应用排除](docs/images/screenshot-appexclusions.png)
+*基于活动应用程序自动暂停或恢复休息调度器*
+
 ### 🌍 国际化
 
 - 目前支持：英语（en-US）、简体中文（zh-CN）、日语（ja-JP）、德语（de-DE）、法语（fr-FR）、西班牙语（es-ES）、俄语（ru-RU）、葡萄牙语（pt-BR）、意大利语（it-IT）、韩语（ko-KR）

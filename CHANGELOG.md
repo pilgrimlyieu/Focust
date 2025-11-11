@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## 0.2.4 (2025.11.11)
+
+### 🎉 Features
+
+- Support restart from tray icon menu.
+
+### 🐛 Bug Fixes
+
+- Fix regression issue that pause/resume in tray icon doesn't work.
+- Fix regression issue that DND monitor doesn't work.
+- Fix inconsistent state between frontend and scheduler when pause reasons is changed in complicated ways.
+
+### 🚀 Improvements
+
+- Monitors no longer send pause command when in break or attention session.
+- Prevent user from manually triggering, postponing or skipping events, when the scheduler is paused.
+
+### 📝 Documentation
+
+- Update QUICKSTART documentation to include FAQ about scheduler pause/resume.
+
 ## 0.2.3 (2025.11.8)
 
 ### 🎉 Features
