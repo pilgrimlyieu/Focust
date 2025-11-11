@@ -145,6 +145,9 @@ pub fn run() {
 
                 let (cmd_tx, shutdown_tx, shared_state) = SchedulerManager::init(&handle);
 
+                // Register shared state for Tauri commands to access
+                handle.manage(shared_state.clone());
+
                 // Spawn monitors based on configuration
                 let mut monitors: Vec<Box<dyn monitors::Monitor>> = vec![];
 

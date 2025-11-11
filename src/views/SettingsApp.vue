@@ -192,15 +192,19 @@ function handleReset() {
 
 /**
  * Toggle pausing/resuming the scheduler.
+ *
+ * Note: We don't manually update the state here. The backend will emit
+ * scheduler-status events that update the frontend state automatically.
+ * This ensures the frontend always reflects the actual backend state.
  */
 async function togglePause() {
   try {
     if (schedulerPaused.value) {
       await invoke("resume_scheduler");
-      schedulerStore.setPaused(false);
+      // State will be updated via scheduler-status event
     } else {
       await invoke("pause_scheduler");
-      schedulerStore.setPaused(true);
+      // State will be updated via scheduler-status event
     }
   } catch (err) {
     console.error(err);

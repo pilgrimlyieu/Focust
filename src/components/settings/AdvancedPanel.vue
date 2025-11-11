@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import AdvancedOption from "@/components/icons/AdvancedOption.vue";
 import BellIcon from "@/components/icons/BellIcon.vue";
@@ -12,17 +12,23 @@ import InfoIcon from "@/components/icons/InfoIcon.vue";
 import MonitorIcon from "@/components/icons/MonitorIcon.vue";
 import type { ToastKind } from "@/composables/useToast";
 import { useConfigStore } from "@/stores/config";
+import { useSchedulerStore } from "@/stores/scheduler";
 import {
   createAttentionEvent,
   createLongBreakEvent,
   createMiniBreakEvent,
 } from "@/types";
+import { getErrorMessage } from "@/utils/handleError";
 
 const emit =
   defineEmits<(event: "notify", kind: ToastKind, message: string) => void>();
 
 const { t } = useI18n();
 const configStore = useConfigStore();
+const schedulerStore = useSchedulerStore();
+
+// Computed property to check if scheduler is paused
+const schedulerPaused = computed(() => schedulerStore.schedulerPaused);
 
 // Debug section visibility (hidden in production builds by default, but can be toggled)
 const showDebugSection = ref(!import.meta.env.PROD);
@@ -58,6 +64,11 @@ async function openLogDirectory() {
  */
 async function triggerMiniBreak() {
   try {
+    if (schedulerPaused.value) {
+      emit("notify", "info", t("toast.cannotTriggerWhilePaused"));
+      return;
+    }
+
     const config = configStore.draft ?? configStore.original;
     if (!config || config.schedules.length === 0) {
       emit("notify", "error", t("toast.noScheduleConfig"));
@@ -70,7 +81,11 @@ async function triggerMiniBreak() {
     emit("notify", "success", t("toast.miniBreakTriggered"));
   } catch (err) {
     console.error("Failed to trigger mini break:", err);
-    emit("notify", "error", t("toast.miniBreakTriggerFailed"));
+    emit(
+      "notify",
+      "error",
+      `${t("toast.miniBreakTriggerFailed")}: ${getErrorMessage(err)}`,
+    );
   }
 }
 
@@ -79,6 +94,11 @@ async function triggerMiniBreak() {
  */
 async function triggerLongBreak() {
   try {
+    if (schedulerPaused.value) {
+      emit("notify", "info", t("toast.cannotTriggerWhilePaused"));
+      return;
+    }
+
     const config = configStore.draft ?? configStore.original;
     if (!config || config.schedules.length === 0) {
       emit("notify", "error", t("toast.noScheduleConfig"));
@@ -90,7 +110,11 @@ async function triggerLongBreak() {
     emit("notify", "success", t("toast.longBreakTriggered"));
   } catch (err) {
     console.error("Failed to trigger long break:", err);
-    emit("notify", "error", t("toast.longBreakTriggerFailed"));
+    emit(
+      "notify",
+      "error",
+      `${t("toast.longBreakTriggerFailed")}: ${getErrorMessage(err)}`,
+    );
   }
 }
 
@@ -99,6 +123,11 @@ async function triggerLongBreak() {
  */
 async function triggerAttention() {
   try {
+    if (schedulerPaused.value) {
+      emit("notify", "info", t("toast.cannotTriggerWhilePaused"));
+      return;
+    }
+
     const config = configStore.draft ?? configStore.original;
     if (!config || config.attentions.length === 0) {
       emit("notify", "error", t("toast.noAttentionConfig"));
@@ -110,7 +139,11 @@ async function triggerAttention() {
     emit("notify", "success", t("toast.attentionTriggered"));
   } catch (err) {
     console.error("Failed to trigger attention:", err);
-    emit("notify", "error", t("toast.attentionTriggerFailed"));
+    emit(
+      "notify",
+      "error",
+      `${t("toast.attentionTriggerFailed")}: ${getErrorMessage(err)}`,
+    );
   }
 }
 
@@ -202,15 +235,17 @@ function toggleDebugSection() {
       </p>
       <div class="flex gap-2 flex-wrap">
         <button class="btn btn-sm btn-secondary gap-2 shadow-sm hover:shadow-md transition-all"
-          @click="triggerMiniBreak">
+          :disabled="schedulerPaused" @click="triggerMiniBreak">
           <ClockIcon class-name="h-4 w-4" />
           Trigger Mini Break (20s)
         </button>
-        <button class="btn btn-sm btn-accent gap-2 shadow-sm hover:shadow-md transition-all" @click="triggerLongBreak">
+        <button class="btn btn-sm btn-accent gap-2 shadow-sm hover:shadow-md transition-all" :disabled="schedulerPaused"
+          @click="triggerLongBreak">
           <ClockIcon class-name="h-4 w-4" />
           Trigger Long Break (5min)
         </button>
-        <button class="btn btn-sm btn-info gap-2 shadow-sm hover:shadow-md transition-all" @click="triggerAttention">
+        <button class="btn btn-sm btn-info gap-2 shadow-sm hover:shadow-md transition-all" :disabled="schedulerPaused"
+          @click="triggerAttention">
           <BellIcon class-name="h-4 w-4" />
           Trigger Attention
         </button>

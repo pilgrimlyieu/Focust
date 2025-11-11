@@ -4,6 +4,7 @@ use tauri::State;
 use tokio::sync::{mpsc::Sender, watch};
 
 use crate::scheduler::models::{Command, PauseReason, SchedulerEvent};
+use crate::scheduler::shared_state::SharedState;
 
 pub struct SchedulerCmd(pub Sender<Command>);
 
@@ -79,12 +80,29 @@ pub async fn postpone_break(state: State<'_, SchedulerCmd>) -> Result<(), String
 }
 
 /// Manually trigger a break for testing purposes
+///
+/// Returns an error if the scheduler is currently paused.
 #[tauri::command]
 pub async fn trigger_event(
-    state: State<'_, SchedulerCmd>,
+    scheduler_cmd: State<'_, SchedulerCmd>,
+    shared_state: State<'_, SharedState>,
     break_kind: SchedulerEvent,
 ) -> Result<(), String> {
-    state
+    // Validate pause state before sending command
+    if shared_state.read().is_paused() {
+        let reasons = shared_state
+            .read()
+            .pause_reasons()
+            .iter()
+            .map(std::string::ToString::to_string)
+            .collect::<Vec<_>>()
+            .join(", ");
+        return Err(format!(
+            "Cannot trigger event while scheduler is paused (reasons: {reasons})"
+        ));
+    }
+
+    scheduler_cmd
         .send(Command::TriggerEvent(break_kind))
         .await
         .map_err(|e| e.to_string())
