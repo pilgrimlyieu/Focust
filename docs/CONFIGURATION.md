@@ -21,6 +21,8 @@ This document provides a comprehensive guide to all configuration options availa
 - [Theme Settings](#theme-settings)
 - [Audio Settings](#audio-settings)
 - [Suggestion Settings](#suggestion-settings)
+- [Application Exclusion Settings](#application-exclusion-settings)
+- [Advanced Settings](#advanced-settings)
 - [Examples](#examples)
 - [Tips and Best Practices](#tips-and-best-practices)
 
@@ -773,6 +775,25 @@ language = "en-US"
 themeMode = "system"
 postponeShortcut = "Ctrl+Shift+P"
 windowSize = 0.8
+```
+
+---
+
+## Advanced Settings
+
+Advanced settings are intended for users who want to fine-tune the application's behavior beyond standard options. These settings are not exposed in the user interface and must be edited directly in the configuration file. All advanced settings are grouped under the `[advanced]` table.
+
+### `logLevel`
+- **Type**: String enum
+- **Default**: `"info"`
+- **Options**: `"debug"`, `"info"`, `"warn"`, `"error"`
+- **Description**: Sets the verbosity of application logging. Higher levels provide more detailed logs, useful for troubleshooting.
+
+Example:
+
+```toml
+[advanced]
+logLevel = "debug" # Enable detailed debug logging
 ```
 
 ---
