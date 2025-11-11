@@ -215,7 +215,7 @@ pub(crate) fn get_next_attention_time(
     attention: &AttentionSettings,
     now: DateTime<Local>,
 ) -> Option<DateTime<Utc>> {
-    if (!attention.enabled) || attention.times.is_empty() || attention.days_of_week.is_empty() {
+    if !attention.enabled || attention.times.is_empty() || attention.days_of_week.is_empty() {
         tracing::debug!(
             "Attention '{}' is disabled or has no times/days configured.",
             attention.name

@@ -227,10 +227,12 @@ async fn run_monitors(
     loop {
         interval_timer.tick().await;
 
+        let in_session = shared_state.read().in_any_session();
+
         // Check each monitor if its interval has elapsed
         for monitor in &mut monitors {
             // Skip monitors during session if they request it
-            if monitor.skip_during_session() && shared_state.read().in_any_session() {
+            if monitor.skip_during_session() && in_session {
                 continue;
             }
 
