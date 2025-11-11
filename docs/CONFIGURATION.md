@@ -786,7 +786,7 @@ Advanced settings are intended for users who want to fine-tune the application's
 ### `logLevel`
 - **Type**: String enum
 - **Default**: `"info"`
-- **Options**: `"debug"`, `"info"`, `"warn"`, `"error"`
+- **Options**: `"trace"`, `"debug"`, `"info"`, `"warn"`, `"error"`
 - **Description**: Sets the verbosity of application logging. Higher levels provide more detailed logs, useful for troubleshooting.
 
 Example:

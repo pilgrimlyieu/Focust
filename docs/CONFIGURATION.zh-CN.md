@@ -696,7 +696,7 @@ patterns = ["chrome.exe", "firefox"]
 ### `logLevel`
 - **类型**：字符串枚举
 - **默认值**：`"info"`
-- **选项**：`"debug"`、`"info"`、`"warn"`、`"error"`
+- **选项**：`"trace"`、`"debug"`、`"info"`、`"warn"`、`"error"`
 - **说明**：日志记录的详细程度
 
 示例：
