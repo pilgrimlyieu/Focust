@@ -14,6 +14,8 @@ mod break_scheduler_tests;
 #[cfg(test)]
 mod manager_integration_tests;
 #[cfg(test)]
+mod monitor_integration_tests;
+#[cfg(test)]
 mod test_helpers;
 
 // Re-export public API
