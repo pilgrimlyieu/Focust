@@ -1,4 +1,5 @@
 // https://github.com/tauri-apps/tauri/issues/13419#issuecomment-3398457618
+// Fix `STATUS_ENTRYPOINT_NOT_FOUND` error on Windows when testing.
 fn main() {
     let mut attributes = tauri_build::Attributes::new();
     #[cfg(windows)]

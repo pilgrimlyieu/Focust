@@ -14,10 +14,10 @@ use super::models::{
 };
 use super::shared_state::SharedState;
 use crate::config::{AppConfig, SharedConfig};
-use crate::core::schedule::ScheduleSettings;
 #[cfg(not(test))]
 use crate::platform::create_prompt_windows;
 use crate::platform::send_break_notification;
+use crate::scheduler::event::get_active_schedule;
 
 /// The state of the break scheduler
 #[derive(Debug, Clone)]
