@@ -210,22 +210,40 @@ const handlePayload = async (data: PromptPayload) => {
 };
 
 const finishPrompt = async (isAutoFinish = false) => {
-  // Strict mode: cannot finish break early manually, but allow auto-finish
-  if (!isAutoFinish && controlsDisabled.value) return;
+  console.log(
+    `[PromptApp] finishPrompt called (isAutoFinish: ${isAutoFinish})`,
+  );
 
-  if (isClosing.value) return;
+  // Strict mode: cannot finish break early manually, but allow auto-finish
+  if (!isAutoFinish && controlsDisabled.value) {
+    console.log("[PromptApp] finishPrompt blocked by strict mode");
+    return;
+  }
+
+  if (isClosing.value) {
+    console.warn("[PromptApp] finishPrompt blocked - already closing");
+    return;
+  }
+
+  console.log("[PromptApp] Starting finishPrompt sequence");
   isClosing.value = true;
+
   if (intervalId.value) {
     clearInterval(intervalId.value);
     intervalId.value = null;
+    console.log("[PromptApp] Timer cleared");
   }
+
   stopAudio();
+  console.log("[PromptApp] Audio stopped");
 
   // Notify backend that break has finished (so it can update timers)
   if (payload.value) {
     try {
       const event = constructSchedulerEvent(payload.value);
+      console.log("[PromptApp] Notifying backend: prompt_finished", event);
       await invoke("prompt_finished", { event });
+      console.log("[PromptApp] Backend notified successfully");
     } catch (err) {
       console.error(
         "[PromptApp] Failed to notify backend about break finish:",
@@ -240,10 +258,11 @@ const finishPrompt = async (isAutoFinish = false) => {
     const payloadId = params.get("payloadId");
     if (payloadId) {
       console.log(
-        "[PromptApp] Closing all prompt windows for payload:",
+        "[PromptApp] Calling close_all_prompt_windows for payload:",
         payloadId,
       );
       await invoke("close_all_prompt_windows", { payloadId });
+      console.log("[PromptApp] close_all_prompt_windows completed");
     } else {
       // Fallback: close only current window
       console.warn(
@@ -283,46 +302,39 @@ const postponeBreak = async () => {
 };
 
 const handleKeydown = (event: KeyboardEvent) => {
-  // Block common browser shortcuts during prompt to prevent user from
-  // interacting with the underlying page or escaping the prompt window
-  if (
-    event.ctrlKey &&
-    (event.key === "a" ||
-      event.key === "c" ||
-      event.key === "v" ||
-      event.key === "x" ||
-      event.key === "r" ||
-      event.key === "w" ||
-      event.key === "t" ||
-      event.key === "n")
-  ) {
-    event.preventDefault();
-    return;
-  }
-  if (event.key === "F5" || event.key === "F11") {
+  const isCtrlOrCmd = event.ctrlKey || event.metaKey;
+  const key = event.key.toLowerCase();
+
+  const blockedKeys = ["f5", "f11"];
+  const blockedCtrlKeys = ["a", "c", "v", "x", "r", "w", "t", "n"];
+
+  if (blockedKeys.includes(key)) {
     event.preventDefault();
     return;
   }
 
-  // Handle break controls
+  if (isCtrlOrCmd && blockedCtrlKeys.includes(key)) {
+    event.preventDefault();
+    return;
+  }
+
   if (controlsDisabled.value) {
-    if (event.key === "Enter" || event.key === "Escape") {
+    if (key === "enter" || key === "escape") {
       event.preventDefault();
     }
     return;
   }
 
-  // Postpone shortcut (from config or fallback to "P")
   const postponeKey =
     payload.value?.postponeShortcut?.split("+").pop()?.toLowerCase() || "p";
-  if (event.key.toLowerCase() === postponeKey) {
+
+  if (key === postponeKey) {
     event.preventDefault();
     void postponeBreak();
     return;
   }
 
-  // Resume/finish with Enter or Space
-  if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
+  if (key === "enter" || key === " " || key === "spacebar") {
     event.preventDefault();
     void finishPrompt();
   }
@@ -342,8 +354,6 @@ watch(payload, (next) => {
 
 onMounted(async () => {
   console.log("[PromptApp] Component mounted");
-  window.addEventListener("keydown", handleKeydown);
-  window.addEventListener("contextmenu", handleContextMenu);
 
   // Get payloadId from URL
   const params = new URLSearchParams(window.location.search);
@@ -376,8 +386,6 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener("keydown", handleKeydown);
-  window.removeEventListener("contextmenu", handleContextMenu);
   if (intervalId.value) {
     clearInterval(intervalId.value);
   }
@@ -401,7 +409,8 @@ defineExpose({
 
 <template>
   <div class="break-app flex min-h-screen flex-col overflow-hidden"
-    :class="{ 'is-strict': controlsDisabled, 'is-rendered': isRendered }" :style="backgroundStyle">
+    :class="{ 'is-strict': controlsDisabled, 'is-rendered': isRendered }" :style="backgroundStyle"
+    @keydown.window="handleKeydown" @contextmenu.prevent="handleContextMenu">
     <div class="flex flex-1 items-center justify-center bg-slate-950/35 p-6">
       <div
         class="w-full max-w-3xl rounded-3xl border border-white/10 bg-white/10 p-10 shadow-2xl backdrop-blur-xl transition-all"
@@ -415,7 +424,7 @@ defineExpose({
           <div class="space-y-2">
             <p class="text-xs uppercase tracking-[0.35em] opacity-60">
               {{ payload.scheduleName ?? (payload.kind === "attention" ? t("break.attention") : payload.kind === "long"
-  ? t("schedule.longBreak") : t("schedule.miniBreak")) }}
+                ? t("schedule.longBreak") : t("schedule.miniBreak")) }}
             </p>
             <h1 class="text-4xl font-semibold">{{ payload.title }}</h1>
             <p class="text-base opacity-80">

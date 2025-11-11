@@ -576,6 +576,8 @@ where
 
     /// Handle `PromptFinished` command
     async fn handle_prompt_finished_command(&mut self, event: SchedulerEvent) {
+        tracing::debug!("Handling PromptFinished command for event: {event}");
+
         if let BreakSchedulerState::InBreak(info) = &self.state {
             if event == info.event {
                 tracing::info!("Break finished normally: {event}");
@@ -585,7 +587,10 @@ where
                 tracing::info!("Break session ended, DND monitor will resume monitoring");
 
                 self.update_state_after_break(event);
+                tracing::debug!("Break state updated after break: {event}");
+
                 self.transition_to_calculating().await;
+                tracing::debug!("Transitioned to calculating next break");
             } else {
                 tracing::warn!(
                     "Received PromptFinished for different event: expected {}, got {event}",
