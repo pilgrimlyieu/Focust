@@ -3,7 +3,7 @@
 /**
  * Settings for displaying suggestions during breaks
  *
- * This controls whether suggestions are shown to the user during break windows.
+ * This controls whether suggestions are shown to the user during prompt windows.
  * The actual suggestion content is managed separately in the [`SuggestionsConfig`].
  */
 export type SuggestionsSettings = { 

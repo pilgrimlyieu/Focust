@@ -17,7 +17,6 @@ use tokio::sync::{Mutex as AsyncMutex, mpsc};
 use super::{Monitor, MonitorAction, MonitorError, MonitorResult};
 use crate::platform::dnd::{DndEvent, DndMonitor as PlatformDndMonitor, INTERVAL_SECS};
 use crate::scheduler::models::PauseReason;
-use crate::scheduler::shared_state::SharedState;
 
 /// Debounce delay in seconds
 ///
@@ -39,14 +38,18 @@ pub struct DndMonitor {
     reported_dnd_state: bool,
     /// When the DND state last changed (for debouncing)
     state_change_time: Option<Instant>,
-    /// Shared scheduler state (for session checking)
-    shared_state: SharedState,
+}
+
+impl Default for DndMonitor {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl DndMonitor {
     /// Create a new DND monitor
     #[must_use]
-    pub fn new(shared_state: SharedState) -> Self {
+    pub fn new() -> Self {
         Self {
             platform_monitor: None,
             event_rx: Arc::new(AsyncMutex::new(None)),
@@ -54,7 +57,6 @@ impl DndMonitor {
             current_dnd_state: false,
             reported_dnd_state: false,
             state_change_time: None,
-            shared_state,
         }
     }
 
@@ -108,19 +110,6 @@ impl Monitor for DndMonitor {
             // Skip if not available
             if !self.available {
                 return Err(MonitorError::Unavailable);
-            }
-
-            // Check if in any session (break or attention)
-            // During sessions, we ignore DND changes to prevent self-triggering
-            if self.shared_state.read().in_any_session() {
-                // In session, ignore DND events but drain the channel
-                let mut event_rx_guard = self.event_rx.lock().await;
-                if let Some(rx) = event_rx_guard.as_mut() {
-                    while rx.try_recv().is_ok() {
-                        // Drain events without processing
-                    }
-                }
-                return Ok(MonitorAction::None);
             }
 
             // Try to receive DND events (non-blocking)

@@ -47,7 +47,7 @@ const startTimer = (duration: number) => {
       clearInterval(intervalId.value ?? undefined);
       intervalId.value = null;
       // Auto-finish when timer reaches 0
-      void finishBreak(true);
+      void finishPrompt(true);
     }
   }, 1000);
 };
@@ -209,7 +209,7 @@ const handlePayload = async (data: PromptPayload) => {
   }
 };
 
-const finishBreak = async (isAutoFinish = false) => {
+const finishPrompt = async (isAutoFinish = false) => {
   // Strict mode: cannot finish break early manually, but allow auto-finish
   if (!isAutoFinish && controlsDisabled.value) return;
 
@@ -234,16 +234,16 @@ const finishBreak = async (isAutoFinish = false) => {
     }
   }
 
-  // Close all break windows
+  // Close all prompt windows
   try {
     const params = new URLSearchParams(window.location.search);
     const payloadId = params.get("payloadId");
     if (payloadId) {
       console.log(
-        "[PromptApp] Closing all break windows for payload:",
+        "[PromptApp] Closing all prompt windows for payload:",
         payloadId,
       );
-      await invoke("close_all_break_windows", { payloadId });
+      await invoke("close_all_prompt_windows", { payloadId });
     } else {
       // Fallback: close only current window
       console.warn(
@@ -279,12 +279,12 @@ const postponeBreak = async () => {
   // Check if postpone is allowed (button should already be disabled, but double-check)
   if (!payload.value || !canPostpone.value) return;
   await invoke("postpone_break");
-  await finishBreak();
+  await finishPrompt();
 };
 
 const handleKeydown = (event: KeyboardEvent) => {
-  // Block common browser shortcuts during break to prevent user from
-  // interacting with the underlying page or escaping the break window
+  // Block common browser shortcuts during prompt to prevent user from
+  // interacting with the underlying page or escaping the prompt window
   if (
     event.ctrlKey &&
     (event.key === "a" ||
@@ -324,12 +324,12 @@ const handleKeydown = (event: KeyboardEvent) => {
   // Resume/finish with Enter or Space
   if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
     event.preventDefault();
-    void finishBreak();
+    void finishPrompt();
   }
 };
 
 /**
- * Prevent context menu (right-click) in break window
+ * Prevent context menu (right-click) in prompt window
  * @param {MouseEvent} event The mouse event.
  */
 const handleContextMenu = (event: MouseEvent) => {
@@ -389,7 +389,7 @@ defineExpose({
   backgroundStyle,
   controlsDisabled,
   elapsed,
-  finishBreak,
+  finishBreak: finishPrompt,
   formatTime,
   isAttention,
   overlayStyle,
@@ -442,7 +442,7 @@ defineExpose({
 
           <div class="flex flex-wrap justify-center gap-3">
             <button class="btn btn-success btn-wide sm:btn-lg" :disabled="controlsDisabled"
-              @click="() => finishBreak()">
+              @click="() => finishPrompt()">
               {{ isAttention ? t("break.gotIt") : t("break.resume") }}
             </button>
             <button v-if="!isAttention" class="btn btn-outline btn-wide sm:btn-lg" :disabled="!canPostpone"

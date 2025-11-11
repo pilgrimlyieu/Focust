@@ -45,7 +45,7 @@ impl Display for HexColor {
     }
 }
 
-/// Resolved background for break window
+/// Resolved background for prompt window
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, rename_all = "camelCase")]
@@ -248,12 +248,12 @@ impl BackgroundSource {
     }
 }
 
-/// Theme settings for break windows
+/// Theme settings for prompt windows
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(rename_all = "camelCase")]
 pub struct ThemeSettings {
-    /// Background source for the break window (solid color, image path, or image folder)
+    /// Background source for the prompt window (solid color, image path, or image folder)
     pub background: BackgroundSource,
     /// Text color in hex format
     pub text_color: HexColor,

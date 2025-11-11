@@ -34,6 +34,7 @@ alias fif := fix-front
 alias fib := fix-back
 
 alias ta := test-all
+alias tl := test-lib
 alias tfa := test-front-all
 alias tf := test-front
 alias tba := test-back-all
@@ -213,6 +214,13 @@ alias adb := add-dep-back
     -bun run test:run
     cargo test --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace
     echo "✅ Tests complete!"
+
+# Run library tests only
+[group: "test"]
+@test-lib *tests:
+    echo "🧪 Running library tests..."
+    cargo test --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace --lib {{ tests }}
+    echo "✅ Library tests complete!"
 
 # Run all front-end tests
 [group: "test"]

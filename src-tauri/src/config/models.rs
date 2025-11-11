@@ -27,7 +27,7 @@ pub struct AppConfig {
     pub theme_mode: String,
     /// Shortcut to postpone breaks, e.g., "Ctrl+Shift+X"
     pub postpone_shortcut: String,
-    /// Break window size percentage (0.1 to 1.0, where 1.0 is fullscreen)
+    /// Prompt window size percentage (0.1 to 1.0, where 1.0 is fullscreen)
     pub window_size: f32,
     /// List of schedules
     pub schedules: Vec<ScheduleSettings>,

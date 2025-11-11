@@ -12,7 +12,7 @@ use crate::platform::i18n::LANGUAGE_FALLBACK;
 
 /// Settings for displaying suggestions during breaks
 ///
-/// This controls whether suggestions are shown to the user during break windows.
+/// This controls whether suggestions are shown to the user during prompt windows.
 /// The actual suggestion content is managed separately in the [`SuggestionsConfig`].
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
 #[serde(rename_all = "camelCase")]

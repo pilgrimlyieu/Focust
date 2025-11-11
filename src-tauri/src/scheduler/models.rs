@@ -150,6 +150,8 @@ pub struct SchedulerStatus {
     pub paused: bool,
     /// The next scheduled break event (if any)
     pub next_event: Option<SchedulerEventInfo>,
+    /// The current mini break counter (for tracking long break triggers)
+    pub mini_break_counter: u8,
 }
 
 /// Information about a scheduled event

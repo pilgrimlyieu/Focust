@@ -1,9 +1,24 @@
-mod attention_timer;
-mod break_scheduler;
 pub mod event;
 pub mod manager;
 pub mod models;
 pub mod shared_state;
+
+mod attention_timer;
+mod break_scheduler;
+mod event_emitter;
+
+#[cfg(test)]
+mod attention_timer_tests;
+#[cfg(test)]
+mod break_scheduler_tests;
+#[cfg(test)]
+mod manager_integration_tests;
+#[cfg(test)]
+mod monitor_integration_tests;
+#[cfg(test)]
+mod stress_tests;
+#[cfg(test)]
+mod test_helpers;
 
 // Re-export public API
 pub use models::*;

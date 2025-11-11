@@ -22,12 +22,12 @@ use crate::{config::SharedConfig, core::payload::PromptPayloadStore};
 const ALLOWED_EXTENSIONS_LOWERCASE: &[&str] = &["jpg", "jpeg", "png", "webp", "bmp", "gif"];
 
 /// Create prompt windows for monitors based on configuration
-pub async fn create_prompt_windows(
-    app: &AppHandle,
+pub async fn create_prompt_windows<R: Runtime>(
+    app: &AppHandle<R>,
     event: SchedulerEvent,
     postpone_count: u8,
 ) -> Result<(), String> {
-    tracing::debug!("Creating break windows for event: {event}");
+    tracing::debug!("Creating prompt windows for event: {event}");
 
     let (payload_id, window_size, all_screens) = {
         let config = app.state::<SharedConfig>();
@@ -41,7 +41,14 @@ pub async fn create_prompt_windows(
             build_prompt_payload(&config_guard, &suggestions_guard, event, postpone_count)?;
 
         // Generate unique payload ID
-        let payload_id = format!("break-{}", chrono::Utc::now().timestamp_millis());
+        let payload_id = format!(
+            "{}-{}",
+            match event {
+                SchedulerEvent::MiniBreak(_) | SchedulerEvent::LongBreak(_) => "break",
+                SchedulerEvent::Attention(_) => "attention",
+            },
+            chrono::Utc::now().timestamp_millis()
+        );
 
         // Store payload for frontend retrieval
         let payload_store = app.state::<PromptPayloadStore>();
@@ -72,7 +79,7 @@ pub async fn create_prompt_windows(
     // Create windows for each monitor
     for (index, monitor) in monitors.iter().enumerate() {
         let label = format!("{payload_id}-{index}");
-        create_break_window_for_monitor(
+        create_prompt_window_for_monitor(
             app,
             &label,
             &payload_id,
@@ -163,16 +170,16 @@ fn is_allowed_image_extension(path: &Path) -> bool {
         })
 }
 
-/// Create a single break window for a specific monitor
-fn create_break_window_for_monitor(
-    app: &AppHandle,
+/// Create a single prompt window for a specific monitor
+fn create_prompt_window_for_monitor<R: Runtime>(
+    app: &AppHandle<R>,
     label: &str,
     payload_id: &str,
     window_size: f64,
     monitor: &Monitor,
     is_primary: bool,
 ) -> Result<(), String> {
-    let url = format!("/index.html?view=break&payloadId={payload_id}");
+    let url = format!("/index.html?view=prompt&payloadId={payload_id}");
 
     // Calculate window dimensions
     let scale_factor = monitor.scale_factor();
@@ -212,9 +219,9 @@ fn create_break_window_for_monitor(
 
     let _window = builder
         .build()
-        .map_err(|e| format!("Failed to create break window: {e}"))?;
+        .map_err(|e| format!("Failed to create prompt window: {e}"))?;
 
-    tracing::debug!("Break window created: {label} (primary: {is_primary})");
+    tracing::debug!("Prompt window created: {label} (primary: {is_primary})");
 
     Ok(())
 }

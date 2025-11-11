@@ -157,7 +157,7 @@ pub fn run() {
                 // Add DND monitor if enabled
                 if app_config.monitor_dnd {
                     tracing::info!("DND monitoring enabled");
-                    let dnd_monitor = monitors::DndMonitor::new(shared_state.clone());
+                    let dnd_monitor = monitors::DndMonitor::new();
                     monitors.push(Box::new(dnd_monitor));
                 } else {
                     tracing::info!("DND monitoring disabled");
@@ -219,7 +219,7 @@ pub fn run() {
             cmd::suggestions::save_suggestions,
             cmd::system::open_config_directory,
             cmd::system::open_log_directory,
-            cmd::window::close_all_break_windows,
+            cmd::window::close_all_prompt_windows,
             cmd::window::open_settings_window,
         ])
         .build(tauri::generate_context!())

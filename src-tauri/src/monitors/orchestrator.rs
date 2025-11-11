@@ -55,13 +55,14 @@ use crate::scheduler::shared_state::SharedState;
 /// * `monitors` - Vector of boxed monitors to run
 /// * `cmd_tx` - Channel sender for sending commands to the scheduler
 /// * `_app_handle` - Tauri app handle (reserved for future use)
-/// * `_shared_state` - Shared scheduler state (reserved for future use)
+/// * `shared_state` - Shared scheduler state for session checking
 ///
 /// # Behavior
 ///
 /// - If no monitors are provided, returns immediately without spawning a task
 /// - Spawns a single async task that runs all monitors
 /// - Task runs until the command channel is closed
+/// - Automatically skips monitors during active sessions (if configured)
 ///
 /// # Examples
 ///
@@ -77,7 +78,7 @@ pub fn spawn_monitor_tasks(
     monitors: Vec<Box<dyn Monitor>>,
     cmd_tx: mpsc::Sender<Command>,
     _app_handle: AppHandle,
-    _shared_state: SharedState,
+    shared_state: SharedState,
 ) {
     if monitors.is_empty() {
         tracing::debug!("No monitors configured, skipping monitor task spawn");
@@ -85,7 +86,7 @@ pub fn spawn_monitor_tasks(
     }
 
     tokio::spawn(async move {
-        run_monitors(monitors, cmd_tx).await;
+        run_monitors(monitors, cmd_tx, shared_state).await;
     });
 }
 
@@ -116,10 +117,11 @@ pub fn spawn_monitor_tasks(
 ///    - `MonitorAction::Resume(reason)` → `Command::Resume(reason)`
 ///    - `MonitorAction::None` → No command sent
 ///
-/// 2. **`SharedState` Coordination**:
-///    - Monitors can read `SharedState` to check session status
-///    - Example: `DndMonitor` checks `in_any_session()` to avoid self-triggering
-///    - Commands update `SharedState` through `SchedulerManager`
+/// 2. **Unified Session Protection**:
+///    - **Orchestrator checks** `shared_state.in_any_session()` before each monitor
+///    - If in session AND monitor has `skip_during_session() == true`, skip check
+///    - This prevents monitors from interfering with active break/attention sessions
+///    - Example: Break window triggers DND → `DndMonitor` skipped → no self-pause
 ///
 /// 3. **Pause Reason Tracking**:
 ///    - Each monitor has a unique `PauseReason` (`UserIdle`, Dnd, `AppExclusion`)
@@ -130,6 +132,7 @@ pub fn spawn_monitor_tasks(
 ///
 /// * `monitors` - Mutable vector of monitors to run
 /// * `cmd_tx` - Channel sender for scheduler commands
+/// * `shared_state` - Shared scheduler state for session checking
 ///
 /// # Lifecycle
 ///
@@ -197,7 +200,11 @@ pub fn spawn_monitor_tasks(
 /// - Call `on_stop()` during graceful shutdown
 /// - Monitor health metrics and auto-restart
 /// - Parallel monitor checking (if safe)
-async fn run_monitors(mut monitors: Vec<Box<dyn Monitor>>, cmd_tx: mpsc::Sender<Command>) {
+async fn run_monitors(
+    mut monitors: Vec<Box<dyn Monitor>>,
+    cmd_tx: mpsc::Sender<Command>,
+    shared_state: SharedState,
+) {
     tracing::info!(
         "Starting monitor orchestrator with {} monitor(s)",
         monitors.len()
@@ -220,8 +227,15 @@ async fn run_monitors(mut monitors: Vec<Box<dyn Monitor>>, cmd_tx: mpsc::Sender<
     loop {
         interval_timer.tick().await;
 
+        let in_session = shared_state.read().in_any_session();
+
         // Check each monitor if its interval has elapsed
         for monitor in &mut monitors {
+            // Skip monitors during session if they request it
+            if monitor.skip_during_session() && in_session {
+                continue;
+            }
+
             let action = match monitor.check().await {
                 Ok(a) => a,
                 Err(e) => {
