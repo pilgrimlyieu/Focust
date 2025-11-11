@@ -685,20 +685,6 @@ pub(crate) fn calculate_next_break_pure(
     })
 }
 
-/// Helper function to get active schedule
-///
-/// Returns the first enabled schedule that matches the current time and day.
-/// Used by the break scheduler to determine if breaks should be scheduled.
-pub(crate) fn get_active_schedule(
-    config: &AppConfig,
-    now_time: chrono::NaiveTime,
-    now_day: chrono::Weekday,
-) -> Option<&ScheduleSettings> {
-    config.schedules.iter().find(|s| {
-        s.enabled && s.days_of_week.contains(&now_day) && s.time_range.contains(&now_time)
-    })
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -710,6 +696,7 @@ mod tests {
 
     mod get_active_schedule_tests {
         use super::*;
+        use crate::scheduler::event::get_active_schedule;
 
         #[test]
         fn returns_schedule_within_time_range() {
