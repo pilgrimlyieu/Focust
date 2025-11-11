@@ -1,4 +1,4 @@
-# Version 0.2.3
+# Version 0.2.4
 
 > [!WARNING]
 >
@@ -17,18 +17,19 @@
 
 ## 🎉 Features
 
-- Support showing debug section in Advanced Options panel.
-- Add `maxPostponeCount` setting to limit the maximum number of postpones for a break.
+- Support restart from tray icon menu.
 
 ## 🐛 Bug Fixes
 
-- Fix the issue that nested vacant settings is not fallback to default values.
-- Fix the issue that postpone behavior doesn't meet user expectation.
+- Fix regression issue that pause/resume in tray icon doesn't work.
+- Fix regression issue that DND monitor doesn't work.
+- Fix inconsistent state between frontend and scheduler when pause reasons is changed in complicated ways.
 
 ## 🚀 Improvements
 
-- Make error logs when loading configuration fails more accurate.
+- Monitors no longer send pause command when in break or attention session.
+- Prevent user from manually triggering, postponing or skipping events, when the scheduler is paused.
 
 ## 📝 Documentation
 
-- Update related documentation for new `maxPostponeCount` setting.
+- Update QUICKSTART documentation to include FAQ about scheduler pause/resume.

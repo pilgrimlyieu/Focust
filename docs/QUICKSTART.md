@@ -139,6 +139,10 @@ Try different background images that relax you. Nature scenes, minimalist patter
 - If you want to see the real break/reminder window, or if you have selected "Image Folder" for backgrounds and want to see the random effect:
 - Go to the **Advanced Settings** tab and click the icon to show the Debug area, where you can manually enable short breaks, long breaks, reminder windows, or skip the current break (v0.2.3+)
 
+### "Cannot resume scheduler from paused state via settings/tray icon"
+- This is because the scheduler is paused by some monitor (e.g., DND monitor), not manually by the user
+- Manual resume only works when no monitors have sent pause commands, i.e., manual resume can only recover from pauses caused by manual pausing
+
 ### "The breaks are interrupting important work!"
 - Use the **Postpone** feature liberally at first
 - Set a **global postpone shortcut** for quick delays

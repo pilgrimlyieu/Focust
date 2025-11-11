@@ -113,7 +113,7 @@ See the [QUICKSTART.md](docs/QUICKSTART.md) for a step-by-step guide to getting 
 
 Built with performance in mind, Focust offers exceptional resource efficiency:
 
-- **Ultra-Low Memory Footprint**: Uses only ~5MB when running in the background, thanks to dynamic window creation and lazy-loaded Vue components
+- **Ultra-Low Memory Footprint**: Uses only ~10MB when running in the background, thanks to dynamic window creation and lazy-loaded Vue components
 - **Native Performance**: Powered by Tauri's lightweight WebView instead of bundled Chromium
 - **Fast Startup**: Cold start in under 2 seconds
 - **Minimal CPU Usage**: <1% CPU when idle, <5% during break windows
