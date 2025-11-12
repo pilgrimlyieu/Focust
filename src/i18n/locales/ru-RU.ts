@@ -177,6 +177,7 @@ const ruRU: LocaleStrings = {
       "Отсрочка сдвигает следующий перерыв на настроенную продолжительность",
     postponeShortcut: "Горячая клавиша отсрочки",
     postponeShortcutHint: "Нажмите для захвата клавиш, например, Ctrl+Shift+P",
+    resetHint: "Сброс отменит все несохраненные изменения",
     running: "Планировщик работает",
     scheduler: "Управление планировщиком",
     secondsRemaining: "{seconds} сек",

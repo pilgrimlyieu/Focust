@@ -183,6 +183,7 @@ const deDE: LocaleStrings = {
     postponeShortcut: "Verschieben-Tastenkombination",
     postponeShortcutHint:
       "Klicken Sie, um Tasten zu erfassen, z.B. Strg+Umschalt+P",
+    resetHint: "Zurücksetzen verwirft alle nicht gespeicherten Änderungen.",
     running: "Planer läuft",
     scheduler: "Planer-Steuerungen",
     secondsRemaining: "{seconds} Sek",

@@ -170,6 +170,7 @@ const koKR: LocaleStrings = {
     postponeHint: "연기는 구성된 기간만큼 다음 휴식을 뒤로 미룹니다",
     postponeShortcut: "연기 단축키",
     postponeShortcutHint: "클릭하여 키 캡처, 예: Ctrl+Shift+P",
+    resetHint: "재설정은 저장되지 않은 모든 변경 사항을 취소합니다",
     running: "스케줄러 실행 중",
     scheduler: "스케줄러 제어",
     secondsRemaining: "{seconds}초",

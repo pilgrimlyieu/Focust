@@ -178,6 +178,7 @@ const esES: LocaleStrings = {
       "Posponer retrasa el siguiente descanso por la duración configurada",
     postponeShortcut: "Atajo de posponer",
     postponeShortcutHint: "Haz clic para capturar teclas, p. ej., Ctrl+Shift+P",
+    resetHint: "Restablecer descartará todos los cambios no guardados",
     running: "Programador en ejecución",
     scheduler: "Controles del programador",
     secondsRemaining: "{seconds} seg",

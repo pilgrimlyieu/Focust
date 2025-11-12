@@ -172,6 +172,7 @@ const jaJP: LocaleStrings = {
     postponeHint: "延期は次の休憩を設定された期間だけ後ろにずらします",
     postponeShortcut: "延期ショートカット",
     postponeShortcutHint: "クリックしてキーをキャプチャ、例：Ctrl+Shift+P",
+    resetHint: "リセットは保存されていないすべての変更を破棄します",
     running: "スケジューラー実行中",
     scheduler: "スケジューラーコントロール",
     secondsRemaining: "{seconds}秒",

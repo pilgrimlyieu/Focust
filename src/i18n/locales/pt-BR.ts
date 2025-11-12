@@ -177,6 +177,7 @@ const ptBR: LocaleStrings = {
     postponeShortcut: "Atalho de adiamento",
     postponeShortcutHint:
       "Clique para capturar teclas, por exemplo, Ctrl+Shift+P",
+    resetHint: "Redefinir descartará todas as alterações não salvas",
     running: "Agendador em execução",
     scheduler: "Controles do agendador",
     secondsRemaining: "{seconds} seg",

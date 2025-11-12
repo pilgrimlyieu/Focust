@@ -182,6 +182,7 @@ const itIT: LocaleStrings = {
     postponeShortcut: "Scorciatoia posticipa",
     postponeShortcutHint:
       "Fai clic per acquisire i tasti, ad es. Ctrl+Maiusc+P",
+    resetHint: "Reimpostare annullerà tutte le modifiche non salvate",
     running: "Scheduler in esecuzione",
     scheduler: "Controlli scheduler",
     secondsRemaining: "{seconds} sec",

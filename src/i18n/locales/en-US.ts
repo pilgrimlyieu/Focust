@@ -171,6 +171,7 @@ const enUS = {
     postponeHint: "Postpone pushes the next break by the configured duration",
     postponeShortcut: "Postpone shortcut",
     postponeShortcutHint: "Click to capture keys, e.g., Ctrl+Shift+P",
+    resetHint: "Reset will discard all unsaved changes",
     running: "Scheduler running",
     scheduler: "Scheduler controls",
     secondsRemaining: "{seconds} sec",

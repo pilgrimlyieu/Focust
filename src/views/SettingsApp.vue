@@ -187,7 +187,7 @@ async function handleSave() {
  */
 function handleReset() {
   configStore.resetDraft();
-  show("info", t("general.postponeHint"));
+  show("info", t("general.resetHint"));
 }
 
 /**

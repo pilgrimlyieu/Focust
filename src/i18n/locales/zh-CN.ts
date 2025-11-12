@@ -164,6 +164,7 @@ const zhCN: LocaleStrings = {
     postponeHint: "延后将根据配置推迟下一次休息",
     postponeShortcut: "延后快捷键",
     postponeShortcutHint: "点击输入框并按下组合键，例如：Ctrl+Shift+P",
+    resetHint: "重置将放弃所有未保存的更改",
     running: "调度器运行中",
     scheduler: "调度控制",
     secondsRemaining: "{seconds} 秒",

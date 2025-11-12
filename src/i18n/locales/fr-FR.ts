@@ -183,6 +183,8 @@ const frFR: LocaleStrings = {
     postponeShortcut: "Raccourci de report",
     postponeShortcutHint:
       "Cliquez pour capturer les touches, par ex., Ctrl+Maj+P",
+    resetHint:
+      "La réinitialisation annulera toutes les modifications non enregistrées",
     running: "Planificateur en cours d'exécution",
     scheduler: "Contrôles du planificateur",
     secondsRemaining: "{seconds} sec",
