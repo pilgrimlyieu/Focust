@@ -18,7 +18,10 @@
 ## 🐛 Bug Fixes
 
 - Fix some potential deadlock issues in communication between frontend and backend on windows closure.
+- Fix reset toast message mistake in settings window.
+- Remove transparent effect in break/attention window.
 
 ## 🚀 Improvements
 
 - Use the monitor where the cursor is instead of the primary one, when `allScreens` option is disabled.
+- Prevent resizing, maximizing, or minimizing the break/attention window.

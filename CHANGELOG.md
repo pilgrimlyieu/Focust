@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## 0.2.6 (2025.11.12)
+
+### 🎉 Features
+
+- Support advanced user configuration. Now user can change log level for troubleshooting purpose. (Firstly mentioned in 0.2.5)
+
+### 🐛 Bug Fixes
+
+- Fix some potential deadlock issues in communication between frontend and backend on windows closure.
+- Fix reset toast message mistake in settings window.
+- Remove transparent effect in break/attention window.
+
+### 🚀 Improvements
+
+- Use the monitor where the cursor is instead of the primary one, when `allScreens` option is disabled.
+- Prevent resizing, maximizing, or minimizing the break/attention window.
+
+## 0.2.5 (2025.11.11)
+
+### 🎉 Features
+
+- ~~Support advanced user configuration. Now user can change log level for troubleshooting purpose.~~ (Fixed in 0.2.6)
+
 ## 0.2.4 (2025.11.11)
 
 ### 🎉 Features

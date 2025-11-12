@@ -210,7 +210,6 @@ fn create_prompt_window_for_monitor<R: Runtime>(
         .maximizable(false)
         .minimizable(false)
         .closable(false)
-        .drag_and_drop(false)
         .center()
         .focused(false);
 
