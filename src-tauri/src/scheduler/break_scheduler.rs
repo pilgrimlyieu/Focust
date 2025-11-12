@@ -224,19 +224,47 @@ where
     }
 
     /// Execute a break: create window and play audio, then wait for completion
-    /// Close all break windows
+    /// Close all break windows asynchronously to avoid deadlock
+    ///
+    /// IMPORTANT: This method returns immediately and closes windows in the background.
+    /// This prevents deadlock when called from a command handler that was invoked
+    /// from within a break window (e.g., `postpone_break`, `skip_break`).
+    ///
+    /// The deadlock scenario:
+    /// 1. User clicks "Postpone" button in break window
+    /// 2. Frontend calls `postpone_break` command and waits for response
+    /// 3. Backend tries to close the calling window synchronously
+    /// 4. Window closure needs `WebView` thread, but it's blocked waiting for command response
+    /// 5. Result: deadlock
+    ///
+    /// Solution: Spawn async task to close windows after a small delay,
+    /// allowing the command to return immediately.
     fn close_break_windows(&self) {
-        let windows = self.app_handle.webview_windows();
-        for (label, window) in windows {
-            if label.starts_with("break-") {
-                tracing::debug!("Closing break window: {label}");
-                let _ = window.close();
-            }
-        }
+        let app_handle = self.app_handle.clone();
+        let shared_state = self.shared_state.clone();
 
-        // CRITICAL: Always clean up session state when closing break windows
-        self.shared_state.write().end_break_session();
-        tracing::debug!("Break session ended (windows closed), monitors will resume monitoring");
+        tracing::debug!("Scheduling asynchronous closure of break windows");
+
+        tauri::async_runtime::spawn(async move {
+            // Small delay to ensure any pending command responses are sent first
+            tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+
+            tracing::debug!("Closing break windows (async)");
+
+            let windows = app_handle.webview_windows();
+            for (label, window) in windows {
+                if label.starts_with("break-") {
+                    tracing::debug!("Closing break window: {label}");
+                    let _ = window.close();
+                }
+            }
+
+            // CRITICAL: Always clean up session state when closing break windows
+            shared_state.write().end_break_session();
+            tracing::debug!(
+                "Break session ended (windows closed), monitors will resume monitoring"
+            );
+        });
     }
 
     /// Get postpone duration based on current break type
