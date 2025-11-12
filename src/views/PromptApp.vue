@@ -340,20 +340,13 @@ const handleKeydown = (event: KeyboardEvent) => {
   }
 };
 
-/**
- * Prevent context menu (right-click) in prompt window
- * @param {MouseEvent} event The mouse event.
- */
-const handleContextMenu = (event: MouseEvent) => {
-  event.preventDefault();
-};
-
 watch(payload, (next) => {
   document.title = next ? `${next.title} — Focust` : "Focust";
 });
 
 onMounted(async () => {
   console.log("[PromptApp] Component mounted");
+  window.addEventListener("keydown", handleKeydown);
 
   // Get payloadId from URL
   const params = new URLSearchParams(window.location.search);
@@ -386,6 +379,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  window.removeEventListener("keydown", handleKeydown);
   if (intervalId.value) {
     clearInterval(intervalId.value);
   }
@@ -410,7 +404,7 @@ defineExpose({
 <template>
   <div class="break-app flex min-h-screen flex-col overflow-hidden"
     :class="{ 'is-strict': controlsDisabled, 'is-rendered': isRendered }" :style="backgroundStyle"
-    @keydown.window="handleKeydown" @contextmenu.prevent="handleContextMenu">
+    @keydown.window="handleKeydown" @contextmenu.prevent>
     <div class="flex flex-1 items-center justify-center bg-slate-950/35 p-6">
       <div
         class="w-full max-w-3xl rounded-3xl border border-white/10 bg-white/10 p-10 shadow-2xl backdrop-blur-xl transition-all"
@@ -424,7 +418,7 @@ defineExpose({
           <div class="space-y-2">
             <p class="text-xs uppercase tracking-[0.35em] opacity-60">
               {{ payload.scheduleName ?? (payload.kind === "attention" ? t("break.attention") : payload.kind === "long"
-                ? t("schedule.longBreak") : t("schedule.miniBreak")) }}
+              ? t("schedule.longBreak") : t("schedule.miniBreak")) }}
             </p>
             <h1 class="text-4xl font-semibold">{{ payload.title }}</h1>
             <p class="text-base opacity-80">

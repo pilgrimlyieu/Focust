@@ -196,7 +196,7 @@ fn create_prompt_window_for_monitor<R: Runtime>(
         .decorations(false)
         .skip_taskbar(true)
         .visible(false)
-        .focused(true);
+        .focused(is_primary);
 
     // Transparency is platform-specific
     #[cfg(not(target_os = "macos"))]
