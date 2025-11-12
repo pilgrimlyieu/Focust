@@ -214,12 +214,6 @@ fn create_prompt_window_for_monitor<R: Runtime>(
         .center()
         .focused(false);
 
-    // Transparency is platform-specific
-    #[cfg(not(target_os = "macos"))]
-    {
-        builder = builder.transparent(true);
-    }
-
     if is_fullscreen {
         builder = builder.fullscreen(true);
     } else {
