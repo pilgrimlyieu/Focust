@@ -201,7 +201,7 @@ const handlePayload = async (data: PromptPayload) => {
 
   try {
     await currentWindow.show();
-    await currentWindow.setFocus();
+    // await currentWindow.setFocus();
     isRendered.value = true;
     console.log("[PromptApp] Window shown successfully");
   } catch (err) {
@@ -403,8 +403,7 @@ defineExpose({
 
 <template>
   <div class="break-app flex min-h-screen flex-col overflow-hidden"
-    :class="{ 'is-strict': controlsDisabled, 'is-rendered': isRendered }" :style="backgroundStyle"
-    @keydown.window="handleKeydown" @contextmenu.prevent>
+    :class="{ 'is-strict': controlsDisabled, 'is-rendered': isRendered }" :style="backgroundStyle" @contextmenu.prevent>
     <div class="flex flex-1 items-center justify-center bg-slate-950/35 p-6">
       <div
         class="w-full max-w-3xl rounded-3xl border border-white/10 bg-white/10 p-10 shadow-2xl backdrop-blur-xl transition-all"
@@ -418,7 +417,7 @@ defineExpose({
           <div class="space-y-2">
             <p class="text-xs uppercase tracking-[0.35em] opacity-60">
               {{ payload.scheduleName ?? (payload.kind === "attention" ? t("break.attention") : payload.kind === "long"
-              ? t("schedule.longBreak") : t("schedule.miniBreak")) }}
+                ? t("schedule.longBreak") : t("schedule.miniBreak")) }}
             </p>
             <h1 class="text-4xl font-semibold">{{ payload.title }}</h1>
             <p class="text-base opacity-80">

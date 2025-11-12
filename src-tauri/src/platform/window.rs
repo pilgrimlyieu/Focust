@@ -197,8 +197,6 @@ fn create_prompt_window_for_monitor<R: Runtime>(
     let scale_factor = monitor.scale_factor();
     let monitor_width = f64::from(monitor.size().width) / scale_factor;
     let monitor_height = f64::from(monitor.size().height) / scale_factor;
-    let monitor_x = f64::from(monitor.position().x) / scale_factor;
-    let monitor_y = f64::from(monitor.position().y) / scale_factor;
 
     let is_fullscreen = window_size >= 1.0;
 
@@ -208,6 +206,12 @@ fn create_prompt_window_for_monitor<R: Runtime>(
         .decorations(false)
         .skip_taskbar(true)
         .visible(false)
+        .resizable(false)
+        .maximizable(false)
+        .minimizable(false)
+        .closable(false)
+        .drag_and_drop(false)
+        .center()
         .focused(is_primary);
 
     // Transparency is platform-specific
@@ -217,16 +221,9 @@ fn create_prompt_window_for_monitor<R: Runtime>(
     }
 
     if is_fullscreen {
-        builder = builder.fullscreen(true).position(monitor_x, monitor_y);
+        builder = builder.fullscreen(true);
     } else {
-        let window_width = (monitor_width * window_size).floor();
-        let window_height = (monitor_height * window_size).floor();
-        let window_x = monitor_x + ((monitor_width - window_width) / 2.0).floor();
-        let window_y = monitor_y + ((monitor_height - window_height) / 2.0).floor();
-
-        builder = builder
-            .inner_size(window_width, window_height)
-            .position(window_x, window_y);
+        builder = builder.inner_size(monitor_width * window_size, monitor_height * window_size);
     }
 
     let _window = builder

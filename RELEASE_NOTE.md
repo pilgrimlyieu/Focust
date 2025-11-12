@@ -1,4 +1,4 @@
-# Version 0.2.5
+# Version 0.2.6
 
 > [!WARNING]
 >
@@ -13,4 +13,12 @@
 
 ## 🎉 Features
 
-- Support advanced user configuration. Now user can change log level for troubleshooting purpose.
+- Support advanced user configuration. Now user can change log level for troubleshooting purpose. (Firstly mentioned in 0.2.5)
+
+## 🐛 Bug Fixes
+
+- Fix some potential deadlock issues in communication between frontend and backend on windows closure.
+
+## 🚀 Improvements
+
+- Use the monitor where the cursor is instead of the primary one, when `allScreens` option is disabled.
