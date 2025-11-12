@@ -201,7 +201,9 @@ const handlePayload = async (data: PromptPayload) => {
 
   try {
     await currentWindow.show();
-    // await currentWindow.setFocus();
+    if (isPrimaryWindow) {
+      await currentWindow.setFocus();
+    }
     isRendered.value = true;
     console.log("[PromptApp] Window shown successfully");
   } catch (err) {
@@ -234,8 +236,12 @@ const finishPrompt = async (isAutoFinish = false) => {
     console.log("[PromptApp] Timer cleared");
   }
 
-  stopAudio();
-  console.log("[PromptApp] Audio stopped");
+  try {
+    await stopAudio();
+    console.log("[PromptApp] Audio stopped");
+  } catch (err) {
+    console.warn("[PromptApp] Failed to stop audio:", err);
+  }
 
   // Notify backend that break has finished (so it can update timers)
   if (payload.value) {
@@ -383,7 +389,9 @@ onBeforeUnmount(() => {
   if (intervalId.value) {
     clearInterval(intervalId.value);
   }
-  stopAudio();
+  stopAudio().catch((err) => {
+    console.warn("Failed to stop audio on unmount", err);
+  });
   document.title = "Focust";
 });
 

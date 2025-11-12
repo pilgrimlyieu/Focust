@@ -212,7 +212,7 @@ fn create_prompt_window_for_monitor<R: Runtime>(
         .closable(false)
         .drag_and_drop(false)
         .center()
-        .focused(is_primary);
+        .focused(false);
 
     // Transparency is platform-specific
     #[cfg(not(target_os = "macos"))]
