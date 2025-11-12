@@ -67,11 +67,23 @@ pub async fn create_prompt_windows<R: Runtime>(
         app.available_monitors()
             .map_err(|e| format!("Failed to get available monitors: {e}"))?
     } else {
-        vec![
-            app.primary_monitor()
+        let get_monitor_from_cursor = || -> Result<Option<tauri::Monitor>, String> {
+            let pos = app
+                .cursor_position()
+                .map_err(|e| format!("Failed to get cursor position: {e}"))?;
+            app.monitor_from_point(pos.x, pos.y)
+                .map_err(|e| format!("Failed to get monitor from point: {e}"))
+        };
+
+        let monitor = match get_monitor_from_cursor() {
+            Ok(Some(monitor)) => monitor,
+            _ => app
+                .primary_monitor()
                 .map_err(|e| format!("Failed to get primary monitor: {e}"))?
                 .ok_or("No primary monitor found")?,
-        ]
+        };
+
+        vec![monitor]
     };
 
     tracing::debug!("Creating windows for {} monitor(s)", monitors.len());
