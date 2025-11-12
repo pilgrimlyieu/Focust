@@ -21,16 +21,22 @@ pub async fn get_config(config_state: State<'_, SharedConfig>) -> Result<AppConf
 
 #[tauri::command]
 pub async fn save_config(
-    config: AppConfig,
+    mut config: AppConfig,
     app_handle: AppHandle,
     scheduler_cmd: State<'_, SchedulerCmd>,
     config_state: State<'_, SharedConfig>,
 ) -> Result<(), String> {
-    // Get the old config to compare shortcuts
-    let old_shortcut = {
+    // Get the old config to compare shortcuts and preserve advanced settings
+    let (old_shortcut, advanced_config) = {
         let config_guard = config_state.read().await;
-        config_guard.postpone_shortcut.clone()
+        (
+            config_guard.postpone_shortcut.clone(),
+            config_guard.advanced.clone(),
+        )
     };
+
+    // Preserve advanced config (which is not exposed to frontend)
+    config.advanced = advanced_config;
 
     // Save config to file
     config::save_config(&app_handle, &config)
