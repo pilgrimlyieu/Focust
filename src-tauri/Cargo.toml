@@ -30,7 +30,7 @@ overflow-checks = false
 debug-assertions = false
 codegen-units = 1
 lto = true
-panic = "abort" # Support catching panics of DND implementation on Windows platform
+panic = "unwind" # Support catching panics of DND implementation on Windows platform
 strip = "debuginfo"
 
 [build-dependencies]
