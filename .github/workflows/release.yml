@@ -144,9 +144,39 @@ jobs:
             $sigFile = "$($exeFile.DirectoryName)\$($exeFile.BaseName).exe.sig"
             if (Test-Path $sigFile) {
               Copy-Item $sigFile "artifacts/focust_${version}_${{ matrix.os_name }}_installer.exe.sig"
-              Write-Host "✅ Signature file found and copied"
+              Write-Host "✅ NSIS signature file found and copied"
             }
           }
+
+          # Create portable version
+          $portableDir = "portable"
+          New-Item -ItemType Directory -Force -Path $portableDir
+
+          # Copy executable
+          $exePath = "src-tauri/target/${{ matrix.target }}/release/focust.exe"
+          if (Test-Path $exePath) {
+            Copy-Item $exePath "$portableDir/focust.exe"
+            Write-Host "✅ Copied executable to portable directory"
+          } else {
+            Write-Host "❌ Executable not found at $exePath"
+          }
+
+          # Copy assets folder
+          $assetsSource = "src-tauri/assets"
+          if (Test-Path $assetsSource) {
+            Copy-Item -Recurse $assetsSource "$portableDir/assets"
+            Write-Host "✅ Copied assets to portable directory"
+          } else {
+            Write-Host "❌ Assets folder not found at $assetsSource"
+          }
+
+          # Create ZIP archive
+          $zipPath = "artifacts/focust_${version}_${{ matrix.os_name }}_portable.zip"
+          Compress-Archive -Path "$portableDir/*" -DestinationPath $zipPath -Force
+          Write-Host "✅ Created portable ZIP: $zipPath"
+
+          # Clean up
+          Remove-Item -Recurse -Force $portableDir
 
       - name: Prepare artifacts (Linux)
         if: matrix.os_name == 'linux' && startsWith(github.ref, 'refs/tags/v')
@@ -160,6 +190,12 @@ jobs:
 
           # Copy signature file if exists
           find src-tauri/target/${{ matrix.target }}/release/bundle/appimage -name "*.AppImage.sig" -exec cp {} artifacts/focust_${version}_${{ matrix.os_name }}.AppImage.sig \; 2>/dev/null || true
+
+          # Find and copy deb
+          find src-tauri/target/${{ matrix.target }}/release/bundle/deb -name "*.deb" -exec cp {} artifacts/focust_${version}_${{ matrix.os_name }}_amd64.deb \; 2>/dev/null || true
+
+          # Find and copy rpm
+          find src-tauri/target/${{ matrix.target }}/release/bundle/rpm -name "*.rpm" -exec cp {} artifacts/focust_${version}_${{ matrix.os_name }}_x86_64.rpm \; 2>/dev/null || true
 
       - name: Prepare artifacts (macOS)
         if: startsWith(matrix.os_name, 'macos') && startsWith(github.ref, 'refs/tags/v')
