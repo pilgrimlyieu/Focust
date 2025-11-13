@@ -1,4 +1,4 @@
-# Version 0.2.6
+# Version 0.2.7
 
 > [!WARNING]
 >
@@ -11,17 +11,8 @@
 >
 > Audio feature doesn't work in macOS. This is a known upstream issue and will be fixed if its new version is released.
 
-## 🎉 Features
-
-- Support advanced user configuration. Now user can change log level for troubleshooting purpose. (Firstly mentioned in 0.2.5)
-
-## 🐛 Bug Fixes
-
-- Fix some potential deadlock issues in communication between frontend and backend on windows closure.
-- Fix reset toast message mistake in settings window.
-- Remove transparent effect in break/attention window.
-
 ## 🚀 Improvements
 
-- Use the monitor where the cursor is instead of the primary one, when `allScreens` option is disabled.
-- Prevent resizing, maximizing, or minimizing the break/attention window.
+- DND feature will not cause panic on Windows platform anymore. (Firstly mentioned in 0.2.1)
+- Include Windows portable package, Linux deb & rpm installers in release assets.
+- Convert audio commands to async to avoid potential freezing.

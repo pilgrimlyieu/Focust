@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## 0.2.7 (2025.11.13)
+
+### 🚀 Improvements
+
+- DND feature will not cause panic on Windows platform anymore. (Firstly mentioned in 0.2.1)
+- Include Windows portable package, Linux deb & rpm installers in release assets.
+- Convert audio commands to async to avoid potential freezing.
+
 ## 0.2.6 (2025.11.12)
 
 ### 🎉 Features
@@ -78,7 +86,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### 🚀 Improvements
 
-- DND feature will not cause panic on Windows platform anymore. (Firstly mentioned in 0.2.1)
+- ~~DND feature will not cause panic on Windows platform anymore. (Firstly mentioned in 0.2.1)~~ (Fixed in 0.2.7)
 
 ## 0.2.1 (2025.11.6)
 
@@ -86,7 +94,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - Update 8 languages support: Japanese, German, French, Spanish, Russian, Portuguese, Italian, Korean.
 - Disable noisy upstream logs.
-- ~~DND feature will not cause panic on Windows platform anymore.~~ (Fixed in 0.2.2)
+- ~~DND feature will not cause panic on Windows platform anymore.~~ (Fixed in 0.2.7)
 
 ## 0.2.0 (2025.11.6)
 

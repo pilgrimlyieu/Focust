@@ -244,7 +244,7 @@ where
     ///
     /// In test environment (`#[cfg(test)]`), session cleanup is synchronous because:
     /// - No real windows exist (window creation is skipped in tests)
-    /// - No deadlock risk since there's no WebView thread
+    /// - No deadlock risk since there's no `WebView` thread
     /// - Tests need immediate session cleanup for assertions
     fn close_break_windows(&self) {
         #[cfg(test)]
