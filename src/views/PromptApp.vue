@@ -83,7 +83,10 @@ const overlayStyle = computed(() => {
   const current = payload.value;
   if (!current) return {};
   return {
-    backdropFilter: `blur(${current.theme.blurRadius}px)`,
+    backdropFilter:
+      current.theme.blurRadius > 0
+        ? `blur(${current.theme.blurRadius}px)`
+        : "none",
     backgroundColor: `rgba(15, 23, 42, ${1 - current.theme.opacity})`,
     color: current.theme.textColor,
     fontFamily: current.theme.fontFamily,
