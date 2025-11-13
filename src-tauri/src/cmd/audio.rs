@@ -16,21 +16,23 @@ use tauri::State;
 #[cfg(not(target_os = "macos"))]
 #[tauri::command]
 #[allow(clippy::needless_pass_by_value)]
-pub fn play_audio(
+pub async fn play_audio(
     player: State<'_, AudioPlayerState>,
     path: String,
     volume: f32,
 ) -> Result<(), String> {
-    tauri_error!(
-        audio::play_audio(&player, &path, volume),
-        "Failed to play audio"
-    )
+    // Use spawn_blocking to prevent blocking the main thread during file I/O
+    let player_clone = player.inner().clone();
+    tokio::task::spawn_blocking(move || audio::play_audio(&player_clone, &path, volume))
+        .await
+        .map_err(|e| format!("Task join error: {e}"))?
+        .map_err(|e| format!("Failed to play audio: {e}"))
 }
 
 /// Tauri command to play an audio file (macOS stub)
 #[cfg(target_os = "macos")]
 #[tauri::command]
-pub fn play_audio(path: String, volume: f32) -> Result<(), String> {
+pub async fn play_audio(path: String, volume: f32) -> Result<(), String> {
     tauri_error!(audio::play_audio(&path, volume), "Failed to play audio")
 }
 
@@ -38,23 +40,26 @@ pub fn play_audio(path: String, volume: f32) -> Result<(), String> {
 #[cfg(not(target_os = "macos"))]
 #[tauri::command]
 #[allow(clippy::needless_pass_by_value)]
-pub fn play_builtin_audio(
+pub async fn play_builtin_audio(
     app: AppHandle,
     player: State<'_, AudioPlayerState>,
     resource_name: String,
     volume: f32,
 ) -> Result<(), String> {
     let resource_path = resolve_builtin_audio_path(&app, &resource_name)?;
-    tauri_error!(
-        audio::play_audio(&player, &resource_path, volume),
-        "Failed to play builtin audio"
-    )
+
+    // Use spawn_blocking to prevent blocking the main thread during file I/O
+    let player_clone = player.inner().clone();
+    tokio::task::spawn_blocking(move || audio::play_audio(&player_clone, &resource_path, volume))
+        .await
+        .map_err(|e| format!("Task join error: {e}"))?
+        .map_err(|e| format!("Failed to play builtin audio: {e}"))
 }
 
 /// Tauri command to play a builtin audio resource (macOS stub)
 #[cfg(target_os = "macos")]
 #[tauri::command]
-pub fn play_builtin_audio(
+pub async fn play_builtin_audio(
     app: AppHandle,
     resource_name: String,
     volume: f32,
@@ -70,14 +75,14 @@ pub fn play_builtin_audio(
 #[cfg(not(target_os = "macos"))]
 #[tauri::command]
 #[allow(clippy::needless_pass_by_value)]
-pub fn stop_audio(player: State<'_, AudioPlayerState>) -> Result<(), String> {
+pub async fn stop_audio(player: State<'_, AudioPlayerState>) -> Result<(), String> {
     tauri_error!(audio::stop_audio(&player), "Failed to stop audio")
 }
 
 /// Tauri command to stop audio playback (macOS stub)
 #[cfg(target_os = "macos")]
 #[tauri::command]
-pub fn stop_audio() -> Result<(), String> {
+pub async fn stop_audio() -> Result<(), String> {
     tauri_error!(audio::stop_audio(), "Failed to stop audio")
 }
 
