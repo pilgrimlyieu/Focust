@@ -239,32 +239,49 @@ where
     ///
     /// Solution: Spawn async task to close windows after a small delay,
     /// allowing the command to return immediately.
+    ///
+    /// # Testing Behavior
+    ///
+    /// In test environment (`#[cfg(test)]`), session cleanup is synchronous because:
+    /// - No real windows exist (window creation is skipped in tests)
+    /// - No deadlock risk since there's no WebView thread
+    /// - Tests need immediate session cleanup for assertions
     fn close_break_windows(&self) {
-        let app_handle = self.app_handle.clone();
-        let shared_state = self.shared_state.clone();
+        #[cfg(test)]
+        {
+            // In tests: synchronous cleanup (no windows, no deadlock risk)
+            self.shared_state.write().end_break_session();
+        }
 
-        tracing::debug!("Scheduling asynchronous closure of break windows");
+        #[cfg(not(test))]
+        {
+            // In production: asynchronous cleanup (avoid deadlock)
+            let app_handle = self.app_handle.clone();
+            let shared_state = self.shared_state.clone();
 
-        tauri::async_runtime::spawn(async move {
-            // Small delay to ensure any pending command responses are sent first
-            tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+            tracing::debug!("Scheduling asynchronous closure of break windows");
 
-            tracing::debug!("Closing break windows (async)");
+            tauri::async_runtime::spawn(async move {
+                // Small delay to ensure any pending command responses are sent first
+                tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
 
-            let windows = app_handle.webview_windows();
-            for (label, window) in windows {
-                if label.starts_with("break-") {
-                    tracing::debug!("Closing break window: {label}");
-                    let _ = window.close();
+                tracing::debug!("Closing break windows (async)");
+
+                let windows = app_handle.webview_windows();
+                for (label, window) in windows {
+                    if label.starts_with("break-") {
+                        tracing::debug!("Closing break window: {label}");
+                        let _ = window.close();
+                    }
                 }
-            }
 
-            // CRITICAL: Always clean up session state when closing break windows
-            shared_state.write().end_break_session();
-            tracing::debug!(
-                "Break session ended (windows closed), monitors will resume monitoring"
-            );
-        });
+                // CRITICAL: Always clean up session state when closing break windows
+                shared_state.write().end_break_session();
+                tracing::debug!(
+                    "Break session ended (windows closed), monitors will resume monitoring"
+                );
+            });
+        }
     }
 
     /// Get postpone duration based on current break type
