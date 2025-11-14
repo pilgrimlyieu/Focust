@@ -26,7 +26,7 @@ allScreens: boolean,
 /**
  * Language code, e.g., "en-US"
  */
-language: string, 
+language: import('@/i18n').LocaleKey, 
 /**
  * UI theme mode: "light", "dark", or "system"
  */

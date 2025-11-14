@@ -10,9 +10,9 @@ import ptBR from "./locales/pt-BR";
 import ruRU from "./locales/ru-RU";
 import zhCN from "./locales/zh-CN";
 
-export type { LocaleStrings };
+export type { LocaleStrings, LocaleKey };
 
-const messages: Record<string, LocaleStrings> = {
+const messages = {
   "de-DE": deDE,
   "en-US": enUS,
   "es-ES": esES,
@@ -23,7 +23,7 @@ const messages: Record<string, LocaleStrings> = {
   "pt-BR": ptBR,
   "ru-RU": ruRU,
   "zh-CN": zhCN,
-};
+} satisfies Record<string, LocaleStrings>;
 
 type LocaleKey = keyof typeof messages;
 
@@ -39,15 +39,15 @@ export const i18n = createI18n({
   messages,
 });
 
-export function setI18nLocale(locale: string) {
-  i18n.global.locale.value = locale as LocaleKey;
+export function setI18nLocale(locale: LocaleKey) {
+  i18n.global.locale.value = locale;
 }
 
 export function getI18nLocale(): LocaleKey {
   return i18n.global.locale.value;
 }
 
-export const supportedLocales: Array<{ key: string; label: string }> = [
+export const supportedLocales: Array<{ key: LocaleKey; label: string }> = [
   { key: "de-DE", label: "Deutsch" },
   { key: "en-US", label: "English" },
   { key: "es-ES", label: "Español" },

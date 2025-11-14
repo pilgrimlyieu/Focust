@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
-import { setI18nLocale } from "@/i18n";
+import { type LocaleKey, setI18nLocale } from "@/i18n";
 import type {
   AppConfig,
   AttentionSettings,
@@ -184,9 +184,9 @@ export const useConfigStore = defineStore("config", () => {
 
   /**
    * Set application language
-   * @param {string} locale Locale string to set
+   * @param {LocaleKey} locale Locale string to set
    */
-  function setLanguage(locale: string) {
+  function setLanguage(locale: LocaleKey) {
     const cfg = ensureDraft();
     cfg.language = locale;
     setI18nLocale(locale);

@@ -36,6 +36,7 @@ pub struct AppConfig {
     /// If breaks should be shown on all screens
     pub all_screens: bool,
     /// Language code, e.g., "en-US"
+    #[ts(type = "import('@/i18n').LocaleKey")]
     pub language: String,
     /// UI theme mode: "light", "dark", or "system"
     pub theme_mode: String,
