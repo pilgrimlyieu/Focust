@@ -7,7 +7,7 @@ import type { ThemeSettings } from "./ThemeSettings";
 /**
  * Prompt payload stored in backend
  */
-export type PromptPayload = { id: number, kind: EventKind, title: string, messageKey: string, message: string | null, scheduleName: string | null, duration: number, strictMode: boolean, theme: ThemeSettings, background: ResolvedBackground, suggestion: string | null, audio: AudioSettings | null, postponeShortcut: string, allScreens: boolean, language: string, 
+export type PromptPayload = { id: number, kind: EventKind, title: string, messageKey: string, message: string | null, scheduleName: string | null, duration: number, strictMode: boolean, theme: ThemeSettings, background: ResolvedBackground, suggestion: string | null, audio: AudioSettings | null, postponeShortcut: string, allScreens: boolean, language: import('@/i18n').LocaleKey, 
 /**
  * Number of times this break has been postponed
  */

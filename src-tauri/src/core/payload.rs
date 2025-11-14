@@ -64,6 +64,7 @@ pub struct PromptPayload {
     pub audio: Option<AudioSettings>,
     pub postpone_shortcut: String,
     pub all_screens: bool,
+    #[ts(type = "import('@/i18n').LocaleKey")]
     pub language: String,
     /// Number of times this break has been postponed
     pub postpone_count: u8,

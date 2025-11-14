@@ -157,6 +157,7 @@ export const useConfigStore = defineStore("config", () => {
     if (original.value) {
       draft.value = safeClone(original.value);
       setI18nLocale(original.value.language);
+      applyTheme(original.value.themeMode);
     }
   }
 

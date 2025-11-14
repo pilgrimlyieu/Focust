@@ -13,7 +13,7 @@ import {
   useComputedValidated,
   useDecimalToPercent,
 } from "@/composables/useComputed";
-import { supportedLocales } from "@/i18n";
+import { LocaleKey, supportedLocales } from "@/i18n";
 import type { AppConfig, ThemeMode } from "@/stores/config";
 import { useConfigStore } from "@/stores/config";
 
@@ -63,7 +63,7 @@ const windowSizePercent = useDecimalToPercent(
  * @param {Event} event The change event
  */
 function onLanguageChange(event: Event) {
-  const value = (event.target as HTMLSelectElement).value;
+  const value = (event.target as HTMLSelectElement).value as LocaleKey;
   configStore.setLanguage(value);
 }
 
