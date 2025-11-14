@@ -264,14 +264,14 @@ jobs:
         id: release_notes
         run: |
           if [ -f "RELEASE_NOTE.md" ]; then
+            echo "# Version ${{ steps.version.outputs.version }}" > release_body.md
+            echo "" >> release_body.md
             cat RELEASE_NOTE.md > release_body.md
             echo "" >> release_body.md
             echo "---" >> release_body.md
             echo "" >> release_body.md
           else
-            echo "# Release Notes" > release_body.md
-            echo "" >> release_body.md
-            echo "Version ${{ steps.version.outputs.version }}" >> release_body.md
+            echo "# Version ${{ steps.version.outputs.version }}" >> release_body.md
             echo "" >> release_body.md
             echo "---" >> release_body.md
             echo "" >> release_body.md
@@ -279,7 +279,7 @@ jobs:
 
           # Add the Full Changelog link if a previous tag exists
           if [ -n "${{ steps.previous_tag.outputs.prev_tag }}" ]; then
-            echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ steps.previous_tag.outputs.prev_tag }}...${{ github.ref_name }}" >> release_body.md
+            echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ steps.previous_tag.outputs.prev_tag }}...${{ steps.version.outputs.version }}" >> release_body.md
             echo "" >> release_body.md
             echo "---" >> release_body.md
             echo "" >> release_body.md

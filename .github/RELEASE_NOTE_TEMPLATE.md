@@ -1,5 +1,3 @@
-# Version x.y.z
-
 > [!WARNING]
 >
 > This is a **BETA** version. If you encountered problems, feel free to [open an issue](https://github.com/pilgrimlyieu/Focust/issues/new), along with log information. The log directory is as follows, or you can open it from Advanced Options panel:
