@@ -97,6 +97,10 @@ pub fn init_logging(log_dir: &PathBuf, log_level: LogLevel) -> Result<(), String
             "tao::platform_impl::platform::event_loop::runner=off"
                 .parse()
                 .unwrap(),
+        )
+        .add_directive(
+            // suppress symphonia core crate logs
+            "symphonia_core::probe=off".parse().unwrap(),
         );
 
     // Default log level for our own crate based on configured level
