@@ -10,9 +10,7 @@ export const useSchedulerStore = defineStore("scheduler", () => {
   const schedulerPaused = ref(false); // Scheduler paused state
   const schedulerStatus = ref<SchedulerStatus | null>(null); // Scheduler status
 
-  /**
-   * Initialize scheduler store and set up event listeners
-   */
+  /** Initialize scheduler store and set up event listeners */
   async function init() {
     if (initialized.value) {
       return;
