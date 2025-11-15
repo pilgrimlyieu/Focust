@@ -4,12 +4,29 @@
 //! real-time notifications when Focus Assist state changes. This provides
 //! zero-polling event-driven monitoring.
 //!
+//! # Why WNF instead of official `FocusSessionManager` API?
+//!
+//! Microsoft provides an official [`FocusSessionManager`] API with the `IsFocusActiveChanged` event:
+//! - Advantages: Official, documented, type-safe `WinRT` interface
+//! - **Critical limitation**: Only available on Windows 11 Build 22621+ (October 2022 Update)
+//!
+//! We chose WNF API because:
+//! 1. **Broader compatibility**: Works on Windows 10/11, not just recent Windows 11 builds
+//! 2. **Proven stability**: Used by many production applications, extensively tested
+//! 4. **Already implemented**: Fully tested with comprehensive error handling
+//!
+//! The WNF API, while undocumented, is stable and widely used. Microsoft itself uses WNF
+//! internally for system notifications. For maximum compatibility with Windows 10 users,
+//! we prioritize WNF over the newer official API.
+//!
 //! Focus Assist states:
 //! - 0: Off
 //! - 1: Priority Only
 //! - 2: Alarms Only
 //!
-//! ref: <https://stackoverflow.com/questions/53407374/is-there-a-way-to-detect-changes-in-focus-assist-formerly-quiet-hours-in-windo>
+//! # References
+//! - WNF API usage: <https://stackoverflow.com/questions/53407374/is-there-a-way-to-detect-changes-in-focus-assist-formerly-quiet-hours-in-windo>
+//! - Official API Documentation: <https://learn.microsoft.com/en-us/uwp/api/windows.ui.shell.focussessionmanager>
 
 use std::mem;
 use std::sync::Arc;

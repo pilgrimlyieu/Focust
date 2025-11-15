@@ -41,7 +41,7 @@
 use tauri::AppHandle;
 use tokio::sync::mpsc;
 
-use super::{Monitor, MonitorAction, action_to_command};
+use super::{Monitor, action_to_command};
 use crate::scheduler::models::Command;
 use crate::scheduler::shared_state::SharedState;
 
@@ -243,10 +243,6 @@ async fn run_monitors(
                     continue;
                 }
             };
-
-            if action == MonitorAction::None {
-                continue;
-            }
 
             tracing::debug!("Monitor '{}' triggered action: {action}", monitor.name());
             let Some(cmd) = action_to_command(action) else {
