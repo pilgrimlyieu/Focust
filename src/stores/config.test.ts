@@ -35,7 +35,7 @@ const mockConfig: RawAppConfig = {
   ],
   autostart: false,
   inactiveS: 300,
-  language: "en",
+  language: "en-US",
   monitorDnd: false,
   postponeShortcut: "Ctrl+X",
   schedules: [

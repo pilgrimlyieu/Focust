@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## 0.2.8 (2025.11.16)
+
+### 🐛 Bug Fixes
+
+- Fix issue that prompt windows position is not correct when current monitor is not the primary monitor, or the multi-screen option is enabled.
+
+### 🚀 Improvements
+
+- Suppress noisy symphonia core crate logs in debug log level.
+
 ## 0.2.7 (2025.11.13)
 
 ### 🚀 Improvements
