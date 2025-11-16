@@ -266,12 +266,12 @@ jobs:
           if [ -f "RELEASE_NOTE.md" ]; then
             echo "# Version ${{ steps.version.outputs.version }}" > release_body.md
             echo "" >> release_body.md
-            cat RELEASE_NOTE.md > release_body.md
+            cat RELEASE_NOTE.md >> release_body.md
             echo "" >> release_body.md
             echo "---" >> release_body.md
             echo "" >> release_body.md
           else
-            echo "# Version ${{ steps.version.outputs.version }}" >> release_body.md
+            echo "# Version ${{ steps.version.outputs.version }}" > release_body.md
             echo "" >> release_body.md
             echo "---" >> release_body.md
             echo "" >> release_body.md
