@@ -244,10 +244,14 @@ async fn run_monitors(
                 }
             };
 
-            tracing::debug!("Monitor '{}' triggered action: {action}", monitor.name());
             let Some(cmd) = action_to_command(action) else {
                 continue;
             };
+
+            tracing::debug!(
+                "Monitor '{}' converted action to command: {cmd}",
+                monitor.name()
+            );
 
             if let Err(e) = cmd_tx.send(cmd).await {
                 tracing::error!(
