@@ -1,375 +1,250 @@
-# Focust Architecture Documentation
+# Focust Architecture Overview
 
-This document provides a high-level overview of Focust's architecture. For detailed implementation, please refer to the source code.
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Technology Stack](#technology-stack)
-- [System Architecture](#system-architecture)
-- [Backend Architecture](#backend-architecture)
-- [Frontend Architecture](#frontend-architecture)
-- [Key Features](#key-features)
-- [Development Guidelines](#development-guidelines)
-
----
-
-## Overview
-
-Focust is a cross-platform break reminder application built with **Tauri 2** (Rust backend) and **Vue 3** (TypeScript frontend).
-
-### Design Philosophy
-
-1. **Event-Driven**: Scheduler uses events for break management
-2. **Type Safety**: End-to-end type safety via ts-rs
-3. **Modular**: Clear separation of concerns
-4. **Native Integration**: System tray, hotkeys, notifications
-5. **Configuration-First**: TOML-based with sensible defaults
-
----
-
-## Technology Stack
-
-### Backend (Rust)
-
-- **Tauri 2.x** - Desktop framework
-- **Tokio** - Async runtime
-- **Serde + TOML** - Config serialization
-- **ts-rs** - TypeScript type generation
-- **user-idle** - System idle detection
-- **tracing** - Logging
-
-### Frontend (Vue 3)
-
-- **Vue 3.5** + **TypeScript 5.9**
-- **Pinia** - State management
-- **Vue I18n** - Internationalization
-- **Tailwind CSS + DaisyUI** - UI styling
-- **Vite 7** - Build tool
-- **Vitest** - Testing
+> **Purpose**: One-page system overview for developers  
+> **Audience**: Developers joining the project  
+> **Detail Level**: Architecture + modules, no implementation
 
 ---
 
 ## System Architecture
 
-### High-Level Overview
+### High-Level Diagram
 
 ```
-┌─────────────────────────────────────────────┐
-│         Frontend (Vue 3)                    │
-│  Settings Window  |  Break Windows          │
-│  Pinia Stores     |  Toast/Modal            │
-└────────────┬────────────────────────────────┘
-             │ Tauri IPC (Commands & Events)
-┌────────────┴────────────────────────────────┐
-│         Backend (Rust)                      │
-│  ┌──────────────┬────────────────────────┐  │
-│  │ Commands     │ Configuration          │  │
-│  ├──────────────┼────────────────────────┤  │
-│  │ Scheduler    │ Platform Integration   │  │
-│  │ Audio/Theme  │ Tray/Hotkeys/Idle      │  │
-│  └──────────────┴────────────────────────┘  │
-└─────────────────────────────────────────────┘
+┌─────────────── Frontend (Vue 3 + TypeScript) ───────────────┐
+│  Settings Window              Break Windows (Multi-Monitor) │
+│  ├─ Pinia Stores              ├─ Countdown Timer            │
+│  ├─ Settings Panels           ├─ Suggestion Display         │
+│  └─ Status Display            └─ Audio Playback             │
+└────────────────────┬────────────────────────────────────────┘
+                     │ Tauri IPC (23 Commands + 5 Events)
+┌────────────────────┴─── Backend (Rust + Tauri 2) ───────────┐
+│  Scheduler Manager          Platform Integration            │
+│  ├─ BreakScheduler          ├─ System Tray                  │
+│  ├─ AttentionTimer          ├─ Global Hotkeys               │
+│  └─ SharedState             ├─ Idle Detection               │
+│                             └─ DND Monitoring               │
+│  Config System              Core                            │
+│  ├─ TOML Load/Save          ├─ Audio (Rodio)                │
+│  └─ Partial Merge           ├─ Themes                       │
+│                             └─ Suggestions                  │
+└─────────────────────────────────────────────────────────────┘
 ```
-
-### Communication Patterns
-
-- **Frontend → Backend**: Tauri commands (`invoke()`)
-- **Backend → Frontend**: Tauri events (`emit()`)
-- **Persistence**: TOML files in platform config directory
-- **Type Safety**: Rust types → TypeScript via ts-rs
 
 ---
 
-## Backend Architecture
+## Module Breakdown
 
-### Module Structure
+### Backend (Rust) - `src-tauri/src/`
 
-```
-src-tauri/src/
-├── cmd/                 # Tauri command handlers
-├── config/              # Configuration system
-│   ├── core.rs          # Load/save with partial config support
-│   └── models.rs        # AppConfig type definitions
-├── core/                # Business logic
-│   ├── audio/           # Audio playback (Rodio)
-│   ├── schedule.rs      # Break schedule types
-│   ├── suggestions.rs   # Suggestion system
-│   ├── theme.rs         # Theme types
-│   └── time.rs          # Time utilities
-├── scheduler/           # Scheduling engine
-│   ├── core.rs          # Event-driven scheduler loop
-│   ├── event.rs         # Event source calculations
-│   └── models.rs        # Scheduler state types
-├── platform/            # Platform integrations
-│   ├── tray.rs          # System tray
-│   ├── hotkey.rs        # Global shortcuts
-│   ├── i18n.rs          # Internationalization
-│   └── notifications.rs # System notifications
-└── utils/               # Utilities
-    └── logging.rs       # Tracing setup
-```
+| Module         | Purpose                              | Key Components                                                   |
+| -------------- | ------------------------------------ | ---------------------------------------------------------------- |
+| **cmd/**       | Tauri command handlers (23 commands) | audio, autostart, config, scheduler, suggestions, system, window |
+| **config/**    | TOML config with partial loading     | AppConfig, AdvancedSettings, load/save/merge                     |
+| **scheduler/** | Event-driven scheduling engine       | BreakScheduler, AttentionTimer, SharedState, Command routing     |
+| **monitors/**  | Environment monitoring               | IdleMonitor, DndMonitor, AppWhitelistMonitor, Orchestrator       |
+| **platform/**  | System integration                   | Tray, hotkeys, notifications, i18n, window creation              |
+| **core/**      | Business logic types                 | Audio, Schedule, Suggestions, Theme, Time                        |
+| **utils/**     | Utilities                            | Error handling, logging (tracing)                                |
 
-### Key Concepts
+### Frontend (Vue 3) - `src/`
 
-**Configuration System:**
-- TOML-based with **partial config loading**
-- Missing fields use default values
-- Automatic config migration on version updates
-- Type-safe with `serde` + `ts-rs`
-
-**Scheduler Engine:**
-- Event-driven state machine
-- States: `Running`, `Paused`, `Idle`, `PostBreak`
-- Event sources: Mini breaks, long breaks, attention reminders
-- Auto-pause on system idle
-
-**Break Payload:**
-- Created when break triggers
-- Stored by UUID in `PromptPayloadStore`
-- Frontend fetches via command with UUID
+| Module           | Purpose                   | Key Components                                |
+| ---------------- | ------------------------- | --------------------------------------------- |
+| **views/**       | Main application views    | SettingsApp.vue, PromptApp.vue                |
+| **stores/**      | Pinia state management    | configStore, schedulerStore, suggestionsStore |
+| **components/**  | Reusable components       | settings/ (lazy panels), ui/, icons/          |
+| **types/**       | Type system               | generated/ (ts-rs), guards.ts, factories.ts   |
+| **composables/** | Vue composition functions | useToast, useComputed                         |
+| **i18n/**        | Internationalization      | en-US, zh-CN locales                          |
+| **utils/**       | Utility functions         | safeClone, handleError                        |
 
 ---
 
-## Frontend Architecture
+## Data Flow
 
-### Module Structure
+### 1. Configuration Flow
 
 ```
-src/
-├── views/              # Main views
-│   ├── SettingsApp.vue # Settings window
-│   └── PromptApp.vue    # Break window
-├── components/
-│   ├── settings/       # Settings panels (lazy-loaded)
-│   ├── ui/             # Reusable components
-│   └── icons/          # Icon components
-├── stores/             # Pinia stores
-│   ├── config.ts       # Config state + dirty tracking
-│   ├── scheduler.ts    # Scheduler status
-│   └── suggestions.ts  # Suggestion management
-├── composables/        # Composition utilities
-│   ├── useComputed.ts  # Custom computed
-│   └── useToast.ts     # Toast notifications
-├── types/
-│   ├── generated/      # Auto-generated from Rust
-│   ├── guards.ts       # Type guards
-│   └── factories.ts    # Factory functions
-├── i18n/               # Internationalization
-└── utils/              # Utility functions
+User Edit (Settings UI)
+  ↓
+configStore.draft (Pinia)
+  ↓
+invoke("save_config")
+  ↓
+Backend: save_config() → TOML file
+  ↓
+SchedulerManager: UpdateConfig command
+  ↓
+BreakScheduler + AttentionTimer recalculate
 ```
 
-### Key Features
+### 2. Scheduler Flow
 
-**Settings Window:**
-- Tab-based UI (General, Schedules, Attentions, etc.)
-- Dirty state tracking for unsaved changes
-- Lazy-loaded panels for performance
-- Real-time scheduler status display
+```
+BreakScheduler: Calculate next break
+  ↓
+Wait until break time (tokio::select!)
+  ↓
+Send notification (optional)
+  ↓
+Execute break: emit("scheduler-event", payload)
+  ↓
+Frontend: schedulerStore.handleSchedulerEvent()
+  ↓
+Create break windows (one per monitor)
+  ↓
+User finishes → invoke("break_finished")
+  ↓
+BreakScheduler: Update state, calculate next
+```
 
-**Break Window:**
-- Dynamic creation per monitor
-- Countdown timer with circular progress
-- Suggestion display (if enabled)
-- Audio playback (primary window only)
-- Keyboard shortcuts (Enter/postpone key)
+### 3. Monitor Flow
 
-**State Management:**
-- `configStore`: Config CRUD + dirty tracking
-- `schedulerStore`: Scheduler status + next break time
-- `suggestionsStore`: Suggestion CRUD
+```
+Orchestrator: Sequential monitor checking
+  ↓
+IdleMonitor: Check system idle time
+DndMonitor: Check Do Not Disturb state
+AppWhitelistMonitor: Check active processes
+  ↓
+Convert MonitorResult → Pause/Resume reason
+  ↓
+SchedulerManager: Add/Remove pause reason (bitflags)
+  ↓
+If all clear → Resume schedulers
+If any active → Pause schedulers
+```
 
 ---
 
-## Key Features
+## IPC Communication
 
-### 1. Partial Config Loading
+### Commands (Frontend → Backend)
 
-**Problem:** New app versions add fields → old configs fail to parse
+| Command                                                                                                                               | Module      | Purpose                   |
+| ------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ------------------------- |
+| `get_config`, `save_config`, `pick_background_image`                                                                                  | config      | Config CRUD               |
+| `get_autostart`, `set_autostart`                                                                                                      | autostart   | Autostart management      |
+| `play_builtin_audio`, `play_audio_file`, `stop_audio`                                                                                 | audio       | Audio control             |
+| `pause_scheduler`, `resume_scheduler`, `postpone_break`, `skip_break`, `trigger_event`, `request_scheduler_status`, `reset_scheduler` | scheduler   | Scheduler control         |
+| `get_suggestions`, `save_suggestions`, `get_suggestions_for_language`                                                                 | suggestions | Suggestion CRUD           |
+| `get_payload`, `cleanup_payload`                                                                                                      | payload     | Prompt payload management |
+| `open_config_dir`, `open_log_dir`, `open_folder`                                                                                      | system      | File explorer             |
+| `open_settings_window`, `close_break_windows`                                                                                         | window      | Window management         |
 
-**Solution:** Merge valid fields with defaults
+### Events (Backend → Frontend)
+
+| Event                    | Payload           | Purpose                             |
+| ------------------------ | ----------------- | ----------------------------------- |
+| `scheduler-status`       | `SchedulerStatus` | Status updates (paused, next event) |
+| `scheduler-event`        | `PromptPayload`   | Break/attention trigger             |
+| `scheduler-paused`       | `()`              | Paused notification                 |
+| `scheduler-resumed`      | `()`              | Resumed notification                |
+| `postpone-limit-reached` | `()`              | Max postpones reached               |
+
+---
+
+## Key Design Patterns
+
+### 1. Dual Scheduler Architecture
+
+**BreakScheduler**: Handles mini/long breaks with intervals  
+**AttentionTimer**: Handles time-based attention reminders  
+**SharedState**: Central authority for pause reasons (bitflags)
+
+**Why**: Separate concerns, independent timing logic, unified pause management
+
+### 2. Bitflags for Pause Reasons
 
 ```rust
-// If config parse fails:
-// 1. Parse as generic TOML
-// 2. Extract valid fields
-// 3. Fill missing fields with defaults
-// 4. Save merged config
+bitflags! {
+    pub struct PauseReasons: u8 {
+        const USER_IDLE     = 1 << 0;
+        const DND           = 1 << 1;
+        const MANUAL        = 1 << 2;
+        const APP_EXCLUSION = 1 << 3;
+    }
+}
 ```
 
-**Benefits:**
-- Seamless version upgrades
-- No data loss
-- User settings preserved
+**Why**: Multiple pause reasons coexist, resume only when all cleared
 
-### 2. Event-Driven Scheduler
+### 3. Partial Config Loading
 
-**Flow:**
-```
-Calculate next event
-  ↓
-Wait until event (tokio::select!)
-  ↓
-Send notification (if configured)
-  ↓
-Create prompt payload
-  ↓
-Emit "show-prompt" event
-  ↓
-Frontend creates break windows
-  ↓
-User finishes/postpones
-  ↓
-Loop
-```
+**Problem**: New app versions add fields → old configs break  
+**Solution**: Parse as generic TOML, merge valid fields with defaults  
+**Why**: Seamless upgrades, no data loss, backward compatibility
 
-**Features:**
-- Non-blocking async design
-- Handles pause/resume/postpone commands
-- Auto-pause on idle detection
-- Multi-monitor support
+### 4. Event-Driven Monitoring
 
-### 3. Type-Safe IPC
+**Windows/Linux**: DND monitor uses platform events (WNF/D-Bus)  
+**macOS**: Polling (no native event API)  
+**Why**: Minimize CPU usage, responsive state changes
 
-**Rust → TypeScript:**
+### 5. Type-Safe IPC (ts-rs)
+
 ```rust
 #[derive(Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, rename_all = "camelCase")]
-pub struct AppConfig {
-    pub autostart: bool,
-    // ...
-}
+pub struct AppConfig { }
 ```
 
-Generated TypeScript:
-```typescript
-export interface AppConfig {
-  autostart: boolean;
-  // ...
-}
-```
+**Why**: Compile-time type checking, refactoring safety, IDE support
 
-**Benefits:**
-- Compile-time type checking
-- Refactoring safety
-- IDE autocomplete
+### 6. Session Protection
 
-### 4. Multi-Monitor Break Windows
-
-**Implementation:**
-```rust
-// Get all monitors
-let monitors = app_handle.available_monitors()?;
-
-// Create window per monitor
-for (index, monitor) in monitors.iter().enumerate() {
-    let window = create_break_window(
-        app_handle,
-        &format!("break-{}", index),
-        payload_id,
-        monitor
-    )?;
-}
-```
-
-**Audio:** Only plays in primary window (index 0)
-
-### 5. Idle Detection & Auto-Pause
-
-**Thread-based monitoring:**
-```rust
-// Check idle time every 5 seconds
-loop {
-    let idle_time = user_idle::UserIdle::get_time()?;
-    
-    if idle_time > inactive_s {
-        // Send pause command
-    }
-    
-    sleep(Duration::from_secs(10));
-}
-```
-
-**Seamless resume:** Automatically resumes when activity detected
+**SharedState**: Tracks break/attention sessions  
+**Monitors**: Check `in_any_session()` before acting  
+**Why**: Prevent monitors from interfering with active prompts
 
 ---
 
-## Development Guidelines
+## Technology Choices
 
-### Adding New Config Fields
-
-1. **Add field to `AppConfig`** in `config/models.rs`:
-   ```rust
-   pub struct AppConfig {
-       pub new_field: bool,
-   }
-   ```
-
-2. **Update `Default` impl** with default value
-
-3. **Update `merge_config_field()`** in `config/core.rs`:
-   ```rust
-   merge_field!(new_field, "newField", bool);
-   ```
-
-4. **Run `cargo test export_bindings`** to generate TypeScript types
-
-5. **Update frontend** to use new field
-
-### Adding New Tauri Commands
-
-1. **Create command** in `cmd/`:
-   ```rust
-   #[tauri::command]
-   pub async fn my_command(arg: String) -> Result<String, String> {
-       Ok(format!("Result: {arg}"))
-   }
-   ```
-
-2. **Register in `lib.rs`**:
-   ```rust
-   .invoke_handler(tauri::generate_handler![
-       my_command,
-   ])
-   ```
-
-3. **Add permission** in `capabilities/default.json`:
-   ```json
-   {
-     "identifier": "my_command",
-     "allow": ["my_command"]
-   }
-   ```
-
-4. **Call from frontend**:
-   ```typescript
-   import { invoke } from '@tauri-apps/api/core';
-   const result = await invoke<string>('my_command', { arg: 'test' });
-   ```
-
-### Testing
-
-**Backend:**
-```bash
-just test-back-all     # All Rust tests
-just test-back <name>  # Specific test
-```
-
-**Frontend:**
-```bash
-just test-front-all    # All Vue tests
-just test-front <name> # Specific test
-```
-
-**Integration:**
-```bash
-just test-all          # Everything
-```
+| Decision         | Choice                   | Rationale                            |
+| ---------------- | ------------------------ | ------------------------------------ |
+| Config Format    | TOML                     | Human-readable, comments, type-safe  |
+| State Management | Pinia                    | Vue 3 official, TypeScript support   |
+| Scheduling       | Event-driven             | Low CPU, responsive, testable        |
+| Error Handling   | `Result<T,E>` + `anyhow` | Library uses Result, app uses anyhow |
+| Async Runtime    | `tauri::async_runtime`   | Avoid Tokio Runtime errors           |
+| Type Sync        | ts-rs                    | Auto-generate TS types from Rust     |
+| Logging          | tracing                  | Structured, file output, levels      |
+| Audio            | rodio                    | Cross-platform, multi-format         |
+| Testing          | Vitest + Cargo test      | Native support, ecosystem            |
 
 ---
 
-## Additional Resources
+## Testing Strategy
 
-- **[CONFIGURATION.md](CONFIGURATION.md)** - Config file reference
-- **[CONTRIBUTING.md](../CONTRIBUTING.md)** - Development guide
+### Test Layers
+
+```
+Layer 4: End-to-End (User scenarios)
+Layer 3: Integration (Manager + Monitor coordination)
+Layer 2: State Machine (BreakScheduler + AttentionTimer logic)
+Layer 1: Unit (SharedState + Config + Core types)
+```
+
+**Coverage**: 273 tests, 100% pass rate  
+**Key Tests**: 143 scheduler tests (8 stress tests), 30 config tests
+
+---
+
+## Platform Support
+
+| Platform | Status         | Notes                                   |
+| -------- | -------------- | --------------------------------------- |
+| Windows  | ✅ Fully tested | Primary development platform            |
+| Linux    | ✅ Designed     | Event-driven DND (D-Bus), tested in CI  |
+| macOS    | ⚠️ Partial      | Audio disabled (cpal Send), DND polling |
+
+**Platform-Specific Code**: `#[cfg(target_os = "...")]` in `platform/dnd/`
+
+---
+
+## Resources
+
+- **Config Reference**: `docs/CONFIGURATION.md`

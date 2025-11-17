@@ -91,39 +91,28 @@ The settings window should be opened in tray tab. To test break windows:
 ```
 Focust/
 ├── src/                    # Frontend (Vue 3 + TypeScript)
-│   ├── components/         # Vue components
-│   │   ├── settings/       # Settings panel components
-│   │   ├── ui/             # Reusable UI components
-│   │   └── icons/          # Icon components
-│   ├── composables/        # Vue composables
+│   ├── components/         # Vue components (settings, UI, icons)
 │   ├── stores/             # Pinia state management
-│   ├── views/              # Main view components
+│   ├── views/              # Main application views
 │   ├── i18n/               # Internationalization
-│   ├── types/              # Type definitions & utilities
-│   │   └── generated/      # Auto-generated from Rust
+│   ├── types/              # Type definitions (including generated/)
 │   └── utils/              # Utility functions
 │
 ├── src-tauri/              # Backend (Rust + Tauri)
 │   ├── src/
 │   │   ├── cmd/            # Tauri command handlers
-│   │   ├── config/         # Configuration management
-│   │   ├── core/           # Core business logic
-│   │   │   ├── audio/      # Audio playback
-│   │   │   ├── schedule.rs # Schedule types
-│   │   │   ├── suggestions.rs # Suggestion system
-│   │   │   └── theme.rs    # Theme types
+│   │   ├── config/         # Configuration system
+│   │   ├── core/           # Business logic (audio, schedule, theme, etc.)
 │   │   ├── scheduler/      # Break scheduling engine
-│   │   ├── platform/       # Platform integrations
-│   │   │   ├── tray.rs     # System tray
-│   │   │   ├── hotkey.rs   # Global hotkeys
-│   │   │   └── notifications.rs # System notifications
+│   │   ├── monitors/       # Environment monitoring (idle, DND, etc.)
+│   │   ├── platform/       # Platform integrations (tray, hotkeys, notifications)
 │   │   └── utils/          # Utility functions
-│   ├── assets/sounds/      # Built-in audio files
-│   └── tests/              # Integration tests
+│   └── assets/sounds/      # Built-in audio files
 │
 ├── docs/                   # Documentation
-│   ├── ARCHITECTURE.md     # Architecture documentation
-│   └── CONFIGURATION.md    # Configuration reference
+│   ├── ARCHITECTURE.md     # System architecture
+│   ├── CONFIGURATION.md    # Configuration reference
+│   └── QUICKSTART.md       # Quick start guide
 │
 ├── justfile                # Command definitions
 └── README.md               # Project readme
@@ -257,18 +246,10 @@ fn test_parsing() {
 
 **Async Code:**
 ```rust
-// Use async/await with tokio
+// Use async/await for asynchronous operations
 async fn fetch_data() -> Result<Data> {
-    let response = reqwest::get("https://api.example.com")
-        .await?;
-    let data = response.json().await?;
-    Ok(data)
+    // Implementation
 }
-
-// Spawn long-running tasks
-tauri::async_runtime::spawn(async move {
-    // Long-running work
-});
 ```
 
 **Type Exports for TypeScript:**
@@ -289,23 +270,13 @@ pub struct AppConfig {
 ```rust
 /// Loads the application configuration from disk.
 ///
-/// This function attempts to load the config file from the platform-specific
-/// configuration directory. If the file doesn't exist, it creates a default
-/// configuration.
+/// Loads from platform-specific config directory, or creates default if not found.
 ///
 /// # Arguments
-///
 /// * `app_handle` - Handle to the Tauri application
 ///
 /// # Returns
-///
-/// Returns the loaded or default configuration
-///
-/// # Examples
-///
-/// ```
-/// let config = load_config(&app_handle).await;
-/// ```
+/// The loaded or default configuration
 pub async fn load_config(app_handle: &AppHandle) -> AppConfig {
     // Implementation
 }
@@ -339,10 +310,10 @@ const MAX_RETRIES = 3;
 **Vue 3 Composition API:**
 ```vue
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed } from "vue";
 import type { AppConfig } from "@/types";
 
-// Props with TypeScript
+// Define props with TypeScript
 interface Props {
   config: AppConfig;
   readonly?: boolean;
@@ -352,26 +323,14 @@ const props = withDefaults(defineProps<Props>(), {
   readonly: false,
 });
 
-// Reactive state
+// Reactive state and computed values
 const count = ref(0);
 const doubled = computed(() => count.value * 2);
-
-// Lifecycle hooks
-onMounted(() => {
-  console.log("Component mounted");
-});
-
-// Expose for testing
-defineExpose({
-  count,
-  doubled,
-});
 </script>
 
 <template>
   <div>
-    <p>Count: {{ count }}</p>
-    <p>Doubled: {{ doubled }}</p>
+    <p>{{ count }} × 2 = {{ doubled }}</p>
   </div>
 </template>
 ```
@@ -384,35 +343,22 @@ import { ref, computed } from "vue";
 export const useConfigStore = defineStore("config", () => {
   // State
   const config = ref<AppConfig | null>(null);
-  const loading = ref(false);
 
-  // Getters
-  const isDarkMode = computed(() => {
-    return config.value?.themeMode === "dark";
-  });
+  // Getters (computed values)
+  const isDarkMode = computed(() => config.value?.themeMode === "dark");
 
-  // Actions
+  // Actions (functions that modify state)
   async function loadConfig() {
-    loading.value = true;
-    try {
-      config.value = await invoke<AppConfig>("get_config");
-    } finally {
-      loading.value = false;
-    }
+    config.value = await invoke<AppConfig>("get_config");
   }
 
-  return {
-    config,
-    loading,
-    isDarkMode,
-    loadConfig,
-  };
+  return { config, isDarkMode, loadConfig };
 });
 ```
 
 **Error Handling:**
 ```typescript
-// Handle errors gracefully
+// Handle errors gracefully with try-catch
 try {
   await invoke("save_config", { config });
   showToast("success", "Settings saved");
@@ -421,12 +367,11 @@ try {
   showToast("error", "Failed to save settings");
 }
 
-// Type guards for generated types
+// Use type guards for runtime type checking
 import { isPromptPayload } from "@/types";
 
 if (isPromptPayload(data)) {
-  // TypeScript knows data is PromptPayload
-  startBreak(data);
+  startBreak(data); // TypeScript knows data type
 }
 ```
 
@@ -435,21 +380,22 @@ if (isPromptPayload(data)) {
 /**
  * Loads the user configuration from the backend.
  *
- * @returns {Promise<UserConfig>} A promise that resolves to the user configuration.
- * @throws An error if the configuration cannot be loaded.
- * @example
- * ```typescript
- * const config = await loadUserConfig();
- * console.log(config.themeMode);
- * ```
+ * @returns A promise that resolves to the user configuration
+ * @throws Error if configuration cannot be loaded
  */
 export async function loadUserConfig(): Promise<UserConfig> {
-  const config = await invoke<UserConfig>("get_user_config");
-  return config;
+  return await invoke<UserConfig>("get_user_config");
 }
 ```
 
 ### Testing Standards
+
+**Key Points:**
+- Add tests for new features and bug fixes
+- Test edge cases and error handling
+- Use descriptive test names
+- Keep tests simple and focused
+- Check existing tests for patterns
 
 #### Rust Tests
 
@@ -460,16 +406,11 @@ mod tests {
 
     #[test]
     fn test_basic_functionality() {
-        let result = add(2, 3);
-        assert_eq!(result, 5);
+        let result = calculate(5);
+        assert_eq!(result, expected_value);
     }
 
-    #[test]
-    fn test_error_handling() {
-        let result = divide(10, 0);
-        assert!(result.is_err());
-    }
-
+    // For async tests, use tokio::test
     #[tokio::test]
     async fn test_async_function() {
         let data = fetch_data().await.unwrap();
@@ -486,14 +427,12 @@ import { mount } from "@vue/test-utils";
 import MyComponent from "@/components/MyComponent.vue";
 
 describe("MyComponent", () => {
-  it("renders properly", () => {
-    const wrapper = mount(MyComponent, {
-      props: { title: "Test" },
-    });
+  it("renders with props", () => {
+    const wrapper = mount(MyComponent, { props: { title: "Test" } });
     expect(wrapper.text()).toContain("Test");
   });
 
-  it("handles click events", async () => {
+  it("emits events on interaction", async () => {
     const wrapper = mount(MyComponent);
     await wrapper.find("button").trigger("click");
     expect(wrapper.emitted("submit")).toBeTruthy();

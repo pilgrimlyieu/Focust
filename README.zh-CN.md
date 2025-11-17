@@ -133,7 +133,7 @@ Focust 以性能为设计理念，提供卓越的资源效率：
 请[为您的平台下载最新版本](https://github.com/pilgrimlyieu/Focust/releases/latest)：
 - **Windows**：`setup.exe` 安装程序
 - **macOS**：`.dmg` 安装程序
-- **Linux**：`.AppImage`
+- **Linux**：`.AppImage`、`.deb` 或 `.rpm` 软件包
 
 ### 从源码构建
 

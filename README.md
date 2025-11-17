@@ -133,7 +133,7 @@ Built with performance in mind, Focust offers exceptional resource efficiency:
 Download the [latest release for your platform](https://github.com/pilgrimlyieu/Focust/releases/latest):
 - **Windows**: `setup.exe` installer
 - **macOS**: `.dmg` installer
-- **Linux**: `.AppImage`
+- **Linux**: `.AppImage`, `.deb`, or `.rpm` packages
 
 ### Building from Source
 

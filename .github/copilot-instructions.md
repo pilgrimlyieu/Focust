@@ -1,216 +1,101 @@
 # GitHub Copilot Instructions for Focust
 
-## Project Overview
+> **Purpose**: Self-contained guide for GitHub Copilot
+> **Audience**: Developers and AI assistants working on Focust
 
-Focust is a cross-platform break reminder application built with Tauri 2 (Rust backend) and Vue 3 (TypeScript frontend). It helps users take regular breaks with customizable schedules, beautiful themes, and intelligent reminders.
+---
 
-**Note**: This is an early development project and the author's first Rust project. Currently tested primarily on Windows, but designed for cross-platform support (Windows, macOS, Linux).
+## 📋 Project Overview
 
-## Technology Stack
+Focust is a cross-platform break reminder app built with **Tauri 2.9** (Rust backend) + **Vue 3.5** (TypeScript frontend). It helps users take regular breaks with customizable schedules and themes.
 
-### Backend (Rust)
-- **Tauri 2.x** - Desktop application framework
-- **Tokio** - Async runtime
-- **Serde + TOML** - Configuration serialization
-- **ts-rs** - TypeScript type generation from Rust types
-- **user-idle2** - System idle detection
-- **tracing** - Structured logging
-- **rodio** - Audio playback
+**Tech Stack**:
+- **Backend**: Tauri 2.9, Rust, Tokio, Serde, ts-rs, rodio
+- **Frontend**: Vue 3.5, TypeScript 5.9, Pinia, Tailwind CSS 4
+- **Tools**: Just, Biome, Vitest, Cargo test
 
-### Frontend (Vue 3)
-- **Vue 3.5** + **TypeScript 5.9** (strict mode)
-- **Pinia** - State management
-- **Vue I18n** - Internationalization (English and Chinese)
-- **Tailwind CSS 4 + DaisyUI** - UI styling
-- **Vite 7** - Build tool and dev server
-- **Vitest** - Testing framework
-- **Biome** - Linting and formatting (replaces ESLint/Prettier)
+---
 
-### Build Tools
-- **Just** - Command runner (see `justfile` for available commands)
-- **Cargo** - Rust package manager
-- **npm/Bun** - JavaScript package manager (Bun preferred)
+## 🏗️ Architecture (Self-Contained)
 
-## Architecture
+### System Overview
 
-### Communication Pattern
-- **Frontend → Backend**: Tauri commands via `invoke()`
-- **Backend → Frontend**: Tauri events via `emit()` and `listen()`
-- **Type Safety**: End-to-end type safety using ts-rs to generate TypeScript types from Rust structs
-- **Persistence**: TOML configuration files stored in platform-specific config directory
-
-### Project Structure
-
-```text
-Focust/
-├── src/                    # Frontend (Vue 3 + TypeScript)
-│   ├── components/         # Vue components
-│   │   ├── settings/       # Settings panel components
-│   │   ├── ui/             # Reusable UI components
-│   │   └── icons/          # Icon components
-│   ├── composables/        # Vue composables
-│   ├── stores/             # Pinia state management
-│   ├── views/              # Main view components
-│   ├── i18n/               # Internationalization files
-│   ├── types/              # Type definitions
-│   │   └── generated/      # Auto-generated from Rust (DO NOT EDIT)
-│   └── utils/              # Utility functions
-│
-├── src-tauri/              # Backend (Rust + Tauri)
-│   ├── src/
-│   │   ├── cmd/            # Tauri command handlers
-│   │   ├── config/         # Configuration management
-│   │   ├── core/           # Core business logic
-│   │   │   ├── audio/      # Audio playback
-│   │   │   ├── schedule.rs # Schedule types
-│   │   │   ├── suggestions.rs # Suggestion system
-│   │   │   └── theme.rs    # Theme types
-│   │   ├── scheduler/      # Break scheduling engine
-│   │   ├── platform/       # Platform integrations
-│   │   │   ├── tray.rs     # System tray
-│   │   │   ├── hotkey.rs   # Global hotkeys
-│   │   │   └── notifications.rs # System notifications
-│   │   └── utils/          # Utility functions
-│   ├── assets/sounds/      # Built-in audio files
-│   └── tests/              # Integration tests
-│
-├── docs/                   # Documentation
-│   ├── ARCHITECTURE.md     # Architecture documentation
-│   ├── CONFIGURATION.md    # Configuration reference
-│   └── QUICKSTART.md       # Quick start guide
-│
-└── justfile                # Command definitions
+```
+Frontend (Vue 3)  ←[invoke/emit]→  Tauri IPC  ←→  Rust Backend
+     ↓                                            ↓
+Pinia Stores                              SchedulerManager
+     ↓                                            ↓
+Settings/Break Views                  BreakScheduler + AttentionTimer
 ```
 
-## Development Workflow
+### Key Backend Modules (`src-tauri/src/`)
 
-### Setup
+- **`cmd/`** - Tauri command handlers (23 commands)
+- **`scheduler/`** - Event-driven scheduling (BreakScheduler + AttentionTimer)
+- **`monitors/`** - Environment monitoring (Idle/DND/AppWhitelist)
+- **`config/`** - TOML config with partial loading + auto migration
+- **`platform/`** - System integration (tray, hotkeys, notifications)
+- **`core/`** - Business logic (audio, schedule, themes)
+
+### Key Frontend Modules (`src/`)
+
+- **`stores/`** - Pinia state (configStore, schedulerStore)
+- **`views/`** - Main views (SettingsApp, PromptApp)
+- **`components/`** - Reusable UI components (lazy-loaded panels)
+- **`types/`** - Type system (generated/ from ts-rs, guards, factories)
+
+---
+
+## 📋 Common Commands
+
 ```bash
-# Install dependencies (use npm if bun not available)
-bun install
-# or: npm install
-
-# Setup Rust dependencies
-cd src-tauri && cargo check && cd ..
-
-# Or use just
-just setup
+just dev          # Start dev server
+just format       # Format code (frontend + backend)
+just check        # Type check + Clippy
+just test-all     # Run all tests
+just build        # Build production version
 ```
 
-### Development Commands
-```bash
-# Start dev server
-just dev
-# or: bun run tauri dev
+---
 
-# Format code
-just format      # Both frontend and backend
-just format-front  # Frontend only
-just format-back   # Backend only
+## 🎯 Coding Standards (Critical Rules)
 
-# Lint/check code
-just check       # All checks
-just check-front # Frontend checks
-just check-back  # Backend checks
+### Rust
 
-# Run tests
-just test-all       # All tests
-just test-front-all # Frontend tests
-just test-back-all  # Backend tests
-```
+| Rule | Correct ✅ | Wrong ❌ | Why |
+|------|-----------|----------|-----|
+| **Format strings** | `tracing::info!("User {user_name}");` | `format!("User: {}", user_name)` | Direct interpolation is cleaner |
+| **Error handling** | `config.load()?;` | `config.load().unwrap();` | Avoid panics, propagate errors |
+| **Async tasks** | `tauri::async_runtime::spawn(...)` | `tokio::spawn(...)` | Avoid "Cannot start runtime" error |
+| **Naming** | `fn calculate_next_event()` | `fn CalcNextEvent()` | Follow snake_case convention |
+| **Imports** | `use std::fs;` then `fs::read()` | `use std::fs::read;` then `read()` | Keep namespace clarity |
 
-## Coding Standards
-
-### General Principles
-1. **Write clean, readable code**: Prioritize clarity over cleverness
-2. **Comment complex logic**: Explain the "why", not just the "what"
-3. **Keep functions small**: Each function should do one thing well
-4. **Use meaningful names**: Self-documenting variable, function, and type names
-5. **Test your code**: Add tests for new features and bug fixes
-6. **Type safety first**: Leverage TypeScript strict mode and Rust's type system
-
-### Rust Code
-
-**Style:**
-- Follow [Rust API Guidelines](https://rust-lang.github.io/api-guidelines/)
-- Use `cargo fmt` for formatting (via `just format-back`)
-- Use `cargo clippy` for linting
-
-**Naming Conventions:**
+**Error Handling Pattern**:
 ```rust
-// Types: PascalCase
-struct AppConfig { }
-enum AudioSource { }
+// Library code: Use Result<T, E>
+pub fn load_config() -> Result<AppConfig, ConfigError> { }
 
-// Functions and variables: snake_case
-fn load_config() -> Result<AppConfig> { }
-let user_name = "Alice";
-
-// Constants: SCREAMING_SNAKE_CASE
-const MAX_RETRIES: u32 = 3;
-```
-
-**Error Handling:**
-- Use `Result<T, E>` for recoverable errors
-- Use `?` operator for error propagation
-- Avoid `unwrap()` in library code (acceptable in tests)
-
-**TypeScript Type Generation:**
-```rust
-use serde::{Deserialize, Serialize};
-use ts_rs::TS;
-
-#[derive(Serialize, Deserialize, TS)]
-#[serde(rename_all = "camelCase")]  // JavaScript convention
-#[ts(export, rename_all = "camelCase")]
-pub struct AppConfig {
-    pub autostart: bool,
-    pub theme_mode: String,
+// Application code: Use anyhow
+fn main() -> anyhow::Result<()> {
+    let config = load_config()?;
+    Ok(())
 }
 ```
 
-**Documentation:**
-- Document public functions with doc comments (`///`)
-- Include examples for complex APIs
-- Describe parameters with `# Arguments` section
-- Document return values and errors
+### TypeScript/Vue
 
-### TypeScript/Vue Code
+| Rule | Correct ✅ | Wrong ❌ | Why |
+|------|-----------|----------|-----|
+| **Props** | `interface Props { config: AppConfig; }` | `defineProps(['config'])` | Type safety |
+| **Type imports** | `import type { AppConfig } from '@/types';` | `import { AppConfig }...` | Avoid runtime imports |
+| **Deep clone** | `safeClone(config)` | `JSON.parse(JSON.stringify(config))` | Handles BigInt correctly |
+| **Naming** | `function loadConfig()` | `function LoadConfig()` | Follow camelCase |
+| **Component setup** | `<script setup lang="ts">` | `<script lang="ts">` + `defineComponent` | Composition API preferred |
 
-**Style:**
-- Use Biome for formatting and linting (configured in `biome.jsonc`)
-- Enable TypeScript strict mode
-- Import paths use `@/` alias for `src/` directory
-
-**Naming Conventions:**
-```typescript
-// Types and Interfaces: PascalCase
-interface UserConfig {
-  userName: string;
-}
-type AudioSource = "builtin" | "file";
-
-// Functions and variables: camelCase
-function loadConfig(): UserConfig { }
-const userName = "Alice";
-
-// Constants: SCREAMING_SNAKE_CASE
-const MAX_RETRIES = 3;
-
-// Components: PascalCase (Vue SFC files)
-// Example: SettingsPanel.vue, BreakWindow.vue
-```
-
-**Vue 3 Composition API:**
-- Use `<script setup lang="ts">` syntax
-- Define props with TypeScript interfaces
-- Use composables for reusable logic
-- Leverage Pinia stores for shared state
-
+**Vue Component Pattern**:
 ```vue
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
-import type { AppConfig } from "@/types";
+import type { AppConfig } from '@/types';
 
 interface Props {
   config: AppConfig;
@@ -220,134 +105,276 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   readonly: false,
 });
-
-// Component logic
 </script>
 ```
 
-**Imports:**
-- Group imports: Vue imports, third-party libraries, local imports
-- Use type imports when possible: `import type { ... }`
-- Organize imports automatically with Biome
+---
 
-### Testing
+## 🚨 Common Pitfalls & Solutions
 
-**Frontend (Vitest):**
-- Test files: `*.test.ts` or `*.spec.ts` alongside source files
-- Use Vue Test Utils for component testing
-- Mock Tauri commands when testing components that use them
+| Issue | Cause | Solution | Location |
+|-------|-------|----------|----------|
+| **BigInt clone fails** | `JSON.parse/stringify` doesn't support BigInt | Use `safeClone()` from `@/utils/safeClone` | `src/utils/safeClone.ts` |
+| **Event permission error** | Window not declared in capabilities | Add window label to `capabilities/default.json` | `src-tauri/capabilities/default.json` |
+| **Tokio Runtime error** | Using `tokio::spawn` in Tauri | Use `tauri::async_runtime::spawn` instead | All async code |
+| **`unwrap()` panic** | Calling `unwrap()` on `Option/Result` | Use `?` operator or `ok_or_else()` | All Rust code |
+| **Type generation fails** | Rust struct changed but TS not updated | Run `cargo test export_bindings` | After changing `#[derive(TS)]` structs |
 
-**Backend (Rust):**
-- Test files: `tests/` directory or inline `#[cfg(test)]` modules
-- Use `tempfile` crate for temporary file operations in tests
-- Test public APIs and critical logic paths
+---
 
-### Configuration
+## 🧩 Code Templates
 
-**Application Config:**
-- Stored in TOML format in platform-specific config directory
-- Defined in `src-tauri/src/config/models.rs`
-- Supports partial config updates
-- Always validate config after loading
+### Add Tauri Command
 
-**Type Generation:**
-- Rust types with `#[derive(TS)]` auto-generate TypeScript types
-- Generated types go to `src/types/generated/` (DO NOT EDIT MANUALLY)
-- Run build to regenerate types after Rust struct changes
-
-## Common Patterns
-
-### Tauri Commands
+**Backend** (`src-tauri/src/cmd/xxx.rs`):
 ```rust
-// Backend (src-tauri/src/cmd/)
 #[tauri::command]
-pub async fn get_config(app_handle: tauri::AppHandle) -> Result<AppConfig, String> {
-    config::load(&app_handle)
-        .await
-        .map_err(|e| e.to_string())
+pub async fn new_command(
+    app_handle: tauri::AppHandle,
+    param: String,
+) -> Result<ReturnType, String> {
+    // Implementation
+    Ok(result)
 }
 ```
 
+**Frontend** (`src/xxx.ts`):
 ```typescript
-// Frontend
-import { invoke } from "@tauri-apps/api/core";
-import type { AppConfig } from "@/types/generated/AppConfig";
+import { invoke } from '@tauri-apps/api/core';
+import type { ReturnType } from '@/types';
 
-const config = await invoke<AppConfig>("get_config");
-```
-
-### Tauri Events
-```rust
-// Backend - emit event
-app_handle.emit("break-started", payload)?;
-```
-
-```typescript
-// Frontend - listen to event
-import { listen } from "@tauri-apps/api/event";
-
-const unlisten = await listen<PromptPayload>("break-started", (event) => {
-  console.log("Break started:", event.payload);
+const result = await invoke<ReturnType>('new_command', { 
+    param: 'value' 
 });
 ```
 
-### Internationalization
-```vue
-<template>
-  <div>{{ t('settings.title') }}</div>
-</template>
-
-<script setup lang="ts">
-import { useI18n } from "vue-i18n";
-
-const { t } = useI18n();
-</script>
+**Register** (`src-tauri/src/cmd.rs`):
+```rust
+pub fn register_commands() -> /* ... */ {
+    vec![
+        // ...existing commands...
+        new_command,
+    ]
+}
 ```
 
-## Important Notes
+### Add Config Field
 
-### Platform Compatibility
-- Primary testing on Windows
-- macOS and Linux support is designed but less tested
-- Consider platform-specific code paths in `src-tauri/src/platform/`
-- Use conditional compilation: `#[cfg(windows)]`, `#[cfg(target_os = "linux")]`, etc.
+**Backend** (`src-tauri/src/config/models.rs`):
+```rust
+#[derive(Serialize, Deserialize, TS)]
+#[serde(default, rename_all = "camelCase")]
+#[ts(export, rename_all = "camelCase")]
+pub struct AppConfig {
+    pub new_field: bool,
+}
 
-### Generated Files
-- **DO NOT EDIT**: Files in `src/types/generated/` are auto-generated from Rust
-- Re-generate by running the build process
-- Changes should be made in the Rust source structs
+impl Default for AppConfig {
+    fn default() -> Self {
+        Self {
+            // ...existing fields...
+            new_field: true, // Set default value
+        }
+    }
+}
+```
 
-### File Paths
-- Use Tauri's path APIs for file operations
-- Respect platform-specific directory structures
-- Use `tauri-plugin-fs` for filesystem access
+**Regenerate types**:
+```bash
+cargo test export_bindings
+```
 
-### Breaking Changes
-- This project is in early development
-- Breaking changes may occur between versions
-- Document breaking changes in commit messages
-- Update RELEASE_NOTE.md for significant changes
+**Frontend usage**:
+```typescript
+const config = useConfigStore();
+config.draft.newField = false; // Auto-completed!
+```
 
-## Documentation
+### Add Event Listener
 
-- **ARCHITECTURE.md**: System architecture and design decisions
-- **CONFIGURATION.md**: Configuration file format and options
-- **CONTRIBUTING.md**: Contribution guidelines and workflow
-- **QUICKSTART.md**: Quick start guide for users
-- **README.md**: Project overview and setup instructions
+**Backend emits**:
+```rust
+app_handle.emit("new-event", payload)?;
+```
 
-## Helpful Resources
+**Frontend listens**:
+```typescript
+import { listen } from '@tauri-apps/api/event';
+import type { NewEventPayload } from '@/types';
 
-- [Tauri Documentation](https://tauri.app/)
-- [Vue 3 Documentation](https://vuejs.org/)
-- [Rust Book](https://doc.rust-lang.org/book/)
-- [TypeScript Documentation](https://www.typescriptlang.org/)
-- [Biome Documentation](https://biomejs.dev/)
-- [Just Documentation](https://just.systems/)
+const unlisten = await listen<NewEventPayload>('new-event', (event) => {
+    console.log(event.payload);
+});
 
-## Getting Help
+// Cleanup on unmount
+onUnmounted(() => unlisten());
+```
 
-- Check existing issues and documentation first
-- Review `CONTRIBUTING.md` for guidelines
-- Open an issue for bugs or feature requests
-- Platform-specific contributions are especially welcome!
+**Add permission** (`src-tauri/capabilities/default.json`):
+```json
+{
+  "windows": ["main", "settings"],
+  "permissions": [
+    {
+      "identifier": "allow-custom-events",
+      "allow": [
+        { "event": "new-event" }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+## 🔄 IPC Communication Patterns
+
+### Commands (Frontend → Backend)
+
+**23 commands organized by module**:
+
+| Module | Commands | Purpose |
+|--------|----------|---------|
+| **config** | `get_config`, `save_config`, `pick_background_image` | Config CRUD |
+| **scheduler** | `pause_scheduler`, `resume_scheduler`, `postpone_break`, `skip_break`, `trigger_event`, `request_scheduler_status`, `reset_scheduler` | Scheduler control |
+| **audio** | `play_builtin_audio`, `play_audio_file`, `stop_audio` | Audio control |
+| **suggestions** | `get_suggestions`, `save_suggestions`, `get_suggestions_for_language` | Suggestion CRUD |
+| **system** | `open_config_dir`, `open_log_dir`, `open_folder` | File operations |
+| **window** | `open_settings_window`, `close_break_windows` | Window management |
+| **autostart** | `get_autostart`, `set_autostart` | Autostart management |
+
+### Events (Backend → Frontend)
+
+| Event | Payload | When Emitted |
+|-------|---------|--------------|
+| `scheduler-status` | `SchedulerStatus` | Status changes (pause/resume, next event update) |
+| `scheduler-event` | `PromptPayload` | Break or attention trigger |
+| `scheduler-paused` | `()` | Scheduler paused |
+| `scheduler-resumed` | `()` | Scheduler resumed |
+| `postpone-limit-reached` | `()` | Max postpones reached |
+
+---
+
+## 🎨 Key Design Patterns
+
+### 1. Type-Safe IPC with ts-rs
+
+**Backend defines, frontend auto-generates**:
+```rust
+// Rust side
+#[derive(Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, rename_all = "camelCase")]
+pub struct AppConfig {
+    pub autostart: bool,
+}
+```
+
+**Result** (auto-generated in `src/types/generated/AppConfig.ts`):
+```typescript
+export interface AppConfig {
+  autostart: boolean;
+}
+```
+
+**Never edit** `src/types/generated/` manually!
+
+### 2. Draft/Original Config Pattern
+
+**Problem**: User cancels changes  
+**Solution**: Edit draft, save to original
+
+```typescript
+// Load
+const original = await invoke('get_config');
+const draft = safeClone(original);
+
+// User edits draft
+draft.autostart = true;
+
+// Save
+await invoke('save_config', { config: draft });
+original = safeClone(draft); // Sync
+
+// Cancel
+draft = safeClone(original); // Revert
+```
+
+### 3. Partial Config Loading
+
+**Problem**: New version adds field → old config breaks  
+**Solution**: Parse as generic TOML, merge valid fields
+
+```rust
+// Load TOML as generic Value
+let toml_value: toml::Value = toml::from_str(&content)?;
+
+// Try full deserialize
+match toml::from_str::<AppConfig>(&content) {
+    Ok(config) => Ok(config),
+    Err(_) => {
+        // Partial merge with defaults
+        let default = AppConfig::default();
+        let merged = merge_partial(&toml_value, &default)?;
+        Ok(merged)
+    }
+}
+```
+
+### 4. Bitflags for Pause Reasons
+
+**Problem**: Multiple pause reasons (idle + DND + manual)  
+**Solution**: Bitflags, resume only when all cleared
+
+```rust
+bitflags! {
+    pub struct PauseReasons: u8 {
+        const USER_IDLE     = 1 << 0;
+        const DND           = 1 << 1;
+        const MANUAL        = 1 << 2;
+        const APP_EXCLUSION = 1 << 3;
+    }
+}
+```
+
+**Logic**:
+- `add_pause_reason()` → Pause if first reason
+- `remove_pause_reason()` → Resume if last reason removed
+
+---
+
+## 🧪 Testing
+
+**Coverage**: 273 tests, 100% pass rate
+
+**Run tests**:
+```bash
+just test-all              # All tests
+cargo test --lib           # Rust unit tests
+cargo test scheduler::     # Specific module
+bun test                   # Frontend tests
+```
+
+**Test pattern** (Rust):
+```rust
+#[tokio::test(start_paused = true)]  // Simulate time
+async fn test_break_timing() {
+    // Arrange
+    let scheduler = create_test_scheduler();
+    
+    // Act
+    tokio::time::advance(Duration::from_secs(1200)).await;
+    
+    // Assert
+    assert!(scheduler.should_break());
+}
+```
+
+---
+
+## 📚 Additional Resources
+
+- **Architecture Details**: See `docs/ARCHITECTURE.md`
+- **Config Reference**: See `docs/CONFIGURATION.md`
+- **Tauri Docs**: https://tauri.app/
+- **Vue 3 Docs**: https://vuejs.org/
