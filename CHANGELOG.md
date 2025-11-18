@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## 0.2.9 (2025.11.18)
+
+## 🐛 Bug Fixes
+
+- Reduce too many monitors "Triggered action: None" logs
+
 ## 0.2.8 (2025.11.16)
 
 ### 🐛 Bug Fixes

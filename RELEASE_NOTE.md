@@ -11,8 +11,4 @@
 
 ## 🐛 Bug Fixes
 
-- Fix issue that prompt windows position is not correct when current monitor is not the primary monitor, or the multi-screen option is enabled.
-
-## 🚀 Improvements
-
-- Suppress noisy symphonia core crate logs in debug log level.
+- Reduce too many monitors "Triggered action: None" logs
