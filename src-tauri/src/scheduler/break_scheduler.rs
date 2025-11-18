@@ -668,7 +668,14 @@ where
             let mut config_guard = config.write().await;
             *config_guard = new_config;
         }
-        self.transition_to_calculating().await;
+        
+        // Only transition to calculating if not paused
+        // If paused, stay in paused state and wait for Resume command
+        if matches!(self.state, BreakSchedulerState::Paused(_)) {
+            tracing::debug!("Config updated while paused, staying in paused state");
+        } else {
+            self.transition_to_calculating().await;
+        }
     }
 
     /// Handle `RequestBreakStatus` command

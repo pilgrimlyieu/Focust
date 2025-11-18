@@ -882,3 +882,80 @@ async fn test_session_recovery_after_pause_resume() {
     drop(cmd_tx);
     drop(env.shutdown_tx);
 }
+
+/// **Test: Config Update While Paused**
+///
+/// Verifies that updating config while paused doesn't resume scheduler.
+/// This prevents state inconsistency where scheduler resumes but pause
+/// reasons still exist in SharedState.
+#[tokio::test(start_paused = true)]
+async fn test_config_update_while_paused() {
+    let initial = TestConfigBuilder::new().mini_break_interval_s(60).build();
+
+    let (mut scheduler, emitter, shutdown_tx, _app) = create_test_break_scheduler(initial);
+    let (cmd_tx, cmd_rx) = mpsc::channel(32);
+
+    let task = tokio::spawn(async move {
+        scheduler.run(cmd_rx).await;
+    });
+
+    advance_time_and_yield(duration_ms(200)).await;
+
+    // Verify scheduler is running
+    let status_before = get_latest_status(&emitter);
+    assert!(!status_before.paused);
+    assert!(status_before.next_event.is_some());
+
+    // Pause the scheduler
+    cmd_tx
+        .send(Command::Pause(PauseReason::Manual))
+        .await
+        .unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+
+    // Verify scheduler is paused
+    let status_paused = get_latest_status(&emitter);
+    assert!(status_paused.paused);
+    assert!(status_paused.next_event.is_none());
+
+    // Update config while paused
+    let new_config = TestConfigBuilder::new().mini_break_interval_s(120).build();
+    cmd_tx
+        .send(Command::UpdateConfig(new_config))
+        .await
+        .unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+
+    // CRITICAL: Should stay paused after config update
+    let status_after_update = get_latest_status(&emitter);
+    assert!(
+        status_after_update.paused,
+        "Scheduler should stay paused after config update"
+    );
+    assert!(
+        status_after_update.next_event.is_none(),
+        "Should not have next event while paused"
+    );
+
+    // Resume should work normally with new config
+    cmd_tx
+        .send(Command::Resume(PauseReason::Manual))
+        .await
+        .unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+
+    let status_resumed = get_latest_status(&emitter);
+    assert!(!status_resumed.paused);
+    assert!(status_resumed.next_event.is_some());
+    // Should use new interval (120s)
+    assert_duration_near(
+        status_resumed.next_event.unwrap().seconds_until.into(),
+        120,
+        5,
+    );
+
+    // Cleanup
+    drop(cmd_tx);
+    drop(shutdown_tx);
+    task.await.unwrap();
+}
