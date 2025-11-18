@@ -1,0 +1,81 @@
+version: 2
+enable-beta-ecosystems: true
+updates:
+  # Frontend dependencies (Bun)
+  - package-ecosystem: "bun"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "frontend"
+    groups:
+      # Group all dev dependencies together
+      dev-dependencies:
+        patterns:
+          - "@types/*"
+          - "@vitejs/*"
+          - "@vitest/*"
+          - "@vue/*"
+          - "vite*"
+          - "vitest"
+          - "typescript"
+        update-types:
+          - "minor"
+          - "patch"
+      # Group production dependencies separately
+      production-dependencies:
+        patterns:
+          - "@tauri-apps/*"
+          - "vue"
+          - "pinia"
+          - "@vueuse/*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Backend dependencies (Cargo)
+  - package-ecosystem: "cargo"
+    directory: "/src-tauri"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "backend"
+    groups:
+      # Group Tauri-related dependencies
+      tauri:
+        patterns:
+          - "tauri*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Group other Rust dependencies
+      rust-dependencies:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "tauri*"
+        update-types:
+          - "patch"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "ci"
