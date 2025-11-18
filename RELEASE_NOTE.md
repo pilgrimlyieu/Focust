@@ -11,4 +11,4 @@
 
 ## 🐛 Bug Fixes
 
-- Reduce too many monitors "Triggered action: None" logs
+- Prevent false resume scheduler when configure is saved when paused.
