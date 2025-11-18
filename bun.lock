@@ -24,7 +24,7 @@
         "@vitest/coverage-v8": "4.0.10",
         "@vitest/ui": "^4.0.10",
         "@vue/test-utils": "^2.4.6",
-        "daisyui": "^5.4.7",
+        "daisyui": "^5.5.5",
         "jsdom": "^27.1.0",
         "tailwindcss": "^4.1.17",
         "typescript": "^5.9.3",
@@ -502,7 +502,7 @@
 
     "csstype": ["csstype@3.1.3", "https://registry.npmmirror.com/csstype/-/csstype-3.1.3.tgz", {}, "sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw=="],
 
-    "daisyui": ["daisyui@5.4.7", "https://registry.npmmirror.com/daisyui/-/daisyui-5.4.7.tgz", {}, "sha512-2wYO61vTPCXk7xEBgnzLZAYoE0xS5IRLu/GSq0vORpB+cTrtubdx69NnA0loc0exvCY1s2fYL4lGZtFHe2ohNQ=="],
+    "daisyui": ["daisyui@5.5.5", "", {}, "sha512-ekvI93ZkWIJoCOtDl0D2QMxnWvTejk9V5nWBqRv+7t0xjiBXqAK5U6o6JE2RPvlIC3EqwNyUoIZSdHX9MZK3nw=="],
 
     "dashdash": ["dashdash@1.14.1", "https://registry.npmmirror.com/dashdash/-/dashdash-1.14.1.tgz", { "dependencies": { "assert-plus": "^1.0.0" } }, "sha512-jRFi8UDGo6j+odZiEpjazZaWqEal3w/basFjQHQEwVtZJGDpxbH1MeYluwCS8Xq5wmLJooDlMgvVarmWfGM44g=="],
 
