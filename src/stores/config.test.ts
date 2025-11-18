@@ -124,7 +124,7 @@ describe("useConfigStore", () => {
       expect(mockInvoke).toHaveBeenCalledWith("get_config");
       expect(store.draft).toBeTruthy();
       expect(store.original).toBeTruthy();
-      expect(store.draft?.language).toBe("en");
+      expect(store.draft?.language).toBe("en-US");
     });
 
     it("should set loading flag during load", async () => {
@@ -232,7 +232,7 @@ describe("useConfigStore", () => {
 
       expect(store.draft).toBeTruthy();
       expect(store.original).toBeTruthy();
-      expect(store.draft?.language).toBe("en");
+      expect(store.draft?.language).toBe("en-US");
     });
 
     it("should normalize applied config", () => {
@@ -291,7 +291,7 @@ describe("useConfigStore", () => {
 
       store.resetDraft();
 
-      expect(store.draft?.language).toBe("en");
+      expect(store.draft?.language).toBe("en-US");
     });
   });
 
