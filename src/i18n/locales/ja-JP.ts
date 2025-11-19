@@ -169,6 +169,8 @@ const jaJP: LocaleStrings = {
     nextBreakNotification: "{time}後に{kind}の通知",
     notification: "通知",
     paused: "スケジューラー一時停止中",
+    pausedDueTo: "一時停止理由：{reasons}",
+    pausedResumeHint: "再開ボタンは手動一時停止のみを解除します",
     postponeHint: "延期は次の休憩を設定された期間だけ後ろにずらします",
     postponeShortcut: "延期ショートカット",
     postponeShortcutHint: "クリックしてキーをキャプチャ、例：Ctrl+Shift+P",
@@ -193,6 +195,12 @@ const jaJP: LocaleStrings = {
     general: "一般設定",
     schedules: "休憩スケジュール",
     suggestions: "休憩の提案",
+  },
+  pauseReason: {
+    appExclusion: "アプリケーション除外",
+    dnd: "おやすみモード",
+    manual: "手動",
+    userIdle: "ユーザー非アクティブ",
   },
   schedule: {
     afterMiniBreaks: "ミニ休憩の後",

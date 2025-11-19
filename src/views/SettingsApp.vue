@@ -51,6 +51,7 @@ import type { ToastKind } from "@/composables/useToast";
 import { useToast } from "@/composables/useToast";
 import { useConfigStore } from "@/stores/config";
 import { useSchedulerStore } from "@/stores/scheduler";
+import type { PauseReason } from "@/types";
 import {
   isSchedulerAttention,
   isSchedulerLongBreak,
@@ -80,7 +81,17 @@ const isSaving = computed(() => configStore.saving);
 const isLoading = computed(() => configStore.loading);
 
 const schedulerPaused = computed(() => schedulerStore.schedulerPaused);
+const pauseReasons = computed(() => schedulerStore.pauseReasons);
+const hasManualPause = computed(() => schedulerStore.hasManualPause);
 const schedulerStatus = computed(() => schedulerStore.schedulerStatus);
+
+// Format pause reasons for display
+const pauseReasonsText = computed(() => {
+  if (pauseReasons.value.length === 0) return "";
+  return pauseReasons.value
+    .map((reason: PauseReason) => t(`pauseReason.${reason}`))
+    .join(", ");
+});
 
 // Track the base time when status was received
 const statusReceivedTime = ref<number>(Date.now());
@@ -202,6 +213,18 @@ async function togglePause() {
     if (schedulerPaused.value) {
       await invoke("resume_scheduler");
       // State will be updated via scheduler-status event
+
+      // If there are non-manual pause reasons, inform the user
+      if (pauseReasons.value.length > 0 && !hasManualPause.value) {
+        show("info", t("general.pausedResumeHint"), 4000);
+      } else if (pauseReasons.value.length > 1) {
+        // Removed manual pause but others remain
+        const remaining = pauseReasons.value
+          .filter((r: PauseReason) => r !== "manual")
+          .map((r: PauseReason) => t(`pauseReason.${r}`))
+          .join(", ");
+        show("info", t("general.pausedDueTo", { reasons: remaining }), 4000);
+      }
     } else {
       await invoke("pause_scheduler");
       // State will be updated via scheduler-status event
@@ -265,9 +288,12 @@ defineExpose({
   handlePostpone,
   handleReset,
   handleSave,
+  hasManualPause,
   isDirty,
   isLoading,
   isSaving,
+  pauseReasons,
+  pauseReasonsText,
   schedulerPaused,
   tabs,
   toasts,
@@ -288,9 +314,14 @@ defineExpose({
           <div>
             <h1 class="text-lg font-bold text-base-content sm:text-xl">{{ t("app.name") }}</h1>
             <p class="text-xs text-base-content/60 sm:text-sm">
-              <span v-if="schedulerPaused" class="flex items-center gap-1">
-                <PauseIcon class-name="h-3 w-3" />
-                {{ t("general.paused") }}
+              <span v-if="schedulerPaused" class="flex flex-col gap-0.5">
+                <span class="flex items-center gap-1">
+                  <PauseIcon class-name="h-3 w-3" />
+                  {{ t("general.paused") }}
+                </span>
+                <span v-if="pauseReasonsText" class="text-xs opacity-80">
+                  {{ t("general.pausedDueTo", { reasons: pauseReasonsText }) }}
+                </span>
               </span>
               <span v-else-if="nextBreakInfo" class="flex items-center gap-1">
                 <CheckCircleIcon class-name="h-3 w-3 text-success" />
@@ -306,12 +337,14 @@ defineExpose({
 
         <!-- Actions -->
         <div class="flex flex-wrap items-center gap-2">
-          <button class="btn btn-sm gap-2 btn-ghost hover:btn-primary" :class="{ 'btn-active': schedulerPaused }"
-            @click="togglePause">
-            <PlayIcon v-if="schedulerPaused" class-name="h-4 w-4" />
-            <PauseIcon v-else class-name="h-4 w-4" />
-            <span class="hidden sm:inline">{{ schedulerPaused ? t("actions.resume") : t("actions.pause") }}</span>
-          </button>
+          <div class="tooltip" :data-tip="schedulerPaused && !hasManualPause ? t('general.pausedResumeHint') : ''">
+            <button class="btn btn-sm gap-2 btn-ghost hover:btn-primary" :class="{ 'btn-active': schedulerPaused }"
+              @click="togglePause">
+              <PlayIcon v-if="schedulerPaused" class-name="h-4 w-4" />
+              <PauseIcon v-else class-name="h-4 w-4" />
+              <span class="hidden sm:inline">{{ schedulerPaused ? t("actions.resume") : t("actions.pause") }}</span>
+            </button>
+          </div>
           <button class="btn btn-sm gap-2 btn-ghost hover:btn-info" :disabled="schedulerPaused" @click="handlePostpone">
             <ClockIcon class-name="h-4 w-4" />
             <span class="hidden sm:inline">{{ t("actions.postpone") }}</span>

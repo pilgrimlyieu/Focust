@@ -1,14 +1,18 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { defineStore } from "pinia";
-import { ref } from "vue";
-import type { SchedulerStatus } from "@/types";
+import { computed, ref } from "vue";
+import type { PauseReason, SchedulerStatus } from "@/types";
 
 /** Scheduler store to handle status updates */
 export const useSchedulerStore = defineStore("scheduler", () => {
   const initialized = ref(false); // Initialization flag
   const schedulerPaused = ref(false); // Scheduler paused state
+  const pauseReasons = ref<PauseReason[]>([]); // Active pause reasons
   const schedulerStatus = ref<SchedulerStatus | null>(null); // Scheduler status
+
+  // Check if paused due to manual reason
+  const hasManualPause = computed(() => pauseReasons.value.includes("manual"));
 
   /** Initialize scheduler store and set up event listeners */
   async function init() {
@@ -22,6 +26,7 @@ export const useSchedulerStore = defineStore("scheduler", () => {
       console.log("[Scheduler] Status update received:", event.payload);
       schedulerStatus.value = event.payload;
       schedulerPaused.value = event.payload.paused;
+      pauseReasons.value = event.payload.pauseReasons || [];
     });
 
     // Request initial status after listeners are set up
@@ -42,7 +47,9 @@ export const useSchedulerStore = defineStore("scheduler", () => {
   }
 
   return {
+    hasManualPause,
     init,
+    pauseReasons,
     schedulerPaused,
     schedulerStatus,
     setPaused,

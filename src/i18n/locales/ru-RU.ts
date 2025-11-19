@@ -173,6 +173,8 @@ const ruRU: LocaleStrings = {
     nextBreakNotification: "Уведомление о {kind} через {time}",
     notification: "Уведомление",
     paused: "Планировщик приостановлен",
+    pausedDueTo: "Приостановлено из-за: {reasons}",
+    pausedResumeHint: "Кнопка Возобновить удаляет только ручную паузу",
     postponeHint:
       "Отсрочка сдвигает следующий перерыв на настроенную продолжительность",
     postponeShortcut: "Горячая клавиша отсрочки",
@@ -198,6 +200,12 @@ const ruRU: LocaleStrings = {
     general: "Общие настройки",
     schedules: "Расписание перерывов",
     suggestions: "Предложения для перерывов",
+  },
+  pauseReason: {
+    appExclusion: "Исключение приложения",
+    dnd: "Не беспокоить",
+    manual: "Вручную",
+    userIdle: "Пользователь неактивен",
   },
   schedule: {
     afterMiniBreaks: "После мини-перерывов",

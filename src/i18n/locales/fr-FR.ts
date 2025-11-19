@@ -179,6 +179,8 @@ const frFR: LocaleStrings = {
     nextBreakNotification: "Notification de {kind} dans {time}",
     notification: "Notification",
     paused: "Planificateur suspendu",
+    pausedDueTo: "Suspendu en raison de : {reasons}",
+    pausedResumeHint: "Le bouton Reprendre ne supprime que la pause manuelle",
     postponeHint: "Reporter repousse la prochaine pause de la durée configurée",
     postponeShortcut: "Raccourci de report",
     postponeShortcutHint:
@@ -205,6 +207,12 @@ const frFR: LocaleStrings = {
     general: "Paramètres généraux",
     schedules: "Horaires de pause",
     suggestions: "Suggestions de pause",
+  },
+  pauseReason: {
+    appExclusion: "Exclusion d'application",
+    dnd: "Ne pas déranger",
+    manual: "Manuelle",
+    userIdle: "Utilisateur inactif",
   },
   schedule: {
     afterMiniBreaks: "Après les mini-pauses",

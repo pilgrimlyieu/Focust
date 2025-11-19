@@ -173,6 +173,8 @@ const ptBR: LocaleStrings = {
     nextBreakNotification: "Notificação de {kind} em {time}",
     notification: "Notificação",
     paused: "Agendador pausado",
+    pausedDueTo: "Pausado devido a: {reasons}",
+    pausedResumeHint: "O botão Retomar remove apenas a pausa manual",
     postponeHint: "Adiar empurra a próxima pausa pela duração configurada",
     postponeShortcut: "Atalho de adiamento",
     postponeShortcutHint:
@@ -198,6 +200,12 @@ const ptBR: LocaleStrings = {
     general: "Configurações gerais",
     schedules: "Agendamentos de pausas",
     suggestions: "Sugestões de pausas",
+  },
+  pauseReason: {
+    appExclusion: "Exclusão de aplicativo",
+    dnd: "Não perturbe",
+    manual: "Manual",
+    userIdle: "Usuário inativo",
   },
   schedule: {
     afterMiniBreaks: "Após mini pausas",

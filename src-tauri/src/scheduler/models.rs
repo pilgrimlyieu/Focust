@@ -119,8 +119,23 @@ impl Display for Command {
 // ============================================================================
 
 /// Reason for pausing the scheduler
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, StrumDisplay, EnumString, EnumIter)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    StrumDisplay,
+    EnumString,
+    EnumIter,
+    Serialize,
+    Deserialize,
+    TS,
+)]
 #[strum(serialize_all = "PascalCase")]
+#[serde(rename_all = "camelCase")]
+#[ts(export, rename_all = "camelCase")]
 pub enum PauseReason {
     UserIdle,
     Dnd,
@@ -187,6 +202,8 @@ impl PauseReasons {
 pub struct SchedulerStatus {
     /// Whether the break scheduler is currently paused
     pub paused: bool,
+    /// The active pause reasons (empty if not paused)
+    pub pause_reasons: Vec<PauseReason>,
     /// The next scheduled break event (if any)
     pub next_event: Option<SchedulerEventInfo>,
     /// The current mini break counter (for tracking long break triggers)

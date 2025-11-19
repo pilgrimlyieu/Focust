@@ -21,6 +21,7 @@ export type { FontFamily } from "./generated/FontFamily";
 export type { HexColor } from "./generated/HexColor";
 export type { LongBreakSettings } from "./generated/LongBreakSettings";
 export type { MiniBreakSettings } from "./generated/MiniBreakSettings";
+export type { PauseReason } from "./generated/PauseReason";
 export type { PromptPayload } from "./generated/PromptPayload";
 export type { ResolvedBackground } from "./generated/ResolvedBackground";
 export type { SchedulerEvent } from "./generated/SchedulerEvent";

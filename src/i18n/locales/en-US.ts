@@ -168,6 +168,8 @@ const enUS = {
     nextBreakNotification: "Notification for {kind} in {time}",
     notification: "Notification",
     paused: "Scheduler paused",
+    pausedDueTo: "Paused due to: {reasons}",
+    pausedResumeHint: "Resume button only removes manual pause",
     postponeHint: "Postpone pushes the next break by the configured duration",
     postponeShortcut: "Postpone shortcut",
     postponeShortcutHint: "Click to capture keys, e.g., Ctrl+Shift+P",
@@ -192,6 +194,12 @@ const enUS = {
     general: "General Settings",
     schedules: "Break Schedules",
     suggestions: "Break Suggestions",
+  },
+  pauseReason: {
+    appExclusion: "App Exclusion",
+    dnd: "Do Not Disturb",
+    manual: "Manual",
+    userIdle: "User Idle",
   },
   schedule: {
     afterMiniBreaks: "After mini breaks",

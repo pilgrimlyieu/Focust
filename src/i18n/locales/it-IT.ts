@@ -177,6 +177,8 @@ const itIT: LocaleStrings = {
     nextBreakNotification: "Notifica per {kind} tra {time}",
     notification: "Notifica",
     paused: "Scheduler in pausa",
+    pausedDueTo: "In pausa a causa di: {reasons}",
+    pausedResumeHint: "Il pulsante Riprendi rimuove solo la pausa manuale",
     postponeHint:
       "Posticipare sposta la prossima pausa della durata configurata",
     postponeShortcut: "Scorciatoia posticipa",
@@ -203,6 +205,12 @@ const itIT: LocaleStrings = {
     general: "Impostazioni generali",
     schedules: "Programmi di pause",
     suggestions: "Suggerimenti di pause",
+  },
+  pauseReason: {
+    appExclusion: "Esclusione applicazione",
+    dnd: "Non disturbare",
+    manual: "Manuale",
+    userIdle: "Utente inattivo",
   },
   schedule: {
     afterMiniBreaks: "Dopo mini pause",

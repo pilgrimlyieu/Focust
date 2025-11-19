@@ -161,6 +161,8 @@ const zhCN: LocaleStrings = {
     nextBreakNotification: "{time}后提醒即将{kind}",
     notification: "提醒",
     paused: "调度器已暂停",
+    pausedDueTo: "暂停原因：{reasons}",
+    pausedResumeHint: "恢复按钮仅移除手动暂停",
     postponeHint: "延后将根据配置推迟下一次休息",
     postponeShortcut: "延后快捷键",
     postponeShortcutHint: "点击输入框并按下组合键，例如：Ctrl+Shift+P",
@@ -185,6 +187,12 @@ const zhCN: LocaleStrings = {
     general: "通用设置",
     schedules: "休息计划",
     suggestions: "休息建议",
+  },
+  pauseReason: {
+    appExclusion: "应用排除",
+    dnd: "勿扰模式",
+    manual: "手动暂停",
+    userIdle: "用户空闲",
   },
   schedule: {
     afterMiniBreaks: "累计短休次数",

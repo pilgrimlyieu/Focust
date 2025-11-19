@@ -167,6 +167,8 @@ const koKR: LocaleStrings = {
     nextBreakNotification: "{time} 후 {kind} 알림",
     notification: "알림",
     paused: "스케줄러 일시 정지됨",
+    pausedDueTo: "일시 정지 이유: {reasons}",
+    pausedResumeHint: "재개 버튼은 수동 일시 정지만 제거합니다",
     postponeHint: "연기는 구성된 기간만큼 다음 휴식을 뒤로 미룹니다",
     postponeShortcut: "연기 단축키",
     postponeShortcutHint: "클릭하여 키 캡처, 예: Ctrl+Shift+P",
@@ -191,6 +193,12 @@ const koKR: LocaleStrings = {
     general: "일반 설정",
     schedules: "휴식 일정",
     suggestions: "휴식 제안",
+  },
+  pauseReason: {
+    appExclusion: "애플리케이션 제외",
+    dnd: "방해 금지",
+    manual: "수동",
+    userIdle: "사용자 비활성",
   },
   schedule: {
     afterMiniBreaks: "미니 휴식 이후",

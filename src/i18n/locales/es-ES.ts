@@ -174,6 +174,8 @@ const esES: LocaleStrings = {
     nextBreakNotification: "Notificación de {kind} en {time}",
     notification: "Notificación",
     paused: "Programador pausado",
+    pausedDueTo: "Pausado debido a: {reasons}",
+    pausedResumeHint: "El botón Reanudar solo elimina la pausa manual",
     postponeHint:
       "Posponer retrasa el siguiente descanso por la duración configurada",
     postponeShortcut: "Atajo de posponer",
@@ -199,6 +201,12 @@ const esES: LocaleStrings = {
     general: "Configuración general",
     schedules: "Horarios de descanso",
     suggestions: "Sugerencias de descanso",
+  },
+  pauseReason: {
+    appExclusion: "Exclusión de aplicación",
+    dnd: "No molestar",
+    manual: "Manual",
+    userIdle: "Usuario inactivo",
   },
   schedule: {
     afterMiniBreaks: "Después de descansos mini",

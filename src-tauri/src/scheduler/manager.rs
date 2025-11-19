@@ -208,6 +208,7 @@ async fn handle_pause_command<R: Runtime>(
         // Emit events for frontend
         let status = SchedulerStatus {
             paused: true,
+            pause_reasons: shared_state.read().pause_reasons(),
             next_event: None,
             mini_break_counter: 0, // Counter is not relevant when paused
         };

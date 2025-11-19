@@ -178,6 +178,8 @@ const deDE: LocaleStrings = {
     nextBreakNotification: "Benachrichtigung für {kind} in {time}",
     notification: "Benachrichtigung",
     paused: "Planer pausiert",
+    pausedDueTo: "Pausiert aufgrund von: {reasons}",
+    pausedResumeHint: "Fortsetzen-Schaltfläche entfernt nur die manuelle Pause",
     postponeHint:
       "Verschieben schiebt die nächste Pause um die konfigurierte Dauer hinaus",
     postponeShortcut: "Verschieben-Tastenkombination",
@@ -204,6 +206,12 @@ const deDE: LocaleStrings = {
     general: "Allgemeine Einstellungen",
     schedules: "Pausenpläne",
     suggestions: "Pausenvorschläge",
+  },
+  pauseReason: {
+    appExclusion: "Anwendungsausschluss",
+    dnd: "Nicht stören",
+    manual: "Manuell",
+    userIdle: "Benutzer inaktiv",
   },
   schedule: {
     afterMiniBreaks: "Nach Mini-Pausen",

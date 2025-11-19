@@ -475,6 +475,7 @@ where
         let duration_to_wait = break_info.break_time - Utc::now();
         let status = SchedulerStatus {
             paused: false,
+            pause_reasons: self.shared_state.read().pause_reasons(),
             next_event: Some(SchedulerEventInfo {
                 kind: break_info.event,
                 time: break_info.break_time.to_rfc3339(),
@@ -494,6 +495,7 @@ where
     fn emit_paused_status(&self, paused: bool) {
         let status = SchedulerStatus {
             paused,
+            pause_reasons: self.shared_state.read().pause_reasons(),
             next_event: None,
             mini_break_counter: self.mini_break_counter,
         };
@@ -668,7 +670,7 @@ where
             let mut config_guard = config.write().await;
             *config_guard = new_config;
         }
-        
+
         // Only transition to calculating if not paused
         // If paused, stay in paused state and wait for Resume command
         if matches!(self.state, BreakSchedulerState::Paused(_)) {

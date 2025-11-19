@@ -887,7 +887,7 @@ async fn test_session_recovery_after_pause_resume() {
 ///
 /// Verifies that updating config while paused doesn't resume scheduler.
 /// This prevents state inconsistency where scheduler resumes but pause
-/// reasons still exist in SharedState.
+/// reasons still exist in `SharedState`.
 #[tokio::test(start_paused = true)]
 async fn test_config_update_while_paused() {
     let initial = TestConfigBuilder::new().mini_break_interval_s(60).build();
