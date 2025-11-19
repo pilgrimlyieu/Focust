@@ -3,7 +3,7 @@
 /// **Note**: Audio is temporarily disabled on macOS due to cpal Send trait limitations.
 /// See `src/core/audio.rs` for detailed explanation and restoration plan.
 /// Expected to be resolved in cpal 0.17.0+
-use crate::{core::audio, tauri_error};
+use crate::core::audio;
 use tauri::path::BaseDirectory;
 use tauri::{AppHandle, Manager};
 
@@ -21,12 +21,17 @@ pub async fn play_audio(
     path: String,
     volume: f32,
 ) -> Result<(), String> {
-    // Use spawn_blocking to prevent blocking the main thread during file I/O
-    let player_clone = player.inner().clone();
-    tokio::task::spawn_blocking(move || audio::play_audio(&player_clone, &path, volume))
-        .await
-        .map_err(|e| format!("Task join error: {e}"))?
-        .map_err(|e| format!("Failed to play audio: {e}"))
+    tracing::debug!("play_audio command called: path={path}, volume={volume}");
+
+    audio::play_audio(&player, &path, volume)
+        .map_err(|e| {
+            let error_msg = format!("Failed to play audio: {e}");
+            tracing::error!("Audio playback error: {error_msg}");
+            error_msg
+        })
+        .inspect(|_result| {
+            tracing::debug!("play_audio command completed successfully");
+        })
 }
 
 /// Tauri command to play an audio file (macOS stub)
@@ -46,14 +51,21 @@ pub async fn play_builtin_audio(
     resource_name: String,
     volume: f32,
 ) -> Result<(), String> {
+    tracing::debug!(
+        "play_builtin_audio command called: resource_name={resource_name}, volume={volume}"
+    );
+
     let resource_path = resolve_builtin_audio_path(&app, &resource_name)?;
 
-    // Use spawn_blocking to prevent blocking the main thread during file I/O
-    let player_clone = player.inner().clone();
-    tokio::task::spawn_blocking(move || audio::play_audio(&player_clone, &resource_path, volume))
-        .await
-        .map_err(|e| format!("Task join error: {e}"))?
-        .map_err(|e| format!("Failed to play builtin audio: {e}"))
+    audio::play_audio(&player, &resource_path, volume)
+        .map_err(|e| {
+            let error_msg = format!("Failed to play builtin audio: {e}");
+            tracing::error!("Audio playback error: {error_msg}");
+            error_msg
+        })
+        .inspect(|_result| {
+            tracing::debug!("play_builtin_audio command completed successfully");
+        })
 }
 
 /// Tauri command to play a builtin audio resource (macOS stub)
@@ -76,7 +88,16 @@ pub async fn play_builtin_audio(
 #[tauri::command]
 #[allow(clippy::needless_pass_by_value)]
 pub async fn stop_audio(player: State<'_, AudioPlayerState>) -> Result<(), String> {
-    tauri_error!(audio::stop_audio(&player), "Failed to stop audio")
+    tracing::debug!("stop_audio command called");
+    audio::stop_audio(&player)
+        .map_err(|e| {
+            let error_msg = format!("Failed to stop audio: {e}");
+            tracing::error!("Audio stop error: {error_msg}");
+            error_msg
+        })
+        .inspect(|_result| {
+            tracing::debug!("stop_audio command completed successfully");
+        })
 }
 
 /// Tauri command to stop audio playback (macOS stub)

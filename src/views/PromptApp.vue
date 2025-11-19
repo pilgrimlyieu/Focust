@@ -123,9 +123,18 @@ const canPostpone = computed(() => {
 
 /** Stop the active audio playback */
 const stopAudio = async () => {
-  await invoke("stop_audio").catch((err) => {
-    console.warn("Failed to stop audio via backend", err);
-  });
+  try {
+    // Add timeout to prevent hanging
+    const stopPromise = invoke("stop_audio");
+    const timeoutPromise = new Promise<void>((_, reject) => {
+      setTimeout(() => reject(new Error("Stop audio timeout")), 2000);
+    });
+
+    await Promise.race([stopPromise, timeoutPromise]);
+    console.log("[PromptApp] Audio stopped successfully");
+  } catch (err) {
+    console.warn("[PromptApp] Failed to stop audio via backend:", err);
+  }
 };
 
 /**
@@ -137,21 +146,38 @@ const playAudio = async (settings?: AudioSettings | null) => {
   if (!settings || isNoAudio(settings)) return;
 
   try {
+    console.log("[PromptApp] Starting audio playback:", settings);
+
+    // Create a timeout promise to prevent hanging
+    const timeoutPromise = new Promise<void>((_, reject) => {
+      setTimeout(() => reject(new Error("Audio playback timeout")), 5000);
+    });
+
+    let audioPromise: Promise<void>;
     if (isBuiltinAudio(settings)) {
       const name = settings.builtinName;
-      await invoke("play_builtin_audio", {
+      console.log("[PromptApp] Playing builtin audio:", name);
+      audioPromise = invoke("play_builtin_audio", {
         resourceName: name,
         volume: settings.volume,
       });
     } else if (isFilePathAudio(settings)) {
       const path = settings.filePath;
-      await invoke("play_audio", {
+      console.log("[PromptApp] Playing audio file:", path);
+      audioPromise = invoke("play_audio", {
         path,
         volume: settings.volume,
       });
+    } else {
+      return;
     }
+
+    // Race between audio playback and timeout
+    await Promise.race([audioPromise, timeoutPromise]);
+    console.log("[PromptApp] Audio playback completed successfully");
   } catch (err) {
-    console.warn("Failed to play break audio", err);
+    console.warn("[PromptApp] Failed to play break audio:", err);
+    // Don't let audio errors block the UI
   }
 };
 
@@ -192,8 +218,9 @@ const handlePayload = async (data: PromptPayload) => {
 
   if (isPrimaryWindow) {
     console.log("[PromptApp] Playing break audio (primary window)");
+    // Don't await audio playback to avoid blocking window display
     playAudio(data.audio).catch((err) => {
-      console.warn("[PromptApp] Audio playback error:", err);
+      console.error("[PromptApp] Audio playback error:", err);
     });
   } else {
     console.log("[PromptApp] Skipping audio playback (secondary window)");
@@ -251,7 +278,13 @@ const finishPrompt = async (isAutoFinish = false) => {
     try {
       const event = constructSchedulerEvent(payload.value);
       console.log("[PromptApp] Notifying backend: prompt_finished", event);
-      await invoke("prompt_finished", { event });
+
+      const notifyPromise = invoke("prompt_finished", { event });
+      const timeoutPromise = new Promise<void>((_, reject) => {
+        setTimeout(() => reject(new Error("prompt_finished timeout")), 3000);
+      });
+
+      await Promise.race([notifyPromise, timeoutPromise]);
       console.log("[PromptApp] Backend notified successfully");
     } catch (err) {
       console.error(
@@ -270,7 +303,16 @@ const finishPrompt = async (isAutoFinish = false) => {
         "[PromptApp] Calling close_all_prompt_windows for payload:",
         payloadId,
       );
-      await invoke("close_all_prompt_windows", { payloadId });
+
+      const closePromise = invoke("close_all_prompt_windows", { payloadId });
+      const timeoutPromise = new Promise<void>((_, reject) => {
+        setTimeout(
+          () => reject(new Error("close_all_prompt_windows timeout")),
+          3000,
+        );
+      });
+
+      await Promise.race([closePromise, timeoutPromise]);
       console.log("[PromptApp] close_all_prompt_windows completed");
     } else {
       // Fallback: close only current window
@@ -282,6 +324,13 @@ const finishPrompt = async (isAutoFinish = false) => {
     }
   } catch (err) {
     console.error("[PromptApp] Failed to close windows:", err);
+    // Force close current window as last resort
+    try {
+      const window = getCurrentWindow();
+      await window.close();
+    } catch (closeErr) {
+      console.error("[PromptApp] Failed to force close window:", closeErr);
+    }
   }
 };
 
@@ -306,7 +355,20 @@ const constructSchedulerEvent = (payload: PromptPayload): SchedulerEvent => {
 const postponeBreak = async () => {
   // Check if postpone is allowed (button should already be disabled, but double-check)
   if (!payload.value || !canPostpone.value) return;
-  await invoke("postpone_break");
+
+  console.log("[PromptApp] Postponing break");
+  try {
+    const postponePromise = invoke("postpone_break");
+    const timeoutPromise = new Promise<void>((_, reject) => {
+      setTimeout(() => reject(new Error("Postpone timeout")), 3000);
+    });
+
+    await Promise.race([postponePromise, timeoutPromise]);
+    console.log("[PromptApp] Break postponed successfully");
+  } catch (err) {
+    console.error("[PromptApp] Failed to postpone break:", err);
+  }
+
   await finishPrompt();
 };
 
