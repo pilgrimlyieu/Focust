@@ -318,9 +318,9 @@ defineExpose({
                 <span class="flex items-center gap-1">
                   <PauseIcon class-name="h-3 w-3" />
                   {{ t("general.paused") }}
-                </span>
-                <span v-if="pauseReasonsText" class="text-xs opacity-80">
-                  {{ t("general.pausedDueTo", { reasons: pauseReasonsText }) }}
+                  <span v-if="pauseReasonsText" class="text-xs opacity-80">
+                    {{ t("general.pausedDueTo", { reasons: pauseReasonsText }) }}
+                  </span>
                 </span>
               </span>
               <span v-else-if="nextBreakInfo" class="flex items-center gap-1">
