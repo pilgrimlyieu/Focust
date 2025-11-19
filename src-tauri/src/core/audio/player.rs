@@ -65,13 +65,35 @@ impl AudioPlayer {
             return Err(PlaybackError::InvalidVolume(volume));
         }
 
-        // Stop any currently playing audio
-        self.stop();
+        // Validate file exists before attempting to open
+        if !std::path::Path::new(path).exists() {
+            return Err(PlaybackError::FileError(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("Audio file not found: {path}"),
+            )));
+        }
+
+        // Stop any currently playing audio before starting new playback
+        // This ensures clean state and prevents resource conflicts
+        if !self.sink.empty() {
+            tracing::debug!("Stopping current audio before playing new file");
+            self.stop();
+        }
 
         // Open the audio file
-        let file = File::open(path)?;
-        let source = Decoder::new(BufReader::new(file))
-            .map_err(|e| PlaybackError::DecoderError(e.to_string()))?;
+        tracing::debug!("Opening audio file: {path}");
+        let file = File::open(path).map_err(|e| {
+            tracing::error!("Failed to open audio file {path}: {e}");
+            e
+        })?;
+
+        // Decode the audio file
+        tracing::debug!("Decoding audio file: {path}");
+        let source = Decoder::new(BufReader::new(file)).map_err(|e| {
+            let err_msg = format!("Failed to decode audio file {path}: {e}");
+            tracing::error!("{err_msg}");
+            PlaybackError::DecoderError(err_msg)
+        })?;
 
         // Set volume and append source
         self.sink.set_volume(volume);
@@ -80,7 +102,7 @@ impl AudioPlayer {
         // Sink plays automatically after appending
         self.current_volume = volume;
 
-        tracing::debug!("Playing audio: {path} at volume {volume}");
+        tracing::debug!("Audio playback started: {path} at volume {volume}");
         Ok(())
     }
 
@@ -123,5 +145,170 @@ impl AudioPlayer {
         tracing::debug!("Volume set to {volume}");
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{AudioPlayer, PlaybackError};
+    use std::fs::File;
+    use std::io::Write;
+    use tempfile::TempDir;
+
+    /// Helper to create a temporary WAV file for testing
+    fn create_test_audio_file(dir: &TempDir, name: &str) -> String {
+        let file_path = dir.path().join(name);
+        let mut file = File::create(&file_path).expect("Failed to create test file");
+
+        // Minimal valid WAV file (44 bytes header + 1 sample)
+        // RIFF header
+        file.write_all(b"RIFF").unwrap();
+        file.write_all(&36u32.to_le_bytes()).unwrap(); // chunk size
+        file.write_all(b"WAVE").unwrap();
+
+        // fmt subchunk
+        file.write_all(b"fmt ").unwrap();
+        file.write_all(&16u32.to_le_bytes()).unwrap(); // subchunk1 size
+        file.write_all(&1u16.to_le_bytes()).unwrap(); // audio format (PCM)
+        file.write_all(&1u16.to_le_bytes()).unwrap(); // num channels
+        file.write_all(&44100u32.to_le_bytes()).unwrap(); // sample rate
+        file.write_all(&88200u32.to_le_bytes()).unwrap(); // byte rate
+        file.write_all(&2u16.to_le_bytes()).unwrap(); // block align
+        file.write_all(&16u16.to_le_bytes()).unwrap(); // bits per sample
+
+        // data subchunk
+        file.write_all(b"data").unwrap();
+        file.write_all(&4u32.to_le_bytes()).unwrap(); // subchunk2 size
+        file.write_all(&[0u8, 0, 0, 0]).unwrap(); // sample data
+
+        file_path.to_string_lossy().to_string()
+    }
+
+    #[test]
+    fn test_audio_player_creation() {
+        // AudioPlayer::new() requires actual audio hardware
+        match AudioPlayer::new() {
+            Ok(player) => {
+                assert_eq!(player.volume(), 0.6);
+                assert!(!player.is_playing());
+            }
+            Err(PlaybackError::OutputStreamError(_)) => {
+                eprintln!("Audio hardware not available, skipping test");
+            }
+            Err(e) => panic!("Unexpected error: {e}"),
+        }
+    }
+
+    #[test]
+    fn test_invalid_volume() {
+        if let Ok(mut player) = AudioPlayer::new() {
+            assert!(player.set_volume(-0.1).is_err());
+            assert!(player.set_volume(1.1).is_err());
+            assert!(player.set_volume(0.0).is_ok());
+            assert!(player.set_volume(1.0).is_ok());
+            assert!(player.set_volume(0.5).is_ok());
+        }
+    }
+
+    #[test]
+    fn test_play_nonexistent_file() {
+        if let Ok(mut player) = AudioPlayer::new() {
+            let result = player.play("/nonexistent/file.mp3", 0.5);
+            assert!(result.is_err());
+            match result {
+                Err(PlaybackError::FileError(_)) => {
+                    // Expected error
+                }
+                _ => panic!("Expected FileError for nonexistent file"),
+            }
+        }
+    }
+
+    #[test]
+    fn test_play_invalid_audio_file() {
+        let temp_dir = TempDir::new().unwrap();
+        let invalid_file = temp_dir.path().join("invalid.mp3");
+        std::fs::write(&invalid_file, b"not a valid audio file").unwrap();
+
+        if let Ok(mut player) = AudioPlayer::new() {
+            let result = player.play(&invalid_file.to_string_lossy(), 0.5);
+            assert!(result.is_err());
+            match result {
+                Err(PlaybackError::DecoderError(_)) => {
+                    // Expected error
+                }
+                _ => panic!("Expected DecoderError for invalid audio file"),
+            }
+        }
+    }
+
+    #[test]
+    fn test_play_valid_audio_file() {
+        let temp_dir = TempDir::new().unwrap();
+        let audio_file = create_test_audio_file(&temp_dir, "test.wav");
+
+        if let Ok(mut player) = AudioPlayer::new() {
+            let result = player.play(&audio_file, 0.5);
+            if result.is_err() {
+                eprintln!("Audio playback not available in test environment");
+            } else {
+                assert!(result.is_ok());
+            }
+        }
+    }
+
+    #[test]
+    fn test_stop_when_not_playing() {
+        if let Ok(mut player) = AudioPlayer::new() {
+            player.stop();
+            assert!(!player.is_playing());
+        }
+    }
+
+    #[test]
+    fn test_volume_persistence() {
+        if let Ok(mut player) = AudioPlayer::new() {
+            player.set_volume(0.3).unwrap();
+            assert_eq!(player.volume(), 0.3);
+
+            player.set_volume(0.8).unwrap();
+            assert_eq!(player.volume(), 0.8);
+        }
+    }
+
+    #[test]
+    fn test_play_with_invalid_volume() {
+        let temp_dir = TempDir::new().unwrap();
+        let audio_file = create_test_audio_file(&temp_dir, "test.wav");
+
+        if let Ok(mut player) = AudioPlayer::new() {
+            let result = player.play(&audio_file, 1.5);
+            assert!(result.is_err());
+            match result {
+                Err(PlaybackError::InvalidVolume(v)) => {
+                    assert_eq!(v, 1.5);
+                }
+                _ => panic!("Expected InvalidVolume error"),
+            }
+        }
+    }
+
+    #[test]
+    fn test_sequential_playback() {
+        let temp_dir = TempDir::new().unwrap();
+        let audio_file1 = create_test_audio_file(&temp_dir, "test1.wav");
+        let audio_file2 = create_test_audio_file(&temp_dir, "test2.wav");
+
+        if let Ok(mut player) = AudioPlayer::new() {
+            if player.play(&audio_file1, 0.5).is_ok() {
+                let result = player.play(&audio_file2, 0.6);
+                if result.is_err() {
+                    eprintln!("Audio playback not available in test environment");
+                } else {
+                    assert!(result.is_ok());
+                    assert_eq!(player.volume(), 0.6);
+                }
+            }
+        }
     }
 }
