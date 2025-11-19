@@ -149,6 +149,7 @@ impl AudioPlayer {
 }
 
 #[cfg(test)]
+#[allow(clippy::float_cmp)]
 mod tests {
     use super::{AudioPlayer, PlaybackError};
     use std::fs::File;
@@ -299,15 +300,15 @@ mod tests {
         let audio_file1 = create_test_audio_file(&temp_dir, "test1.wav");
         let audio_file2 = create_test_audio_file(&temp_dir, "test2.wav");
 
-        if let Ok(mut player) = AudioPlayer::new() {
-            if player.play(&audio_file1, 0.5).is_ok() {
-                let result = player.play(&audio_file2, 0.6);
-                if result.is_err() {
-                    eprintln!("Audio playback not available in test environment");
-                } else {
-                    assert!(result.is_ok());
-                    assert_eq!(player.volume(), 0.6);
-                }
+        if let Ok(mut player) = AudioPlayer::new()
+            && player.play(&audio_file1, 0.5).is_ok()
+        {
+            let result = player.play(&audio_file2, 0.6);
+            if result.is_err() {
+                eprintln!("Audio playback not available in test environment");
+            } else {
+                assert!(result.is_ok());
+                assert_eq!(player.volume(), 0.6);
             }
         }
     }

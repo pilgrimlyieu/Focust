@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## 0.2.11 (2025.11.19)
+
+### 🎉 Features
+
+- Add pause reasons display support in the settings UI to inform users why schedulers are paused.
+- Add toast notifications when user attempts to resume paused schedulers manually that are still paused due to other reasons.
+
+### 🐛 Bug Fixes
+
+- Fix potential prompt-window-specific freezing issue when audio playback fails silently.
+
+### 🚀 Improvements
+
+- Enhance audio playback commands with timeout handling and logging.
+
 ## 0.2.10 (2025.11.18)
 
 ### 🐛 Bug Fixes

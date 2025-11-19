@@ -9,6 +9,15 @@
 >
 > Audio feature doesn't work in macOS. This is a known upstream issue and will be fixed if its new version is released.
 
+## 🎉 Features
+
+- Add pause reasons display support in the settings UI to inform users why schedulers are paused.
+- Add toast notifications when user attempts to resume paused schedulers manually that are still paused due to other reasons.
+
 ## 🐛 Bug Fixes
 
-- Prevent false resume scheduler when configure is saved when paused.
+- Fix potential prompt-window-specific freezing issue when audio playback fails silently.
+
+## 🚀 Improvements
+
+- Enhance audio playback commands with timeout handling and logging.

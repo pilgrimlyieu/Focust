@@ -1,16 +1,18 @@
+#[cfg(not(target_os = "macos"))]
+use tauri::State;
 /// Tauri commands for audio playback control
 ///
 /// **Note**: Audio is temporarily disabled on macOS due to cpal Send trait limitations.
 /// See `src/core/audio.rs` for detailed explanation and restoration plan.
 /// Expected to be resolved in cpal 0.17.0+
-use crate::core::audio;
 use tauri::path::BaseDirectory;
 use tauri::{AppHandle, Manager};
 
+use crate::core::audio;
 #[cfg(not(target_os = "macos"))]
 use crate::core::audio::AudioPlayerState;
-#[cfg(not(target_os = "macos"))]
-use tauri::State;
+#[cfg(target_os = "macos")]
+use crate::tauri_error;
 
 /// Tauri command to play an audio file (non-macOS)
 #[cfg(not(target_os = "macos"))]
