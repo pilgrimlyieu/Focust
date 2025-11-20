@@ -13,13 +13,6 @@
 
 ## 🎉 Features
 
-- Add pause reasons display support in the settings UI to inform users why schedulers are paused.
-- Add toast notifications when user attempts to resume paused schedulers manually that are still paused due to other reasons.
+- Focust has its own icon now!
 
-## 🐛 Bug Fixes
-
-- Fix potential prompt-window-specific freezing issue when audio playback fails silently.
-
-## 🚀 Improvements
-
-- Enhance audio playback commands with timeout handling and logging.
+![Focust icon](https://github.com/pilgrimlyieu/Focust/raw/deaeba28f9444ddd2db4b4736e110ab2b871851d/src-tauri/icons/128x128.png)

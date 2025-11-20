@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## 0.2.12 (2025.11.20)
+
+### 🎉 Features
+
+- Focust has its own icon now!
+
+![Focust icon](https://github.com/pilgrimlyieu/Focust/raw/deaeba28f9444ddd2db4b4736e110ab2b871851d/src-tauri/icons/128x128.png)
+
+
 ## 0.2.11 (2025.11.19)
 
 ### 🎉 Features
