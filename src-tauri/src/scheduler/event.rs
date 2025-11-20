@@ -71,7 +71,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_active_schedule_during_weekday() {
+    fn get_active_schedule_during_weekday() {
         let config = create_test_config();
         let now_time = naive_time(10, 30, 0);
         let now_day = Weekday::Mon;
@@ -82,7 +82,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_active_schedule_outside_time_range() {
+    fn get_active_schedule_outside_time_range() {
         let config = create_test_config();
         // Too late
         let now_time = naive_time(8, 0, 0);
@@ -93,7 +93,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_active_schedule_on_weekend() {
+    fn get_active_schedule_on_weekend() {
         let config = create_test_config();
         // Weekend
         let now_time = naive_time(11, 0, 0);
@@ -104,7 +104,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_active_schedule_ignores_disabled() {
+    fn get_active_schedule_ignores_disabled() {
         let config = create_test_config();
         // Match Weekday and Disabled schedule, but Disabled should be ignored
         let now_time = naive_time(10, 0, 0);
@@ -115,7 +115,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_active_schedule_no_match_day() {
+    fn get_active_schedule_no_match_day() {
         let config = create_test_config();
         // Disabled
         let now_time = naive_time(21, 0, 0);
@@ -126,7 +126,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_active_schedule_no_schedules_defined() {
+    fn get_active_schedule_no_schedules_defined() {
         let config = AppConfig {
             schedules: vec![],
             ..Default::default()

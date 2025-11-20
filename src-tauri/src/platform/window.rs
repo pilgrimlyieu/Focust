@@ -133,8 +133,7 @@ pub fn create_settings_window<R: Runtime>(app: &AppHandle<R>) -> Result<(), Stri
     });
 
     // Create window
-    let _window =
-        WebviewWindowBuilder::new(app, "settings", WebviewUrl::App("settings.html".into()))
+    let _window = WebviewWindowBuilder::new(app, "settings", WebviewUrl::App("settings.html".into()))
             .title("Focust - Settings")
             .inner_size(1400.0, 900.0)
             .center()

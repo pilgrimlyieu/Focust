@@ -35,7 +35,7 @@ use crate::scheduler::test_helpers::*;
 ///
 /// Adding the first pause reason should pause all schedulers.
 #[tokio::test(start_paused = true)]
-async fn test_first_pause_reason() {
+async fn first_pause_reason() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -67,7 +67,7 @@ async fn test_first_pause_reason() {
 ///
 /// Adding additional pause reasons should keep scheduler paused.
 #[tokio::test(start_paused = true)]
-async fn test_multiple_pause_reasons() {
+async fn multiple_pause_reasons() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -107,7 +107,7 @@ async fn test_multiple_pause_reasons() {
 ///
 /// Removing one pause reason when multiple exist should keep paused.
 #[tokio::test(start_paused = true)]
-async fn test_partial_resume_stays_paused() {
+async fn partial_resume_stays_paused() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -149,7 +149,7 @@ async fn test_partial_resume_stays_paused() {
 ///
 /// Removing the last pause reason should resume all schedulers.
 #[tokio::test(start_paused = true)]
-async fn test_last_resume_triggers_resume() {
+async fn last_resume_triggers_resume() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -207,7 +207,7 @@ async fn test_last_resume_triggers_resume() {
 ///
 /// Adding same pause reason multiple times should be idempotent.
 #[tokio::test(start_paused = true)]
-async fn test_duplicate_pause_reason_idempotent() {
+async fn duplicate_pause_reason_idempotent() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -259,7 +259,7 @@ async fn test_duplicate_pause_reason_idempotent() {
 ///
 /// Removing a pause reason that wasn't added should be safe.
 #[tokio::test(start_paused = true)]
-async fn test_resume_non_existent_reason() {
+async fn resume_non_existent_reason() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -303,7 +303,7 @@ async fn test_resume_non_existent_reason() {
 ///
 /// Test all four pause reasons can coexist.
 #[tokio::test(start_paused = true)]
-async fn test_all_pause_reasons_coexist() {
+async fn all_pause_reasons_coexist() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -347,7 +347,7 @@ async fn test_all_pause_reasons_coexist() {
 ///
 /// Removing pause reasons in different order than added.
 #[tokio::test(start_paused = true)]
-async fn test_clear_reasons_different_order() {
+async fn clear_reasons_different_order() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -403,7 +403,7 @@ async fn test_clear_reasons_different_order() {
 ///
 /// `UpdateConfig` should be sent to all schedulers.
 #[tokio::test(start_paused = true)]
-async fn test_update_config_broadcasts() {
+async fn update_config_broadcasts() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -433,7 +433,7 @@ async fn test_update_config_broadcasts() {
 ///
 /// Break-specific commands should only go to `BreakScheduler`.
 #[tokio::test(start_paused = true)]
-async fn test_break_commands_route_correctly() {
+async fn break_commands_route_correctly() {
     let config = TestConfigBuilder::new()
         .mini_break_interval_s(30)
         .notification_before_s(0)
@@ -470,7 +470,7 @@ async fn test_break_commands_route_correctly() {
 ///
 /// Manager should handle rapid command sequences without dropping commands.
 #[tokio::test(start_paused = true)]
-async fn test_rapid_command_sequence() {
+async fn rapid_command_sequence() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -507,7 +507,7 @@ async fn test_rapid_command_sequence() {
 ///
 /// Rapidly adding/removing different pause reasons.
 #[tokio::test(start_paused = true)]
-async fn test_interleaved_pause_reasons() {
+async fn interleaved_pause_reasons() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -557,7 +557,7 @@ async fn test_interleaved_pause_reasons() {
 ///
 /// Pause and immediately resume same reason - should cancel out.
 #[tokio::test(start_paused = true)]
-async fn test_pause_immediate_resume() {
+async fn pause_immediate_resume() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -593,7 +593,7 @@ async fn test_pause_immediate_resume() {
 ///
 /// Add many reasons then clear them all.
 #[tokio::test(start_paused = true)]
-async fn test_many_reasons_then_clear_all() {
+async fn many_reasons_then_clear_all() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);

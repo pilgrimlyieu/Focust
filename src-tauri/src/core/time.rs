@@ -69,7 +69,7 @@ mod tests {
 
     // ShortTimes tests
     #[test]
-    fn test_short_times_new_sorts_and_deduplicates() {
+    fn short_times_new_sorts_and_deduplicates() {
         let times = vec![
             NaiveTime::from_hms_opt(14, 0, 0).unwrap(),
             NaiveTime::from_hms_opt(9, 0, 0).unwrap(),
@@ -89,7 +89,7 @@ mod tests {
     }
 
     #[test]
-    fn test_short_times_earliest_after_finds_next_time() {
+    fn short_times_earliest_after_finds_next_time() {
         let times = vec![
             NaiveTime::from_hms_opt(9, 0, 0).unwrap(),
             NaiveTime::from_hms_opt(14, 0, 0).unwrap(),
@@ -104,7 +104,7 @@ mod tests {
     }
 
     #[test]
-    fn test_short_times_earliest_after_returns_none_when_all_passed() {
+    fn short_times_earliest_after_returns_none_when_all_passed() {
         let times = vec![
             NaiveTime::from_hms_opt(9, 0, 0).unwrap(),
             NaiveTime::from_hms_opt(14, 0, 0).unwrap(),
@@ -118,7 +118,7 @@ mod tests {
     }
 
     #[test]
-    fn test_short_times_first_returns_earliest_time() {
+    fn short_times_first_returns_earliest_time() {
         let times = vec![
             NaiveTime::from_hms_opt(14, 0, 0).unwrap(),
             NaiveTime::from_hms_opt(9, 0, 0).unwrap(),
@@ -132,14 +132,14 @@ mod tests {
     }
 
     #[test]
-    fn test_short_times_first_returns_none_when_empty() {
+    fn short_times_first_returns_none_when_empty() {
         let short_times = ShortTimes::new(vec![]);
         assert_eq!(short_times.first(), None);
     }
 
     // TimeRange tests
     #[test]
-    fn test_time_range_contains_time_within_range() {
+    fn time_range_contains_time_within_range() {
         let range = TimeRange {
             start: NaiveTime::from_hms_opt(9, 0, 0).unwrap(),
             end: NaiveTime::from_hms_opt(17, 0, 0).unwrap(),
@@ -150,7 +150,7 @@ mod tests {
     }
 
     #[test]
-    fn test_time_range_contains_start_boundary() {
+    fn time_range_contains_start_boundary() {
         let range = TimeRange {
             start: NaiveTime::from_hms_opt(9, 0, 0).unwrap(),
             end: NaiveTime::from_hms_opt(17, 0, 0).unwrap(),
@@ -161,7 +161,7 @@ mod tests {
     }
 
     #[test]
-    fn test_time_range_contains_end_boundary() {
+    fn time_range_contains_end_boundary() {
         let range = TimeRange {
             start: NaiveTime::from_hms_opt(9, 0, 0).unwrap(),
             end: NaiveTime::from_hms_opt(17, 0, 0).unwrap(),
@@ -172,7 +172,7 @@ mod tests {
     }
 
     #[test]
-    fn test_time_range_does_not_contain_time_before_start() {
+    fn time_range_does_not_contain_time_before_start() {
         let range = TimeRange {
             start: NaiveTime::from_hms_opt(9, 0, 0).unwrap(),
             end: NaiveTime::from_hms_opt(17, 0, 0).unwrap(),
@@ -183,7 +183,7 @@ mod tests {
     }
 
     #[test]
-    fn test_time_range_does_not_contain_time_after_end() {
+    fn time_range_does_not_contain_time_after_end() {
         let range = TimeRange {
             start: NaiveTime::from_hms_opt(9, 0, 0).unwrap(),
             end: NaiveTime::from_hms_opt(17, 0, 0).unwrap(),
@@ -194,7 +194,7 @@ mod tests {
     }
 
     #[test]
-    fn test_time_range_default() {
+    fn time_range_default() {
         let range = TimeRange::default();
 
         assert_eq!(range.start, NaiveTime::from_hms_opt(0, 0, 0).unwrap());

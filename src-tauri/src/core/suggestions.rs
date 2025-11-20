@@ -191,19 +191,19 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_suggestions_settings_default() {
+    fn suggestions_settings_default() {
         let settings = SuggestionsSettings::default();
         assert!(settings.show, "Default should show suggestions");
     }
 
     #[test]
-    fn test_suggestions_settings_disabled() {
+    fn suggestions_settings_disabled() {
         let settings = SuggestionsSettings { show: false };
         assert!(!settings.show, "Should not show suggestions when disabled");
     }
 
     #[test]
-    fn test_suggestions_settings_clone() {
+    fn suggestions_settings_clone() {
         let settings = SuggestionsSettings::default();
         let cloned = settings.clone();
         assert_eq!(
@@ -213,7 +213,7 @@ mod tests {
     }
 
     #[test]
-    fn test_suggestions_settings_serialization() {
+    fn suggestions_settings_serialization() {
         let settings = SuggestionsSettings { show: true };
         let json = serde_json::to_string(&settings).expect("Failed to serialize");
         let deserialized: SuggestionsSettings =
@@ -225,7 +225,7 @@ mod tests {
     }
 
     #[test]
-    fn test_suggestions_settings_camel_case_serialization() {
+    fn suggestions_settings_camel_case_serialization() {
         let settings = SuggestionsSettings { show: true };
         let json = serde_json::to_string(&settings).expect("Failed to serialize");
         // Verify camelCase is used in JSON
@@ -236,7 +236,7 @@ mod tests {
     }
 
     #[test]
-    fn test_suggestions_settings_toml_serialization() {
+    fn suggestions_settings_toml_serialization() {
         let settings = SuggestionsSettings { show: false };
         let toml = toml::to_string(&settings).expect("Failed to serialize to TOML");
         let deserialized: SuggestionsSettings =
@@ -248,7 +248,7 @@ mod tests {
     }
 
     #[test]
-    fn test_suggestions_config_default() {
+    fn suggestions_config_default() {
         let config = SuggestionsConfig::default();
 
         // Test that all supported languages have suggestions
@@ -271,7 +271,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_suggestions_for_language() {
+    fn get_suggestions_for_language_works() {
         let config = SuggestionsConfig::default();
 
         // Test all supported languages
@@ -295,7 +295,7 @@ mod tests {
     }
 
     #[test]
-    fn test_suggestions_config_serialization() {
+    fn suggestions_config_serialization() {
         let config = SuggestionsConfig::default();
 
         let toml_string = toml::to_string_pretty(&config).expect("Failed to serialize");

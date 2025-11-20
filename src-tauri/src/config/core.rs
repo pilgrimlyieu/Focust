@@ -130,7 +130,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_partial_config_with_figment() {
+    fn partial_config_with_figment() {
         // Test that figment correctly fills missing fields with defaults
         let partial_toml = r#"
             # User's partial config
@@ -155,7 +155,7 @@ mod tests {
     }
 
     #[test]
-    fn test_figment_error_handling() {
+    fn figment_error_handling() {
         let invalid_toml = r#"
             autostart = "not a boolean"
         "#;

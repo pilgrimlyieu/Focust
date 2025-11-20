@@ -44,7 +44,7 @@ mod tests {
     /// - State remains consistent
     /// - Only one "paused" event is emitted
     #[tokio::test(start_paused = true)]
-    async fn test_concurrent_three_monitors_race() {
+    async fn concurrent_three_monitors_race() {
         let config = TestConfigBuilder::new().mini_break_interval_s(300).build();
 
         let env = create_manager_test_env(config);
@@ -102,7 +102,7 @@ mod tests {
     /// - Final state is predictable
     /// - No `pause_reasons` accumulation (memory leak check)
     #[tokio::test(start_paused = true)]
-    async fn test_rapid_pause_resume_cycling() {
+    async fn rapid_pause_resume_cycling() {
         let config = TestConfigBuilder::new().mini_break_interval_s(600).build();
 
         let env = create_manager_test_env(config);
@@ -168,7 +168,7 @@ mod tests {
     /// - Final state is consistent
     /// - No deadlocks or channel overflow
     #[tokio::test(start_paused = true)]
-    async fn test_command_queue_under_pressure() {
+    async fn command_queue_under_pressure() {
         let config = TestConfigBuilder::new().mini_break_interval_s(900).build();
 
         let env = create_manager_test_env(config);
@@ -222,7 +222,7 @@ mod tests {
     /// - Monitor signals are processed correctly
     /// - No state corruption
     #[tokio::test(start_paused = true)]
-    async fn test_config_update_with_monitor_storm() {
+    async fn config_update_with_monitor_storm() {
         let config = TestConfigBuilder::new().mini_break_interval_s(300).build();
 
         let env = create_manager_test_env(config);
@@ -274,7 +274,7 @@ mod tests {
     /// - State consistency is maintained throughout
     /// - No unexpected state corruption
     #[tokio::test(start_paused = true)]
-    async fn test_complex_state_transition_chain() {
+    async fn complex_state_transition_chain() {
         let config = TestConfigBuilder::new().mini_break_interval_s(300).build();
 
         let env = create_manager_test_env(config);
@@ -348,7 +348,7 @@ mod tests {
     /// - Partial resumes don't trigger running state
     /// - Order of resume doesn't matter
     #[tokio::test(start_paused = true)]
-    async fn test_all_pause_reasons_random_resume_order() {
+    async fn all_pause_reasons_random_resume_order() {
         let config = TestConfigBuilder::new().mini_break_interval_s(600).build();
 
         let env = create_manager_test_env(config);
@@ -424,7 +424,7 @@ mod tests {
     /// - State remains consistent
     /// - Idempotency is preserved
     #[tokio::test(start_paused = true)]
-    async fn test_scheduler_recovery_from_edge_cases() {
+    async fn scheduler_recovery_from_edge_cases() {
         let config = TestConfigBuilder::new().mini_break_interval_s(600).build();
 
         let env = create_manager_test_env(config);

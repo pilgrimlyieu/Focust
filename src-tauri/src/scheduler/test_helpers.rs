@@ -217,7 +217,7 @@ pub fn weekend_days() -> Vec<Weekday> {
 /// ```ignore
 /// let dt = test_datetime(2025, 9, 3, 10, 30, 0);
 /// ```
-pub fn test_datetime(
+pub fn get_test_datetime(
     year: i32,
     month: u32,
     day: u32,
@@ -231,7 +231,7 @@ pub fn test_datetime(
 }
 
 /// Create a UTC datetime from local datetime for testing
-pub fn test_datetime_with_local(
+pub fn get_test_datetime_with_local(
     year: i32,
     month: u32,
     day: u32,
@@ -247,7 +247,7 @@ pub fn test_datetime_with_local(
 }
 
 /// Create a Local datetime for testing
-pub fn test_local_datetime(
+pub fn get_test_local_datetime(
     year: i32,
     month: u32,
     day: u32,
@@ -390,7 +390,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_config_builder_defaults() {
+    fn config_builder_defaults() {
         let config = TestConfigBuilder::new().build();
 
         assert_eq!(config.schedules.len(), 1);
@@ -400,7 +400,7 @@ mod tests {
     }
 
     #[test]
-    fn test_config_builder_customization() {
+    fn config_builder_customization() {
         let config = TestConfigBuilder::new()
             .mini_break_interval_s(120)
             .mini_break_duration_s(30)
@@ -414,8 +414,8 @@ mod tests {
     }
 
     #[test]
-    fn test_time_helpers() {
-        let dt = test_datetime(2025, 9, 3, 10, 30, 0);
+    fn time_helpers() {
+        let dt = get_test_datetime(2025, 9, 3, 10, 30, 0);
         assert_eq!(dt.year(), 2025);
         assert_eq!(dt.month(), 9);
         assert_eq!(dt.day(), 3);
@@ -424,29 +424,29 @@ mod tests {
     }
 
     #[test]
-    fn test_duration_helpers() {
+    fn duration_helpers() {
         assert_eq!(duration_s(60).num_seconds(), 60);
         assert_eq!(duration_m(5).num_seconds(), 300);
         assert_eq!(duration_h(2).num_seconds(), 7200);
     }
 
     #[test]
-    fn test_assert_time_near_passes() {
-        let t1 = test_datetime(2025, 1, 15, 10, 0, 0);
-        let t2 = test_datetime(2025, 1, 15, 10, 0, 1);
+    fn assert_time_near_passes() {
+        let t1 = get_test_datetime(2025, 1, 15, 10, 0, 0);
+        let t2 = get_test_datetime(2025, 1, 15, 10, 0, 1);
         assert_time_near(t1, t2, duration_s(2));
     }
 
     #[test]
     #[should_panic(expected = "Time difference too large")]
-    fn test_assert_time_near_fails() {
-        let t1 = test_datetime(2025, 9, 3, 10, 0, 0);
-        let t2 = test_datetime(2025, 9, 3, 10, 0, 5);
+    fn assert_time_near_fails() {
+        let t1 = get_test_datetime(2025, 9, 3, 10, 0, 0);
+        let t2 = get_test_datetime(2025, 9, 3, 10, 0, 5);
         assert_time_near(t1, t2, duration_s(2));
     }
 
     #[test]
-    fn test_weekday_helpers() {
+    fn weekday_helpers() {
         assert_eq!(all_weekdays().len(), 7);
         assert_eq!(workdays().len(), 5);
         assert_eq!(weekend_days().len(), 2);

@@ -210,14 +210,14 @@ mod tests {
 
     // parse_shortcut basic tests
     #[test]
-    fn test_parse_shortcut_basic() {
+    fn parse_shortcut_basic() {
         parse_shortcut("Ctrl+Shift+X").unwrap();
         parse_shortcut("Alt+P").unwrap();
         parse_shortcut("Ctrl+F1").unwrap();
     }
 
     #[test]
-    fn test_parse_shortcut_case_insensitive() {
+    fn parse_shortcut_case_insensitive() {
         parse_shortcut("ctrl+x").unwrap();
         parse_shortcut("CTRL+X").unwrap();
         parse_shortcut("Alt+a").unwrap();
@@ -225,7 +225,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_shortcut_all_modifiers() {
+    fn parse_shortcut_all_modifiers() {
         parse_shortcut("Ctrl+Alt+Shift+X").unwrap();
         parse_shortcut("Super+C").unwrap();
         parse_shortcut("Meta+V").unwrap();
@@ -234,7 +234,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_shortcut_letters() {
+    fn parse_shortcut_letters() {
         // Test all letters
         for letter in 'a'..='z' {
             let shortcut = format!("Ctrl+{letter}");
@@ -246,7 +246,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_shortcut_numbers() {
+    fn parse_shortcut_numbers() {
         // Test all digits
         for num in 0..=9 {
             let shortcut = format!("Ctrl+{num}");
@@ -258,7 +258,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_shortcut_function_keys() {
+    fn parse_shortcut_function_keys() {
         for i in 1..=12 {
             let shortcut = format!("Ctrl+F{i}");
             assert!(
@@ -269,7 +269,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_shortcut_special_keys() {
+    fn parse_shortcut_special_keys() {
         parse_shortcut("Ctrl+Space").unwrap();
         parse_shortcut("Ctrl+Enter").unwrap();
         parse_shortcut("Ctrl+Return").unwrap();
@@ -290,7 +290,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_shortcut_arrow_keys() {
+    fn parse_shortcut_arrow_keys() {
         parse_shortcut("Ctrl+Left").unwrap();
         parse_shortcut("Ctrl+Right").unwrap();
         parse_shortcut("Ctrl+Up").unwrap();
@@ -298,7 +298,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_shortcut_whitespace_handling() {
+    fn parse_shortcut_whitespace_handling() {
         parse_shortcut("Ctrl + X").unwrap();
         parse_shortcut(" Ctrl+X ").unwrap();
         parse_shortcut("Ctrl  +  X").unwrap();
@@ -306,42 +306,42 @@ mod tests {
 
     // Error case tests
     #[test]
-    fn test_parse_shortcut_empty_string() {
+    fn parse_shortcut_empty_string() {
         let result = parse_shortcut("");
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), "Empty shortcut string");
     }
 
     #[test]
-    fn test_parse_shortcut_only_modifier() {
+    fn parse_shortcut_only_modifier() {
         let result = parse_shortcut("Ctrl");
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), "No key code found in shortcut");
     }
 
     #[test]
-    fn test_parse_shortcut_multiple_modifiers_only() {
+    fn parse_shortcut_multiple_modifiers_only() {
         let result = parse_shortcut("Ctrl+Alt+Shift");
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), "No key code found in shortcut");
     }
 
     #[test]
-    fn test_parse_shortcut_unknown_key() {
+    fn parse_shortcut_unknown_key() {
         let result = parse_shortcut("Ctrl+InvalidKey");
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("Unknown key code"));
     }
 
     #[test]
-    fn test_parse_shortcut_multiple_keys() {
+    fn parse_shortcut_multiple_keys() {
         let result = parse_shortcut("X+Y");
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("Multiple key codes"));
     }
 
     #[test]
-    fn test_parse_shortcut_multiple_keys_with_modifier() {
+    fn parse_shortcut_multiple_keys_with_modifier() {
         let result = parse_shortcut("Ctrl+X+Y");
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("Multiple key codes"));
@@ -349,28 +349,28 @@ mod tests {
 
     // parse_key_code tests
     #[test]
-    fn test_parse_key_code_letters() {
+    fn parse_key_code_letters() {
         assert!(matches!(parse_key_code("a"), Ok(Code::KeyA)));
         assert!(matches!(parse_key_code("z"), Ok(Code::KeyZ)));
         assert!(matches!(parse_key_code("m"), Ok(Code::KeyM)));
     }
 
     #[test]
-    fn test_parse_key_code_numbers() {
+    fn parse_key_code_numbers() {
         assert!(matches!(parse_key_code("0"), Ok(Code::Digit0)));
         assert!(matches!(parse_key_code("5"), Ok(Code::Digit5)));
         assert!(matches!(parse_key_code("9"), Ok(Code::Digit9)));
     }
 
     #[test]
-    fn test_parse_key_code_function_keys() {
+    fn parse_key_code_function_keys() {
         assert!(matches!(parse_key_code("f1"), Ok(Code::F1)));
         assert!(matches!(parse_key_code("f6"), Ok(Code::F6)));
         assert!(matches!(parse_key_code("f12"), Ok(Code::F12)));
     }
 
     #[test]
-    fn test_parse_key_code_special_keys() {
+    fn parse_key_code_special_keys() {
         assert!(matches!(parse_key_code("space"), Ok(Code::Space)));
         assert!(matches!(parse_key_code("enter"), Ok(Code::Enter)));
         assert!(matches!(parse_key_code("return"), Ok(Code::Enter)));
@@ -382,7 +382,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_key_code_arrow_keys() {
+    fn parse_key_code_arrow_keys() {
         assert!(matches!(parse_key_code("left"), Ok(Code::ArrowLeft)));
         assert!(matches!(parse_key_code("right"), Ok(Code::ArrowRight)));
         assert!(matches!(parse_key_code("up"), Ok(Code::ArrowUp)));
@@ -390,14 +390,14 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_key_code_case_insensitive() {
+    fn parse_key_code_case_insensitive() {
         assert!(matches!(parse_key_code("A"), Ok(Code::KeyA)));
         assert!(matches!(parse_key_code("F1"), Ok(Code::F1)));
         assert!(matches!(parse_key_code("SPACE"), Ok(Code::Space)));
     }
 
     #[test]
-    fn test_parse_key_code_invalid() {
+    fn parse_key_code_invalid() {
         parse_key_code("invalid").unwrap_err();
         parse_key_code("ctrl").unwrap_err(); // Modifier keys should not be treated as keys
         parse_key_code("alt").unwrap_err();
@@ -406,7 +406,7 @@ mod tests {
 
     // Edge cases and real-world usage tests
     #[test]
-    fn test_parse_shortcut_common_combinations() {
+    fn parse_shortcut_common_combinations() {
         // Common shortcut combinations
         parse_shortcut("Ctrl+C").unwrap(); // Copy
         parse_shortcut("Ctrl+V").unwrap(); // Paste
@@ -421,7 +421,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_shortcut_modifier_aliases() {
+    fn parse_shortcut_modifier_aliases() {
         // Test modifier key aliases
         let ctrl_x = parse_shortcut("Ctrl+X").unwrap();
         let control_x = parse_shortcut("Control+X").unwrap();

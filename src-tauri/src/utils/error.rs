@@ -119,7 +119,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_focust_error_display() {
+    fn focust_error_display() {
         let err = FocustError::Config("Invalid value".to_owned());
         assert_eq!(err.to_string(), "Configuration error: Invalid value");
 
@@ -129,13 +129,13 @@ mod tests {
     }
 
     #[test]
-    fn test_config_error_display() {
+    fn config_error_display() {
         let err = ConfigError::ValidationError("Missing field".to_owned());
         assert_eq!(err.to_string(), "Invalid config value: Missing field");
     }
 
     #[test]
-    fn test_audio_error_display() {
+    fn audio_error_display() {
         let path = PathBuf::from("/test/audio.mp3");
         let err = AudioError::FileNotFound(path.clone());
         assert_eq!(
@@ -145,7 +145,7 @@ mod tests {
     }
 
     #[test]
-    fn test_to_tauri_result() {
+    fn to_tauri_result_works() {
         let ok_result: Result<i32, FocustError> = Ok(42);
         let tauri_result = to_tauri_result(ok_result);
         assert_eq!(tauri_result, Ok(42));

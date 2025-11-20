@@ -379,7 +379,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_pause_reason_management() {
+    fn pause_reason_management() {
         let mut state = SharedSchedulerState::new();
 
         // Initially not paused
@@ -408,7 +408,7 @@ mod tests {
     }
 
     #[test]
-    fn test_duplicate_pause_reason() {
+    fn duplicate_pause_reason() {
         let mut state = SharedSchedulerState::new();
 
         // Add same reason twice
@@ -418,7 +418,7 @@ mod tests {
     }
 
     #[test]
-    fn test_remove_nonexistent_reason() {
+    fn remove_nonexistent_reason() {
         let mut state = SharedSchedulerState::new();
         state.add_pause_reason(PauseReason::UserIdle);
 
@@ -428,7 +428,7 @@ mod tests {
     }
 
     #[test]
-    fn test_session_management() {
+    fn session_management() {
         let mut state = SharedSchedulerState::new();
 
         // Initially not in any session
@@ -458,7 +458,7 @@ mod tests {
     }
 
     #[test]
-    fn test_both_sessions_active() {
+    fn both_sessions_active() {
         let mut state = SharedSchedulerState::new();
 
         state.start_break_session();
@@ -476,7 +476,7 @@ mod tests {
     }
 
     #[test]
-    fn test_idempotent_session_operations() {
+    fn idempotent_session_operations() {
         let mut state = SharedSchedulerState::new();
 
         // Starting same session multiple times
@@ -492,7 +492,7 @@ mod tests {
     }
 
     #[test]
-    fn test_multiple_pause_reasons_simultaneously() {
+    fn multiple_pause_reasons_simultaneously() {
         let mut state = SharedSchedulerState::new();
 
         // Add three different pause reasons
@@ -520,7 +520,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pause_during_active_sessions() {
+    fn pause_during_active_sessions() {
         let mut state = SharedSchedulerState::new();
 
         // Start both sessions
@@ -542,7 +542,7 @@ mod tests {
     }
 
     #[test]
-    fn test_session_operations_during_pause() {
+    fn session_operations_during_pause() {
         let mut state = SharedSchedulerState::new();
 
         // Pause first
@@ -564,7 +564,7 @@ mod tests {
     }
 
     #[test]
-    fn test_rapid_pause_resume_cycles() {
+    fn rapid_pause_resume_cycles() {
         let mut state = SharedSchedulerState::new();
 
         // Rapid cycling should maintain consistency
@@ -581,7 +581,7 @@ mod tests {
     }
 
     #[test]
-    fn test_alternating_pause_reasons() {
+    fn alternating_pause_reasons() {
         let mut state = SharedSchedulerState::new();
 
         // Add reason A
@@ -608,7 +608,7 @@ mod tests {
     }
 
     #[test]
-    fn test_session_overlap_scenarios() {
+    fn session_overlap_scenarios() {
         let mut state = SharedSchedulerState::new();
 
         // Scenario 1: Start break, then attention, end break
@@ -634,7 +634,7 @@ mod tests {
     }
 
     #[test]
-    fn test_session_end_without_start() {
+    fn session_end_without_start() {
         let mut state = SharedSchedulerState::new();
 
         // Ending a session that was never started should be idempotent
@@ -644,7 +644,7 @@ mod tests {
     }
 
     #[test]
-    fn test_complex_interleaved_operations() {
+    fn complex_interleaved_operations() {
         let mut state = SharedSchedulerState::new();
 
         // Complex sequence: pause, session, unpause, session, pause
@@ -664,7 +664,7 @@ mod tests {
     }
 
     #[test]
-    fn test_all_pause_reasons_types() {
+    fn all_pause_reasons_types() {
         let mut state = SharedSchedulerState::new();
 
         // Test all enum variants

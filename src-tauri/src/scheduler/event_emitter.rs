@@ -129,7 +129,7 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn test_event_emitter_records_events() {
+    fn event_emitter_records_events() {
         let emitter = TestEventEmitter::new();
 
         emitter.emit("test-event", json!({"key": "value"})).unwrap();
@@ -142,7 +142,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_events_by_name() {
+    fn get_events_by_name_works() {
         let emitter = TestEventEmitter::new();
 
         emitter.emit("event-a", json!({"id": 1})).unwrap();
@@ -156,7 +156,7 @@ mod tests {
     }
 
     #[test]
-    fn test_clear_events() {
+    fn clear_events_works() {
         let emitter = TestEventEmitter::new();
 
         emitter.emit("test", json!({})).unwrap();
@@ -167,7 +167,7 @@ mod tests {
     }
 
     #[test]
-    fn test_has_event() {
+    fn has_event_works() {
         let emitter = TestEventEmitter::new();
 
         emitter.emit("exists", json!({})).unwrap();

@@ -891,7 +891,7 @@ mod tests {
             config.schedules[0].days_of_week = workdays();
 
             // Saturday at 10:00
-            let now = test_datetime(2025, 9, 6, 10, 0, 0);
+            let now = get_test_datetime(2025, 9, 6, 10, 0, 0);
 
             let result = calculate_next_break_pure(&config, now, 0, None);
             assert!(result.is_none());
@@ -960,7 +960,7 @@ mod tests {
                 .build();
 
             // Test during active time (23:00)
-            let now_23h = test_datetime(2025, 9, 3, 23, 0, 0);
+            let now_23h = get_test_datetime(2025, 9, 3, 23, 0, 0);
             let result = calculate_next_break_pure(&config, now_23h, 0, None);
             assert!(
                 result.is_some(),
@@ -968,7 +968,7 @@ mod tests {
             );
 
             // Test after midnight but still in range (01:00)
-            let now_01h = test_datetime(2025, 9, 4, 1, 0, 0);
+            let now_01h = get_test_datetime(2025, 9, 4, 1, 0, 0);
             let result = calculate_next_break_pure(&config, now_01h, 0, None);
             assert!(
                 result.is_some(),
@@ -976,7 +976,7 @@ mod tests {
             );
 
             // Test outside range (10:00)
-            let now_10h = test_datetime(2025, 9, 3, 10, 0, 0);
+            let now_10h = get_test_datetime(2025, 9, 3, 10, 0, 0);
             let result = calculate_next_break_pure(&config, now_10h, 0, None);
             assert!(
                 result.is_none(),
@@ -1060,7 +1060,7 @@ mod tests {
             };
 
             // Test at 10:00 local time (should use schedule1)
-            let now_morning = test_datetime_with_local(2025, 9, 3, 10, 0, 0);
+            let now_morning = get_test_datetime_with_local(2025, 9, 3, 10, 0, 0);
 
             let result = calculate_next_break_pure(&config, now_morning, 0, None);
             let break_info = result.unwrap();
@@ -1069,7 +1069,7 @@ mod tests {
             assert_duration_near(break_duration, 1800, 5);
 
             // Test at 14:00 local time (should use schedule2)
-            let now_afternoon = test_datetime_with_local(2025, 9, 3, 14, 0, 0);
+            let now_afternoon = get_test_datetime_with_local(2025, 9, 3, 14, 0, 0);
 
             let result = calculate_next_break_pure(&config, now_afternoon, 0, None);
             let break_info = result.unwrap();
@@ -1078,7 +1078,7 @@ mod tests {
             assert_duration_near(break_duration, 1200, 5);
 
             // Test at 12:30 local time (between schedules, should be None)
-            let now_between = test_datetime_with_local(2025, 9, 3, 12, 30, 0);
+            let now_between = get_test_datetime_with_local(2025, 9, 3, 12, 30, 0);
 
             let result = calculate_next_break_pure(&config, now_between, 0, None);
             assert!(

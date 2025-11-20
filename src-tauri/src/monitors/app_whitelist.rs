@@ -143,7 +143,7 @@ mod tests {
     use crate::config::AppExclusion;
 
     #[test]
-    fn test_app_whitelist_monitor_creation() {
+    fn app_whitelist_monitor_creation() {
         let exclusions = vec![AppExclusion::pause(vec!["chrome.exe".to_owned()])];
         let monitor = AppWhitelistMonitor::new(exclusions);
 
@@ -154,13 +154,13 @@ mod tests {
     }
 
     #[test]
-    fn test_app_whitelist_monitor_empty_exclusions() {
+    fn app_whitelist_monitor_empty_exclusions() {
         let monitor = AppWhitelistMonitor::new(vec![]);
         assert_eq!(monitor.exclusions.len(), 0);
     }
 
     #[test]
-    fn test_app_whitelist_monitor_update_exclusions() {
+    fn app_whitelist_monitor_update_exclusions() {
         let mut monitor = AppWhitelistMonitor::new(vec![]);
         assert_eq!(monitor.exclusions.len(), 0);
 
@@ -174,13 +174,13 @@ mod tests {
     }
 
     #[test]
-    fn test_check_processes_no_exclusions() {
+    fn check_processes_no_exclusions() {
         let mut monitor = AppWhitelistMonitor::new(vec![]);
         assert!(!monitor.check_processes());
     }
 
     #[test]
-    fn test_check_processes_inactive_exclusion() {
+    fn check_processes_inactive_exclusion() {
         let mut exclusion = AppExclusion::pause(vec!["nonexistent.exe".to_owned()]);
         exclusion.active = false;
 
@@ -189,7 +189,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_check_returns_none_for_empty_exclusions() {
+    async fn check_returns_none_for_empty_exclusions() {
         let mut monitor = AppWhitelistMonitor::new(vec![]);
         let result = monitor.check().await;
         assert!(matches!(result, Ok(MonitorAction::None)));

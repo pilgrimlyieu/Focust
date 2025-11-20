@@ -30,7 +30,7 @@ use crate::{
 ///
 /// The scheduler should automatically start scheduling breaks after startup.
 #[tokio::test(start_paused = true)]
-async fn test_automatic_startup() {
+async fn automatic_startup() {
     let config = TestConfigBuilder::new()
         .mini_break_interval_s(1200) // 20 minutes
         .mini_break_duration_s(300) // 5 minutes
@@ -81,7 +81,7 @@ async fn test_automatic_startup() {
 ///
 /// Verifies a full break cycle from scheduling to completion.
 #[tokio::test(start_paused = true)]
-async fn test_complete_break_cycle() {
+async fn complete_break_cycle() {
     let config = TestConfigBuilder::new()
         .mini_break_interval_s(60)
         .mini_break_duration_s(20)
@@ -139,7 +139,7 @@ async fn test_complete_break_cycle() {
 ///
 /// Verifies long break is triggered after N mini breaks and counter resets.
 #[tokio::test(start_paused = true)]
-async fn test_long_break_trigger() {
+async fn long_break_trigger() {
     let config = TestConfigBuilder::new()
         .mini_break_interval_s(30)
         .mini_break_duration_s(10)
@@ -222,7 +222,7 @@ async fn test_long_break_trigger() {
 ///
 /// User can manually pause/resume via tray menu.
 #[tokio::test(start_paused = true)]
-async fn test_manual_pause_resume() {
+async fn manual_pause_resume() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let (mut scheduler, emitter, shutdown_tx, _app) = create_test_break_scheduler(config);
@@ -279,7 +279,7 @@ async fn test_manual_pause_resume() {
 ///
 /// User can postpone upcoming break.
 #[tokio::test(start_paused = true)]
-async fn test_postpone_break() {
+async fn postpone_break() {
     let config = TestConfigBuilder::new()
         .mini_break_interval_s(60)
         .notification_before_s(0)
@@ -327,7 +327,7 @@ async fn test_postpone_break() {
 ///
 /// Verify postpone limit is enforced.
 #[tokio::test(start_paused = true)]
-async fn test_postpone_limit() {
+async fn postpone_limit() {
     let config = TestConfigBuilder::new()
         .mini_break_interval_s(60)
         .postpone_settings(2, 30)
@@ -388,7 +388,7 @@ async fn test_postpone_limit() {
 ///
 /// User can skip upcoming break.
 #[tokio::test(start_paused = true)]
-async fn test_skip_break() {
+async fn skip_break() {
     let config = TestConfigBuilder::new()
         .mini_break_interval_s(60)
         .notification_before_s(0)
@@ -428,7 +428,7 @@ async fn test_skip_break() {
 ///
 /// User can manually trigger a break from Advanced Option panel.
 #[tokio::test(start_paused = true)]
-async fn test_manual_trigger() {
+async fn manual_trigger() {
     let config = TestConfigBuilder::new()
         .mini_break_interval_s(600)
         .notification_before_s(0)
@@ -473,7 +473,7 @@ async fn test_manual_trigger() {
 ///
 /// Configuration changes should take effect immediately.
 #[tokio::test(start_paused = true)]
-async fn test_config_update() {
+async fn config_update() {
     let initial = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let (mut scheduler, emitter, shutdown_tx, _app) = create_test_break_scheduler(initial);
@@ -520,7 +520,7 @@ async fn test_config_update() {
 ///
 /// `RequestBreakStatus` should emit current state without side effects.
 #[tokio::test(start_paused = true)]
-async fn test_request_status() {
+async fn request_status() {
     let config = TestConfigBuilder::new().mini_break_interval_s(180).build();
 
     let (mut scheduler, emitter, shutdown_tx, _app) = create_test_break_scheduler(config);
@@ -555,7 +555,7 @@ async fn test_request_status() {
 ///
 /// Verify scheduler handles commands correctly while in break.
 #[tokio::test(start_paused = true)]
-async fn test_commands_during_break() {
+async fn commands_during_break() {
     let config = TestConfigBuilder::new()
         .mini_break_interval_s(30)
         .mini_break_duration_s(10)
@@ -597,7 +597,7 @@ async fn test_commands_during_break() {
 ///
 /// Verify scheduler handles extremely short intervals.
 #[tokio::test(start_paused = true)]
-async fn test_extreme_short_interval() {
+async fn extreme_short_interval() {
     let config = TestConfigBuilder::new()
         .mini_break_interval_s(5)
         .mini_break_duration_s(2)
@@ -638,7 +638,7 @@ async fn test_extreme_short_interval() {
 /// added" and "resume only when last reason removed" is in `SchedulerManager`
 /// and tested in manager tests.
 #[tokio::test(start_paused = true)]
-async fn test_pause_resume_cycle() {
+async fn pause_resume_cycle() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let (mut scheduler, emitter, shutdown_tx, _app) = create_test_break_scheduler(config);
@@ -687,7 +687,7 @@ async fn test_pause_resume_cycle() {
 ///
 /// Verify scheduler handles rapid command sequences without crashing.
 #[tokio::test(start_paused = true)]
-async fn test_rapid_commands() {
+async fn rapid_commands() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let (mut scheduler, emitter, shutdown_tx, _app) = create_test_break_scheduler(config);
@@ -725,7 +725,7 @@ async fn test_rapid_commands() {
 
 /// **ST1: `InBreak` + Pause(Manual) - Session Must Be Cleaned**
 #[tokio::test(start_paused = true)]
-async fn test_inbreak_pause_manual_cleans_session() {
+async fn inbreak_pause_manual_cleans_session() {
     let config = TestConfigBuilder::new()
         .mini_break_interval_s(60)
         .mini_break_duration_s(20)
@@ -772,7 +772,7 @@ async fn test_inbreak_pause_manual_cleans_session() {
 
 /// **ST2: `InBreak` + Skip - Session Must Be Cleaned**
 #[tokio::test(start_paused = true)]
-async fn test_inbreak_skip_cleans_session() {
+async fn inbreak_skip_cleans_session() {
     let config = TestConfigBuilder::new()
         .mini_break_interval_s(60)
         .mini_break_duration_s(20)
@@ -805,7 +805,7 @@ async fn test_inbreak_skip_cleans_session() {
 
 /// **ST3: `InBreak` + Postpone - Session Must Be Cleaned**
 #[tokio::test(start_paused = true)]
-async fn test_inbreak_postpone_cleans_session() {
+async fn inbreak_postpone_cleans_session() {
     let config = TestConfigBuilder::new()
         .mini_break_interval_s(60)
         .mini_break_duration_s(20)
@@ -838,7 +838,7 @@ async fn test_inbreak_postpone_cleans_session() {
 
 /// **ST4: Session Recovery After Pause/Resume**
 #[tokio::test(start_paused = true)]
-async fn test_session_recovery_after_pause_resume() {
+async fn session_recovery_after_pause_resume() {
     let config = TestConfigBuilder::new()
         .mini_break_interval_s(30)
         .mini_break_duration_s(10)
@@ -889,7 +889,7 @@ async fn test_session_recovery_after_pause_resume() {
 /// This prevents state inconsistency where scheduler resumes but pause
 /// reasons still exist in `SharedState`.
 #[tokio::test(start_paused = true)]
-async fn test_config_update_while_paused() {
+async fn config_update_while_paused() {
     let initial = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let (mut scheduler, emitter, shutdown_tx, _app) = create_test_break_scheduler(initial);

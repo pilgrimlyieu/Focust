@@ -60,7 +60,7 @@ fn config_with_attention(
 ///
 /// `AttentionTimer` should start and be ready to schedule.
 #[tokio::test(start_paused = true)]
-async fn test_attention_timer_starts() {
+async fn attention_timer_starts() {
     let config = config_with_attention(10, 0, true, all_weekdays());
 
     let env = create_manager_test_env(config);
@@ -80,7 +80,7 @@ async fn test_attention_timer_starts() {
 ///
 /// Timer should handle empty attention list gracefully.
 #[tokio::test(start_paused = true)]
-async fn test_attention_timer_no_attentions() {
+async fn attention_timer_no_attentions() {
     let mut config = TestConfigBuilder::new().build();
     config.attentions = vec![]; // No attentions configured
 
@@ -101,7 +101,7 @@ async fn test_attention_timer_no_attentions() {
 ///
 /// Disabled attentions should not trigger.
 #[tokio::test(start_paused = true)]
-async fn test_disabled_attention() {
+async fn disabled_attention() {
     let config = config_with_attention(10, 0, false, all_weekdays()); // Disabled
 
     let env = create_manager_test_env(config);
@@ -128,7 +128,7 @@ async fn test_disabled_attention() {
 ///
 /// When scheduler is paused, attention timer should also pause.
 #[tokio::test(start_paused = true)]
-async fn test_pause_stops_attention_timer() {
+async fn pause_stops_attention_timer() {
     let config = config_with_attention(10, 0, true, all_weekdays());
 
     let env = create_manager_test_env(config);
@@ -162,7 +162,7 @@ async fn test_pause_stops_attention_timer() {
 ///
 /// When scheduler resumes, attention timer should resume.
 #[tokio::test(start_paused = true)]
-async fn test_resume_restarts_attention_timer() {
+async fn resume_restarts_attention_timer() {
     let config = config_with_attention(10, 0, true, all_weekdays());
 
     let env = create_manager_test_env(config);
@@ -200,7 +200,7 @@ async fn test_resume_restarts_attention_timer() {
 ///
 /// Attention timer should respect multi-reason pause management.
 #[tokio::test(start_paused = true)]
-async fn test_attention_multiple_pause_reasons() {
+async fn attention_multiple_pause_reasons() {
     let config = config_with_attention(10, 0, true, all_weekdays());
 
     let env = create_manager_test_env(config);
@@ -250,7 +250,7 @@ async fn test_attention_multiple_pause_reasons() {
 ///
 /// Attention timer should handle config updates.
 #[tokio::test(start_paused = true)]
-async fn test_update_attention_config() {
+async fn update_attention_config() {
     let config = config_with_attention(10, 0, true, all_weekdays());
 
     let env = create_manager_test_env(config);
@@ -279,7 +279,7 @@ async fn test_update_attention_config() {
 ///
 /// Adding a new attention to config.
 #[tokio::test(start_paused = true)]
-async fn test_add_new_attention() {
+async fn add_new_attention() {
     let config = config_with_attention(10, 0, true, all_weekdays());
 
     let env = create_manager_test_env(config);
@@ -320,7 +320,7 @@ async fn test_add_new_attention() {
 ///
 /// Removing all attentions should be handled gracefully.
 #[tokio::test(start_paused = true)]
-async fn test_remove_all_attentions() {
+async fn remove_all_attentions() {
     let config = config_with_attention(10, 0, true, all_weekdays());
 
     let env = create_manager_test_env(config);
@@ -355,7 +355,7 @@ async fn test_remove_all_attentions() {
 ///
 /// Multiple attentions at different times should be scheduled correctly.
 #[tokio::test(start_paused = true)]
-async fn test_multiple_attentions_different_times() {
+async fn multiple_attentions_different_times() {
     let mut config = TestConfigBuilder::new().build();
 
     config.attentions = vec![
@@ -415,7 +415,7 @@ async fn test_multiple_attentions_different_times() {
 ///
 /// Attention should only trigger on configured days.
 #[tokio::test(start_paused = true)]
-async fn test_attention_specific_days() {
+async fn attention_specific_days() {
     // Only on Monday and Wednesday
     let config = config_with_attention(
         10,
@@ -441,7 +441,7 @@ async fn test_attention_specific_days() {
 ///
 /// Attention configured for weekdays only.
 #[tokio::test(start_paused = true)]
-async fn test_attention_weekdays_only() {
+async fn attention_weekdays_only() {
     let config = config_with_attention(10, 0, true, workdays());
 
     let env = create_manager_test_env(config);
@@ -461,7 +461,7 @@ async fn test_attention_weekdays_only() {
 ///
 /// Attention configured for weekend only.
 #[tokio::test(start_paused = true)]
-async fn test_attention_weekend_only() {
+async fn attention_weekend_only() {
     let config = config_with_attention(10, 0, true, weekend_days());
 
     let env = create_manager_test_env(config);
@@ -485,7 +485,7 @@ async fn test_attention_weekend_only() {
 ///
 /// If attention time already passed today, should schedule for next valid day.
 #[tokio::test(start_paused = true)]
-async fn test_attention_time_passed() {
+async fn attention_time_passed() {
     // Set attention for early morning (already passed in test)
     let config = config_with_attention(1, 0, true, all_weekdays());
 
@@ -506,7 +506,7 @@ async fn test_attention_time_passed() {
 ///
 /// Attention scheduled at midnight (00:00).
 #[tokio::test(start_paused = true)]
-async fn test_attention_at_midnight() {
+async fn attention_at_midnight() {
     let config = config_with_attention(0, 0, true, all_weekdays());
 
     let env = create_manager_test_env(config);
@@ -526,7 +526,7 @@ async fn test_attention_at_midnight() {
 ///
 /// Attention scheduled at end of day.
 #[tokio::test(start_paused = true)]
-async fn test_attention_at_end_of_day() {
+async fn attention_at_end_of_day() {
     let config = config_with_attention(23, 59, true, all_weekdays());
 
     let env = create_manager_test_env(config);
@@ -546,7 +546,7 @@ async fn test_attention_at_end_of_day() {
 ///
 /// Attention with empty `days_of_week` list.
 #[tokio::test(start_paused = true)]
-async fn test_attention_no_valid_days() {
+async fn attention_no_valid_days() {
     let config = config_with_attention(10, 0, true, vec![]); // No days
 
     let env = create_manager_test_env(config);
@@ -570,7 +570,7 @@ async fn test_attention_no_valid_days() {
 ///
 /// Attention timer should coexist with break scheduler.
 #[tokio::test(start_paused = true)]
-async fn test_attention_with_breaks() {
+async fn attention_with_breaks() {
     let mut config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     config.attentions = vec![AttentionSettings {
@@ -602,7 +602,7 @@ async fn test_attention_with_breaks() {
 ///
 /// Pausing should affect both schedulers.
 #[tokio::test(start_paused = true)]
-async fn test_pause_affects_both_schedulers() {
+async fn pause_affects_both_schedulers() {
     let mut config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     config.attentions = vec![AttentionSettings {

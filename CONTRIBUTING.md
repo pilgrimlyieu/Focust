@@ -239,7 +239,7 @@ let config = load_file(path)?;
 // Avoid unwrap() in library code
 // In tests and examples, unwrap() is acceptable
 #[cfg(test)]
-fn test_parsing() {
+fn parsing_works() {
     let config = parse_config("test.toml").unwrap();
 }
 ```
@@ -405,14 +405,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_basic_functionality() {
+    fn basic_basic_functionality_works() {
         let result = calculate(5);
         assert_eq!(result, expected_value);
     }
 
     // For async tests, use tokio::test
     #[tokio::test]
-    async fn test_async_function() {
+    async fn async_function_works() {
         let data = fetch_data().await.unwrap();
         assert!(!data.is_empty());
     }

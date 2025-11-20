@@ -232,7 +232,7 @@ mod tests {
 
     // SchedulerEvent tests
     #[test]
-    fn test_scheduler_event_display() {
+    fn scheduler_event_display() {
         use crate::core::schedule::{AttentionId, BreakId};
         let mini_break = SchedulerEvent::MiniBreak(BreakId::new());
         let long_break = SchedulerEvent::LongBreak(BreakId::new());
@@ -244,7 +244,7 @@ mod tests {
     }
 
     #[test]
-    fn test_scheduler_event_equality() {
+    fn scheduler_event_equality() {
         use crate::core::schedule::BreakId;
         let id = BreakId::new();
         let event1 = SchedulerEvent::MiniBreak(id);
@@ -257,7 +257,7 @@ mod tests {
 
     // Command tests
     #[test]
-    fn test_command_display() {
+    fn command_display() {
         assert_eq!(Command::PostponeBreak.to_string(), "PostponeBreak");
         assert_eq!(Command::SkipBreak.to_string(), "SkipBreak");
         assert_eq!(
@@ -267,20 +267,20 @@ mod tests {
     }
 
     #[test]
-    fn test_command_pause_display() {
+    fn command_pause_display() {
         let cmd = Command::Pause(PauseReason::UserIdle);
         assert_eq!(cmd.to_string(), "Pause(UserIdle)");
     }
 
     // PauseReason tests
     #[test]
-    fn test_pause_reason_equality() {
+    fn pause_reason_equality() {
         assert_eq!(PauseReason::UserIdle, PauseReason::UserIdle);
         assert_ne!(PauseReason::UserIdle, PauseReason::Manual);
     }
 
     #[test]
-    fn test_pause_reason_display() {
+    fn pause_reason_display() {
         assert_eq!(PauseReason::UserIdle.to_string(), "UserIdle");
         assert_eq!(PauseReason::Dnd.to_string(), "Dnd");
         assert_eq!(PauseReason::Manual.to_string(), "Manual");
@@ -289,7 +289,7 @@ mod tests {
 
     // PauseReasons tests
     #[test]
-    fn test_pause_reasons_len() {
+    fn pause_reasons_len() {
         assert_eq!(PauseReasons::empty().len(), 0);
         assert_eq!(PauseReasons::USER_IDLE.len(), 1);
         assert_eq!((PauseReasons::USER_IDLE | PauseReasons::DND).len(), 2);
@@ -297,7 +297,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pause_reasons_active_reasons() {
+    fn pause_reasons_active_reasons() {
         let empty: Vec<_> = PauseReasons::empty().active_reasons().collect();
         assert_eq!(empty, vec![]);
 
@@ -313,7 +313,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pause_reasons_to_vec() {
+    fn pause_reasons_to_vec() {
         assert_eq!(PauseReasons::empty().to_vec(), vec![]);
         assert_eq!(
             PauseReasons::USER_IDLE.to_vec(),

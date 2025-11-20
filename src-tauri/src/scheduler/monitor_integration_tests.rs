@@ -33,7 +33,7 @@ use crate::scheduler::test_helpers::*;
 ///
 /// When user is idle, `IdleMonitor` should send Pause(UserIdle) command.
 #[tokio::test(start_paused = true)]
-async fn test_idle_monitor_triggers_pause() {
+async fn idle_monitor_triggers_pause() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -71,7 +71,7 @@ async fn test_idle_monitor_triggers_pause() {
 ///
 /// When user becomes active, `IdleMonitor` should send Resume(UserIdle).
 #[tokio::test(start_paused = true)]
-async fn test_idle_monitor_resumes() {
+async fn idle_monitor_resumes() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -112,7 +112,7 @@ async fn test_idle_monitor_resumes() {
 ///
 /// When DND mode enabled, `DndMonitor` should pause scheduler.
 #[tokio::test(start_paused = true)]
-async fn test_dnd_monitor_triggers_pause() {
+async fn dnd_monitor_triggers_pause() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -141,7 +141,7 @@ async fn test_dnd_monitor_triggers_pause() {
 ///
 /// When DND mode disabled, `DndMonitor` should resume scheduler.
 #[tokio::test(start_paused = true)]
-async fn test_dnd_monitor_resumes() {
+async fn dnd_monitor_resumes() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -177,7 +177,7 @@ async fn test_dnd_monitor_resumes() {
 ///
 /// When excluded app is active, `AppWhitelistMonitor` should pause.
 #[tokio::test(start_paused = true)]
-async fn test_app_whitelist_monitor_triggers_pause() {
+async fn app_whitelist_monitor_triggers_pause() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -209,7 +209,7 @@ async fn test_app_whitelist_monitor_triggers_pause() {
 ///
 /// When excluded app is no longer active, should resume.
 #[tokio::test(start_paused = true)]
-async fn test_app_whitelist_monitor_resumes() {
+async fn app_whitelist_monitor_resumes() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -252,7 +252,7 @@ async fn test_app_whitelist_monitor_resumes() {
 ///
 /// When multiple monitors detect pause conditions simultaneously.
 #[tokio::test(start_paused = true)]
-async fn test_two_monitors_both_pause() {
+async fn two_monitors_both_pause() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -290,7 +290,7 @@ async fn test_two_monitors_both_pause() {
 ///
 /// When one monitor resumes but another still paused, stay paused.
 #[tokio::test(start_paused = true)]
-async fn test_two_monitors_sequential_resume() {
+async fn two_monitors_sequential_resume() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -345,7 +345,7 @@ async fn test_two_monitors_sequential_resume() {
 ///
 /// All three monitors trigger pause, then clear in different order.
 #[tokio::test(start_paused = true)]
-async fn test_three_monitors_coordinated() {
+async fn three_monitors_coordinated() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -403,7 +403,7 @@ async fn test_three_monitors_coordinated() {
 ///
 /// Monitor rapidly toggling between pause and resume states.
 #[tokio::test(start_paused = true)]
-async fn test_monitor_flapping() {
+async fn monitor_flapping() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -445,7 +445,7 @@ async fn test_monitor_flapping() {
 ///
 /// Monitor pauses, then user also manually pauses.
 #[tokio::test(start_paused = true)]
-async fn test_monitor_and_user_pause() {
+async fn monitor_and_user_pause() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -485,7 +485,7 @@ async fn test_monitor_and_user_pause() {
 ///
 /// Monitor condition clears but user pause remains.
 #[tokio::test(start_paused = true)]
-async fn test_monitor_resumes_user_still_paused() {
+async fn monitor_resumes_user_still_paused() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -526,7 +526,7 @@ async fn test_monitor_resumes_user_still_paused() {
 ///
 /// User tries to manually resume while monitor still has pause condition.
 #[tokio::test(start_paused = true)]
-async fn test_user_resume_during_monitor_pause() {
+async fn user_resume_during_monitor_pause() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -571,7 +571,7 @@ async fn test_user_resume_during_monitor_pause() {
 ///
 /// Simulates chaotic environment with all monitors rapidly changing.
 #[tokio::test(start_paused = true)]
-async fn test_monitor_storm() {
+async fn monitor_storm() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -615,7 +615,7 @@ async fn test_monitor_storm() {
 ///
 /// Simulates realistic scenario where conditions cascade.
 #[tokio::test(start_paused = true)]
-async fn test_monitor_cascade() {
+async fn monitor_cascade() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -687,7 +687,7 @@ async fn test_monitor_cascade() {
 ///
 /// Monitors may send redundant pause/resume commands due to check intervals.
 #[tokio::test(start_paused = true)]
-async fn test_monitor_redundant_commands() {
+async fn monitor_redundant_commands() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -736,7 +736,7 @@ async fn test_monitor_redundant_commands() {
 ///
 /// Stress test: all possible pause reasons active at once.
 #[tokio::test(start_paused = true)]
-async fn test_all_four_pause_reasons() {
+async fn all_four_pause_reasons() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -799,7 +799,7 @@ async fn test_all_four_pause_reasons() {
 /// Test that session state is properly managed and accessible.
 /// This verifies the `SharedState` session tracking APIs work correctly.
 #[tokio::test(start_paused = true)]
-async fn test_monitor_during_break_session() {
+async fn monitor_during_break_session() {
     let config = TestConfigBuilder::new()
         .mini_break_interval_s(30)
         .mini_break_duration_s(10)

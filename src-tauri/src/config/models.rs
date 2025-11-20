@@ -88,7 +88,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_default_config_toml_serialization() {
+    fn default_config_toml_serialization() {
         let config = AppConfig::default();
         let toml_string = toml::to_string_pretty(&config).expect("Failed to serialize config");
         let deserialized: AppConfig =
@@ -98,7 +98,7 @@ mod tests {
     }
 
     #[test]
-    fn test_default_config_json_serialization() {
+    fn default_config_json_serialization() {
         let config = AppConfig::default();
         let json_string =
             serde_json::to_string_pretty(&config).expect("Failed to serialize config to JSON");
@@ -110,7 +110,7 @@ mod tests {
     }
 
     #[test]
-    fn test_config_camel_case_fields() {
+    fn config_camel_case_fields() {
         let config = AppConfig::default();
         let json_string = serde_json::to_string(&config).expect("Failed to serialize");
 
@@ -124,7 +124,7 @@ mod tests {
     }
 
     #[test]
-    fn test_config_default_values() {
+    fn config_default_values() {
         let config = AppConfig::default();
 
         assert!(!config.autostart);
@@ -138,7 +138,7 @@ mod tests {
     }
 
     #[test]
-    fn test_config_clone() {
+    fn config_clone() {
         let config = AppConfig::default();
         let cloned = config.clone();
 

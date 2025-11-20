@@ -305,28 +305,28 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_background_source_solid() {
+    fn background_source_solid() {
         let bg = BackgroundSource::new_solid(HexColor::new("#000000"));
         assert_eq!(bg.current, BackgroundType::Solid);
         assert_eq!(bg.get_solid().unwrap().to_string(), "#000000");
     }
 
     #[test]
-    fn test_background_source_image_path() {
+    fn background_source_image_path() {
         let bg = BackgroundSource::new_image_path("/path/to/image.jpg".to_owned());
         assert_eq!(bg.current, BackgroundType::ImagePath);
         assert_eq!(bg.get_image_path().unwrap(), "/path/to/image.jpg");
     }
 
     #[test]
-    fn test_background_source_image_folder() {
+    fn background_source_image_folder() {
         let bg = BackgroundSource::new_image_folder("/path/to/folder".to_owned());
         assert_eq!(bg.current, BackgroundType::ImageFolder);
         assert_eq!(bg.get_image_folder().unwrap(), "/path/to/folder");
     }
 
     #[test]
-    fn test_background_source_switch_preserves_values() {
+    fn background_source_switch_preserves_values() {
         let mut bg = BackgroundSource::new_solid(HexColor::new("#ABCDEF"));
 
         // Set other values
@@ -351,7 +351,7 @@ mod tests {
     }
 
     #[test]
-    fn test_background_source_clone() {
+    fn background_source_clone() {
         let mut bg = BackgroundSource::new_solid(HexColor::new("#123456"));
         bg.set_image_path("/test.jpg".to_owned());
 
@@ -362,7 +362,7 @@ mod tests {
     }
 
     #[test]
-    fn test_background_source_new_format() {
+    fn background_source_new_format() {
         // New format with all values preserved
         let new_format = r##"{"current":"solid","solid":"#ABCDEF","imagePath":"/test.jpg","imageFolder":"/folder"}"##;
         let bg: BackgroundSource = serde_json::from_str(new_format).unwrap();
@@ -375,7 +375,7 @@ mod tests {
 
     // ThemeSettings tests
     #[test]
-    fn test_theme_settings_default() {
+    fn theme_settings_default() {
         let theme = ThemeSettings::default();
         assert_eq!(theme.background.current, BackgroundType::Solid);
         assert_eq!(theme.blur_radius, 8);
@@ -384,7 +384,7 @@ mod tests {
     }
 
     #[test]
-    fn test_theme_settings_clone() {
+    fn theme_settings_clone() {
         let theme = ThemeSettings::default();
         let cloned = theme.clone();
         assert_eq!(theme.blur_radius, cloned.blur_radius);
@@ -393,7 +393,7 @@ mod tests {
     }
 
     #[test]
-    fn test_theme_settings_custom() {
+    fn theme_settings_custom() {
         let theme = ThemeSettings {
             background: BackgroundSource::new_image_path("/test.jpg".to_owned()),
             text_color: HexColor::new("#FF0000"),
@@ -411,7 +411,7 @@ mod tests {
 
     // FontFamily tests
     #[test]
-    fn test_font_family_creation() {
+    fn font_family_creation() {
         let font = FontFamily("Times New Roman".to_owned());
         let serialized = serde_json::to_string(&font).unwrap();
         let _deserialized: FontFamily = serde_json::from_str(&serialized).unwrap();
@@ -420,7 +420,7 @@ mod tests {
 
     // Serialization tests
     #[test]
-    fn test_hex_color_serialization() {
+    fn hex_color_serialization() {
         let color = HexColor::new("#ABCDEF");
         let json = serde_json::to_string(&color).unwrap();
         let deserialized: HexColor = serde_json::from_str(&json).unwrap();
@@ -428,7 +428,7 @@ mod tests {
     }
 
     #[test]
-    fn test_background_source_serialization() {
+    fn background_source_serialization() {
         let mut bg = BackgroundSource::new_solid(HexColor::new("#123456"));
         bg.set_image_path("/preserved.jpg".to_owned());
 
@@ -441,7 +441,7 @@ mod tests {
     }
 
     #[test]
-    fn test_theme_settings_serialization() {
+    fn theme_settings_serialization() {
         let theme = ThemeSettings::default();
         let json = serde_json::to_string(&theme).unwrap();
         let deserialized: ThemeSettings = serde_json::from_str(&json).unwrap();
@@ -451,7 +451,7 @@ mod tests {
 
     // Boundary tests
     #[test]
-    fn test_theme_settings_opacity_bounds() {
+    fn theme_settings_opacity_bounds() {
         let mut theme = ThemeSettings {
             opacity: 0.0,
             ..Default::default()
@@ -463,7 +463,7 @@ mod tests {
     }
 
     #[test]
-    fn test_theme_settings_blur_radius_max() {
+    fn theme_settings_blur_radius_max() {
         let theme = ThemeSettings {
             blur_radius: u8::MAX,
             ..Default::default()
@@ -472,7 +472,7 @@ mod tests {
     }
 
     #[test]
-    fn test_theme_settings_font_size_range() {
+    fn theme_settings_font_size_range() {
         let mut theme = ThemeSettings {
             font_size: 8,
             ..Default::default()
@@ -484,7 +484,7 @@ mod tests {
     }
 
     #[test]
-    fn test_background_source_persists_all_values() {
+    fn background_source_persists_all_values() {
         // Create background with solid color
         let mut bg = BackgroundSource::new_solid(HexColor::new("#ff0000"));
         bg.set_image_path("/image.jpg".to_owned());
@@ -528,7 +528,7 @@ mod tests {
     }
 
     #[test]
-    fn test_background_source_toml_skips_none_values() {
+    fn background_source_toml_skips_none_values() {
         // Create background with only solid color (other fields are None)
         let bg = BackgroundSource::new_solid(HexColor::new("#ff0000"));
 

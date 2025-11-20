@@ -296,7 +296,7 @@ mod tests {
                 ..Default::default()
             };
 
-            let now = test_local_datetime(2025, 9, 3, 9, 0, 0);
+            let now = get_test_local_datetime(2025, 9, 3, 9, 0, 0);
 
             let result = get_next_attention_time(&attention, now);
 
@@ -314,7 +314,7 @@ mod tests {
                 ..Default::default()
             };
 
-            let now = test_local_datetime(2025, 9, 3, 15, 0, 0);
+            let now = get_test_local_datetime(2025, 9, 3, 15, 0, 0);
 
             let result = get_next_attention_time(&attention, now);
 
@@ -332,7 +332,7 @@ mod tests {
                 ..Default::default()
             };
 
-            let now = test_local_datetime(2025, 9, 3, 9, 0, 0);
+            let now = get_test_local_datetime(2025, 9, 3, 9, 0, 0);
 
             let result = get_next_attention_time(&attention, now);
             assert!(result.is_none());
@@ -347,7 +347,7 @@ mod tests {
                 ..Default::default()
             };
 
-            let now = test_local_datetime(2025, 9, 3, 9, 0, 0);
+            let now = get_test_local_datetime(2025, 9, 3, 9, 0, 0);
 
             let result = get_next_attention_time(&attention, now);
             assert!(result.is_none());
@@ -362,7 +362,7 @@ mod tests {
                 ..Default::default()
             };
 
-            let now = test_local_datetime(2025, 9, 2, 9, 0, 0);
+            let now = get_test_local_datetime(2025, 9, 2, 9, 0, 0);
 
             let result = get_next_attention_time(&attention, now);
 
@@ -383,7 +383,7 @@ mod tests {
                 ..Default::default()
             };
 
-            let now = test_local_datetime(2025, 9, 3, 10, 0, 0);
+            let now = get_test_local_datetime(2025, 9, 3, 10, 0, 0);
 
             let result = get_next_attention_time(&attention, now);
 
@@ -546,7 +546,7 @@ mod tests {
             };
 
             // Current time is exactly 10:00
-            let now = test_local_datetime(2025, 9, 3, 10, 0, 0);
+            let now = get_test_local_datetime(2025, 9, 3, 10, 0, 0);
 
             let result = get_next_attention_time(&attention, now);
 
@@ -566,7 +566,7 @@ mod tests {
             };
 
             // Current time is 20:00 (all times passed)
-            let now = test_local_datetime(2025, 9, 3, 20, 0, 0);
+            let now = get_test_local_datetime(2025, 9, 3, 20, 0, 0);
 
             let result = get_next_attention_time(&attention, now);
 
@@ -587,7 +587,7 @@ mod tests {
             };
 
             // Wednesday 2025-09-03
-            let now = test_local_datetime(2025, 9, 3, 9, 0, 0);
+            let now = get_test_local_datetime(2025, 9, 3, 9, 0, 0);
 
             let result = get_next_attention_time(&attention, now);
 
@@ -607,7 +607,7 @@ mod tests {
             };
 
             // Monday morning
-            let now = test_local_datetime(2025, 9, 1, 9, 0, 0);
+            let now = get_test_local_datetime(2025, 9, 1, 9, 0, 0);
 
             let result = get_next_attention_time(&attention, now);
 
@@ -632,7 +632,7 @@ mod tests {
             };
 
             // Test at 23:30 (after last time)
-            let now = test_local_datetime(2025, 9, 3, 23, 30, 0);
+            let now = get_test_local_datetime(2025, 9, 3, 23, 30, 0);
 
             let result = get_next_attention_time(&attention, now);
 
@@ -653,7 +653,7 @@ mod tests {
                 ..Default::default()
             };
 
-            let now = test_local_datetime(2025, 9, 3, 9, 0, 0);
+            let now = get_test_local_datetime(2025, 9, 3, 9, 0, 0);
 
             let result = get_next_attention_time(&attention, now);
             assert!(result.is_none());
@@ -669,7 +669,7 @@ mod tests {
                 ..Default::default()
             };
 
-            let now = test_local_datetime(2025, 9, 3, 9, 0, 0); // Wednesday
+            let now = get_test_local_datetime(2025, 9, 3, 9, 0, 0); // Wednesday
 
             let result = get_next_attention_time(&attention, now);
 
@@ -689,7 +689,7 @@ mod tests {
                 ..Default::default()
             };
 
-            let now = test_local_datetime(2025, 9, 1, 10, 0, 0); // Monday
+            let now = get_test_local_datetime(2025, 9, 1, 10, 0, 0); // Monday
 
             let result = get_next_attention_time(&attention, now);
 

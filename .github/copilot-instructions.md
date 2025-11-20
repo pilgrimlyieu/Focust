@@ -358,7 +358,7 @@ bun test                   # Frontend tests
 **Test pattern** (Rust):
 ```rust
 #[tokio::test(start_paused = true)]  // Simulate time
-async fn test_break_timing() {
+async fn break_timing_works() {
     // Arrange
     let scheduler = create_test_scheduler();
     

@@ -127,7 +127,7 @@ mod tests {
     use std::str::FromStr;
 
     #[test]
-    fn test_log_level_parsing() {
+    fn log_level_parsing() {
         // strum is configured with serialize_all = "lowercase"
         assert_eq!(LogLevel::from_str("trace").unwrap(), LogLevel::Trace);
         assert_eq!(LogLevel::from_str("debug").unwrap(), LogLevel::Debug);
@@ -144,7 +144,7 @@ mod tests {
     }
 
     #[test]
-    fn test_log_level_display() {
+    fn log_level_display() {
         assert_eq!(LogLevel::Trace.to_string(), "trace");
         assert_eq!(LogLevel::Debug.to_string(), "debug");
         assert_eq!(LogLevel::Info.to_string(), "info");
@@ -153,7 +153,7 @@ mod tests {
     }
 
     #[test]
-    fn test_log_level_to_tracing_level() {
+    fn log_level_to_tracing_level() {
         assert_eq!(LogLevel::Trace.to_tracing_level(), Level::TRACE);
         assert_eq!(LogLevel::Debug.to_tracing_level(), Level::DEBUG);
         assert_eq!(LogLevel::Info.to_tracing_level(), Level::INFO);
@@ -162,7 +162,7 @@ mod tests {
     }
 
     #[test]
-    fn test_log_level_serialization() {
+    fn log_level_serialization() {
         // JSON serialization
         let level = LogLevel::Info;
         let json = serde_json::to_string(&level).unwrap();

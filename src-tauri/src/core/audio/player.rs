@@ -186,7 +186,7 @@ mod tests {
     }
 
     #[test]
-    fn test_audio_player_creation() {
+    fn audio_player_creation() {
         // AudioPlayer::new() requires actual audio hardware
         match AudioPlayer::new() {
             Ok(player) => {
@@ -201,7 +201,7 @@ mod tests {
     }
 
     #[test]
-    fn test_invalid_volume() {
+    fn invalid_volume() {
         if let Ok(mut player) = AudioPlayer::new() {
             assert!(player.set_volume(-0.1).is_err());
             assert!(player.set_volume(1.1).is_err());
@@ -212,7 +212,7 @@ mod tests {
     }
 
     #[test]
-    fn test_play_nonexistent_file() {
+    fn play_nonexistent_file() {
         if let Ok(mut player) = AudioPlayer::new() {
             let result = player.play("/nonexistent/file.mp3", 0.5);
             assert!(result.is_err());
@@ -226,7 +226,7 @@ mod tests {
     }
 
     #[test]
-    fn test_play_invalid_audio_file() {
+    fn play_invalid_audio_file() {
         let temp_dir = TempDir::new().unwrap();
         let invalid_file = temp_dir.path().join("invalid.mp3");
         std::fs::write(&invalid_file, b"not a valid audio file").unwrap();
@@ -244,7 +244,7 @@ mod tests {
     }
 
     #[test]
-    fn test_play_valid_audio_file() {
+    fn play_valid_audio_file() {
         let temp_dir = TempDir::new().unwrap();
         let audio_file = create_test_audio_file(&temp_dir, "test.wav");
 
@@ -257,7 +257,7 @@ mod tests {
     }
 
     #[test]
-    fn test_stop_when_not_playing() {
+    fn stop_when_not_playing() {
         if let Ok(mut player) = AudioPlayer::new() {
             player.stop();
             assert!(!player.is_playing());
@@ -265,7 +265,7 @@ mod tests {
     }
 
     #[test]
-    fn test_volume_persistence() {
+    fn volume_persistence() {
         if let Ok(mut player) = AudioPlayer::new() {
             player.set_volume(0.3).unwrap();
             assert_eq!(player.volume(), 0.3);
@@ -276,7 +276,7 @@ mod tests {
     }
 
     #[test]
-    fn test_play_with_invalid_volume() {
+    fn play_with_invalid_volume() {
         let temp_dir = TempDir::new().unwrap();
         let audio_file = create_test_audio_file(&temp_dir, "test.wav");
 
@@ -293,7 +293,7 @@ mod tests {
     }
 
     #[test]
-    fn test_sequential_playback() {
+    fn sequential_playback() {
         let temp_dir = TempDir::new().unwrap();
         let audio_file1 = create_test_audio_file(&temp_dir, "test1.wav");
         let audio_file2 = create_test_audio_file(&temp_dir, "test2.wav");
