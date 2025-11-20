@@ -111,7 +111,7 @@ mod tests {
 
     #[test]
     fn test_app_exclusion_pause() {
-        let exclusion = AppExclusion::pause(vec!["chrome.exe".to_string()]);
+        let exclusion = AppExclusion::pause(vec!["chrome.exe".to_owned()]);
         assert_eq!(exclusion.rule, ExclusionRule::Pause);
         assert!(exclusion.active);
         assert_eq!(exclusion.processes, vec!["chrome.exe"]);
@@ -119,7 +119,7 @@ mod tests {
 
     #[test]
     fn test_app_exclusion_resume() {
-        let exclusion = AppExclusion::resume(vec!["vscode.exe".to_string()]);
+        let exclusion = AppExclusion::resume(vec!["vscode.exe".to_owned()]);
         assert_eq!(exclusion.rule, ExclusionRule::Resume);
         assert!(exclusion.active);
         assert_eq!(exclusion.processes, vec!["vscode.exe"]);
@@ -127,7 +127,7 @@ mod tests {
 
     #[test]
     fn test_matches_exact() {
-        let exclusion = AppExclusion::pause(vec!["chrome.exe".to_string()]);
+        let exclusion = AppExclusion::pause(vec!["chrome.exe".to_owned()]);
         assert!(exclusion.matches("chrome.exe"));
         assert!(exclusion.matches("Chrome.exe")); // Case insensitive
         assert!(exclusion.matches("CHROME.EXE"));
@@ -135,14 +135,14 @@ mod tests {
 
     #[test]
     fn test_matches_path() {
-        let exclusion = AppExclusion::pause(vec!["chrome.exe".to_string()]);
+        let exclusion = AppExclusion::pause(vec!["chrome.exe".to_owned()]);
         assert!(exclusion.matches("C:\\Program Files\\Google\\Chrome\\chrome.exe"));
         assert!(exclusion.matches("/usr/bin/chrome.exe"));
     }
 
     #[test]
     fn test_matches_partial() {
-        let exclusion = AppExclusion::pause(vec!["chrome".to_string()]);
+        let exclusion = AppExclusion::pause(vec!["chrome".to_owned()]);
         assert!(exclusion.matches("chrome.exe"));
         assert!(exclusion.matches("google-chrome"));
         assert!(exclusion.matches("Chrome Browser.app"));
@@ -151,9 +151,9 @@ mod tests {
     #[test]
     fn test_matches_multiple_patterns() {
         let exclusion = AppExclusion::pause(vec![
-            "chrome.exe".to_string(),
-            "firefox.exe".to_string(),
-            "safari".to_string(),
+            "chrome.exe".to_owned(),
+            "firefox.exe".to_owned(),
+            "safari".to_owned(),
         ]);
 
         assert!(exclusion.matches("chrome.exe"));
@@ -164,7 +164,7 @@ mod tests {
 
     #[test]
     fn test_matches_inactive() {
-        let mut exclusion = AppExclusion::pause(vec!["chrome.exe".to_string()]);
+        let mut exclusion = AppExclusion::pause(vec!["chrome.exe".to_owned()]);
         exclusion.active = false;
         assert!(!exclusion.matches("chrome.exe"));
     }
@@ -177,7 +177,7 @@ mod tests {
 
     #[test]
     fn test_serialization() {
-        let exclusion = AppExclusion::pause(vec!["chrome.exe".to_string()]);
+        let exclusion = AppExclusion::pause(vec!["chrome.exe".to_owned()]);
         let json = serde_json::to_string(&exclusion).unwrap();
         assert!(json.contains("\"rule\":\"pause\""));
         assert!(json.contains("\"active\":true"));

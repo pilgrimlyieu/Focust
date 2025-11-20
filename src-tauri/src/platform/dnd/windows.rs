@@ -44,10 +44,9 @@ const MAX_BUFFER_SIZE: u32 = 1024;
 const EXPECTED_STATE_SIZE: u32 = mem::size_of::<FocusAssistState>() as u32;
 
 /// Wrapper to make `WnfUserSubscription` pointer Send
-/// Safety: The WNF subscription is thread-safe and can be safely sent between threads
 struct SendPtr(*mut WnfUserSubscription);
 
-// SAFETY: WNF subscription handles are thread-safe
+/// SAFETY: The WNF subscription is thread-safe and can be safely sent between threads
 unsafe impl Send for SendPtr {}
 unsafe impl Sync for SendPtr {}
 
@@ -130,7 +129,7 @@ impl WindowsDndMonitor {
     }
 
     /// Get current Focus Assist state
-    #[allow(clippy::unused_async)] // for consistency with other platforms
+    #[expect(clippy::unused_async, reason = "for consistency with other platforms")]
     pub async fn is_enabled(&self) -> Result<bool> {
         Ok(query_focus_assist_state())
     }
@@ -344,7 +343,6 @@ fn subscribe_to_focus_assist(
 /// # Safety
 /// This function uses undocumented Windows WNF API. All errors are caught and logged
 /// without propagating. Panics are caught to prevent app crashes during cleanup.
-#[allow(clippy::unnecessary_wraps)]
 fn unsubscribe_from_focus_assist(subscription: *mut WnfUserSubscription) {
     if !is_valid_ptr(subscription) {
         tracing::warn!("Invalid subscription pointer during unsubscribe: {subscription:p}");

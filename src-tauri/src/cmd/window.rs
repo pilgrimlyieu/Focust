@@ -20,7 +20,6 @@ pub async fn open_settings_window<R: Runtime>(app: AppHandle<R>) -> Result<(), S
 /// 4. Result: deadlock - window appears frozen
 ///
 /// Solution: Return immediately, spawn async task to close windows after a small delay
-#[allow(clippy::needless_pass_by_value)]
 #[tauri::command]
 pub async fn close_all_prompt_windows<R: Runtime>(
     app: AppHandle<R>,

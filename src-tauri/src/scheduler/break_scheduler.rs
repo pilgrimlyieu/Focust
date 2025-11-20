@@ -38,9 +38,9 @@ impl Display for BreakSchedulerState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let state_str = match self {
             BreakSchedulerState::Paused(reason) => format!("Paused({reason})"),
-            BreakSchedulerState::Idle => "Idle".to_string(),
-            BreakSchedulerState::WaitingForNotification(_) => "WaitingForNotification".to_string(),
-            BreakSchedulerState::WaitingForBreak(_) => "WaitingForBreak".to_string(),
+            BreakSchedulerState::Idle => "Idle".to_owned(),
+            BreakSchedulerState::WaitingForNotification(_) => "WaitingForNotification".to_owned(),
+            BreakSchedulerState::WaitingForBreak(_) => "WaitingForBreak".to_owned(),
             BreakSchedulerState::InBreak(info) => format!("InBreak({})", info.event),
         };
         write!(f, "{state_str}")
@@ -90,21 +90,21 @@ where
 
     /// Get current state as string (for testing)
     #[cfg(test)]
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     pub fn get_state(&self) -> String {
         format!("{}", self.state)
     }
 
     /// Get mini break counter (for testing)
     #[cfg(test)]
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     pub fn get_mini_break_counter(&self) -> u8 {
         self.mini_break_counter
     }
 
     /// Get last break time (for testing)
     #[cfg(test)]
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     pub fn get_last_break_time(&self) -> Option<DateTime<Utc>> {
         self.last_break_time
     }
@@ -418,7 +418,6 @@ where
     }
 
     /// Execute a break: create window and play audio, then wait for completion
-    #[allow(clippy::unused_async)]
     async fn execute_break(&mut self, info: BreakInfo) {
         tracing::info!("Executing break: {}", info.event);
         let event = info.event;
@@ -456,6 +455,7 @@ where
         #[cfg(test)]
         {
             // In tests, just log that we would create windows
+            futures::future::ready(()).await; // yield to allow async context
             tracing::debug!("Test mode: skipping window creation for event: {event}");
         }
     }
@@ -1028,7 +1028,7 @@ mod tests {
         fn uses_first_matching_schedule() {
             // Schedule 1: 09:00-12:00, 30-minute intervals
             let schedule1 = ScheduleSettings {
-                name: "Morning".to_string(),
+                name: "Morning".to_owned(),
                 enabled: true,
                 time_range: time_range(9, 0, 12, 0),
                 days_of_week: workdays(),
@@ -1042,7 +1042,7 @@ mod tests {
 
             // Schedule 2: 13:00-17:00, 20-minute intervals
             let schedule2 = ScheduleSettings {
-                name: "Afternoon".to_string(),
+                name: "Afternoon".to_owned(),
                 enabled: true,
                 time_range: time_range(13, 0, 17, 0),
                 days_of_week: workdays(),

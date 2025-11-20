@@ -1,4 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{
+    Arc, Mutex,
+    atomic::{AtomicBool, Ordering},
+};
 
 use tauri::{
     AppHandle, Listener, Manager, Runtime,
@@ -21,11 +24,12 @@ use crate::{config::SharedConfig, platform::i18n::LANGUAGE_FALLBACK};
 /// Global state to track scheduler pause status and tray reference for menu updates
 #[derive(Clone)]
 pub struct TrayState {
-    pub scheduler_paused: Arc<Mutex<bool>>,
+    pub scheduler_paused: Arc<AtomicBool>,
     pub tray_sender: Arc<Mutex<Option<tokio::sync::mpsc::UnboundedSender<TrayUpdate>>>>,
 }
 
 /// Messages for updating the tray menu
+#[non_exhaustive]
 pub enum TrayUpdate {
     UpdateMenu(bool), // bool: paused state
 }
@@ -77,7 +81,7 @@ fn initialize_tray_state<R: Runtime>(
 ) -> (TrayState, mpsc::UnboundedReceiver<TrayUpdate>) {
     let (tray_tx, tray_rx) = mpsc::unbounded_channel::<TrayUpdate>();
     let tray_state = TrayState {
-        scheduler_paused: Arc::new(Mutex::new(false)),
+        scheduler_paused: Arc::new(AtomicBool::new(false)),
         tray_sender: Arc::new(Mutex::new(Some(tray_tx))),
     };
     app.manage(tray_state.clone());
@@ -91,7 +95,7 @@ async fn get_localized_strings<R: Runtime>(app: &AppHandle<R>) -> LanguageString
         config.language.clone()
     } else {
         tracing::warn!("Config not yet loaded, using default language {LANGUAGE_FALLBACK}");
-        LANGUAGE_FALLBACK.to_string()
+        LANGUAGE_FALLBACK.to_owned()
     };
     get_strings(&lang)
 }
@@ -148,9 +152,9 @@ fn listen_for_scheduler_status<R: Runtime>(app: &AppHandle<R>, tray_state: TrayS
     app.listen("scheduler-status", move |event| {
         if let Ok(status) = serde_json::from_str::<SchedulerStatus>(event.payload()) {
             // Update stored state
-            if let Ok(mut paused) = tray_state.scheduler_paused.lock() {
-                *paused = status.paused;
-            }
+            tray_state
+                .scheduler_paused
+                .store(status.paused, Ordering::Relaxed);
 
             // Send update message to tray update task
             if let Ok(sender_option) = tray_state.tray_sender.lock()
@@ -208,10 +212,8 @@ fn toggle_pause<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {
     let scheduler_cmd = app.state::<SchedulerCmd>();
 
     // Get current pause state from tray state
-    let is_paused = if let Some(tray_state) = app.try_state::<TrayState>()
-        && let Ok(paused) = tray_state.scheduler_paused.lock()
-    {
-        *paused
+    let is_paused = if let Some(tray_state) = app.try_state::<TrayState>() {
+        tray_state.scheduler_paused.load(Ordering::Relaxed)
     } else {
         false
     };

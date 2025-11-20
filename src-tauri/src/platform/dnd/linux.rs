@@ -1,4 +1,3 @@
-#![allow(clippy::doc_markdown)]
 //! Linux DND monitoring via D-Bus
 //!
 //! This implementation uses D-Bus to monitor DND state across different
@@ -138,7 +137,7 @@ impl LinuxDndMonitor {
     // ========================================================================
 
     /// Monitor KDE Plasma DND via D-Bus
-    #[allow(clippy::unnecessary_wraps)]
+    #[expect(clippy::unnecessary_wraps)]
     fn monitor_kde(&self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
         let last_state = self.last_state.clone();
 
@@ -154,7 +153,7 @@ impl LinuxDndMonitor {
     }
 
     /// Monitor XFCE DND via D-Bus
-    #[allow(clippy::unnecessary_wraps)]
+    #[expect(clippy::unnecessary_wraps)]
     fn monitor_xfce(&self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
         let last_state = self.last_state.clone();
 
@@ -170,7 +169,7 @@ impl LinuxDndMonitor {
     }
 
     /// Monitor GNOME DND via dconf watch
-    #[allow(clippy::unnecessary_wraps)]
+    #[expect(clippy::unnecessary_wraps)]
     fn monitor_gnome(&self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
         let last_state = self.last_state.clone();
 
@@ -186,7 +185,7 @@ impl LinuxDndMonitor {
     }
 
     /// Monitor Cinnamon DND via dconf watch
-    #[allow(clippy::unnecessary_wraps)]
+    #[expect(clippy::unnecessary_wraps)]
     fn monitor_cinnamon(&self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
         let last_state = self.last_state.clone();
 
@@ -202,7 +201,7 @@ impl LinuxDndMonitor {
     }
 
     /// Monitor MATE DND via dconf watch
-    #[allow(clippy::unnecessary_wraps)]
+    #[expect(clippy::unnecessary_wraps)]
     fn monitor_mate(&self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
         let last_state = self.last_state.clone();
 
@@ -218,7 +217,7 @@ impl LinuxDndMonitor {
     }
 
     /// Monitor LXQt DND via config file polling (fallback)
-    #[allow(clippy::unnecessary_wraps)]
+    #[expect(clippy::unnecessary_wraps)]
     fn monitor_lxqt(&self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
         let last_state = self.last_state.clone();
 

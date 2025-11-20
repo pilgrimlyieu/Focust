@@ -61,6 +61,7 @@ impl Default for LogLevel {
 /// # Arguments
 /// * `log_dir` - Directory to store log files
 /// * `log_level` - Log level configuration
+#[expect(clippy::unwrap_used, clippy::expect_used)]
 pub fn init_logging(log_dir: &PathBuf, log_level: LogLevel) -> Result<(), String> {
     // Create log directory if it doesn't exist
     std::fs::create_dir_all(log_dir).map_err(|e| format!("Failed to create log directory: {e}"))?;
@@ -135,11 +136,11 @@ mod tests {
         assert_eq!(LogLevel::from_str("error").unwrap(), LogLevel::Error);
 
         // Case sensitive - uppercase should fail with default strum config
-        assert!(LogLevel::from_str("INFO").is_err());
-        assert!(LogLevel::from_str("Debug").is_err());
+        LogLevel::from_str("INFO").unwrap_err();
+        LogLevel::from_str("Debug").unwrap_err();
 
         // Invalid input
-        assert!(LogLevel::from_str("invalid").is_err());
+        LogLevel::from_str("invalid").unwrap_err();
     }
 
     #[test]

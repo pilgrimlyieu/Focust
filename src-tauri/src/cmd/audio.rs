@@ -17,7 +17,6 @@ use crate::tauri_error;
 /// Tauri command to play an audio file (non-macOS)
 #[cfg(not(target_os = "macos"))]
 #[tauri::command]
-#[allow(clippy::needless_pass_by_value)]
 pub async fn play_audio(
     player: State<'_, AudioPlayerState>,
     path: String,
@@ -46,7 +45,6 @@ pub async fn play_audio(path: String, volume: f32) -> Result<(), String> {
 /// Tauri command to play a builtin audio resource (non-macOS)
 #[cfg(not(target_os = "macos"))]
 #[tauri::command]
-#[allow(clippy::needless_pass_by_value)]
 pub async fn play_builtin_audio(
     app: AppHandle,
     player: State<'_, AudioPlayerState>,
@@ -88,7 +86,6 @@ pub async fn play_builtin_audio(
 /// Tauri command to stop audio playback (non-macOS)
 #[cfg(not(target_os = "macos"))]
 #[tauri::command]
-#[allow(clippy::needless_pass_by_value)]
 pub async fn stop_audio(player: State<'_, AudioPlayerState>) -> Result<(), String> {
     tracing::debug!("stop_audio command called");
     audio::stop_audio(&player)

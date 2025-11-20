@@ -144,7 +144,7 @@ mod tests {
 
     #[test]
     fn test_app_whitelist_monitor_creation() {
-        let exclusions = vec![AppExclusion::pause(vec!["chrome.exe".to_string()])];
+        let exclusions = vec![AppExclusion::pause(vec!["chrome.exe".to_owned()])];
         let monitor = AppWhitelistMonitor::new(exclusions);
 
         assert_eq!(monitor.name(), "AppWhitelistMonitor");
@@ -165,8 +165,8 @@ mod tests {
         assert_eq!(monitor.exclusions.len(), 0);
 
         let new_exclusions = vec![
-            AppExclusion::pause(vec!["chrome.exe".to_string()]),
-            AppExclusion::pause(vec!["firefox.exe".to_string()]),
+            AppExclusion::pause(vec!["chrome.exe".to_owned()]),
+            AppExclusion::pause(vec!["firefox.exe".to_owned()]),
         ];
 
         monitor.update_exclusions(new_exclusions);
@@ -181,7 +181,7 @@ mod tests {
 
     #[test]
     fn test_check_processes_inactive_exclusion() {
-        let mut exclusion = AppExclusion::pause(vec!["nonexistent.exe".to_string()]);
+        let mut exclusion = AppExclusion::pause(vec!["nonexistent.exe".to_owned()]);
         exclusion.active = false;
 
         let mut monitor = AppWhitelistMonitor::new(vec![exclusion]);

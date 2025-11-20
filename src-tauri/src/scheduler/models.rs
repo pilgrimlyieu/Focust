@@ -16,6 +16,7 @@ use crate::core::schedule::{AttentionId, BreakId};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(tag = "type", content = "data", rename_all = "camelCase")]
 #[ts(export, rename_all = "camelCase")]
+#[non_exhaustive]
 pub enum SchedulerEvent {
     MiniBreak(BreakId),
     LongBreak(BreakId),
@@ -80,6 +81,7 @@ pub(crate) struct BreakInfo {
 
 /// Commands sent to the scheduler from external sources
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub enum Command {
     /// Update the scheduler configuration
     UpdateConfig(AppConfig),
@@ -136,6 +138,7 @@ impl Display for Command {
 #[strum(serialize_all = "PascalCase")]
 #[serde(rename_all = "camelCase")]
 #[ts(export, rename_all = "camelCase")]
+#[non_exhaustive]
 pub enum PauseReason {
     UserIdle,
     Dnd,
@@ -168,7 +171,7 @@ impl From<PauseReason> for PauseReasons {
 impl PauseReasons {
     /// Returns the number of active pause reasons
     #[must_use]
-    #[allow(clippy::len_without_is_empty)]
+    #[expect(clippy::len_without_is_empty)]
     pub fn len(self) -> usize {
         self.bits().count_ones() as usize
     }

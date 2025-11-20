@@ -151,7 +151,7 @@ pub struct ScheduleSettings {
 impl Default for ScheduleSettings {
     fn default() -> Self {
         ScheduleSettings {
-            name: "Default Schedule".to_string(),
+            name: "Default Schedule".to_owned(),
             enabled: true,
             time_range: TimeRange::default(),
             days_of_week: vec![
@@ -233,7 +233,7 @@ impl Default for AttentionSettings {
     fn default() -> Self {
         AttentionSettings {
             id: AttentionId::new(),
-            name: "Default Attention".to_string(),
+            name: "Default Attention".to_owned(),
             enabled: true,
             theme: ThemeSettings::default(),
             times: ShortTimes::default(),
@@ -246,8 +246,8 @@ impl Default for AttentionSettings {
                 Weekday::Sat,
                 Weekday::Sun,
             ],
-            title: "Attention Reminder".to_string(),
-            message: "This is an attention reminder.".to_string(),
+            title: "Attention Reminder".to_owned(),
+            message: "This is an attention reminder.".to_owned(),
             duration_s: 5, // Default to 5 seconds
         }
     }

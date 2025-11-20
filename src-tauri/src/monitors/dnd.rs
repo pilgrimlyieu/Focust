@@ -144,7 +144,7 @@ impl Monitor for DndMonitor {
                     tracing::error!("DND event channel disconnected");
                     self.available = false;
                     return Err(MonitorError::CheckFailed(
-                        "Event channel disconnected".to_string(),
+                        "Event channel disconnected".to_owned(),
                     ));
                 }
             }

@@ -117,7 +117,7 @@ async fn check_focus_mode_status() -> Result<bool> {
 // ============================================================================
 
 /// Poll Focus Mode status with optional adaptive interval
-#[allow(clippy::unnecessary_wraps)]
+#[expect(clippy::unnecessary_wraps)]
 async fn poll_focus_mode(
     sender: mpsc::Sender<DndEvent>,
     last_state: Arc<AsyncMutex<bool>>,

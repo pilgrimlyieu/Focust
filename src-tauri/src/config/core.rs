@@ -125,7 +125,7 @@ async fn load_advanced_config(config_path: &PathBuf) -> Result<AdvancedConfig> {
 }
 
 #[cfg(test)]
-#[allow(clippy::float_cmp)]
+#[expect(clippy::float_cmp)]
 mod tests {
     use super::*;
 
@@ -166,6 +166,6 @@ mod tests {
             .extract::<AppConfig>();
 
         // Should fail due to type mismatch
-        assert!(result.is_err());
+        result.unwrap_err();
     }
 }

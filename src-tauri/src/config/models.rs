@@ -64,7 +64,7 @@ impl Default for AppConfig {
             inactive_s: 300,
             all_screens: false,
             language: detect_system_language(),
-            theme_mode: "system".to_string(),
+            theme_mode: "system".to_owned(),
             postpone_shortcut: String::new(),
             window_size: 0.8, // Default 80% of screen size
             schedules: vec![ScheduleSettings::default()],
@@ -77,9 +77,7 @@ impl Default for AppConfig {
 
 /// Detect system language and return appropriate locale code
 fn detect_system_language() -> String {
-    sys_locale::get_locale()
-        .inspect(|loc| println!("Detected system locale: {loc}"))
-        .unwrap_or_else(|| LANGUAGE_FALLBACK.to_string())
+    sys_locale::get_locale().unwrap_or_else(|| LANGUAGE_FALLBACK.to_owned())
 }
 
 /// Shared application configuration wrapped in a `RwLock` for thread-safe access

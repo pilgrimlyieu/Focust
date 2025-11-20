@@ -39,7 +39,7 @@ pub struct TestConfigBuilder {
     config: AppConfig,
 }
 
-#[allow(dead_code)]
+#[expect(dead_code)]
 impl TestConfigBuilder {
     /// Create a new builder with default test configuration
     ///
@@ -51,7 +51,7 @@ impl TestConfigBuilder {
     /// - Notification: 0s before (disabled)
     pub fn new() -> Self {
         let default_schedule = ScheduleSettings {
-            name: "Test Schedule".to_string(),
+            name: "Test Schedule".to_owned(),
             enabled: true,
             time_range: TimeRange {
                 start: NaiveTime::MIN,
@@ -327,7 +327,7 @@ pub fn assert_time_near(actual: DateTime<Utc>, expected: DateTime<Utc>, toleranc
 }
 
 /// Assert that an option contains a value within a time tolerance
-#[allow(unused)]
+#[expect(unused)]
 pub fn assert_time_option_near(
     actual: Option<DateTime<Utc>>,
     expected: DateTime<Utc>,
@@ -353,14 +353,14 @@ pub fn assert_duration_near(actual_seconds: i64, expected_seconds: i64, toleranc
 // ============================================================================
 
 /// Create a minimal schedule for testing specific scenarios
-#[allow(unused)]
+#[expect(unused)]
 pub fn minimal_schedule(
     time_range: TimeRange,
     days: Vec<Weekday>,
     mini_interval_s: u32,
 ) -> ScheduleSettings {
     ScheduleSettings {
-        name: "Minimal Schedule".to_string(),
+        name: "Minimal Schedule".to_owned(),
         enabled: true,
         time_range,
         days_of_week: days,
@@ -539,7 +539,6 @@ pub mod state_machine {
     ///
     /// # Panics
     /// Panics if the event was not found
-    #[allow(dead_code)]
     pub fn assert_event_emitted(emitter: &TestEventEmitter, event_name: &str) -> serde_json::Value {
         emitter
             .get_events_by_name(event_name)
@@ -561,7 +560,7 @@ pub mod state_machine {
     ///
     /// # Panics
     /// Panics if the event was found
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     pub fn assert_event_not_emitted(emitter: &TestEventEmitter, event_name: &str) {
         assert!(
             !emitter.has_event(event_name),
@@ -570,7 +569,7 @@ pub mod state_machine {
     }
 
     /// Clear all recorded events
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     pub fn clear_events(emitter: &TestEventEmitter) {
         emitter.clear();
     }
@@ -590,7 +589,7 @@ pub mod state_machine {
     ///
     /// # Returns
     /// The event payload if found, None if timeout
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     pub async fn wait_for_event(
         emitter: &TestEventEmitter,
         event_name: &str,
@@ -614,7 +613,7 @@ pub mod state_machine {
     /// * `status` - The `SchedulerStatus` to check
     /// * `expected_kind` - Expected event type (or None if should be idle)
     /// * `expected_seconds_tolerance` - Tolerance for time comparison (seconds)
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     pub fn assert_next_event_matches(
         status: &SchedulerStatus,
         expected_kind: Option<SchedulerEvent>,
@@ -659,7 +658,7 @@ pub mod state_machine {
     }
 
     /// Assert that scheduler is in a specific state (via state string)
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     pub fn assert_scheduler_state_contains(state_str: &str, expected_substr: &str) {
         assert!(
             state_str.contains(expected_substr),
@@ -691,7 +690,7 @@ pub mod manager {
     ///
     /// Contains all necessary components to test the full scheduler system
     /// including monitors, event routing, and state management.
-    #[allow(dead_code)] // Some fields used conditionally in tests
+    #[expect(dead_code, reason = "Some fields used conditionally in tests")]
     pub struct ManagerTestEnv {
         pub app_handle: AppHandle<MockRuntime>,
         pub event_emitter: TestEventEmitter,

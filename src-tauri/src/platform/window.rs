@@ -280,7 +280,7 @@ fn build_prompt_payload(
                 id: attention.id.into(),
                 kind: EventKind::Attention,
                 title: attention.title.clone(),
-                message_key: "break.attentionMessage".to_string(),
+                message_key: "break.attentionMessage".to_owned(),
                 message: Some(attention.message.clone()),
                 schedule_name: None,
                 duration: attention.duration_s as i32,
@@ -290,7 +290,7 @@ fn build_prompt_payload(
                 suggestion: None,
                 audio: None,
                 postpone_shortcut: if config.postpone_shortcut.is_empty() {
-                    "P".to_string()
+                    "P".to_owned()
                 } else {
                     config.postpone_shortcut.clone()
                 },
@@ -314,9 +314,9 @@ fn build_prompt_payload(
         kind,
         title: schedule_name.clone(),
         message_key: if kind.is_mini() {
-            "break.miniBreakMessage".to_string()
+            "break.miniBreakMessage".to_owned()
         } else {
-            "break.longBreakMessage".to_string()
+            "break.longBreakMessage".to_owned()
         },
         message: None,
         schedule_name: Some(schedule_name),
@@ -327,7 +327,7 @@ fn build_prompt_payload(
         suggestion,
         audio: Some(break_settings.audio.clone()),
         postpone_shortcut: if config.postpone_shortcut.is_empty() {
-            "P".to_string()
+            "P".to_owned()
         } else {
             config.postpone_shortcut.clone()
         },
@@ -347,7 +347,7 @@ fn resolve_background(source: &BackgroundSource) -> ResolvedBackground {
             .unwrap_or_default(),
         BackgroundType::ImagePath => source
             .get_image_path()
-            .map(|path| ResolvedBackground::new_image(path.to_string()))
+            .map(|path| ResolvedBackground::new_image(path.to_owned()))
             .unwrap_or_default(),
         BackgroundType::ImageFolder => source
             .get_image_folder()
@@ -393,11 +393,7 @@ fn resolve_random_image_from_folder(
         return None;
     }
 
-    let chosen_entry = entries
-        .choose(rng)
-        .expect("Should have chosen an entry as entries is not empty");
-
-    let chosen_path_string = chosen_entry.to_string_lossy().to_string();
+    let chosen_path_string = entries.choose(rng)?.to_string_lossy().to_string();
     tracing::debug!("Chosen background image: {chosen_path_string}");
     Some(ResolvedBackground::new_image(chosen_path_string))
 }

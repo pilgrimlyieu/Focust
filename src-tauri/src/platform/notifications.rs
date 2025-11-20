@@ -44,7 +44,7 @@ pub async fn send_break_notification<R: Runtime>(
         config.language.clone()
     } else {
         tracing::warn!("Config not yet loaded, using default language {LANGUAGE_FALLBACK}");
-        LANGUAGE_FALLBACK.to_string()
+        LANGUAGE_FALLBACK.to_owned()
     };
 
     let strings = i18n::get_strings(&lang);

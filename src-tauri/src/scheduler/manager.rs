@@ -264,14 +264,14 @@ async fn route_event_command(
     break_cmd_tx: &mpsc::Sender<Command>,
     attention_cmd_tx: &mpsc::Sender<Command>,
 ) {
-    if matches!(
-        event,
-        SchedulerEvent::MiniBreak(_) | SchedulerEvent::LongBreak(_)
-    ) {
-        tracing::debug!("Routing {event} command to BreakScheduler");
-        let _ = break_cmd_tx.send(cmd).await;
-    } else if matches!(event, SchedulerEvent::Attention(_)) {
-        tracing::debug!("Routing {event} command to AttentionTimer");
-        let _ = attention_cmd_tx.send(cmd).await;
+    match event {
+        SchedulerEvent::MiniBreak(_) | SchedulerEvent::LongBreak(_) => {
+            tracing::debug!("Routing {event} command to BreakScheduler");
+            let _ = break_cmd_tx.send(cmd).await;
+        }
+        SchedulerEvent::Attention(_) => {
+            tracing::debug!("Routing {event} command to AttentionTimer");
+            let _ = attention_cmd_tx.send(cmd).await;
+        }
     }
 }

@@ -14,13 +14,13 @@ use crate::{config::SharedConfig, core::schedule::AttentionId};
 
 /// A simple timer for attention reminders
 /// Attention timer can be paused/resumed like breaks
-#[allow(dead_code)]
 pub struct AttentionTimer<E, R = tauri::Wry>
 where
     E: EventEmitter,
     R: Runtime,
 {
     app_handle: AppHandle<R>,
+    #[expect(unused)]
     event_emitter: E,
     shutdown_rx: watch::Receiver<()>,
     paused: bool,
@@ -49,7 +49,7 @@ where
 
     /// Check if paused (for testing)
     #[cfg(test)]
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     pub fn is_paused(&self) -> bool {
         self.paused
     }
@@ -397,7 +397,7 @@ mod tests {
         use super::*;
 
         #[test]
-        #[allow(clippy::similar_names)]
+        #[expect(clippy::similar_names)]
         fn returns_none_when_all_disabled() {
             let attention1 = AttentionSettings {
                 enabled: false,

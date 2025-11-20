@@ -1,12 +1,3 @@
-#![warn(clippy::pedantic)]
-#![allow(clippy::missing_docs_in_private_items)]
-#![allow(clippy::missing_errors_doc)]
-#![allow(clippy::missing_panics_doc)]
-#![allow(clippy::cast_possible_truncation)]
-#![allow(clippy::cast_possible_wrap)]
-#![allow(clippy::cast_sign_loss)]
-#![allow(clippy::struct_excessive_bools)]
-
 use tauri::Manager;
 use tauri_plugin_autostart::ManagerExt;
 
@@ -24,7 +15,7 @@ pub mod platform;
 pub mod scheduler;
 pub mod utils;
 
-#[allow(clippy::too_many_lines)]
+#[expect(clippy::too_many_lines, clippy::expect_used, clippy::print_stderr)]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()

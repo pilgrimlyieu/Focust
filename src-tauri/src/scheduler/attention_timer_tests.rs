@@ -39,13 +39,13 @@ fn config_with_attention(
 
     config.attentions = vec![AttentionSettings {
         id: AttentionId::new(),
-        name: "Test Attention".to_string(),
+        name: "Test Attention".to_owned(),
         enabled,
         theme: ThemeSettings::default(),
         times: ShortTimes::new(vec![naive_time(hour, minute, 0)]),
         days_of_week: days,
-        title: "Attention".to_string(),
-        message: "Time for attention".to_string(),
+        title: "Attention".to_owned(),
+        message: "Time for attention".to_owned(),
         duration_s: 10,
     }];
 
@@ -292,13 +292,13 @@ async fn test_add_new_attention() {
     let mut new_config = config_with_attention(10, 0, true, all_weekdays());
     new_config.attentions.push(AttentionSettings {
         id: AttentionId::new(),
-        name: "Second Attention".to_string(),
+        name: "Second Attention".to_owned(),
         enabled: true,
         theme: ThemeSettings::default(),
         times: ShortTimes::new(vec![naive_time(14, 0, 0)]),
         days_of_week: all_weekdays(),
-        title: "Attention".to_string(),
-        message: "Time for attention".to_string(),
+        title: "Attention".to_owned(),
+        message: "Time for attention".to_owned(),
         duration_s: 10,
     });
 
@@ -361,35 +361,35 @@ async fn test_multiple_attentions_different_times() {
     config.attentions = vec![
         AttentionSettings {
             id: AttentionId::new(),
-            name: "Morning Attention".to_string(),
+            name: "Morning Attention".to_owned(),
             enabled: true,
             theme: ThemeSettings::default(),
             times: ShortTimes::new(vec![naive_time(10, 0, 0)]),
             days_of_week: all_weekdays(),
-            title: "Attention".to_string(),
-            message: "Time for attention".to_string(),
+            title: "Attention".to_owned(),
+            message: "Time for attention".to_owned(),
             duration_s: 10,
         },
         AttentionSettings {
             id: AttentionId::new(),
-            name: "Afternoon Attention".to_string(),
+            name: "Afternoon Attention".to_owned(),
             enabled: true,
             theme: ThemeSettings::default(),
             times: ShortTimes::new(vec![naive_time(14, 0, 0)]),
             days_of_week: all_weekdays(),
-            title: "Attention".to_string(),
-            message: "Time for attention".to_string(),
+            title: "Attention".to_owned(),
+            message: "Time for attention".to_owned(),
             duration_s: 10,
         },
         AttentionSettings {
             id: AttentionId::new(),
-            name: "Evening Attention".to_string(),
+            name: "Evening Attention".to_owned(),
             enabled: true,
             theme: ThemeSettings::default(),
             times: ShortTimes::new(vec![naive_time(16, 0, 0)]),
             days_of_week: all_weekdays(),
-            title: "Attention".to_string(),
-            message: "Time for attention".to_string(),
+            title: "Attention".to_owned(),
+            message: "Time for attention".to_owned(),
             duration_s: 10,
         },
     ];
@@ -575,13 +575,13 @@ async fn test_attention_with_breaks() {
 
     config.attentions = vec![AttentionSettings {
         id: AttentionId::new(),
-        name: "Test Attention".to_string(),
+        name: "Test Attention".to_owned(),
         enabled: true,
         theme: ThemeSettings::default(),
         times: ShortTimes::new(vec![naive_time(10, 0, 0)]),
         days_of_week: all_weekdays(),
-        title: "Attention".to_string(),
-        message: "Time for attention".to_string(),
+        title: "Attention".to_owned(),
+        message: "Time for attention".to_owned(),
         duration_s: 10,
     }];
 
@@ -607,13 +607,13 @@ async fn test_pause_affects_both_schedulers() {
 
     config.attentions = vec![AttentionSettings {
         id: AttentionId::new(),
-        name: "Test Attention".to_string(),
+        name: "Test Attention".to_owned(),
         enabled: true,
         theme: ThemeSettings::default(),
         times: ShortTimes::new(vec![naive_time(10, 0, 0)]),
         days_of_week: all_weekdays(),
-        title: "Attention".to_string(),
-        message: "Time for attention".to_string(),
+        title: "Attention".to_owned(),
+        message: "Time for attention".to_owned(),
         duration_s: 10,
     }];
 

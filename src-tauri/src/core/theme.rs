@@ -27,7 +27,7 @@ impl FromStr for HexColor {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if Self::is_valid(s) {
-            Ok(HexColor(s.to_string()))
+            Ok(HexColor(s.to_owned()))
         } else {
             Err(())
         }
@@ -36,7 +36,7 @@ impl FromStr for HexColor {
 
 impl Default for HexColor {
     fn default() -> Self {
-        HexColor("#FFFFFF".to_string())
+        HexColor("#FFFFFF".to_owned())
     }
 }
 
@@ -141,6 +141,7 @@ impl Deref for FontFamily {
 #[serde(rename_all = "camelCase")]
 #[ts(export, rename_all = "camelCase")]
 #[strum(serialize_all = "camelCase")]
+#[non_exhaustive]
 pub enum BackgroundType {
     #[default]
     Solid,
@@ -293,13 +294,13 @@ impl Default for ThemeSettings {
             blur_radius: 8,
             opacity: 0.9,
             font_size: 24,
-            font_family: FontFamily("Arial".to_string()),
+            font_family: FontFamily("Arial".to_owned()),
         }
     }
 }
 
 #[cfg(test)]
-#[allow(clippy::float_cmp)]
+#[expect(clippy::float_cmp)]
 mod tests {
     use super::*;
 
@@ -312,14 +313,14 @@ mod tests {
 
     #[test]
     fn test_background_source_image_path() {
-        let bg = BackgroundSource::new_image_path("/path/to/image.jpg".to_string());
+        let bg = BackgroundSource::new_image_path("/path/to/image.jpg".to_owned());
         assert_eq!(bg.current, BackgroundType::ImagePath);
         assert_eq!(bg.get_image_path().unwrap(), "/path/to/image.jpg");
     }
 
     #[test]
     fn test_background_source_image_folder() {
-        let bg = BackgroundSource::new_image_folder("/path/to/folder".to_string());
+        let bg = BackgroundSource::new_image_folder("/path/to/folder".to_owned());
         assert_eq!(bg.current, BackgroundType::ImageFolder);
         assert_eq!(bg.get_image_folder().unwrap(), "/path/to/folder");
     }
@@ -329,8 +330,8 @@ mod tests {
         let mut bg = BackgroundSource::new_solid(HexColor::new("#ABCDEF"));
 
         // Set other values
-        bg.set_image_path("/test.jpg".to_string());
-        bg.set_image_folder("/test/folder".to_string());
+        bg.set_image_path("/test.jpg".to_owned());
+        bg.set_image_folder("/test/folder".to_owned());
 
         // Switch to image path
         bg.use_image_path();
@@ -352,7 +353,7 @@ mod tests {
     #[test]
     fn test_background_source_clone() {
         let mut bg = BackgroundSource::new_solid(HexColor::new("#123456"));
-        bg.set_image_path("/test.jpg".to_string());
+        bg.set_image_path("/test.jpg".to_owned());
 
         let cloned = bg.clone();
         assert_eq!(cloned.current, bg.current);
@@ -394,12 +395,12 @@ mod tests {
     #[test]
     fn test_theme_settings_custom() {
         let theme = ThemeSettings {
-            background: BackgroundSource::new_image_path("/test.jpg".to_string()),
+            background: BackgroundSource::new_image_path("/test.jpg".to_owned()),
             text_color: HexColor::new("#FF0000"),
             blur_radius: 10,
             opacity: 0.8,
             font_size: 24,
-            font_family: FontFamily("Helvetica".to_string()),
+            font_family: FontFamily("Helvetica".to_owned()),
         };
 
         assert_eq!(theme.background.current, BackgroundType::ImagePath);
@@ -411,7 +412,7 @@ mod tests {
     // FontFamily tests
     #[test]
     fn test_font_family_creation() {
-        let font = FontFamily("Times New Roman".to_string());
+        let font = FontFamily("Times New Roman".to_owned());
         let serialized = serde_json::to_string(&font).unwrap();
         let _deserialized: FontFamily = serde_json::from_str(&serialized).unwrap();
         assert!(serialized.contains("Times New Roman"));
@@ -429,7 +430,7 @@ mod tests {
     #[test]
     fn test_background_source_serialization() {
         let mut bg = BackgroundSource::new_solid(HexColor::new("#123456"));
-        bg.set_image_path("/preserved.jpg".to_string());
+        bg.set_image_path("/preserved.jpg".to_owned());
 
         let json = serde_json::to_string(&bg).unwrap();
         let deserialized: BackgroundSource = serde_json::from_str(&json).unwrap();
@@ -486,8 +487,8 @@ mod tests {
     fn test_background_source_persists_all_values() {
         // Create background with solid color
         let mut bg = BackgroundSource::new_solid(HexColor::new("#ff0000"));
-        bg.set_image_path("/image.jpg".to_string());
-        bg.set_image_folder("/folder".to_string());
+        bg.set_image_path("/image.jpg".to_owned());
+        bg.set_image_folder("/folder".to_owned());
 
         // Serialize to JSON - all fields should be present
         let json = serde_json::to_string(&bg).unwrap();
@@ -543,7 +544,7 @@ mod tests {
 
         // Now set image path and serialize again
         let mut bg2 = BackgroundSource::new_solid(HexColor::new("#00ff00"));
-        bg2.set_image_path("/test.jpg".to_string());
+        bg2.set_image_path("/test.jpg".to_owned());
         bg2.use_image_path();
 
         let toml2 = toml::to_string(&bg2).unwrap();

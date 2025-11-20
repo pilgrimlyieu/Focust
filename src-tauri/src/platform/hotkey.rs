@@ -62,7 +62,7 @@ fn register_postpone_shortcut<R: Runtime>(
 /// Supported format: "Ctrl+Shift+X", etc.
 fn parse_shortcut(s: &str) -> Result<Shortcut, String> {
     if s.trim().is_empty() {
-        return Err("Empty shortcut string".to_string());
+        return Err("Empty shortcut string".to_owned());
     }
 
     let parts: Vec<&str> = s
@@ -72,7 +72,7 @@ fn parse_shortcut(s: &str) -> Result<Shortcut, String> {
         .collect();
 
     if parts.is_empty() {
-        return Err("Empty shortcut string".to_string());
+        return Err("Empty shortcut string".to_owned());
     }
 
     let mut modifiers = Modifiers::empty();
@@ -94,7 +94,7 @@ fn parse_shortcut(s: &str) -> Result<Shortcut, String> {
         }
     }
 
-    let key = key_code.ok_or_else(|| "No key code found in shortcut".to_string())?;
+    let key = key_code.ok_or_else(|| "No key code found in shortcut".to_owned())?;
 
     Ok(Shortcut::new(Some(modifiers), key))
 }
@@ -105,7 +105,10 @@ fn parse_key_code(s: &str) -> Result<Code, String> {
 
     // Letters: a-z
     if lower.len() == 1 {
-        let ch = lower.chars().next().unwrap();
+        let ch = lower
+            .chars()
+            .next()
+            .ok_or_else(|| "Empty key string".to_owned())?;
         if ch.is_ascii_lowercase() {
             let key_code = match ch {
                 'a' => Code::KeyA,
@@ -153,6 +156,7 @@ fn parse_key_code(s: &str) -> Result<Code, String> {
             };
             return Ok(key_code);
         }
+        return Err(format!("Unknown key code: {s}"));
     }
 
     // Function keys: f1-f12
@@ -207,26 +211,26 @@ mod tests {
     // parse_shortcut basic tests
     #[test]
     fn test_parse_shortcut_basic() {
-        assert!(parse_shortcut("Ctrl+Shift+X").is_ok());
-        assert!(parse_shortcut("Alt+P").is_ok());
-        assert!(parse_shortcut("Ctrl+F1").is_ok());
+        parse_shortcut("Ctrl+Shift+X").unwrap();
+        parse_shortcut("Alt+P").unwrap();
+        parse_shortcut("Ctrl+F1").unwrap();
     }
 
     #[test]
     fn test_parse_shortcut_case_insensitive() {
-        assert!(parse_shortcut("ctrl+x").is_ok());
-        assert!(parse_shortcut("CTRL+X").is_ok());
-        assert!(parse_shortcut("Alt+a").is_ok());
-        assert!(parse_shortcut("SHIFT+F2").is_ok());
+        parse_shortcut("ctrl+x").unwrap();
+        parse_shortcut("CTRL+X").unwrap();
+        parse_shortcut("Alt+a").unwrap();
+        parse_shortcut("SHIFT+F2").unwrap();
     }
 
     #[test]
     fn test_parse_shortcut_all_modifiers() {
-        assert!(parse_shortcut("Ctrl+Alt+Shift+X").is_ok());
-        assert!(parse_shortcut("Super+C").is_ok());
-        assert!(parse_shortcut("Meta+V").is_ok());
-        assert!(parse_shortcut("Cmd+Z").is_ok());
-        assert!(parse_shortcut("Win+D").is_ok());
+        parse_shortcut("Ctrl+Alt+Shift+X").unwrap();
+        parse_shortcut("Super+C").unwrap();
+        parse_shortcut("Meta+V").unwrap();
+        parse_shortcut("Cmd+Z").unwrap();
+        parse_shortcut("Win+D").unwrap();
     }
 
     #[test]
@@ -266,38 +270,38 @@ mod tests {
 
     #[test]
     fn test_parse_shortcut_special_keys() {
-        assert!(parse_shortcut("Ctrl+Space").is_ok());
-        assert!(parse_shortcut("Ctrl+Enter").is_ok());
-        assert!(parse_shortcut("Ctrl+Return").is_ok());
-        assert!(parse_shortcut("Ctrl+Escape").is_ok());
-        assert!(parse_shortcut("Ctrl+Esc").is_ok());
-        assert!(parse_shortcut("Ctrl+Tab").is_ok());
-        assert!(parse_shortcut("Ctrl+Backspace").is_ok());
-        assert!(parse_shortcut("Ctrl+Delete").is_ok());
-        assert!(parse_shortcut("Ctrl+Del").is_ok());
-        assert!(parse_shortcut("Ctrl+Insert").is_ok());
-        assert!(parse_shortcut("Ctrl+Ins").is_ok());
-        assert!(parse_shortcut("Ctrl+Home").is_ok());
-        assert!(parse_shortcut("Ctrl+End").is_ok());
-        assert!(parse_shortcut("Ctrl+PageUp").is_ok());
-        assert!(parse_shortcut("Ctrl+PgUp").is_ok());
-        assert!(parse_shortcut("Ctrl+PageDown").is_ok());
-        assert!(parse_shortcut("Ctrl+PgDown").is_ok());
+        parse_shortcut("Ctrl+Space").unwrap();
+        parse_shortcut("Ctrl+Enter").unwrap();
+        parse_shortcut("Ctrl+Return").unwrap();
+        parse_shortcut("Ctrl+Escape").unwrap();
+        parse_shortcut("Ctrl+Esc").unwrap();
+        parse_shortcut("Ctrl+Tab").unwrap();
+        parse_shortcut("Ctrl+Backspace").unwrap();
+        parse_shortcut("Ctrl+Delete").unwrap();
+        parse_shortcut("Ctrl+Del").unwrap();
+        parse_shortcut("Ctrl+Insert").unwrap();
+        parse_shortcut("Ctrl+Ins").unwrap();
+        parse_shortcut("Ctrl+Home").unwrap();
+        parse_shortcut("Ctrl+End").unwrap();
+        parse_shortcut("Ctrl+PageUp").unwrap();
+        parse_shortcut("Ctrl+PgUp").unwrap();
+        parse_shortcut("Ctrl+PageDown").unwrap();
+        parse_shortcut("Ctrl+PgDown").unwrap();
     }
 
     #[test]
     fn test_parse_shortcut_arrow_keys() {
-        assert!(parse_shortcut("Ctrl+Left").is_ok());
-        assert!(parse_shortcut("Ctrl+Right").is_ok());
-        assert!(parse_shortcut("Ctrl+Up").is_ok());
-        assert!(parse_shortcut("Ctrl+Down").is_ok());
+        parse_shortcut("Ctrl+Left").unwrap();
+        parse_shortcut("Ctrl+Right").unwrap();
+        parse_shortcut("Ctrl+Up").unwrap();
+        parse_shortcut("Ctrl+Down").unwrap();
     }
 
     #[test]
     fn test_parse_shortcut_whitespace_handling() {
-        assert!(parse_shortcut("Ctrl + X").is_ok());
-        assert!(parse_shortcut(" Ctrl+X ").is_ok());
-        assert!(parse_shortcut("Ctrl  +  X").is_ok());
+        parse_shortcut("Ctrl + X").unwrap();
+        parse_shortcut(" Ctrl+X ").unwrap();
+        parse_shortcut("Ctrl  +  X").unwrap();
     }
 
     // Error case tests
@@ -394,26 +398,26 @@ mod tests {
 
     #[test]
     fn test_parse_key_code_invalid() {
-        assert!(parse_key_code("invalid").is_err());
-        assert!(parse_key_code("ctrl").is_err()); // Modifier keys should not be treated as keys
-        assert!(parse_key_code("alt").is_err());
-        assert!(parse_key_code("").is_err());
+        parse_key_code("invalid").unwrap_err();
+        parse_key_code("ctrl").unwrap_err(); // Modifier keys should not be treated as keys
+        parse_key_code("alt").unwrap_err();
+        parse_key_code("").unwrap_err();
     }
 
     // Edge cases and real-world usage tests
     #[test]
     fn test_parse_shortcut_common_combinations() {
         // Common shortcut combinations
-        assert!(parse_shortcut("Ctrl+C").is_ok()); // Copy
-        assert!(parse_shortcut("Ctrl+V").is_ok()); // Paste
-        assert!(parse_shortcut("Ctrl+X").is_ok()); // Cut
-        assert!(parse_shortcut("Ctrl+Z").is_ok()); // Undo
-        assert!(parse_shortcut("Ctrl+Y").is_ok()); // Redo
-        assert!(parse_shortcut("Ctrl+S").is_ok()); // Save
-        assert!(parse_shortcut("Ctrl+P").is_ok()); // Print
-        assert!(parse_shortcut("Ctrl+F").is_ok()); // Find
-        assert!(parse_shortcut("Alt+F4").is_ok()); // Close window
-        assert!(parse_shortcut("Ctrl+Shift+Esc").is_ok()); // Task manager
+        parse_shortcut("Ctrl+C").unwrap(); // Copy
+        parse_shortcut("Ctrl+V").unwrap(); // Paste
+        parse_shortcut("Ctrl+X").unwrap(); // Cut
+        parse_shortcut("Ctrl+Z").unwrap(); // Undo
+        parse_shortcut("Ctrl+Y").unwrap(); // Redo
+        parse_shortcut("Ctrl+S").unwrap(); // Save
+        parse_shortcut("Ctrl+P").unwrap(); // Print
+        parse_shortcut("Ctrl+F").unwrap(); // Find
+        parse_shortcut("Alt+F4").unwrap(); // Close window
+        parse_shortcut("Ctrl+Shift+Esc").unwrap(); // Task manager
     }
 
     #[test]
@@ -423,9 +427,9 @@ mod tests {
         let control_x = parse_shortcut("Control+X").unwrap();
         assert_eq!(format!("{ctrl_x:?}"), format!("{control_x:?}"));
 
-        assert!(parse_shortcut("Super+D").is_ok());
-        assert!(parse_shortcut("Meta+D").is_ok());
-        assert!(parse_shortcut("Cmd+D").is_ok());
-        assert!(parse_shortcut("Win+D").is_ok());
+        parse_shortcut("Super+D").unwrap();
+        parse_shortcut("Meta+D").unwrap();
+        parse_shortcut("Cmd+D").unwrap();
+        parse_shortcut("Win+D").unwrap();
     }
 }

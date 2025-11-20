@@ -187,7 +187,7 @@ impl AudioSettings {
 }
 
 #[cfg(test)]
-#[allow(clippy::float_cmp)]
+#[expect(clippy::float_cmp)]
 mod tests {
     use super::*;
     use serde_json;
@@ -210,33 +210,33 @@ mod tests {
 
     #[test]
     fn test_audio_source_new_builtin() {
-        let source = AudioSource::new_builtin("bell".to_string());
+        let source = AudioSource::new_builtin("bell".to_owned());
         assert_eq!(source.current, AudioSourceType::Builtin);
-        assert_eq!(source.builtin_name, Some("bell".to_string()));
+        assert_eq!(source.builtin_name, Some("bell".to_owned()));
         assert!(source.file_path.is_none());
     }
 
     #[test]
     fn test_audio_source_new_file_path() {
-        let source = AudioSource::new_file_path("/path/to/audio.mp3".to_string());
+        let source = AudioSource::new_file_path("/path/to/audio.mp3".to_owned());
         assert_eq!(source.current, AudioSourceType::FilePath);
         assert!(source.builtin_name.is_none());
-        assert_eq!(source.file_path, Some("/path/to/audio.mp3".to_string()));
+        assert_eq!(source.file_path, Some("/path/to/audio.mp3".to_owned()));
     }
 
     #[test]
     fn test_audio_source_getters() {
-        let mut source = AudioSource::new_builtin("bell".to_string());
+        let mut source = AudioSource::new_builtin("bell".to_owned());
         assert_eq!(source.get_builtin_name(), Some("bell"));
         assert_eq!(source.get_file_path(), None);
 
-        source.set_file_path("/test.mp3".to_string());
+        source.set_file_path("/test.mp3".to_owned());
         assert_eq!(source.get_file_path(), Some("/test.mp3"));
     }
 
     #[test]
     fn test_audio_source_switch_preserves_values() {
-        let mut source = AudioSource::new_builtin("bell".to_string());
+        let mut source = AudioSource::new_builtin("bell".to_owned());
 
         // Switch to file path
         source.use_file_path();
@@ -245,7 +245,7 @@ mod tests {
         assert_eq!(source.get_builtin_name(), Some("bell"));
 
         // Set file path
-        source.set_file_path("/custom.mp3".to_string());
+        source.set_file_path("/custom.mp3".to_owned());
         assert_eq!(source.get_file_path(), Some("/custom.mp3"));
 
         // Switch back to builtin
@@ -261,8 +261,8 @@ mod tests {
     fn test_audio_source_serialize_new_format() {
         let source = AudioSource {
             current: AudioSourceType::Builtin,
-            builtin_name: Some("bell".to_string()),
-            file_path: Some("/preserved.mp3".to_string()),
+            builtin_name: Some("bell".to_owned()),
+            file_path: Some("/preserved.mp3".to_owned()),
         };
 
         let json = serde_json::to_string(&source).unwrap();
@@ -302,25 +302,25 @@ mod tests {
     #[test]
     fn test_audio_settings_get_path_builtin() {
         let settings = AudioSettings {
-            source: AudioSource::new_builtin("bell".to_string()),
+            source: AudioSource::new_builtin("bell".to_owned()),
             volume: 0.6,
         };
-        assert_eq!(settings.get_path(), Some("sounds/bell.mp3".to_string()));
+        assert_eq!(settings.get_path(), Some("sounds/bell.mp3".to_owned()));
     }
 
     #[test]
     fn test_audio_settings_get_path_file_path() {
         let settings = AudioSettings {
-            source: AudioSource::new_file_path("/custom/audio.mp3".to_string()),
+            source: AudioSource::new_file_path("/custom/audio.mp3".to_owned()),
             volume: 0.6,
         };
-        assert_eq!(settings.get_path(), Some("/custom/audio.mp3".to_string()));
+        assert_eq!(settings.get_path(), Some("/custom/audio.mp3".to_owned()));
     }
 
     #[test]
     fn test_audio_settings_is_builtin() {
         let mut settings = AudioSettings {
-            source: AudioSource::new_builtin("bell".to_string()),
+            source: AudioSource::new_builtin("bell".to_owned()),
             volume: 0.6,
         };
         assert!(settings.is_builtin());
@@ -335,8 +335,8 @@ mod tests {
     #[test]
     fn test_audio_source_persists_all_values() {
         // Create source with builtin
-        let mut source = AudioSource::new_builtin("bell".to_string());
-        source.set_file_path("/custom.mp3".to_string());
+        let mut source = AudioSource::new_builtin("bell".to_owned());
+        source.set_file_path("/custom.mp3".to_owned());
 
         // Serialize to JSON - all fields should be present
         let json = serde_json::to_string(&source).unwrap();
@@ -351,8 +351,8 @@ mod tests {
         // Deserialize back
         let restored: AudioSource = serde_json::from_str(&json).unwrap();
         assert_eq!(restored.current, AudioSourceType::Builtin);
-        assert_eq!(restored.builtin_name, Some("bell".to_string()));
-        assert_eq!(restored.file_path, Some("/custom.mp3".to_string()));
+        assert_eq!(restored.builtin_name, Some("bell".to_owned()));
+        assert_eq!(restored.file_path, Some("/custom.mp3".to_owned()));
 
         // Switch to file path - builtin should still be there
         let mut restored = restored;
@@ -367,7 +367,7 @@ mod tests {
     #[test]
     fn test_audio_source_toml_skips_none_values() {
         // Create source with only builtin (file_path is None)
-        let source = AudioSource::new_builtin("bell".to_string());
+        let source = AudioSource::new_builtin("bell".to_owned());
 
         // Serialize to TOML
         let toml = toml::to_string(&source).unwrap();
@@ -379,8 +379,8 @@ mod tests {
         assert!(!toml.contains("filePath"));
 
         // Now set file path and serialize again
-        let mut source2 = AudioSource::new_builtin("chime".to_string());
-        source2.set_file_path("/music.mp3".to_string());
+        let mut source2 = AudioSource::new_builtin("chime".to_owned());
+        source2.set_file_path("/music.mp3".to_owned());
         source2.use_file_path();
 
         let toml2 = toml::to_string(&source2).unwrap();

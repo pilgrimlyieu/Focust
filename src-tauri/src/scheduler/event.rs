@@ -6,7 +6,6 @@ use crate::{config::AppConfig, core::schedule::ScheduleSettings};
 // This module is now primarily used internally by BreakScheduler
 // The EventSource pattern is deprecated in favor of direct calculation
 
-#[allow(dead_code)]
 pub struct SchedulingContext<'a> {
     pub now_utc: DateTime<Utc>,
     pub now_local: DateTime<Local>,
@@ -40,7 +39,7 @@ mod tests {
         AppConfig {
             schedules: vec![
                 ScheduleSettings {
-                    name: "Weekday Schedule".to_string(),
+                    name: "Weekday Schedule".to_owned(),
                     enabled: true,
                     time_range: time_range(9, 0, 17, 0),
                     days_of_week: vec![
@@ -53,14 +52,14 @@ mod tests {
                     ..Default::default()
                 },
                 ScheduleSettings {
-                    name: "Weekend Schedule".to_string(),
+                    name: "Weekend Schedule".to_owned(),
                     enabled: true,
                     time_range: time_range(10, 0, 14, 0),
                     days_of_week: vec![Weekday::Sat, Weekday::Sun],
                     ..Default::default()
                 },
                 ScheduleSettings {
-                    name: "Disabled Schedule".to_string(),
+                    name: "Disabled Schedule".to_owned(),
                     enabled: false, // DISABLED
                     time_range: full_time_range(),
                     days_of_week: vec![Weekday::Mon],

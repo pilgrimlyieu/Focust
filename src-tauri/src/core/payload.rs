@@ -15,6 +15,7 @@ use crate::core::theme::{ResolvedBackground, ThemeSettings};
 #[serde(rename_all = "camelCase")]
 #[ts(export, rename_all = "camelCase")]
 #[strum(serialize_all = "PascalCase")]
+#[non_exhaustive]
 pub enum EventKind {
     #[strum(serialize = "MiniBreak")]
     Mini,

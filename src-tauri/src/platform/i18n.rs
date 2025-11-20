@@ -38,12 +38,12 @@ pub struct NotificationStrings {
 impl Default for TrayStrings {
     fn default() -> Self {
         Self {
-            show: "Show Settings".to_string(),
-            pause: "Pause Breaks".to_string(),
-            resume: "Resume Breaks".to_string(),
-            restart: "Restart".to_string(),
-            quit: "Quit".to_string(),
-            tooltip: "Focust - Break Reminder".to_string(),
+            show: "Show Settings".to_owned(),
+            pause: "Pause Breaks".to_owned(),
+            resume: "Resume Breaks".to_owned(),
+            restart: "Restart".to_owned(),
+            quit: "Quit".to_owned(),
+            tooltip: "Focust - Break Reminder".to_owned(),
         }
     }
 }
@@ -51,11 +51,11 @@ impl Default for TrayStrings {
 impl Default for NotificationStrings {
     fn default() -> Self {
         Self {
-            mini_break: "Mini Break".to_string(),
-            long_break: "Long Break".to_string(),
-            attention: "Attention".to_string(),
-            starting_soon: "{breakType} in {seconds} seconds".to_string(),
-            message: "Time to take a break and rest your eyes.".to_string(),
+            mini_break: "Mini Break".to_owned(),
+            long_break: "Long Break".to_owned(),
+            attention: "Attention".to_owned(),
+            starting_soon: "{breakType} in {seconds} seconds".to_owned(),
+            message: "Time to take a break and rest your eyes.".to_owned(),
         }
     }
 }

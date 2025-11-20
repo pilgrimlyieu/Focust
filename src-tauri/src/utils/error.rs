@@ -120,7 +120,7 @@ mod tests {
 
     #[test]
     fn test_focust_error_display() {
-        let err = FocustError::Config("Invalid value".to_string());
+        let err = FocustError::Config("Invalid value".to_owned());
         assert_eq!(err.to_string(), "Configuration error: Invalid value");
 
         let io_err = io::Error::new(io::ErrorKind::NotFound, "file not found");
@@ -130,7 +130,7 @@ mod tests {
 
     #[test]
     fn test_config_error_display() {
-        let err = ConfigError::ValidationError("Missing field".to_string());
+        let err = ConfigError::ValidationError("Missing field".to_owned());
         assert_eq!(err.to_string(), "Invalid config value: Missing field");
     }
 
@@ -150,7 +150,7 @@ mod tests {
         let tauri_result = to_tauri_result(ok_result);
         assert_eq!(tauri_result, Ok(42));
 
-        let err_result: Result<i32, FocustError> = Err(FocustError::Config("test".to_string()));
+        let err_result: Result<i32, FocustError> = Err(FocustError::Config("test".to_owned()));
         let tauri_result = to_tauri_result(err_result);
         assert!(tauri_result.is_err());
         assert_eq!(tauri_result.unwrap_err(), "Configuration error: test");

@@ -111,7 +111,7 @@ impl EventEmitter for TestEventEmitter {
     fn emit<S: Serialize + Clone>(&self, event: &str, payload: S) -> Result<(), String> {
         let json_value = serde_json::to_value(payload)
             .map_err(|e| format!("Failed to serialize payload: {e}"))?;
-        self.events.lock().push((event.to_string(), json_value));
+        self.events.lock().push((event.to_owned(), json_value));
         Ok(())
     }
 }

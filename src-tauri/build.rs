@@ -1,5 +1,6 @@
 // https://github.com/tauri-apps/tauri/issues/13419#issuecomment-3398457618
 // Fix `STATUS_ENTRYPOINT_NOT_FOUND` error on Windows when testing.
+#[expect(clippy::unwrap_used)]
 fn main() {
     #[cfg(windows)]
     {
@@ -15,6 +16,7 @@ fn main() {
     }
 }
 
+#[expect(clippy::unwrap_used, clippy::expect_used)]
 #[cfg(windows)]
 fn add_manifest() {
     static WINDOWS_MANIFEST_FILE: &str = "windows-app-manifest.xml";
