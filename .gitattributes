@@ -1,2 +1,6 @@
+# Line ending normalization
+* text=auto eol=lf
+
+# Linguist configuration
 src/i18n/locales/**.ts linguist-documentation=true
 src/types/generated/**.ts linguist-generated=true

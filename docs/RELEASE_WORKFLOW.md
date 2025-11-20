@@ -87,24 +87,72 @@ Builds the application with code signing enabled (requires key setup).
 
 ### Making a Release
 
-1. **Update version**:
-   - Edit `src-tauri/tauri.conf.json`
-   - Update `CHANGELOG.md` and `RELEASE_NOTE.md`
+#### Automated Release (Recommended)
 
-2. **Create and push tag**:
+Use the release scripts for streamlined version management:
+
+1. **Prepare release notes**:
+   - Edit `RELEASE_NOTE.md` with your changes
+
+2. **Run release script**:
    ```bash
-   git tag v0.1.0
-   git push origin v0.1.0
+   # Via Just (recommended)
+   just release-patch    # Bump patch version (0.2.11 -> 0.2.12)
+   just release-minor    # Bump minor version (0.2.11 -> 0.3.0)
+   just release-major    # Bump major version (0.2.11 -> 1.0.0)
+   just release 1.2.3    # Specify exact version
+   
+   # Direct execution (PowerShell on Windows)
+   .\scripts\release.ps1 --Patch
+   
+   # Direct execution (Bash on Linux/macOS)
+   ./scripts/release.sh --patch
    ```
 
-3. **Automatic process**:
+3. **What the script does**:
+   - ✅ Updates `package.json` and `tauri.conf.json` version numbers
+   - ✅ Extracts content from `RELEASE_NOTE.md` and adds to `CHANGELOG.md`
+   - ✅ Commits changes with message: `chore: bump version to vX.Y.Z`
+   - ✅ Creates Git tag: `vX.Y.Z`
+   - ✅ Pushes commit and tag to remote (with confirmation)
+
+4. **(Optional) GPG sign the commit**:
+   ```bash
+   git commit --amend -S --no-edit
+   git push origin main --force-with-lease
+   ```
+
+5. **Automatic CI/CD process**:
    - GitHub Actions builds for all platforms
    - Installers are signed automatically
    - Release is created with:
      - Signed installers
      - Signature files (`.sig`)
      - Update manifest (`latest.json`)
-     - Release notes
+     - Release notes from CHANGELOG.md
+
+#### Manual Release (Legacy)
+
+If you prefer manual control:
+
+1. **Update version**:
+   - Edit `package.json` version
+   - Edit `src-tauri/tauri.conf.json` version
+   - Update `CHANGELOG.md` and `RELEASE_NOTE.md`
+
+2. **Create and push tag**:
+   ```bash
+   git add package.json src-tauri/tauri.conf.json CHANGELOG.md
+   git commit -m "chore: bump version to vX.Y.Z"
+   git tag vX.Y.Z
+   git push origin main
+   git push origin vX.Y.Z
+   ```
+
+3. **Automatic process**:
+   - GitHub Actions builds for all platforms
+   - Installers are signed automatically
+   - Release is created with artifacts
 
 ## How It Works
 
@@ -267,12 +315,80 @@ Secrets are encrypted and only exposed to workflows:
    - Confirm `.sig` files present
    - Check `latest.json` format
 
+## Release Script Reference
+
+### Scripts Location
+- `scripts/release.ps1` - PowerShell (Windows, cross-platform)
+- `scripts/release.sh` - Bash (Linux, macOS)
+
+### Usage Examples
+
+**Bump versions**:
+```bash
+# Patch: 0.2.11 -> 0.2.12
+just release-patch
+just release --patch
+
+# Minor: 0.2.11 -> 0.3.0
+just release-minor
+just release --minor
+
+# Major: 0.2.11 -> 1.0.0
+just release-major
+just release --major
+```
+
+**Specify exact version**:
+```bash
+just release 1.2.3
+```
+
+**Skip push (manual push later)**:
+```bash
+# PowerShell
+.\scripts\release.ps1 1.2.3 -NoPush
+
+# Bash
+./scripts/release.sh 1.2.3 --no-push
+```
+
+### Script Features
+
+✅ **Cross-platform**: Works on Windows (PowerShell), Linux, and macOS (Bash)  
+✅ **Safe**: Requires confirmation before executing  
+✅ **Automatic**: Updates versions, CHANGELOG, commits, tags, and pushes  
+✅ **Semantic versioning**: Supports major/minor/patch bumps  
+✅ **Flexible**: Can specify exact version or bump type  
+
+### RELEASE_NOTE.md Format
+
+The script automatically extracts content from `RELEASE_NOTE.md` after the separator comment:
+
+```markdown
+> [!WARNING]
+> These admonitions will be kept in RELEASE_NOTE.md
+
+> [!NOTE]
+> But not included in CHANGELOG.md
+
+<!-- Release notes content starts here -->
+
+## 🎉 Features
+- This content will be extracted
+
+## 🐛 Bug Fixes
+- And added to CHANGELOG.md
+```
+
+The content is converted from `##` headers to `###` headers for CHANGELOG format, preserving all other formatting.
+
 ## Additional Resources
 
 - [Tauri Updater Plugin](https://v2.tauri.app/plugin/updater/)
 - [Tauri Signer CLI](https://v2.tauri.app/reference/cli/#signer)
 - [GitHub Actions Secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
 - [Focust Updater Signing Guide](UPDATER_SIGNING.md)
+- [Release Scripts](../scripts/) - Automated release automation
 
 ## Support
 

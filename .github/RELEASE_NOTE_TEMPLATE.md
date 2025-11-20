@@ -9,6 +9,8 @@
 >
 > Audio feature doesn't work in macOS. This is a known upstream issue and will be fixed if its new version is released.
 
+<!-- Release notes content starts here -->
+
 ## 🎉 Features
 
 - List new features here

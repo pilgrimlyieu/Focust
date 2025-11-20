@@ -1,11 +1,12 @@
 set dotenv-load
 set shell := ["bash", "-c"]
-set windows-shell := ["powershell", "-NoLogo", "-Command"]
+set windows-shell := ["pwsh", "-NoLogo", "-Command"]
 
 RUST_DIR := "src-tauri"
 
 TAURI_CMD := "bun run tauri"
 RM_CMD := if os_family() == "windows" { "Remove-Item -Force -Recurse -ErrorAction SilentlyContinue" } else { "rm -rf" }
+RELEASE_CMD := if os_family() == "windows" { "pwsh -NoLogo -File scripts/release.ps1" } else { "bash scripts/release.sh" }
 
 alias s := setup
 alias d := dev
@@ -289,6 +290,32 @@ alias adb := add-dep-back
     echo "⬆️ Adding back-end dependencies..."
     cargo add {{ deps }} --manifest-path {{ RUST_DIR }}/Cargo.toml
     echo "✅ Back-end dependencies added!"
+
+# -----------------------------------------------------------------------------
+# Release
+# -----------------------------------------------------------------------------
+
+# Release a new version (usage: just release 1.2.3 OR just release --patch/--minor/--major)
+[group: "release"]
+@release +args:
+    echo "🚀 Releasing new version..."
+    {{ RELEASE_CMD }} {{ args }}
+    echo "✅ Release process complete!"
+
+# Release with patch version bump
+[group: "release"]
+@release-patch:
+    just release --patch
+
+# Release with minor version bump
+[group: "release"]
+@release-minor:
+    just release --minor
+
+# Release with major version bump
+[group: "release"]
+@release-major:
+    just release --major
 
 # -----------------------------------------------------------------------------
 # Git
