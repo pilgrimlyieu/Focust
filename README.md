@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<!-- ![Focust Logo](docs/images/logo.png) -->
+![Focust Logo](src-tauri/icons/128x128.png)
 
 **A modern, cross-platform break reminder application**
 
@@ -321,9 +321,9 @@ Contributions are warmly welcomed! Whether it's bug reports, feature requests, d
 
 - [x] Whitelist applications (v0.2.0 major goal)
 - [x] DND mode detection (v0.2.0 goal)
+- [x] Project icon
 - [ ] Improved error handling and user feedback
 - [ ] Improved code comments and documentation
-- [ ] Project icon
 - [ ] Comprehensive platform testing (macOS, Linux)
 
 ---

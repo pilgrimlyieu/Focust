@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<!-- ![Focust Logo](docs/images/logo.png) -->
+![Focust Logo](src-tauri/icons/128x128.png)
 
 **现代化、跨平台的休息提醒应用**
 
@@ -322,9 +322,9 @@ just
 
 - [x] 白名单应用（v0.2.0 主要目标）
 - [x] 勿扰模式检测（v0.2.0 目标）
+- [x] 项目图标
 - [ ] 改进的错误处理和用户反馈
 - [ ] 改进的代码注释和文档
-- [ ] 项目图标
 - [ ] 全面的平台测试（macOS、Linux）
 
 ---
