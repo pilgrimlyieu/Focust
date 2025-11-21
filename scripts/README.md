@@ -14,14 +14,15 @@ just release 1.2.3    # Specify exact version
 
 ## Scripts
 
-- `release.ps1` - PowerShell script (Windows, cross-platform)
-- `release.sh` - Bash script (Linux, macOS)
+- `release.ts` - TypeScript script (cross-platform, runs with Bun/Node.js)
+- `setup-updater-signing.ts` - TypeScript script to setup code signing for updater
 
 ## Requirements
 
-1. Write release notes in `RELEASE_NOTE.md` before running
-2. Be on `main` branch with clean working directory
-3. Have Git configured properly
+1. Bun (recommended) or Node.js 18+
+2. Write release notes in `RELEASE_NOTE.md` before running
+3. Be on `main` branch with clean working directory
+4. Have Git configured properly
 
 ## What It Does
 
@@ -47,22 +48,20 @@ just release 1.2.3
 
 ### Direct Execution
 
-**PowerShell (Windows):**
-```powershell
-.\scripts\release.ps1 --Patch
-.\scripts\release.ps1 --Minor
-.\scripts\release.ps1 --Major
-.\scripts\release.ps1 1.2.3
-.\scripts\release.ps1 1.2.3 -NoPush  # Skip push
+**Using Bun (recommended):**
+```bash
+bun scripts/release.ts --patch
+bun scripts/release.ts --minor
+bun scripts/release.ts --major
+bun scripts/release.ts 1.2.3
+bun scripts/release.ts 1.2.3 --no-push  # Skip push
 ```
 
-**Bash (Linux/macOS):**
+**Using Node.js:**
 ```bash
-./scripts/release.sh --patch
-./scripts/release.sh --minor
-./scripts/release.sh --major
-./scripts/release.sh 1.2.3
-./scripts/release.sh 1.2.3 --no-push  # Skip push
+node --loader ts-node/esm scripts/release.ts --patch
+# Or with tsx:
+npx tsx scripts/release.ts --patch
 ```
 
 ## GPG Signing

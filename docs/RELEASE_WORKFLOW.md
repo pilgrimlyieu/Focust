@@ -66,11 +66,14 @@ Builds the application with code signing enabled (requires key setup).
 
 1. **Generate signing keys**:
    ```bash
-   # Linux/macOS
-   bash scripts/setup-updater-signing.sh
+   # Using Bun (recommended, cross-platform)
+   bun scripts/setup-updater-signing.ts
    
-   # Windows
-   powershell scripts/setup-updater-signing.ps1
+   # Using Node.js
+   npx tsx scripts/setup-updater-signing.ts
+   
+   # Or via Just command
+   just setup-signing
    ```
 
 2. **Add secrets to GitHub**:
@@ -102,11 +105,14 @@ Use the release scripts for streamlined version management:
    just release-major    # Bump major version (0.2.11 -> 1.0.0)
    just release 1.2.3    # Specify exact version
    
-   # Direct execution (PowerShell on Windows)
-   .\scripts\release.ps1 --Patch
+   # Direct execution with Bun (cross-platform)
+   bun scripts/release.ts --patch
+   bun scripts/release.ts --minor
+   bun scripts/release.ts --major
+   bun scripts/release.ts 1.2.3
    
-   # Direct execution (Bash on Linux/macOS)
-   ./scripts/release.sh --patch
+   # Using Node.js
+   npx tsx scripts/release.ts --patch
    ```
 
 3. **What the script does**:
@@ -318,8 +324,8 @@ Secrets are encrypted and only exposed to workflows:
 ## Release Script Reference
 
 ### Scripts Location
-- `scripts/release.ps1` - PowerShell (Windows, cross-platform)
-- `scripts/release.sh` - Bash (Linux, macOS)
+- `scripts/release.ts` - TypeScript (cross-platform, runs with Bun/Node.js)
+- `scripts/setup-updater-signing.ts` - TypeScript signing setup
 
 ### Usage Examples
 
@@ -345,20 +351,21 @@ just release 1.2.3
 
 **Skip push (manual push later)**:
 ```bash
-# PowerShell
-.\scripts\release.ps1 1.2.3 -NoPush
+# Using Bun
+bun scripts/release.ts 1.2.3 --no-push
 
-# Bash
-./scripts/release.sh 1.2.3 --no-push
+# Using Node.js
+npx tsx scripts/release.ts 1.2.3 --no-push
 ```
 
 ### Script Features
 
-✅ **Cross-platform**: Works on Windows (PowerShell), Linux, and macOS (Bash)  
+✅ **Cross-platform**: TypeScript runs on any platform with Bun/Node.js  
 ✅ **Safe**: Requires confirmation before executing  
 ✅ **Automatic**: Updates versions, CHANGELOG, commits, tags, and pushes  
 ✅ **Semantic versioning**: Supports major/minor/patch bumps  
 ✅ **Flexible**: Can specify exact version or bump type  
+✅ **Type-safe**: Written in TypeScript for better reliability  
 
 ### RELEASE_NOTE.md Format
 

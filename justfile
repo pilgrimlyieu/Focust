@@ -2,11 +2,25 @@ set dotenv-load
 set shell := ["bash", "-c"]
 set windows-shell := ["pwsh", "-NoLogo", "-Command"]
 
+# Package manager detection (priority: bun > pnpm > yarn > npm)
+# PKG_MANAGER := if os_family() == "windows" {
+#     `(Get-Command bun -ErrorAction SilentlyContinue) ? "bun" : (Get-Command pnpm -ErrorAction SilentlyContinue) ? "pnpm" : (Get-Command yarn -ErrorAction SilentlyContinue) ? "yarn" : "npm"`
+# } else {
+#     `command -v bun >/dev/null 2>&1 && echo "bun" || command -v pnpm >/dev/null 2>&1 && echo "pnpm" || command -v yarn >/dev/null 2>&1 && echo "yarn" || echo "npm"`
+# }
+# Or manually specify the package manager here:
+PKG_MANAGER := "bun"
+PKG_EXEC := if PKG_MANAGER == "npm" { "npx" } else if PKG_MANAGER == "yarn" { "yarn dlx" } else { PKG_MANAGER + "x" }
+PKG_TS := if PKG_MANAGER == "bun" { "bun" } else { PKG_EXEC + " tsx" }
+PKG_RUN := if PKG_MANAGER == "npm" { "npm run" } else if PKG_MANAGER == "yarn" { "yarn" } else { PKG_MANAGER + " run" }
+PKG_ADD := if PKG_MANAGER == "npm" { "npm install" } else if PKG_MANAGER == "yarn" { "yarn add" } else { PKG_MANAGER + " add" }
+PKG_UPDATE := if PKG_MANAGER == "npm" { "npm update" } else if PKG_MANAGER == "yarn" { "yarn upgrade" } else { PKG_MANAGER + " update" }
+PKG_INSTALL := if PKG_MANAGER == "npm" { "npm install" } else if PKG_MANAGER == "yarn" { "yarn install" } else { PKG_MANAGER + " install" }
+
 RUST_DIR := "src-tauri"
 
-TAURI_CMD := "bun run tauri"
+TAURI_CMD := PKG_RUN + " tauri"
 RM_CMD := if os_family() == "windows" { "Remove-Item -Force -Recurse -ErrorAction SilentlyContinue" } else { "rm -rf" }
-RELEASE_CMD := if os_family() == "windows" { "pwsh -NoLogo -File scripts/release.ps1" } else { "bash scripts/release.sh" }
 
 alias s := setup
 alias d := dev
@@ -62,7 +76,8 @@ alias adb := add-dep-back
 # Setup the project environment
 @setup:
     echo "🚀 Setting up project dependencies..."
-    -bun install
+    echo "📦 Detected package manager: {{ PKG_MANAGER }}"
+    -{{ PKG_INSTALL }}
     cargo check --manifest-path {{ RUST_DIR }}/Cargo.toml
     echo "✅ Setup complete! You can now run 'just dev'."
 
@@ -118,7 +133,7 @@ alias adb := add-dep-back
 [group: "format"]
 @format:
     echo "💅 Formatting code..."
-    -bunx biome format --write .
+    -{{ PKG_EXEC }} biome format --write .
     cargo fmt --manifest-path {{ RUST_DIR }}/Cargo.toml --all
     echo "✅ Formatting complete!"
 
@@ -126,7 +141,7 @@ alias adb := add-dep-back
 [group: "format"]
 @format-front:
     echo "💅 Formatting front-end code..."
-    bunx biome format --write .
+    {{ PKG_EXEC }} biome format --write .
     echo "✅ Front-end formatting complete!"
 
 # Back-end specific formatting
@@ -140,8 +155,8 @@ alias adb := add-dep-back
 [group: "check"]
 @check:
     echo "🧐 Running static analysis..."
-    -bunx biome check .
-    -bunx tsc --noEmit
+    -{{ PKG_EXEC }} biome check .
+    -{{ PKG_EXEC }} tsc --noEmit
     cargo check --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace --all-targets
     echo "✅ Checks complete!"
 
@@ -149,8 +164,8 @@ alias adb := add-dep-back
 [group: "check"]
 @check-front:
     echo "🧐 Running front-end checks..."
-    -bunx biome check .
-    bunx tsc --noEmit
+    -{{ PKG_EXEC }} biome check .
+    {{ PKG_EXEC }} tsc --noEmit
     echo "✅ Front-end checks complete!"
 
 # Back-end specific checks
@@ -164,7 +179,7 @@ alias adb := add-dep-back
 [group: "lint"]
 @lint:
     echo "🔍 Running linters..."
-    -bunx biome lint .
+    -{{ PKG_EXEC }} biome lint .
     cargo clippy --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace --all-targets
     echo "✅ Linting complete!"
 
@@ -172,7 +187,7 @@ alias adb := add-dep-back
 [group: "lint"]
 @lint-front:
     echo "🔍 Running front-end linters..."
-    bunx biome lint .
+    {{ PKG_EXEC }} biome lint .
     echo "✅ Front-end linting complete!"
 
 # Back-end specific linting
@@ -186,7 +201,7 @@ alias adb := add-dep-back
 [group: "fix"]
 @fix:
     echo "🛠️ Fixing code issues..."
-    bunx biome check --write .
+    {{ PKG_EXEC }} biome check --write .
     cargo clippy --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace --all-targets --fix --allow-dirty
     echo "✅ Fixing complete!"
 
@@ -194,7 +209,7 @@ alias adb := add-dep-back
 [group: "fix"]
 @fix-front:
     echo "🛠️ Fixing front-end code issues..."
-    bunx biome check --write .
+    {{ PKG_EXEC }} biome check --write .
     echo "✅ Front-end fixing complete!"
 
 # Back-end specific fixing
@@ -212,7 +227,7 @@ alias adb := add-dep-back
 [group: "test"]
 @test-all:
     echo "🧪 Running tests..."
-    -bun run test:run
+    -{{ PKG_RUN }} test:run
     cargo test --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace
     echo "✅ Tests complete!"
 
@@ -227,14 +242,14 @@ alias adb := add-dep-back
 [group: "test"]
 @test-front-all:
     echo "🧪 Running front-end tests..."
-    bun run test:run
+    {{ PKG_RUN }} test:run
     echo "✅ Front-end tests complete!"
     
 # Run front-end tests
 [group: "test"]
 @test-front +tests:
     echo "🧪 Running front-end tests..."
-    bun run test:run {{ tests }}
+    {{ PKG_RUN }} test:run {{ tests }}
     echo "✅ Front-end tests complete!"
 
 # Run all back-end tests
@@ -259,7 +274,7 @@ alias adb := add-dep-back
 [group: "update-dependencies"]
 @update:
     echo "⬆️ Updating dependencies..."
-    -bun update
+    -{{ PKG_UPDATE }}
     cargo update --manifest-path {{ RUST_DIR }}/Cargo.toml
     echo "✅ Dependencies updated!"
 
@@ -267,7 +282,7 @@ alias adb := add-dep-back
 [group: "update-dependencies"]
 @update-front:
     echo "⬆️ Updating front-end dependencies..."
-    bun update
+    {{ PKG_UPDATE }}
     echo "✅ Front-end dependencies updated!"
 
 # Update back-end dependencies
@@ -281,7 +296,7 @@ alias adb := add-dep-back
 [group: "add-dependency"]
 @add-dep-front +deps:
     echo "⬆️ Adding front-end dependencies..."
-    bun add {{ deps }}
+    {{ PKG_ADD }} {{ deps }}
     echo "✅ Front-end dependencies added!"
 
 # Add back-end dependency
@@ -299,7 +314,7 @@ alias adb := add-dep-back
 [group: "release"]
 @release +args:
     echo "🚀 Releasing new version..."
-    {{ RELEASE_CMD }} {{ args }}
+    {{ PKG_TS }} scripts/release.ts {{ args }}
     echo "✅ Release process complete!"
 
 # Release with patch version bump
@@ -317,6 +332,13 @@ alias adb := add-dep-back
 @release-major:
     just release --major
 
+# Setup code signing for updater
+[group: "release"]
+@setup-signing:
+    echo "🔐 Setting up code signing..."
+    {{ PKG_TS }} scripts/setup-updater-signing.ts
+    echo "✅ Setup complete!"
+
 # -----------------------------------------------------------------------------
 # Git
 # -----------------------------------------------------------------------------
@@ -325,8 +347,8 @@ alias adb := add-dep-back
 [group: "git"]
 @pre-commit-checks:
     echo "🔒 Running frontend checks..."
-    bunx biome check .
-    bunx tsc --noEmit
+    {{ PKG_EXEC }} biome check .
+    {{ PKG_EXEC }} tsc --noEmit
     echo "✅ Frontend checks passed!"
     echo "🔒 Running backend checks..."
     cargo fmt --manifest-path src-tauri/Cargo.toml --all --check
@@ -338,8 +360,8 @@ alias adb := add-dep-back
 [group: "git"]
 @pre-commit-checks-all:
     echo "🔒 Running front-end checks..."
-    -bunx biome check .
-    -bunx tsc --noEmit
+    -{{ PKG_EXEC }} biome check .
+    -{{ PKG_EXEC }} tsc --noEmit
     echo "✅ Front-end checks passed!"
     echo "🔒 Running back-end checks..."
     -cargo fmt --manifest-path src-tauri/Cargo.toml --all --check
@@ -351,13 +373,13 @@ alias adb := add-dep-back
 [group: "git"]
 @pre-commit-fixes:
     echo "💅 Formatting front-end code..."
-    -bunx biome format --write .
+    -{{ PKG_EXEC }} biome format --write .
     echo "✅ Front-end formatting applied!"
     echo "💅 Formatting back-end code..."
     -cargo fmt --manifest-path {{ RUST_DIR }}/Cargo.toml --all
     echo "✅ Back-end formatting applied!"
     echo "🛠️ Fixing front-end code issues..."
-    -bunx biome check --write .
+    -{{ PKG_EXEC }} biome check --write .
     echo "✅ Front-end fixing complete!"
     echo "🛠️ Fixing back-end code issues..."
     -cargo clippy --manifest-path {{ RUST_DIR }}/Cargo.toml --workspace --all-targets --fix --allow-dirty
