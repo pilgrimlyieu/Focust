@@ -12,7 +12,7 @@ import { useI18n } from "vue-i18n";
 import CheckCircleIcon from "@/components/icons/CheckCircleIcon.vue";
 import CheckIcon from "@/components/icons/CheckIcon.vue";
 import CleanCalendar from "@/components/icons/CleanCalendar.vue";
-import ClockIcon from "@/components/icons/ClockIcon.vue";
+import FocustLogo from "@/components/icons/FocustLogo.vue";
 import PauseIcon from "@/components/icons/PauseIcon.vue";
 import PlayIcon from "@/components/icons/PlayIcon.vue";
 import RefreshIcon from "@/components/icons/RefreshIcon.vue";
@@ -307,9 +307,8 @@ defineExpose({
       <div class="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <!-- App info with icon -->
         <div class="flex items-center gap-3">
-          <div
-            class="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-primary to-secondary shadow-lg">
-            <ClockIcon class-name="h-6 w-6 text-white" />
+          <div class="flex h-10 w-10 items-center justify-center ">
+            <FocustLogo />
           </div>
           <div>
             <h1 class="text-lg font-bold text-base-content sm:text-xl">{{ t("app.name") }}</h1>
