@@ -9,15 +9,32 @@ const ruRU: LocaleStrings = {
     checkForUpdates: "Проверить обновления",
     checkingUpdates: "Проверка обновлений…",
     currentVersion: "Текущая версия",
+    dismissUpdate: "Отклонить",
     github: "Репозиторий GitHub",
+    installingUpdate: "Установка обновления…",
+    installUpdate: "Установить обновление",
     license: "Лицензия",
+    majorUpdate: "Крупное обновление",
+    majorUpdateDesc:
+      "Крупные обновления версий могут включать несовместимые изменения. Пожалуйста, ознакомьтесь с примечаниями к выпуску перед обновлением.",
+    minorUpdate: "Минорное обновление",
+    minorUpdateDesc: "Это обновление включает новые функции и улучшения.",
+    newVersion: "Новая версия",
     noUpdateAvailable: "Вы уже используете последнюю версию",
+    patchUpdate: "Обновление-патч",
+    patchUpdateDesc:
+      "Это обновление включает исправления ошибок и незначительные улучшения.",
     projectLicense: "(Лицензия MIT)",
+    releaseNotes: "Примечания к выпуску",
     starOnGitHub: "⭐ Добавить звезду на GitHub",
     title: "О Focust",
     updateAvailable: "Доступна новая версия {version}!",
+    updateInstalled:
+      "Обновление успешно установлено! Пожалуйста, перезапустите приложение.",
     version: "Версия",
     viewLicense: "Просмотреть лицензию",
+    zeroVerWarning:
+      "⚠️ Этот проект находится на стадии 0.x. Обновления могут вносить частые изменения.",
   },
   actions: {
     add: "Добавить",

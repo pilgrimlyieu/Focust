@@ -9,15 +9,33 @@ const itIT: LocaleStrings = {
     checkForUpdates: "Controlla aggiornamenti",
     checkingUpdates: "Controllo aggiornamenti…",
     currentVersion: "Versione attuale",
+    dismissUpdate: "Ignora",
     github: "Repository GitHub",
+    installingUpdate: "Installazione aggiornamento…",
+    installUpdate: "Installa aggiornamento",
     license: "Licenza",
+    majorUpdate: "Aggiornamento maggiore",
+    majorUpdateDesc:
+      "Gli aggiornamenti di versione maggiore possono includere modifiche incompatibili. Si prega di consultare le note di rilascio prima dell'aggiornamento.",
+    minorUpdate: "Aggiornamento minore",
+    minorUpdateDesc:
+      "Questo aggiornamento include nuove funzionalità e miglioramenti.",
+    newVersion: "Nuova versione",
     noUpdateAvailable: "Stai già utilizzando l'ultima versione",
+    patchUpdate: "Aggiornamento patch",
+    patchUpdateDesc:
+      "Questo aggiornamento include correzioni di bug e miglioramenti minori.",
     projectLicense: "(Licenza MIT)",
+    releaseNotes: "Note di rilascio",
     starOnGitHub: "⭐ Metti una stella su GitHub",
     title: "Info su Focust",
     updateAvailable: "Nuova versione {version} disponibile!",
+    updateInstalled:
+      "Aggiornamento installato con successo! Si prega di riavviare l'applicazione.",
     version: "Versione",
     viewLicense: "Visualizza licenza",
+    zeroVerWarning:
+      "⚠️ Questo progetto è in fase 0.x. Gli aggiornamenti possono introdurre modifiche frequenti.",
   },
   actions: {
     add: "Aggiungi",

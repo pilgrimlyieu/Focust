@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { getName, getVersion } from "@tauri-apps/api/app";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { check } from "@tauri-apps/plugin-updater";
+import { check, type Update } from "@tauri-apps/plugin-updater";
 import { onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import ExternalLinkIcon from "@/components/icons/ExternalLinkIcon.vue";
@@ -16,10 +16,57 @@ const { t } = useI18n();
 const appName = ref<string>("Focust");
 const appVersion = ref<string>("0.1.0");
 const checkingUpdate = ref<boolean>(false);
+const installingUpdate = ref<boolean>(false);
+const pendingUpdate = ref<Update | null>(null);
 
 const GITHUB_REPO = "https://github.com/pilgrimlyieu/Focust";
 const AUTHOR_PROFILE = "https://github.com/pilgrimlyieu";
 const LICENSE_URL = "https://github.com/pilgrimlyieu/Focust/blob/main/LICENSE";
+
+type VersionDiff = "major" | "minor" | "patch" | null;
+
+/**
+ * Parse version string and return [major, minor, patch]
+ * Handles both "1.2.3" and "v1.2.3" formats
+ * @param {string} version Version string
+ * @returns {[number, number, number]} Parsed version parts
+ */
+function parseVersion(version: string): [number, number, number] {
+  const cleaned = version.replace(/^v/, "");
+  const parts = cleaned.split(".").map(Number);
+  return [parts[0] || 0, parts[1] || 0, parts[2] || 0];
+}
+
+/**
+ * Compare two version strings and determine the difference type
+ * @param {string} current Current version (e.g., "0.2.11" or "v0.2.11")
+ * @param {string} latest Latest version (e.g., "0.3.0" or "v0.3.0")
+ * @returns {VersionDiff} Type of version difference
+ */
+function compareVersions(current: string, latest: string): VersionDiff {
+  const [cMajor, cMinor, cPatch] = parseVersion(current);
+  const [lMajor, lMinor, lPatch] = parseVersion(latest);
+
+  if (lMajor > cMajor) return "major";
+  if (lMajor < cMajor) return null;
+
+  if (lMinor > cMinor) return "minor";
+  if (lMinor < cMinor) return null;
+
+  if (lPatch > cPatch) return "patch";
+
+  return null;
+}
+
+/**
+ * Check if version is in 0.x (zero-ver) stage
+ * @param {string} version Version string
+ * @returns {boolean} True if major version is 0
+ */
+function isZeroVer(version: string): boolean {
+  const [major] = parseVersion(version);
+  return major === 0;
+}
 
 /** Load application info on mount */
 onMounted(async () => {
@@ -44,17 +91,54 @@ async function openLink(url: string) {
   }
 }
 
-/** Check for updates */
+/** Check for updates (without auto-installing) */
 async function checkForUpdates() {
   checkingUpdate.value = true;
   try {
     const update = await check();
-    if (update) {
-      console.log(
-        `found update ${update.version} from ${update.date} with notes ${update.body}`,
+
+    if (!update) {
+      emit("notify", "info", t("about.noUpdateAvailable"));
+      return;
+    }
+
+    console.log(
+      `Update available: ${update.version} (current: ${update.currentVersion})`,
+    );
+    console.log(`Release date: ${update.date}`);
+    console.log(`Release notes: ${update.body}`);
+
+    // Store update for later installation
+    pendingUpdate.value = update;
+
+    // Determine version difference type
+    const versionDiff = compareVersions(update.currentVersion, update.version);
+    const isZero = isZeroVer(update.version);
+
+    // Show notification based on version type
+    if (versionDiff === "major") {
+      emit(
+        "notify",
+        "info",
+        t("about.updateAvailable", { version: update.version }),
       );
-      await update.downloadAndInstall();
-      console.log("update installed");
+    } else if (versionDiff === "minor") {
+      emit(
+        "notify",
+        "success",
+        t("about.updateAvailable", { version: update.version }),
+      );
+    } else if (versionDiff === "patch") {
+      emit(
+        "notify",
+        "info",
+        t("about.updateAvailable", { version: update.version }),
+      );
+    }
+
+    // Log zero-ver warning if applicable
+    if (isZero) {
+      console.log("⚠️ This is a 0.x version - expect frequent changes");
     }
   } catch (err) {
     console.error("Failed to check updates:", err);
@@ -62,6 +146,33 @@ async function checkForUpdates() {
   } finally {
     checkingUpdate.value = false;
   }
+}
+
+/** Install the pending update */
+async function installUpdate() {
+  if (!pendingUpdate.value) return;
+
+  installingUpdate.value = true;
+  try {
+    console.log(`Installing update ${pendingUpdate.value.version}...`);
+    await pendingUpdate.value.downloadAndInstall();
+
+    emit("notify", "success", t("about.updateInstalled"));
+    console.log("Update installed successfully");
+
+    // Clear pending update
+    pendingUpdate.value = null;
+  } catch (err) {
+    console.error("Failed to install update:", err);
+    emit("notify", "error", t("toast.updateCheckFailed"));
+  } finally {
+    installingUpdate.value = false;
+  }
+}
+
+/** Dismiss the pending update */
+function dismissUpdate() {
+  pendingUpdate.value = null;
 }
 </script>
 
@@ -96,8 +207,75 @@ async function checkForUpdates() {
           <span class="text-sm text-base-content/70">{{ t("about.currentVersion") }}</span>
           <span class="badge badge-primary badge-lg font-mono">v{{ appVersion }}</span>
         </div>
-        <button class="btn btn-primary gap-2 shadow-md hover:shadow-lg transition-all" :disabled="checkingUpdate"
-          @click="checkForUpdates">
+
+        <!-- Update Available Notification -->
+        <div v-if="pendingUpdate" class="alert shadow-lg" :class="{
+          'alert-warning': compareVersions(pendingUpdate.currentVersion, pendingUpdate.version) === 'major',
+          'alert-info': compareVersions(pendingUpdate.currentVersion, pendingUpdate.version) !== 'major'
+        }">
+          <div class="w-full space-y-3">
+            <!-- Header -->
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex-1">
+                <h4 class="font-bold text-base flex items-center gap-2">
+                  {{ t("about.newVersion") }}: v{{ pendingUpdate.version }}
+                  <span v-if="compareVersions(pendingUpdate.currentVersion, pendingUpdate.version) === 'major'"
+                    class="badge badge-warning badge-sm">
+                    {{ t("about.majorUpdate") }}
+                  </span>
+                  <span v-else-if="compareVersions(pendingUpdate.currentVersion, pendingUpdate.version) === 'minor'"
+                    class="badge badge-info badge-sm">
+                    {{ t("about.minorUpdate") }}
+                  </span>
+                  <span v-else-if="compareVersions(pendingUpdate.currentVersion, pendingUpdate.version) === 'patch'"
+                    class="badge badge-success badge-sm">
+                    {{ t("about.patchUpdate") }}
+                  </span>
+                </h4>
+                <p v-if="compareVersions(pendingUpdate.currentVersion, pendingUpdate.version) === 'major'"
+                  class="text-sm mt-1 opacity-90">
+                  {{ t("about.majorUpdateDesc") }}
+                </p>
+                <p v-else-if="compareVersions(pendingUpdate.currentVersion, pendingUpdate.version) === 'minor'"
+                  class="text-sm mt-1 opacity-90">
+                  {{ t("about.minorUpdateDesc") }}
+                </p>
+                <p v-else-if="compareVersions(pendingUpdate.currentVersion, pendingUpdate.version) === 'patch'"
+                  class="text-sm mt-1 opacity-90">
+                  {{ t("about.patchUpdateDesc") }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Zero-ver Warning -->
+            <div v-if="isZeroVer(pendingUpdate.version)" class="text-sm opacity-80">
+              {{ t("about.zeroVerWarning") }}
+            </div>
+
+            <!-- Release Notes -->
+            <div v-if="pendingUpdate.body" class="text-sm opacity-90">
+              <button class="btn btn-link btn-xs p-0 h-auto text-sm text-primary hover:text-primary-focus"
+                @click="openLink(pendingUpdate.body)">
+                {{ t("about.releaseNotes") }}
+              </button>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-2 pt-2">
+              <button class="btn btn-sm btn-primary gap-2" :disabled="installingUpdate" @click="installUpdate">
+                <span v-if="installingUpdate" class="loading loading-spinner loading-xs" />
+                {{ installingUpdate ? t("about.installingUpdate") : t("about.installUpdate") }}
+              </button>
+              <button class="btn btn-sm btn-ghost" :disabled="installingUpdate" @click="dismissUpdate">
+                {{ t("about.dismissUpdate") }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Check for Updates Button -->
+        <button v-if="!pendingUpdate" class="btn btn-primary gap-2 shadow-md hover:shadow-lg transition-all"
+          :disabled="checkingUpdate" @click="checkForUpdates">
           <span v-if="checkingUpdate" class="loading loading-spinner loading-sm" />
           <span>{{ checkingUpdate ? t("about.checkingUpdates") : t("about.checkForUpdates") }}</span>
         </button>
@@ -132,25 +310,9 @@ async function checkForUpdates() {
     <div class="rounded-2xl border border-base-300 bg-base-100/70 p-6 shadow-md">
       <h3 class="text-lg font-bold mb-4">Built With</h3>
       <div class="flex flex-wrap gap-2">
-        <span class="badge badge-lg gap-2">
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 0L2.5 6v12L12 24l9.5-6V6L12 0zm0 2.2l7.5 4.7v9.4L12 21.8l-7.5-4.7V6.9L12 2.2z" />
-          </svg>
-          Tauri 2.9
-        </span>
-        <span class="badge badge-lg gap-2">
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M2 12.5L12 2l10 10.5-10 9.5L2 12.5z" />
-          </svg>
-          Vue 3.5
-        </span>
-        <span class="badge badge-lg gap-2">
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-            <path
-              d="M23.8 12.7c0-.7-.6-1.2-1.2-1.2h-2.8c-.1-1.2-.4-2.4-.9-3.5l2.4-1.4c.6-.4.8-1.1.5-1.7-.4-.6-1.1-.8-1.7-.5l-2.4 1.4c-.8-1-1.7-1.9-2.7-2.7l1.4-2.4c.4-.6.2-1.3-.5-1.7-.6-.4-1.3-.2-1.7.5L12.8 2c-1.1-.5-2.3-.8-3.5-.9V.5c0-.7-.6-1.2-1.2-1.2-.7 0-1.2.6-1.2 1.2v2.8c-1.2.1-2.4.4-3.5.9L1.9.9C1.5.3.8.1.2.5c-.6.4-.8 1.1-.5 1.7L2.1 4.6c-1 .8-1.9 1.7-2.7 2.7L-2 5.9c-.6-.4-1.3-.2-1.7.5-.4.6-.2 1.3.5 1.7l2.4 1.4c-.5 1.1-.8 2.3-.9 3.5H-4c-.7 0-1.2.6-1.2 1.2s.6 1.2 1.2 1.2h2.8c.1 1.2.4 2.4.9 3.5l-2.4 1.4c-.6.4-.8 1.1-.5 1.7.3.4.7.6 1.1.6.2 0 .4-.1.6-.2l2.4-1.4c.8 1 1.7 1.9 2.7 2.7l-1.4 2.4c-.4.6-.2 1.3.5 1.7.2.1.4.2.6.2.4 0 .8-.2 1.1-.6l1.4-2.4c1.1.5 2.3.8 3.5.9v2.8c0 .7.6 1.2 1.2 1.2.7 0 1.2-.6 1.2-1.2v-2.8c1.2-.1 2.4-.4 3.5-.9l1.4 2.4c.3.4.7.6 1.1.6.2 0 .4-.1.6-.2.6-.4.8-1.1.5-1.7l-1.4-2.4c1-.8 1.9-1.7 2.7-2.7l2.4 1.4c.2.1.4.2.6.2.4 0 .8-.2 1.1-.6.4-.6.2-1.3-.5-1.7l-2.4-1.4c.5-1.1.8-2.3.9-3.5h2.8c.7 0 1.2-.5 1.2-1.2z" />
-          </svg>
-          Rust 2024
-        </span>
+        <span class="badge badge-lg gap-2">Tauri 2</span>
+        <span class="badge badge-lg gap-2">Vue 3</span>
+        <span class="badge badge-lg gap-2">Rust 2024</span>
         <span class="badge badge-lg gap-2">TypeScript</span>
         <span class="badge badge-lg gap-2">Tailwind CSS</span>
         <span class="badge badge-lg gap-2">DaisyUI</span>

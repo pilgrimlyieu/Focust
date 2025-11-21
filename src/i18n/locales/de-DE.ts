@@ -9,15 +9,33 @@ const deDE: LocaleStrings = {
     checkForUpdates: "Nach Updates suchen",
     checkingUpdates: "Suche nach Updates…",
     currentVersion: "Aktuelle Version",
+    dismissUpdate: "Ignorieren",
     github: "GitHub-Repository",
+    installingUpdate: "Update wird installiert…",
+    installUpdate: "Update installieren",
     license: "Lizenz",
+    majorUpdate: "Hauptversion-Update",
+    majorUpdateDesc:
+      "Hauptversion-Updates können bahnbrechende Änderungen enthalten. Bitte lesen Sie die Versionshinweise vor dem Update.",
+    minorUpdate: "Nebenversion-Update",
+    minorUpdateDesc:
+      "Dieses Update enthält neue Funktionen und Verbesserungen.",
+    newVersion: "Neue Version",
     noUpdateAvailable: "Sie verwenden bereits die neueste Version",
+    patchUpdate: "Patch-Update",
+    patchUpdateDesc:
+      "Dieses Update enthält Fehlerbehebungen und kleinere Verbesserungen.",
     projectLicense: "(MIT-Lizenz)",
+    releaseNotes: "Versionshinweise",
     starOnGitHub: "⭐ Auf GitHub markieren",
     title: "Über Focust",
     updateAvailable: "Neue Version {version} verfügbar!",
+    updateInstalled:
+      "Update erfolgreich installiert! Bitte starten Sie die Anwendung neu.",
     version: "Version",
     viewLicense: "Lizenz anzeigen",
+    zeroVerWarning:
+      "⚠️ Dieses Projekt befindet sich im 0.x-Stadium. Updates können häufige Änderungen einführen.",
   },
   actions: {
     add: "Hinzufügen",

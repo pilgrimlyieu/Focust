@@ -9,15 +9,32 @@ const esES: LocaleStrings = {
     checkForUpdates: "Buscar actualizaciones",
     checkingUpdates: "Buscando actualizaciones…",
     currentVersion: "Versión actual",
+    dismissUpdate: "Descartar",
     github: "Repositorio GitHub",
+    installingUpdate: "Instalando actualización…",
+    installUpdate: "Instalar actualización",
     license: "Licencia",
+    majorUpdate: "Actualización mayor",
+    majorUpdateDesc:
+      "Las actualizaciones de versión mayor pueden incluir cambios importantes. Por favor, revisa las notas de la versión antes de actualizar.",
+    minorUpdate: "Actualización menor",
+    minorUpdateDesc: "Esta actualización incluye nuevas funciones y mejoras.",
+    newVersion: "Nueva versión",
     noUpdateAvailable: "Ya estás usando la última versión",
+    patchUpdate: "Actualización de parche",
+    patchUpdateDesc:
+      "Esta actualización incluye correcciones de errores y mejoras menores.",
     projectLicense: "(Licencia MIT)",
+    releaseNotes: "Notas de la versión",
     starOnGitHub: "⭐ Destacar en GitHub",
     title: "Acerca de Focust",
     updateAvailable: "¡Nueva versión {version} disponible!",
+    updateInstalled:
+      "¡Actualización instalada con éxito! Por favor, reinicia la aplicación.",
     version: "Versión",
     viewLicense: "Ver licencia",
+    zeroVerWarning:
+      "⚠️ Este proyecto está en etapa 0.x. Las actualizaciones pueden introducir cambios frecuentes.",
   },
   actions: {
     add: "Agregar",

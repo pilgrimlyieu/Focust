@@ -12,6 +12,7 @@ import { useI18n } from "vue-i18n";
 import CheckCircleIcon from "@/components/icons/CheckCircleIcon.vue";
 import CheckIcon from "@/components/icons/CheckIcon.vue";
 import CleanCalendar from "@/components/icons/CleanCalendar.vue";
+import ClockIcon from "@/components/icons/ClockIcon.vue";
 import FocustLogo from "@/components/icons/FocustLogo.vue";
 import PauseIcon from "@/components/icons/PauseIcon.vue";
 import PlayIcon from "@/components/icons/PlayIcon.vue";

@@ -308,7 +308,7 @@ jobs:
           cat > artifacts/latest.json << EOF
           {
             "version": "v${VERSION}",
-            "notes": "See release notes at https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}",
+            "notes": "https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}",
             "pub_date": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
             "platforms": {
           EOF

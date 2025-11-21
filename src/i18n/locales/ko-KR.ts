@@ -9,15 +9,32 @@ const koKR: LocaleStrings = {
     checkForUpdates: "업데이트 확인",
     checkingUpdates: "업데이트 확인 중…",
     currentVersion: "현재 버전",
+    dismissUpdate: "무시",
     github: "GitHub 저장소",
+    installingUpdate: "업데이트 설치 중…",
+    installUpdate: "업데이트 설치",
     license: "라이선스",
+    majorUpdate: "주요 버전 업데이트",
+    majorUpdateDesc:
+      "주요 버전 업데이트에는 호환성을 깨는 변경사항이 포함될 수 있습니다. 업데이트 전에 릴리스 노트를 확인하세요.",
+    minorUpdate: "마이너 업데이트",
+    minorUpdateDesc:
+      "이 업데이트에는 새로운 기능과 개선사항이 포함되어 있습니다.",
+    newVersion: "새 버전",
     noUpdateAvailable: "이미 최신 버전을 사용하고 있습니다",
+    patchUpdate: "패치 업데이트",
+    patchUpdateDesc:
+      "이 업데이트에는 버그 수정과 사소한 개선사항이 포함되어 있습니다.",
     projectLicense: "(MIT 라이선스)",
+    releaseNotes: "릴리스 노트",
     starOnGitHub: "⭐ GitHub에서 별표 추가",
     title: "Focust 정보",
     updateAvailable: "새 버전 {version}을(를) 사용할 수 있습니다!",
+    updateInstalled: "업데이트 설치 성공! 애플리케이션을 재시작하세요.",
     version: "버전",
     viewLicense: "라이선스 보기",
+    zeroVerWarning:
+      "⚠️ 이 프로젝트는 0.x 단계입니다. 업데이트로 인해 빈번한 변경이 발생할 수 있습니다.",
   },
   actions: {
     add: "추가",

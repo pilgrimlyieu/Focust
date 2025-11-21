@@ -9,15 +9,32 @@ const jaJP: LocaleStrings = {
     checkForUpdates: "アップデートを確認",
     checkingUpdates: "アップデートを確認中…",
     currentVersion: "現在のバージョン",
+    dismissUpdate: "無視",
     github: "GitHubリポジトリ",
+    installingUpdate: "アップデートをインストール中…",
+    installUpdate: "アップデートをインストール",
     license: "ライセンス",
+    majorUpdate: "メジャーアップデート",
+    majorUpdateDesc:
+      "メジャーバージョンアップデートには破壊的な変更が含まれる可能性があります。更新前にリリースノートを確認してください。",
+    minorUpdate: "マイナーアップデート",
+    minorUpdateDesc: "このアップデートには新機能と改善が含まれています。",
+    newVersion: "新バージョン",
     noUpdateAvailable: "最新バージョンを使用しています",
+    patchUpdate: "パッチアップデート",
+    patchUpdateDesc:
+      "このアップデートにはバグ修正と小さな改善が含まれています。",
     projectLicense: "（MITライセンス）",
+    releaseNotes: "リリースノート",
     starOnGitHub: "⭐ GitHubでスター",
     title: "Focustについて",
     updateAvailable: "新バージョン {version} が利用可能です！",
+    updateInstalled:
+      "アップデートのインストールに成功しました！アプリケーションを再起動してください。",
     version: "バージョン",
     viewLicense: "ライセンスを表示",
+    zeroVerWarning:
+      "⚠️ このプロジェクトは0.x段階です。アップデートにより頻繁な変更が導入される可能性があります。",
   },
   actions: {
     add: "追加",
