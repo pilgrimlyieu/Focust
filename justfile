@@ -62,6 +62,11 @@ alias ub := update-back
 alias adf := add-dep-front
 alias adb := add-dep-back
 
+alias r := release
+alias rp := release-patch
+alias rm := release-minor
+alias rM := release-major
+
 # -----------------------------------------------------------------------------
 # Core Development & Build Commands
 # -----------------------------------------------------------------------------
