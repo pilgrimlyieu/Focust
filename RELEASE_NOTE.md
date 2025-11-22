@@ -13,8 +13,4 @@
 
 ## 🐛 Bug Fixes
 
-- Fix: DND monitor fails to report initial status when Do Not Disturb mode is enabled at startup.
-
-## 🚀 Improvements
-
-- Implement process index for efficient application exclusion matching
+- Fix: Update doesn't work. (This is a regression of 3bcdea0531c1034066e54862968f8f5ad1941a2a from v0.2.13)

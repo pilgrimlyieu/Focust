@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## 0.2.15 (2025.11.22)
+
+### 🐛 Bug Fixes
+
+- Fix: Update doesn't work. (This is a regression of 3bcdea0531c1034066e54862968f8f5ad1941a2a from v0.2.13)
+
 ## 0.2.14 (2025.11.22)
 
 ### 🐛 Bug Fixes
