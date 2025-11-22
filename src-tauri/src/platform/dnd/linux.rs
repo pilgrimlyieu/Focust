@@ -8,15 +8,16 @@
 //! - **XFCE**: org.xfce.Xfconf do-not-disturb property
 //! - **Cinnamon**: org.cinnamon.desktop.notifications via gsettings
 //! - **MATE**: org.mate.NotificationDaemon do-not-disturb via gsettings
-//! - **LXQt**: Config file monitoring (fallback to polling)
+//! - **`LXQt`**: Config file monitoring (fallback to polling)
 //!
 //! All D-Bus implementations are event-driven for zero-polling performance.
 
 use std::env;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use anyhow::{Context, Result};
-use tokio::sync::{Mutex as AsyncMutex, mpsc};
+use tokio::sync::mpsc;
 
 use super::DndEvent;
 use crate::platform::dnd::INTERVAL_SECS;
@@ -24,8 +25,8 @@ use crate::platform::dnd::INTERVAL_SECS;
 /// Linux DND monitor using D-Bus
 pub struct LinuxDndMonitor {
     desktop_env: DesktopEnvironment,
-    is_monitoring: Arc<AsyncMutex<bool>>,
-    last_state: Arc<AsyncMutex<bool>>,
+    is_monitoring: Arc<AtomicBool>,
+    last_state: Arc<AtomicBool>,
 }
 
 /// Detected desktop environment
@@ -49,15 +50,14 @@ impl LinuxDndMonitor {
 
         Ok(Self {
             desktop_env,
-            is_monitoring: Arc::new(AsyncMutex::new(false)),
-            last_state: Arc::new(AsyncMutex::new(false)),
+            is_monitoring: Arc::new(AtomicBool::new(false)),
+            last_state: Arc::new(AtomicBool::new(false)),
         })
     }
 
     /// Start monitoring DND state changes
     pub async fn start(&mut self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
-        let mut is_monitoring = self.is_monitoring.lock().await;
-        if *is_monitoring {
+        if self.is_monitoring.load(Ordering::Acquire) {
             tracing::debug!("Linux DND monitoring is already running");
             return Ok(());
         }
@@ -75,7 +75,7 @@ impl LinuxDndMonitor {
                 false
             }
         };
-        *self.last_state.lock().await = initial_state;
+        self.last_state.store(initial_state, Ordering::Release);
 
         // Start monitoring based on desktop environment
         let monitor_result = match self.desktop_env {
@@ -95,27 +95,28 @@ impl LinuxDndMonitor {
 
         match monitor_result {
             Ok(()) => {
-                *is_monitoring = true;
+                self.is_monitoring.store(true, Ordering::Release);
                 tracing::info!("Linux DND monitoring started successfully");
                 Ok(())
             }
             Err(e) => {
                 tracing::error!("Failed to start Linux DND monitoring: {e}");
-                *is_monitoring = false;
+                self.is_monitoring.store(false, Ordering::Release);
                 Err(e).context("Linux DND monitor failed to start")
             }
         }
     }
 
     /// Stop monitoring DND state
+    #[expect(clippy::unused_async, reason = "for consistency with other platforms")]
     pub async fn stop(&mut self) -> Result<()> {
-        let mut is_monitoring = self.is_monitoring.lock().await;
-        if !*is_monitoring {
+        if !self.is_monitoring.load(Ordering::Acquire) {
+            tracing::debug!("Linux DND monitoring is not running");
             return Ok(());
         }
 
         tracing::info!("Stopping Linux DND monitoring");
-        *is_monitoring = false;
+        self.is_monitoring.store(false, Ordering::Release);
         Ok(())
     }
 
@@ -216,7 +217,7 @@ impl LinuxDndMonitor {
         Ok(())
     }
 
-    /// Monitor LXQt DND via config file polling (fallback)
+    /// Monitor `LXQt` DND via config file polling (fallback)
     #[expect(clippy::unnecessary_wraps)]
     fn monitor_lxqt(&self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
         let last_state = self.last_state.clone();
@@ -351,7 +352,7 @@ async fn check_mate_dnd() -> Result<bool> {
     Ok(stdout.trim() == "true")
 }
 
-/// Check LXQt DND state from config file
+/// Check `LXQt` DND state from config file
 async fn check_lxqt_dnd() -> Result<bool> {
     use tokio::fs;
 
@@ -374,10 +375,10 @@ async fn check_lxqt_dnd() -> Result<bool> {
 // Event-Driven Monitors
 // ============================================================================
 
-/// Monitor KDE via D-Bus PropertiesChanged signal
+/// Monitor KDE via D-Bus `PropertiesChanged` signal
 async fn monitor_kde_dbus(
     sender: mpsc::Sender<DndEvent>,
-    last_state: Arc<AsyncMutex<bool>>,
+    last_state: Arc<AtomicBool>,
 ) -> Result<()> {
     use futures_util::StreamExt;
     use zbus::{Connection, MessageStream};
@@ -391,29 +392,30 @@ async fn monitor_kde_dbus(
         // Parse PropertiesChanged signal for Inhibited property
         if let Ok(_msg) = msg
             && let Ok(current_state) = check_kde_dnd().await
-            && let mut last = last_state.lock().await
-            && *last != current_state
         {
-            *last = current_state;
+            let last = last_state.load(Ordering::Acquire);
+            if last != current_state {
+                last_state.store(current_state, Ordering::Release);
 
-            let event = if current_state {
-                DndEvent::Started
-            } else {
-                DndEvent::Finished
-            };
+                let event = if current_state {
+                    DndEvent::Started
+                } else {
+                    DndEvent::Finished
+                };
 
-            tracing::info!("KDE DND state changed: {}", event.description());
-            sender.send(event).await?;
+                tracing::info!("KDE DND state changed: {}", event.description());
+                sender.send(event).await?;
+            }
         }
     }
 
     Ok(())
 }
 
-/// Monitor XFCE via D-Bus PropertyChanged signal
+/// Monitor XFCE via D-Bus `PropertyChanged` signal
 async fn monitor_xfce_dbus(
     sender: mpsc::Sender<DndEvent>,
-    last_state: Arc<AsyncMutex<bool>>,
+    last_state: Arc<AtomicBool>,
 ) -> Result<()> {
     // Similar to KDE, monitor Xfconf PropertyChanged signals
     // Implementation details omitted for brevity
@@ -424,7 +426,7 @@ async fn monitor_xfce_dbus(
 /// Monitor GNOME via dconf watch command
 async fn monitor_gnome_dconf(
     sender: mpsc::Sender<DndEvent>,
-    last_state: Arc<AsyncMutex<bool>>,
+    last_state: Arc<AtomicBool>,
 ) -> Result<()> {
     use tokio::io::{AsyncBufReadExt, BufReader};
     use tokio::process::Command;
@@ -442,21 +444,20 @@ async fn monitor_gnome_dconf(
         tracing::debug!("dconf watch output: {line}");
 
         // Check current state when change is detected
-        if let Ok(current_state) = check_gnome_dnd().await
-            && let mut last = last_state.lock().await
-            && *last != current_state
-            && *last != current_state
-        {
-            *last = current_state;
+        if let Ok(current_state) = check_gnome_dnd().await {
+            let last = last_state.load(Ordering::Acquire);
+            if last != current_state {
+                last_state.store(current_state, Ordering::Release);
 
-            let event = if current_state {
-                DndEvent::Started
-            } else {
-                DndEvent::Finished
-            };
+                let event = if current_state {
+                    DndEvent::Started
+                } else {
+                    DndEvent::Finished
+                };
 
-            tracing::info!("GNOME DND state changed: {}", event.description());
-            sender.send(event).await?;
+                tracing::info!("GNOME DND state changed: {}", event.description());
+                sender.send(event).await?;
+            }
         }
     }
 
@@ -466,7 +467,7 @@ async fn monitor_gnome_dconf(
 /// Monitor Cinnamon via dconf watch
 async fn monitor_cinnamon_dconf(
     sender: mpsc::Sender<DndEvent>,
-    last_state: Arc<AsyncMutex<bool>>,
+    last_state: Arc<AtomicBool>,
 ) -> Result<()> {
     use tokio::io::{AsyncBufReadExt, BufReader};
     use tokio::process::Command;
@@ -483,20 +484,20 @@ async fn monitor_cinnamon_dconf(
     while let Some(line) = lines.next_line().await? {
         tracing::debug!("dconf watch output: {line}");
 
-        if let Ok(current_state) = check_cinnamon_dnd().await
-            && let mut last = last_state.lock().await
-            && *last != current_state
-        {
-            *last = current_state;
+        if let Ok(current_state) = check_cinnamon_dnd().await {
+            let last = last_state.load(Ordering::Acquire);
+            if last != current_state {
+                last_state.store(current_state, Ordering::Release);
 
-            let event = if current_state {
-                DndEvent::Started
-            } else {
-                DndEvent::Finished
-            };
+                let event = if current_state {
+                    DndEvent::Started
+                } else {
+                    DndEvent::Finished
+                };
 
-            tracing::info!("Cinnamon DND state changed: {}", event.description());
-            sender.send(event).await?;
+                tracing::info!("Cinnamon DND state changed: {}", event.description());
+                sender.send(event).await?;
+            }
         }
     }
 
@@ -506,7 +507,7 @@ async fn monitor_cinnamon_dconf(
 /// Monitor MATE via dconf watch
 async fn monitor_mate_dconf(
     sender: mpsc::Sender<DndEvent>,
-    last_state: Arc<AsyncMutex<bool>>,
+    last_state: Arc<AtomicBool>,
 ) -> Result<()> {
     use tokio::io::{AsyncBufReadExt, BufReader};
     use tokio::process::Command;
@@ -523,30 +524,30 @@ async fn monitor_mate_dconf(
     while let Some(line) = lines.next_line().await? {
         tracing::debug!("dconf watch output: {line}");
 
-        if let Ok(current_state) = check_mate_dnd().await
-            && let mut last = last_state.lock().await
-            && *last != current_state
-        {
-            *last = current_state;
+        if let Ok(current_state) = check_mate_dnd().await {
+            let last = last_state.load(Ordering::Acquire);
+            if last != current_state {
+                last_state.store(current_state, Ordering::Release);
 
-            let event = if current_state {
-                DndEvent::Started
-            } else {
-                DndEvent::Finished
-            };
+                let event = if current_state {
+                    DndEvent::Started
+                } else {
+                    DndEvent::Finished
+                };
 
-            tracing::info!("MATE DND state changed: {}", event.description());
-            sender.send(event).await?;
+                tracing::info!("MATE DND state changed: {}", event.description());
+                sender.send(event).await?;
+            }
         }
     }
 
     Ok(())
 }
 
-/// Poll LXQt config file (fallback for file-based config)
+/// Poll `LXQt` config file (fallback for file-based config)
 async fn poll_lxqt_config(
     sender: mpsc::Sender<DndEvent>,
-    last_state: Arc<AsyncMutex<bool>>,
+    last_state: Arc<AtomicBool>,
 ) -> Result<()> {
     poll_dnd_state(sender, last_state, check_lxqt_dnd).await
 }
@@ -554,7 +555,7 @@ async fn poll_lxqt_config(
 /// Generic polling helper
 async fn poll_dnd_state<F, Fut>(
     sender: mpsc::Sender<DndEvent>,
-    last_state: Arc<AsyncMutex<bool>>,
+    last_state: Arc<AtomicBool>,
     check_fn: F,
 ) -> Result<()>
 where
@@ -566,20 +567,20 @@ where
     loop {
         interval.tick().await;
 
-        if let Ok(current_state) = check_fn().await
-            && let mut last = last_state.lock().await
-            && *last != current_state
-        {
-            *last = current_state;
+        if let Ok(current_state) = check_fn().await {
+            let last = last_state.load(Ordering::Acquire);
+            if last != current_state {
+                last_state.store(current_state, Ordering::Release);
 
-            let event = if current_state {
-                DndEvent::Started
-            } else {
-                DndEvent::Finished
-            };
+                let event = if current_state {
+                    DndEvent::Started
+                } else {
+                    DndEvent::Finished
+                };
 
-            tracing::info!("DND state changed: {}", event.description());
-            sender.send(event).await?;
+                tracing::info!("DND state changed: {}", event.description());
+                sender.send(event).await?;
+            }
         }
     }
 }

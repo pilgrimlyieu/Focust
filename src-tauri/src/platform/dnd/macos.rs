@@ -5,6 +5,7 @@
 //! monitoring, it uses adaptive polling to minimize CPU usage.
 
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use anyhow::{Context, Result};
 use tokio::sync::{Mutex as AsyncMutex, mpsc};
@@ -14,23 +15,22 @@ use crate::platform::dnd::INTERVAL_SECS;
 
 /// macOS DND monitor using polling
 pub struct MacosDndMonitor {
-    is_monitoring: Arc<AsyncMutex<bool>>,
-    last_state: Arc<AsyncMutex<bool>>,
+    is_monitoring: Arc<AtomicBool>,
+    last_state: Arc<AtomicBool>,
 }
 
 impl MacosDndMonitor {
     /// Create a new macOS DND monitor
     pub fn new() -> Result<Self> {
         Ok(Self {
-            is_monitoring: Arc::new(AsyncMutex::new(false)),
-            last_state: Arc::new(AsyncMutex::new(false)),
+            is_monitoring: Arc::new(AtomicBool::new(false)),
+            last_state: Arc::new(AtomicBool::new(false)),
         })
     }
 
     /// Start monitoring Focus Mode status
     pub async fn start(&mut self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
-        let mut is_monitoring = self.is_monitoring.lock().await;
-        if *is_monitoring {
+        if self.is_monitoring.load(Ordering::Acquire) {
             tracing::debug!("macOS DND monitoring is already running");
             return Ok(());
         }
@@ -48,7 +48,7 @@ impl MacosDndMonitor {
                 false
             }
         };
-        *self.last_state.lock().await = initial_state;
+        self.last_state.store(initial_state, Ordering::Release);
 
         // Start polling loop
         let last_state = self.last_state.clone();
@@ -59,20 +59,19 @@ impl MacosDndMonitor {
             }
         });
 
-        *is_monitoring = true;
+        self.is_monitoring.store(true, Ordering::Release);
         tracing::info!("macOS DND monitoring started successfully");
         Ok(())
     }
 
     /// Stop monitoring Focus Mode status
     pub async fn stop(&mut self) -> Result<()> {
-        let mut is_monitoring = self.is_monitoring.lock().await;
-        if !*is_monitoring {
+        if !self.is_monitoring.load(Ordering::Acquire) {
             return Ok(());
         }
 
         tracing::info!("Stopping macOS DND monitoring");
-        *is_monitoring = false;
+        self.is_monitoring.store(false, Ordering::Release);
         Ok(())
     }
 
@@ -120,7 +119,7 @@ async fn check_focus_mode_status() -> Result<bool> {
 #[expect(clippy::unnecessary_wraps)]
 async fn poll_focus_mode(
     sender: mpsc::Sender<DndEvent>,
-    last_state: Arc<AsyncMutex<bool>>,
+    last_state: Arc<AtomicBool>,
 ) -> Result<()> {
     let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(INTERVAL_SECS));
     loop {
@@ -128,11 +127,11 @@ async fn poll_focus_mode(
 
         match check_focus_mode_status().await {
             Ok(current_state) => {
-                let mut last = last_state.lock().await;
+                let last = last_state.load(Ordering::Acquire);
 
                 // Emit event if state changed
-                if *last != current_state {
-                    *last = current_state;
+                if last != current_state {
+                    last_state.store(current_state, Ordering::Release);
 
                     let event = if current_state {
                         DndEvent::Started

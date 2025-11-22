@@ -30,6 +30,7 @@
 
 use std::mem;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use anyhow::{Context, Result};
 use parking_lot::Mutex as ParkingMutex;
@@ -62,8 +63,8 @@ impl SendPtr {
 
 /// Windows DND monitor using WNF API
 pub struct WindowsDndMonitor {
-    is_monitoring: Arc<TokioMutex<bool>>,
-    last_state: Arc<TokioMutex<bool>>,
+    is_monitoring: Arc<AtomicBool>,
+    last_state: Arc<ParkingMutex<bool>>,
     subscription: Arc<TokioMutex<Option<SendPtr>>>,
 }
 
@@ -71,16 +72,15 @@ impl WindowsDndMonitor {
     /// Create a new Windows DND monitor
     pub fn new() -> Result<Self> {
         Ok(Self {
-            is_monitoring: Arc::new(TokioMutex::new(false)),
-            last_state: Arc::new(TokioMutex::new(false)),
+            is_monitoring: Arc::new(AtomicBool::new(false)),
+            last_state: Arc::new(ParkingMutex::new(false)),
             subscription: Arc::new(TokioMutex::new(None)),
         })
     }
 
     /// Start monitoring Focus Assist state changes
     pub async fn start(&mut self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
-        let mut is_monitoring = self.is_monitoring.lock().await;
-        if *is_monitoring {
+        if self.is_monitoring.load(Ordering::Acquire) {
             tracing::debug!("Windows DND monitoring is already running");
             return Ok(());
         }
@@ -90,20 +90,20 @@ impl WindowsDndMonitor {
         // Skip initial state query - callback will fire immediately with current state
         // This avoids potential issues with RtlQueryWnfStateData function signature
         let initial_state = false; // Assume disabled, will be updated by callback
-        *self.last_state.lock().await = initial_state;
+        *self.last_state.lock() = initial_state;
 
         // Subscribe to WNF notifications
-        let callback_last_state = Arc::new(ParkingMutex::new(initial_state));
+        let callback_last_state = self.last_state.clone();
         match subscribe_to_focus_assist(sender, callback_last_state) {
             Ok(subscription) => {
                 *self.subscription.lock().await = Some(subscription);
-                *is_monitoring = true;
+                self.is_monitoring.store(true, Ordering::Release);
                 tracing::info!("Windows DND monitoring started successfully");
                 Ok(())
             }
             Err(e) => {
                 tracing::error!("Failed to subscribe to Focus Assist notifications: {e}");
-                *is_monitoring = false;
+                self.is_monitoring.store(false, Ordering::Release);
                 Err(e).context("Windows DND monitor failed to start")
             }
         }
@@ -111,8 +111,7 @@ impl WindowsDndMonitor {
 
     /// Stop monitoring Focus Assist state
     pub async fn stop(&mut self) -> Result<()> {
-        let mut is_monitoring = self.is_monitoring.lock().await;
-        if !*is_monitoring {
+        if !self.is_monitoring.load(Ordering::Acquire) {
             return Ok(());
         }
 
@@ -123,7 +122,7 @@ impl WindowsDndMonitor {
             unsubscribe_from_focus_assist(subscription.as_ptr());
         }
 
-        *is_monitoring = false;
+        self.is_monitoring.store(false, Ordering::Release);
         tracing::info!("Windows DND monitoring stopped");
         Ok(())
     }
