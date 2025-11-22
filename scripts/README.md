@@ -64,15 +64,6 @@ node --loader ts-node/esm scripts/release.ts --patch
 npx tsx scripts/release.ts --patch
 ```
 
-## GPG Signing
-
-To sign the commit with GPG after release:
-
-```bash
-git commit --amend -S --no-edit
-git push origin main --force-with-lease
-```
-
 ## Full Documentation
 
 See [docs/RELEASE_WORKFLOW.md](../docs/RELEASE_WORKFLOW.md) for complete workflow documentation.

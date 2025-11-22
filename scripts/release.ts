@@ -265,10 +265,6 @@ async function main(): Promise<void> {
 
     // Success!
     logger.success(`Release v${newVersion} completed! 🎉`);
-    logger.spacer();
-    logger.info(
-      "💡 Tip: Sign your commit with GPG if needed:\n   git commit --amend -S --no-edit && git push origin main --force-with-lease",
-    );
   } catch (error) {
     logger.spacer();
     exitWithError(

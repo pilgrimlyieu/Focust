@@ -2,7 +2,7 @@
 import { getName, getVersion } from "@tauri-apps/api/app";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { check, type Update } from "@tauri-apps/plugin-updater";
-import { onMounted, ref } from "vue";
+import { markRaw, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import ExternalLinkIcon from "@/components/icons/ExternalLinkIcon.vue";
 import InfoCircleIcon from "@/components/icons/InfoCircleIcon.vue";
@@ -109,7 +109,7 @@ async function checkForUpdates() {
     console.log(`Release notes: ${update.body}`);
 
     // Store update for later installation
-    pendingUpdate.value = update;
+    pendingUpdate.value = markRaw(update);
 
     // Determine version difference type
     const versionDiff = compareVersions(update.currentVersion, update.version);
