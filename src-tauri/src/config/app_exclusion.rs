@@ -2,8 +2,40 @@
 ///
 /// Allows users to configure when breaks should be paused based on which
 /// applications are currently running.
+use std::collections::HashSet;
+
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
+
+/// Internal index structure for fast process matching
+#[derive(Debug, Clone, Default)]
+struct ProcessIndex {
+    /// Exact match cache for O(1) lookup
+    exact_matches: HashSet<String>,
+    /// Patterns that need partial matching (`ends_with`/`contains`)
+    partial_patterns: Vec<String>,
+}
+
+impl ProcessIndex {
+    /// Build index from process patterns
+    fn build(processes: &[String]) -> Self {
+        let mut exact_matches = HashSet::new();
+        let mut partial_patterns = Vec::new();
+
+        for pattern in processes {
+            let lower = pattern.to_lowercase();
+            // Add to exact match set for O(1) lookup
+            exact_matches.insert(lower.clone());
+            // Keep for partial matching (ends_with/contains)
+            partial_patterns.push(lower);
+        }
+
+        Self {
+            exact_matches,
+            partial_patterns,
+        }
+    }
+}
 
 /// Rule for application exclusion behavior
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS, Default)]
@@ -22,6 +54,7 @@ pub enum ExclusionRule {
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(default, rename_all = "camelCase")]
 #[ts(export, rename_all = "camelCase")]
+#[expect(clippy::partial_pub_fields)]
 pub struct AppExclusion {
     /// The rule to apply (pause or resume)
     pub rule: ExclusionRule,
@@ -31,6 +64,10 @@ pub struct AppExclusion {
     /// Can be case-insensitive process names (e.g., "chrome.exe", "spotify")
     /// or full paths (e.g., "C:\\Program Files\\App\\app.exe")
     pub processes: Vec<String>,
+    /// Internal index for fast matching (rebuilt on load)
+    #[serde(skip)]
+    #[ts(skip)]
+    process_index: ProcessIndex,
 }
 
 impl Default for AppExclusion {
@@ -39,6 +76,7 @@ impl Default for AppExclusion {
             rule: ExclusionRule::Pause,
             active: false,
             processes: Vec::new(),
+            process_index: ProcessIndex::default(),
         }
     }
 }
@@ -50,6 +88,7 @@ impl AppExclusion {
         Self {
             rule: ExclusionRule::Pause,
             active: true,
+            process_index: ProcessIndex::build(&processes),
             processes,
         }
     }
@@ -60,8 +99,14 @@ impl AppExclusion {
         Self {
             rule: ExclusionRule::Resume,
             active: true,
+            process_index: ProcessIndex::build(&processes),
             processes,
         }
+    }
+
+    /// Rebuild internal index (call after deserialization or modification)
+    pub fn rebuild_index(&mut self) {
+        self.process_index = ProcessIndex::build(&self.processes);
     }
 
     /// Check if a process name or path matches any of the configured processes
@@ -72,22 +117,28 @@ impl AppExclusion {
         }
 
         let process_lower = process_name.to_lowercase();
+        self.matches_lowercase(&process_lower)
+    }
 
-        self.processes.iter().any(|pattern| {
-            let pattern_lower = pattern.to_lowercase();
+    /// Check if a lowercase process name or path matches any of the configured processes
+    /// This method assumes the input is already lowercase, avoiding redundant conversions
+    #[must_use]
+    pub fn matches_lowercase(&self, process_lower: &str) -> bool {
+        if !self.active || self.processes.is_empty() {
+            return false;
+        }
 
-            // Check for exact match
-            if process_lower == pattern_lower {
-                return true;
-            }
+        // Fast path: O(1) exact match
+        if self.process_index.exact_matches.contains(process_lower) {
+            return true;
+        }
 
+        // Slow path: O(n) pattern matching for ends_with/contains
+        self.process_index.partial_patterns.iter().any(|pattern| {
             // Check if process name ends with the pattern (for paths)
-            if process_lower.ends_with(&pattern_lower) {
-                return true;
-            }
-
+            process_lower.ends_with(pattern) ||
             // Check if pattern is contained in process name
-            process_lower.contains(&pattern_lower)
+            process_lower.contains(pattern)
         })
     }
 }

@@ -26,9 +26,14 @@ pub struct AppWhitelistMonitor {
 impl AppWhitelistMonitor {
     /// Create a new app whitelist monitor with the given exclusion rules
     #[must_use]
-    pub fn new(exclusions: Vec<AppExclusion>) -> Self {
+    pub fn new(mut exclusions: Vec<AppExclusion>) -> Self {
         // Create system instance for process monitoring
         let system = System::new();
+
+        // Rebuild indices for all exclusions (in case they were deserialized)
+        for exclusion in &mut exclusions {
+            exclusion.rebuild_index();
+        }
 
         Self {
             exclusions,
@@ -38,12 +43,17 @@ impl AppWhitelistMonitor {
     }
 
     /// Update the exclusion rules
-    pub fn update_exclusions(&mut self, exclusions: Vec<AppExclusion>) {
+    pub fn update_exclusions(&mut self, mut exclusions: Vec<AppExclusion>) {
+        // Rebuild indices for all exclusions
+        for exclusion in &mut exclusions {
+            exclusion.rebuild_index();
+        }
         self.exclusions = exclusions;
     }
 
     /// Check if any processes match the current exclusion rules
     fn check_processes(&mut self) -> bool {
+        // Refresh system processes
         self.system.refresh_processes_specifics(
             sysinfo::ProcessesToUpdate::All,
             true,
@@ -58,22 +68,31 @@ impl AppWhitelistMonitor {
             return false;
         };
 
-        // Check if any running process matches the exclusion patterns
-        let has_matching_process = self.system.processes().values().any(|process| {
-            let process_name = process.name().to_string_lossy();
-            let exe_path = process.exe().map(|p| p.to_string_lossy().to_string());
+        // Pre-extract and cache process information (lowercase for matching)
+        let cached_processes: Vec<(String, Option<String>)> = self
+            .system
+            .processes()
+            .values()
+            .map(|process| {
+                let name = process.name().to_string_lossy().to_lowercase();
+                let path = process.exe().map(|p| p.to_string_lossy().to_lowercase());
+                (name, path)
+            })
+            .collect();
 
-            // Check against process name
-            if exclusion.matches(&process_name) {
-                tracing::debug!("Process '{process_name}' matched exclusion rule",);
+        // Check if any cached process matches the exclusion patterns
+        let has_matching_process = cached_processes.iter().any(|(name, path)| {
+            // Check against process name using lowercase variant
+            if exclusion.matches_lowercase(name) {
+                tracing::debug!("Process '{name}' matched exclusion rule");
                 return true;
             }
 
             // Check against full executable path if available
-            if let Some(path) = exe_path
-                && exclusion.matches(&path)
+            if let Some(path) = path
+                && exclusion.matches_lowercase(path)
             {
-                tracing::debug!("Process path '{path}' matched exclusion rule",);
+                tracing::debug!("Process path '{path}' matched exclusion rule");
                 return true;
             }
 
