@@ -38,6 +38,8 @@ pub struct DndMonitor {
     reported_dnd_state: bool,
     /// When the DND state last changed (for debouncing)
     state_change_time: Option<Instant>,
+    /// Whether the initial check has been completed
+    initial_check_done: bool,
 }
 
 impl Default for DndMonitor {
@@ -57,6 +59,7 @@ impl DndMonitor {
             current_dnd_state: false,
             reported_dnd_state: false,
             state_change_time: None,
+            initial_check_done: false,
         }
     }
 
@@ -70,8 +73,29 @@ impl DndMonitor {
 
         let (tx, rx) = mpsc::channel(16);
 
-        self.current_dnd_state = false; // Assume disabled initially
-        self.reported_dnd_state = false;
+        // Query the actual initial DND state from the system
+        // Note: Windows uses WNF callbacks which fire immediately on subscription,
+        // so we skip the initial query to avoid issues with RtlQueryWnfStateData
+        #[cfg(target_os = "windows")]
+        {
+            // Windows: Rely on WNF callback to fire immediately after subscription
+            self.current_dnd_state = false;
+            tracing::trace!("Windows DND: Skipping initial state query, relying on WNF callback");
+        }
+
+        #[cfg(not(target_os = "windows"))]
+        {
+            self.current_dnd_state = monitor
+                .is_enabled()
+                .await
+                .map_err(|e| {
+                    tracing::warn!("Failed to query initial DND state: {e}. Assuming disabled.");
+                    format!("Failed to query initial DND state: {e}")
+                })
+                .unwrap_or(false);
+        }
+
+        self.reported_dnd_state = false; // Start with "not reported" state
 
         monitor.start(tx).await.map_err(|e| {
             tracing::error!("Failed to start DND monitor: {e}");
@@ -86,9 +110,9 @@ impl DndMonitor {
         tracing::info!(
             "DND monitor initialized successfully (initial state: {})",
             if self.current_dnd_state {
-                "active"
+                "queried as active"
             } else {
-                "inactive"
+                "queried as inactive"
             }
         );
 
@@ -146,6 +170,25 @@ impl Monitor for DndMonitor {
                     return Err(MonitorError::CheckFailed(
                         "Event channel disconnected".to_owned(),
                     ));
+                }
+            }
+
+            // Handle initial state check (skip debouncing for first check)
+            if !self.initial_check_done {
+                self.initial_check_done = true;
+
+                if self.current_dnd_state != self.reported_dnd_state {
+                    self.reported_dnd_state = self.current_dnd_state;
+
+                    return if self.current_dnd_state {
+                        tracing::info!("DND enabled at startup (initial check), pausing scheduler");
+                        Ok(MonitorAction::Pause(PauseReason::Dnd))
+                    } else {
+                        tracing::info!(
+                            "DND disabled at startup (initial check), scheduler remains active"
+                        );
+                        Ok(MonitorAction::None)
+                    };
                 }
             }
 

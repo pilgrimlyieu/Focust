@@ -130,6 +130,9 @@ function git(...args: string[]): void {
 }
 
 function commitAndTag(version: string): void {
+  logger.info("🔍 Verifying Staged Changes (Version files only):");
+  git("diff", "-U0", "package.json", "src-tauri/tauri.conf.json");
+  confirm("Proceed with commit?") || exitWithError("Commit cancelled by user");
   git(
     "add",
     "package.json",
@@ -137,9 +140,6 @@ function commitAndTag(version: string): void {
     "CHANGELOG.md",
     "RELEASE_NOTE.md",
   );
-  logger.info("🔍 Verifying Staged Changes (Version files only):");
-  git("diff", "--staged", "-U0", "package.json", "src-tauri/tauri.conf.json");
-  confirm("Proceed with commit?") || exitWithError("Commit cancelled by user");
   git("commit", "-m", `"chore: bump version to v${version}"`);
   git("tag", `v${version}`);
   logger.success(`Created commit and tag v${version}`);
