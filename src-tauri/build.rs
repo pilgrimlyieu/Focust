@@ -1,7 +1,7 @@
 // https://github.com/tauri-apps/tauri/issues/13419#issuecomment-3398457618
 // Fix `STATUS_ENTRYPOINT_NOT_FOUND` error on Windows when testing.
-#[expect(clippy::unwrap_used)]
 fn main() {
+    #[expect(clippy::unwrap_used)]
     #[cfg(windows)]
     {
         let mut attributes = tauri_build::Attributes::new();

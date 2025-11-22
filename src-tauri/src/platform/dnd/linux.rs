@@ -267,6 +267,7 @@ fn detect_desktop_environment() -> DesktopEnvironment {
 // ============================================================================
 
 /// Check KDE DND state via D-Bus
+#[expect(clippy::same_name_method)]
 async fn check_kde_dnd() -> Result<bool> {
     use zbus::{Connection, proxy};
 
@@ -275,19 +276,20 @@ async fn check_kde_dnd() -> Result<bool> {
         default_service = "org.freedesktop.Notifications",
         default_path = "/org/freedesktop/Notifications"
     )]
-    trait Notifications {
+    trait KdeNotifications {
         #[zbus(property, name = "Inhibited")]
         fn inhibited(&self) -> zbus::Result<bool>;
     }
 
     let connection = Connection::session().await?;
-    let proxy = NotificationsProxy::new(&connection).await?;
+    let proxy = KdeNotificationsProxy::new(&connection).await?;
     let inhibited = proxy.inhibited().await?;
 
     Ok(inhibited)
 }
 
 /// Check XFCE DND state via D-Bus
+#[expect(clippy::same_name_method)]
 async fn check_xfce_dnd() -> Result<bool> {
     use zbus::zvariant::{OwnedValue, Value};
     use zbus::{Connection, proxy};
@@ -297,12 +299,12 @@ async fn check_xfce_dnd() -> Result<bool> {
         default_service = "org.xfce.Xfconf",
         default_path = "/org/xfce/Xfconf"
     )]
-    trait Xfconf {
+    trait XfceXfconf {
         fn get_property(&self, channel: &str, property: &str) -> zbus::Result<OwnedValue>;
     }
 
     let connection = Connection::session().await?;
-    let proxy = XfconfProxy::new(&connection).await?;
+    let proxy = XfceXfconfProxy::new(&connection).await?;
     let value = proxy
         .get_property("xfce4-notifyd", "/do-not-disturb")
         .await?;
