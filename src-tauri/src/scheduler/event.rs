@@ -22,7 +22,7 @@ pub fn get_active_schedule(
     now_day: Weekday,
 ) -> Option<&ScheduleSettings> {
     config.schedules.iter().find(|s| {
-        s.enabled && s.days_of_week.contains(&now_day) && s.time_range.contains(&now_time)
+        s.enabled && s.days_of_week.contains_day(now_day) && s.time_range.contains(&now_time)
     })
 }
 
@@ -36,33 +36,29 @@ mod tests {
     use chrono::Weekday;
 
     fn create_test_config() -> AppConfig {
+        use crate::core::schedule::DaysOfWeek;
+
         AppConfig {
             schedules: vec![
                 ScheduleSettings {
                     name: "Weekday Schedule".to_owned(),
                     enabled: true,
                     time_range: time_range(9, 0, 17, 0),
-                    days_of_week: vec![
-                        Weekday::Mon,
-                        Weekday::Tue,
-                        Weekday::Wed,
-                        Weekday::Thu,
-                        Weekday::Fri,
-                    ],
+                    days_of_week: DaysOfWeek::workdays(),
                     ..Default::default()
                 },
                 ScheduleSettings {
                     name: "Weekend Schedule".to_owned(),
                     enabled: true,
                     time_range: time_range(10, 0, 14, 0),
-                    days_of_week: vec![Weekday::Sat, Weekday::Sun],
+                    days_of_week: DaysOfWeek::weekend(),
                     ..Default::default()
                 },
                 ScheduleSettings {
                     name: "Disabled Schedule".to_owned(),
                     enabled: false, // DISABLED
                     time_range: full_time_range(),
-                    days_of_week: vec![Weekday::Mon],
+                    days_of_week: DaysOfWeek::MONDAY,
                     ..Default::default()
                 },
             ],

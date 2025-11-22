@@ -14,7 +14,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
     - ![Old Logo](https://github.com/pilgrimlyieu/Focust/raw/deaeba28f9444ddd2db4b4736e110ab2b871851d/src-tauri/icons/128x128.png) ![New Logo](https://github.com/pilgrimlyieu/Focust/raw/ef0cdb9adb507fe7db84cc355e8f1b9e50e1e9a3/src-tauri/icons/128x128.png)
 - The update will not automatically and quietly be done anymore. Instead, users will be notified of the detailed information of the new version and can choose if they want to update.
 
-
 ## 0.2.12 (2025.11.20)
 
 ### 🎉 Features
@@ -22,7 +21,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Focust has its own icon now!
 
 ![Focust icon](https://github.com/pilgrimlyieu/Focust/raw/deaeba28f9444ddd2db4b4736e110ab2b871851d/src-tauri/icons/128x128.png)
-
 
 ## 0.2.11 (2025.11.19)
 

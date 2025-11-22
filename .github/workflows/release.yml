@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'src-tauri/Cargo.lock'
+      - 'src-tauri/Cargo.toml'
       - 'bun.lock'
     tags:
       - "v*.*.*"

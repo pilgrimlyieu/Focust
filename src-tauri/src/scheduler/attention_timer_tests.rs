@@ -16,7 +16,7 @@
 use tokio::sync::mpsc;
 
 use crate::config::AppConfig;
-use crate::core::schedule::{AttentionId, AttentionSettings};
+use crate::core::schedule::{AttentionId, AttentionSettings, DaysOfWeek};
 use crate::core::theme::ThemeSettings;
 use crate::core::time::ShortTimes;
 use crate::scheduler::models::{Command, PauseReason};
@@ -29,12 +29,7 @@ use crate::scheduler::test_helpers::*;
 // ============================================================================
 
 /// Create a config with attention settings
-fn config_with_attention(
-    hour: u32,
-    minute: u32,
-    enabled: bool,
-    days: Vec<chrono::Weekday>,
-) -> AppConfig {
+fn config_with_attention(hour: u32, minute: u32, enabled: bool, days: DaysOfWeek) -> AppConfig {
     let mut config = TestConfigBuilder::new().build();
 
     config.attentions = vec![AttentionSettings {
@@ -417,12 +412,7 @@ async fn multiple_attentions_different_times() {
 #[tokio::test(start_paused = true)]
 async fn attention_specific_days() {
     // Only on Monday and Wednesday
-    let config = config_with_attention(
-        10,
-        0,
-        true,
-        vec![chrono::Weekday::Mon, chrono::Weekday::Wed],
-    );
+    let config = config_with_attention(10, 0, true, DaysOfWeek::MONDAY | DaysOfWeek::WEDNESDAY);
 
     let env = create_manager_test_env(config);
     let (_cmd_tx, cmd_rx) = mpsc::channel(32);
@@ -547,7 +537,7 @@ async fn attention_at_end_of_day() {
 /// Attention with empty `days_of_week` list.
 #[tokio::test(start_paused = true)]
 async fn attention_no_valid_days() {
-    let config = config_with_attention(10, 0, true, vec![]); // No days
+    let config = config_with_attention(10, 0, true, DaysOfWeek::empty()); // No days
 
     let env = create_manager_test_env(config);
     let (_cmd_tx, cmd_rx) = mpsc::channel(32);

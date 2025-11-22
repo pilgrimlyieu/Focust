@@ -114,7 +114,7 @@ function updateChangelog(newVersion: string, releaseNotes: string): void {
   const changelogEntry = releaseNotes.replace(/^## /gm, "### ");
 
   // Insert new version after [Unreleased]
-  const newEntry = `\n\n## ${newVersion} (${date})\n\n${changelogEntry}\n`;
+  const newEntry = `\n\n## ${newVersion} (${date})\n\n${changelogEntry}`;
   const updated = content.replace(/(\[Unreleased\])/, `$1${newEntry}`);
 
   file.write(changelogPath, updated);
@@ -147,7 +147,7 @@ function commitAndTag(version: string): void {
 
 function pushToRemote(version: string): void {
   git("push", "origin", "main");
-  git("push", "origin", `v${version}`);
+  git("push", "origin", "tag", `v${version}`);
   logger.success("Pushed changes and tag to remote");
 }
 

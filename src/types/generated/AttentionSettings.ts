@@ -29,6 +29,7 @@ theme: ThemeSettings,
 times: ShortTimes, 
 /**
  * Days of the week when the attention should trigger
+ * Internally stored as bitflags, but serialized as `Vec<Weekday>` for compatibility
  */
 daysOfWeek: Array<string>, 
 /**

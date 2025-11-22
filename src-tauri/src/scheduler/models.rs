@@ -168,6 +168,18 @@ impl From<PauseReason> for PauseReasons {
     }
 }
 
+impl From<PauseReasons> for PauseReason {
+    fn from(reasons: PauseReasons) -> Self {
+        match reasons {
+            PauseReasons::USER_IDLE => PauseReason::UserIdle,
+            PauseReasons::DND => PauseReason::Dnd,
+            PauseReasons::MANUAL => PauseReason::Manual,
+            PauseReasons::APP_EXCLUSION => PauseReason::AppExclusion,
+            _ => unreachable!("Attempted to convert an invalid or combined flag: Got {reasons:?}"),
+        }
+    }
+}
+
 impl PauseReasons {
     /// Returns the number of active pause reasons
     #[must_use]
@@ -176,21 +188,10 @@ impl PauseReasons {
         self.bits().count_ones() as usize
     }
 
-    /// Returns an iterator over all active pause reasons
-    pub fn active_reasons(self) -> impl Iterator<Item = PauseReason> {
-        self.iter().map(|flag| match flag {
-            PauseReasons::USER_IDLE => PauseReason::UserIdle,
-            PauseReasons::DND => PauseReason::Dnd,
-            PauseReasons::MANUAL => PauseReason::Manual,
-            PauseReasons::APP_EXCLUSION => PauseReason::AppExclusion,
-            _ => unreachable!(),
-        })
-    }
-
     /// Returns a vector of all active pause reasons
     #[must_use]
     pub fn to_vec(self) -> Vec<PauseReason> {
-        self.active_reasons().collect()
+        self.iter().map(PauseReason::from).collect()
     }
 }
 
@@ -297,27 +298,17 @@ mod tests {
     }
 
     #[test]
-    fn pause_reasons_active_reasons() {
-        let empty: Vec<_> = PauseReasons::empty().active_reasons().collect();
-        assert_eq!(empty, vec![]);
-
-        let single: Vec<_> = PauseReasons::USER_IDLE.active_reasons().collect();
-        assert_eq!(single, vec![PauseReason::UserIdle]);
-
-        let multiple: Vec<_> = (PauseReasons::USER_IDLE | PauseReasons::DND)
-            .active_reasons()
-            .collect();
-        assert_eq!(multiple.len(), 2);
-        assert!(multiple.contains(&PauseReason::UserIdle));
-        assert!(multiple.contains(&PauseReason::Dnd));
-    }
-
-    #[test]
     fn pause_reasons_to_vec() {
         assert_eq!(PauseReasons::empty().to_vec(), vec![]);
         assert_eq!(
             PauseReasons::USER_IDLE.to_vec(),
             vec![PauseReason::UserIdle]
         );
+    }
+
+    #[test]
+    fn all_pause_reasons_to_vec() {
+        let reasons = PauseReasons::all().to_vec();
+        assert_eq!(reasons.len(), 4);
     }
 }

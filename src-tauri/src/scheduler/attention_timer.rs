@@ -345,7 +345,7 @@ pub(crate) fn get_next_attention_time(
     };
 
     // Check if there's a time today
-    if attention.days_of_week.contains(&now.weekday())
+    if attention.days_of_week.contains_day(now.weekday())
         && let Some(next_time_today) = attention.times.earliest_after(&now_time)
         && let Some(dt_local) = build_datetime(now_date, next_time_today)
     {
@@ -355,7 +355,7 @@ pub(crate) fn get_next_attention_time(
     // Check next 7 days
     for i in 1..=7 {
         let next_date = now_date + chrono::Duration::days(i);
-        if attention.days_of_week.contains(&next_date.weekday())
+        if attention.days_of_week.contains_day(next_date.weekday())
             && let Some(first_time) = attention.times.first()
             && let Some(dt_local) = build_datetime(next_date, first_time)
         {
@@ -373,6 +373,7 @@ pub(crate) fn get_next_attention_time(
 mod tests {
     use super::*;
     use crate::core::schedule::AttentionSettings;
+    use crate::core::schedule::DaysOfWeek;
     use crate::core::time::ShortTimes;
     use crate::scheduler::test_helpers::*;
     use chrono::{Timelike, Weekday};
@@ -451,7 +452,7 @@ mod tests {
             let attention = AttentionSettings {
                 enabled: true,
                 times: ShortTimes::new(vec![naive_time(10, 0, 0)]),
-                days_of_week: vec![Weekday::Mon, Weekday::Wed, Weekday::Fri],
+                days_of_week: DaysOfWeek::MONDAY | DaysOfWeek::WEDNESDAY | DaysOfWeek::FRIDAY,
                 ..Default::default()
             };
 
@@ -538,7 +539,7 @@ mod tests {
             let no_days_attention = AttentionSettings {
                 enabled: true,
                 times: ShortTimes::new(vec![naive_time(10, 0, 0)]),
-                days_of_week: vec![],
+                days_of_week: DaysOfWeek::empty(),
                 ..Default::default()
             };
 
@@ -695,7 +696,7 @@ mod tests {
             let attention = AttentionSettings {
                 enabled: true,
                 times: ShortTimes::new(vec![naive_time(10, 0, 0)]),
-                days_of_week: vec![Weekday::Fri],
+                days_of_week: DaysOfWeek::FRIDAY,
                 ..Default::default()
             };
 
@@ -742,7 +743,7 @@ mod tests {
             let attention = AttentionSettings {
                 enabled: true,
                 times: ShortTimes::new(vec![naive_time(10, 0, 0)]),
-                days_of_week: vec![],
+                days_of_week: DaysOfWeek::empty(),
                 ..Default::default()
             };
 
@@ -758,7 +759,7 @@ mod tests {
             let attention = AttentionSettings {
                 enabled: true,
                 times: ShortTimes::new(vec![naive_time(10, 0, 0)]),
-                days_of_week: vec![Weekday::Mon],
+                days_of_week: DaysOfWeek::MONDAY,
                 ..Default::default()
             };
 
@@ -778,7 +779,7 @@ mod tests {
             let attention = AttentionSettings {
                 enabled: true,
                 times: ShortTimes::new(vec![naive_time(10, 0, 0)]),
-                days_of_week: vec![Weekday::Mon],
+                days_of_week: DaysOfWeek::MONDAY,
                 ..Default::default()
             };
 

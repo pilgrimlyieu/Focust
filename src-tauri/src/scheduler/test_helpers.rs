@@ -11,12 +11,12 @@
 //! - **Flexibility**: Support diverse test scenarios
 //! - **Stability**: Depend on public APIs, not internal implementation
 
-use chrono::{DateTime, Datelike, Duration, Local, NaiveTime, TimeZone, Timelike, Utc, Weekday};
+use chrono::{DateTime, Datelike, Duration, Local, NaiveTime, TimeZone, Timelike, Utc};
 use tauri::Manager;
 
 use crate::config::AppConfig;
 use crate::core::schedule::{
-    BaseBreakSettings, LongBreakSettings, MiniBreakSettings, ScheduleSettings,
+    BaseBreakSettings, DaysOfWeek, LongBreakSettings, MiniBreakSettings, ScheduleSettings,
 };
 use crate::core::time::TimeRange;
 
@@ -57,7 +57,7 @@ impl TestConfigBuilder {
                 start: NaiveTime::MIN,
                 end: NaiveTime::MIN,
             },
-            days_of_week: all_weekdays(),
+            days_of_week: DaysOfWeek::all(),
             notification_before_s: 0,
             mini_breaks: MiniBreakSettings {
                 base: BaseBreakSettings {
@@ -127,7 +127,7 @@ impl TestConfigBuilder {
     }
 
     /// Set days of week for the schedule
-    pub fn days_of_week(mut self, days: Vec<Weekday>) -> Self {
+    pub fn days_of_week(mut self, days: DaysOfWeek) -> Self {
         self.config.schedules[0].days_of_week = days;
         self
     }
@@ -182,32 +182,18 @@ impl Default for TestConfigBuilder {
 // ============================================================================
 
 /// Get all weekdays (Monday through Sunday)
-pub fn all_weekdays() -> Vec<Weekday> {
-    vec![
-        Weekday::Mon,
-        Weekday::Tue,
-        Weekday::Wed,
-        Weekday::Thu,
-        Weekday::Fri,
-        Weekday::Sat,
-        Weekday::Sun,
-    ]
+pub fn all_weekdays() -> DaysOfWeek {
+    DaysOfWeek::all()
 }
 
 /// Get typical workdays (Monday through Friday)
-pub fn workdays() -> Vec<Weekday> {
-    vec![
-        Weekday::Mon,
-        Weekday::Tue,
-        Weekday::Wed,
-        Weekday::Thu,
-        Weekday::Fri,
-    ]
+pub fn workdays() -> DaysOfWeek {
+    DaysOfWeek::workdays()
 }
 
 /// Get weekend days (Saturday and Sunday)
-pub fn weekend_days() -> Vec<Weekday> {
-    vec![Weekday::Sat, Weekday::Sun]
+pub fn weekend_days() -> DaysOfWeek {
+    DaysOfWeek::weekend()
 }
 
 /// Create a UTC datetime for testing
@@ -356,7 +342,7 @@ pub fn assert_duration_near(actual_seconds: i64, expected_seconds: i64, toleranc
 #[expect(unused)]
 pub fn minimal_schedule(
     time_range: TimeRange,
-    days: Vec<Weekday>,
+    days: DaysOfWeek,
     mini_interval_s: u32,
 ) -> ScheduleSettings {
     ScheduleSettings {
@@ -410,7 +396,7 @@ mod tests {
 
         assert_eq!(config.schedules[0].mini_breaks.interval_s, 120);
         assert_eq!(config.schedules[0].mini_breaks.base.duration_s, 30);
-        assert_eq!(config.schedules[0].days_of_week.len(), 5);
+        assert_eq!(config.schedules[0].days_of_week.to_vec().len(), 5);
     }
 
     #[test]
