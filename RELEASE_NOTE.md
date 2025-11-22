@@ -11,8 +11,10 @@
 
 <!-- Release notes content starts here -->
 
+## 🐛 Bug Fixes
+
+- Fix: DND monitor fails to report initial status when Do Not Disturb mode is enabled at startup.
+
 ## 🚀 Improvements
 
-- Update Focust logo
-    - ![Old Logo](https://github.com/pilgrimlyieu/Focust/raw/deaeba28f9444ddd2db4b4736e110ab2b871851d/src-tauri/icons/128x128.png) ![New Logo](https://github.com/pilgrimlyieu/Focust/raw/ef0cdb9adb507fe7db84cc355e8f1b9e50e1e9a3/src-tauri/icons/128x128.png)
-- The update will not automatically and quietly be done anymore. Instead, users will be notified of the detailed information of the new version and can choose if they want to update.
+- Implement process index for efficient application exclusion matching

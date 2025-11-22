@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## 0.2.14 (2025.11.22)
+
+### 🐛 Bug Fixes
+
+- Fix: DND monitor fails to report initial status when Do Not Disturb mode is enabled at startup.
+
+### 🚀 Improvements
+
+- Implement process index for efficient application exclusion matching
+
 ## 0.2.13 (2025.11.21)
 
 ### 🚀 Improvements
