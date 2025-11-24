@@ -75,7 +75,7 @@ impl LinuxDndMonitor {
                 false
             }
         };
-        self.last_state.store(initial_state, Ordering::Release);
+        self.last_state.store(initial_state, Ordering::Relaxed);
 
         // Start monitoring based on desktop environment
         let monitor_result = match self.desktop_env {
@@ -393,9 +393,9 @@ async fn monitor_kde_dbus(
         if let Ok(_msg) = msg
             && let Ok(current_state) = check_kde_dnd().await
         {
-            let last = last_state.load(Ordering::Acquire);
+            let last = last_state.load(Ordering::Relaxed);
             if last != current_state {
-                last_state.store(current_state, Ordering::Release);
+                last_state.store(current_state, Ordering::Relaxed);
 
                 let event = if current_state {
                     DndEvent::Started
@@ -445,9 +445,9 @@ async fn monitor_gnome_dconf(
 
         // Check current state when change is detected
         if let Ok(current_state) = check_gnome_dnd().await {
-            let last = last_state.load(Ordering::Acquire);
+            let last = last_state.load(Ordering::Relaxed);
             if last != current_state {
-                last_state.store(current_state, Ordering::Release);
+                last_state.store(current_state, Ordering::Relaxed);
 
                 let event = if current_state {
                     DndEvent::Started
@@ -485,9 +485,9 @@ async fn monitor_cinnamon_dconf(
         tracing::debug!("dconf watch output: {line}");
 
         if let Ok(current_state) = check_cinnamon_dnd().await {
-            let last = last_state.load(Ordering::Acquire);
+            let last = last_state.load(Ordering::Relaxed);
             if last != current_state {
-                last_state.store(current_state, Ordering::Release);
+                last_state.store(current_state, Ordering::Relaxed);
 
                 let event = if current_state {
                     DndEvent::Started
@@ -525,9 +525,9 @@ async fn monitor_mate_dconf(
         tracing::debug!("dconf watch output: {line}");
 
         if let Ok(current_state) = check_mate_dnd().await {
-            let last = last_state.load(Ordering::Acquire);
+            let last = last_state.load(Ordering::Relaxed);
             if last != current_state {
-                last_state.store(current_state, Ordering::Release);
+                last_state.store(current_state, Ordering::Relaxed);
 
                 let event = if current_state {
                     DndEvent::Started
@@ -568,9 +568,9 @@ where
         interval.tick().await;
 
         if let Ok(current_state) = check_fn().await {
-            let last = last_state.load(Ordering::Acquire);
+            let last = last_state.load(Ordering::Relaxed);
             if last != current_state {
-                last_state.store(current_state, Ordering::Release);
+                last_state.store(current_state, Ordering::Relaxed);
 
                 let event = if current_state {
                     DndEvent::Started

@@ -48,7 +48,7 @@ impl MacosDndMonitor {
                 false
             }
         };
-        self.last_state.store(initial_state, Ordering::Release);
+        self.last_state.store(initial_state, Ordering::Relaxed);
 
         // Start polling loop
         let last_state = self.last_state.clone();
@@ -127,11 +127,11 @@ async fn poll_focus_mode(
 
         match check_focus_mode_status().await {
             Ok(current_state) => {
-                let last = last_state.load(Ordering::Acquire);
+                let last = last_state.load(Ordering::Relaxed);
 
                 // Emit event if state changed
                 if last != current_state {
-                    last_state.store(current_state, Ordering::Release);
+                    last_state.store(current_state, Ordering::Relaxed);
 
                     let event = if current_state {
                         DndEvent::Started

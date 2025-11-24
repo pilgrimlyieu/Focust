@@ -64,7 +64,7 @@ impl SendPtr {
 /// Windows DND monitor using WNF API
 pub struct WindowsDndMonitor {
     is_monitoring: Arc<AtomicBool>,
-    last_state: Arc<ParkingMutex<bool>>,
+    last_state: Arc<AtomicBool>,
     subscription: Arc<TokioMutex<Option<SendPtr>>>,
 }
 
@@ -73,7 +73,7 @@ impl WindowsDndMonitor {
     pub fn new() -> Result<Self> {
         Ok(Self {
             is_monitoring: Arc::new(AtomicBool::new(false)),
-            last_state: Arc::new(ParkingMutex::new(false)),
+            last_state: Arc::new(AtomicBool::new(false)),
             subscription: Arc::new(TokioMutex::new(None)),
         })
     }
@@ -89,8 +89,7 @@ impl WindowsDndMonitor {
 
         // Skip initial state query - callback will fire immediately with current state
         // This avoids potential issues with RtlQueryWnfStateData function signature
-        let initial_state = false; // Assume disabled, will be updated by callback
-        *self.last_state.lock() = initial_state;
+        self.last_state.store(false, Ordering::Relaxed);
 
         // Subscribe to WNF notifications
         let callback_last_state = self.last_state.clone();
@@ -197,7 +196,7 @@ type WnfUserCallback = unsafe extern "system" fn(
 /// Context passed to WNF callback
 struct CallbackContext {
     sender: mpsc::Sender<DndEvent>,
-    last_state: Arc<ParkingMutex<bool>>,
+    last_state: Arc<AtomicBool>,
 }
 
 #[link(name = "ntdll")]
@@ -282,7 +281,7 @@ fn query_focus_assist_state() -> bool {
 /// Memory cleanup is guaranteed even on failure paths to prevent leaks.
 fn subscribe_to_focus_assist(
     sender: mpsc::Sender<DndEvent>,
-    last_state: Arc<ParkingMutex<bool>>,
+    last_state: Arc<AtomicBool>,
 ) -> Result<SendPtr> {
     // Wrap the entire unsafe block in a catch_unwind to prevent panics from propagating
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unsafe {
@@ -439,17 +438,10 @@ unsafe extern "system" fn focus_assist_callback(
         let context = &*ctx_ptr;
 
         // Try to lock the state mutex - if this fails, skip this update
-        let Some(mut last_state) = context.last_state.try_lock() else {
-            tracing::debug!(
-                "WNF callback: could not acquire lock on last_state. Skipping this update."
-            );
-            return NTSTATUS(0);
-        };
+        let previous_state = context.last_state.swap(is_active, Ordering::Relaxed);
 
-        // Only emit event if state actually changed
-        if *last_state != is_active {
-            *last_state = is_active;
-
+        if previous_state != is_active {
+            // Only emit event if state actually changed
             let event = if is_active {
                 DndEvent::Started
             } else {
