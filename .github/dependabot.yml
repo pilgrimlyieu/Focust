@@ -5,7 +5,7 @@ updates:
   - package-ecosystem: "bun"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
       day: "monday"
       time: "09:00"
       timezone: "Asia/Shanghai"
@@ -16,24 +16,16 @@ updates:
     groups:
       # Group all dev dependencies together
       dev-dependencies:
-        patterns:
-          - "@types/*"
-          - "@vitejs/*"
-          - "@vitest/*"
-          - "@vue/*"
-          - "vite*"
-          - "vitest"
+        dependency-type: "development"
+        exclude-patterns:
           - "typescript"
+          - "vite"
         update-types:
           - "minor"
           - "patch"
       # Group production dependencies separately
       production-dependencies:
-        patterns:
-          - "@tauri-apps/*"
-          - "vue"
-          - "pinia"
-          - "@vueuse/*"
+        dependency-type: "production"
         update-types:
           - "minor"
           - "patch"
@@ -42,7 +34,7 @@ updates:
   - package-ecosystem: "cargo"
     directory: "/src-tauri"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
       day: "monday"
       time: "09:00"
       timezone: "Asia/Shanghai"
@@ -65,13 +57,14 @@ updates:
         exclude-patterns:
           - "tauri*"
         update-types:
+          - "minor"
           - "patch"
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
       day: "monday"
       time: "09:00"
       timezone: "Asia/Shanghai"
