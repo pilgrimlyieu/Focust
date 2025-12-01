@@ -33,7 +33,6 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use anyhow::{Context, Result};
-use parking_lot::Mutex as ParkingMutex;
 use tokio::sync::Mutex as TokioMutex;
 use tokio::sync::mpsc;
 use windows::Win32::Foundation::NTSTATUS;
