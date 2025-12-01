@@ -13,4 +13,4 @@
 
 ## 🐛 Bug Fixes
 
-- Fix: Update doesn't work. (This is a regression of 3bcdea0531c1034066e54862968f8f5ad1941a2a from v0.2.13)
+- Fix: Older log files are not deleted automatically. This is an upstream issue, and has been fixed in the latest version. (https://github.com/tokio-rs/tracing/pull/2966)

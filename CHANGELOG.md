@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## 0.2.16 (2025.12.1)
+
+### 🐛 Bug Fixes
+
+- Fix: Older log files are not deleted automatically. This is an upstream issue, and has been fixed in the latest version. (https://github.com/tokio-rs/tracing/pull/2966)
+
 ## 0.2.15 (2025.11.22)
 
 ### 🐛 Bug Fixes
