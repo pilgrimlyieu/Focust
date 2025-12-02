@@ -252,13 +252,13 @@ async function main(): Promise<void> {
         logger.spacer();
       } else {
         logger.warning(
-          `Push skipped. Run manually:\n  git push origin main && git push origin v${newVersion}`,
+          `Push skipped. Run manually:\n  git push origin main && git push origin tag v${newVersion}`,
         );
         logger.spacer();
       }
     } else {
       logger.warning(
-        `Push skipped (--no-push). Run manually:\n  git push origin main && git push origin v${newVersion}`,
+        `Push skipped (--no-push). Run manually:\n  git push origin main && git push origin tag v${newVersion}`,
       );
       logger.spacer();
     }
