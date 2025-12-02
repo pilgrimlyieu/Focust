@@ -185,7 +185,6 @@ end = "00:00:00"
 #### `miniBreaks.enabled`
 - **类型**：布尔值
 - **默认值**：`true`
-- **注意**：此字段无意义，仅为兼容性而保留。因短休息是休息计划的核心部分，如需禁用整个休息计划，请使用 `schedules` 的 `enabled` 字段直接禁用整个休息计划。
 
 #### `miniBreaks.durationS`
 - **类型**：整数（秒）
@@ -253,7 +252,6 @@ show = true
 #### `longBreaks.enabled`
 - **类型**：布尔值
 - **默认值**：`true`
-- **注意**：此字段无意义，仅为兼容性而保留。如需禁用长休息，可将 `afterMiniBreaks` 设置为一个非常大的值（例如 `9999`），以防止触发长休息。
 
 #### `longBreaks.durationS`
 - **类型**：整数（秒）

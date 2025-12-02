@@ -186,7 +186,6 @@ Mini breaks are short reminders (typically lasting 20 seconds) that occur freque
 #### `miniBreaks.enabled`
 - **Type**: Boolean
 - **Default**: `true`
-- **Note**: This field is meaningless and retained only for compatibility. Since mini breaks are a core part of break schedules, to disable the entire break schedule, use the `enabled` field of `schedules` to directly disable the entire break schedule.
 
 #### `miniBreaks.durationS`
 - **Type**: Integer (seconds)
@@ -254,7 +253,6 @@ Long breaks are extended rest periods (typically 5 minutes) that occur less freq
 #### `longBreaks.enabled`
 - **Type**: Boolean
 - **Default**: `true`
-- **Note**: This field is meaningless and retained only for compatibility. To disable long breaks, set `afterMiniBreaks` to a very large value (e.g., `9999`) to prevent long breaks from being triggered.
 
 #### `longBreaks.durationS`
 - **Type**: Integer (seconds)
