@@ -1,3 +1,8 @@
+//! Tauri commands for scheduler state management and control.
+//!
+//! This module provides commands to interact with the break scheduler,
+//! including pausing/resuming, postponing breaks, and triggering events.
+
 use std::ops::Deref;
 
 use tauri::State;
@@ -6,6 +11,7 @@ use tokio::sync::{mpsc::Sender, watch};
 use crate::scheduler::models::{Command, PauseReason, SchedulerEvent};
 use crate::scheduler::shared_state::SharedState;
 
+/// Wrapper around the scheduler command sender for Tauri state management.
 pub struct SchedulerCmd(pub Sender<Command>);
 
 impl Deref for SchedulerCmd {
@@ -17,20 +23,24 @@ impl Deref for SchedulerCmd {
 }
 
 impl SchedulerCmd {
-    /// Create a new [`SchedulerCmd`]
+    /// Creates a new `SchedulerCmd` wrapper.
     #[must_use]
     pub fn new(sender: Sender<Command>) -> Self {
         SchedulerCmd(sender)
     }
 
-    /// Try to send a command to the scheduler
+    /// Tries to send a command to the scheduler without blocking.
+    ///
+    /// Logs an error if the command fails to send.
     pub fn try_send_command(&self, command: &Command) {
         self.0.try_send(command.clone()).unwrap_or_else(|e| {
             tracing::error!("Failed to send {command} to scheduler: {e}");
         });
     }
 
-    /// Send a command to the scheduler asynchronously
+    /// Sends a command to the scheduler asynchronously.
+    ///
+    /// Logs an error if the command fails to send.
     pub async fn send_command(&self, command: &Command) {
         self.0.send(command.clone()).await.unwrap_or_else(|e| {
             tracing::error!("Failed to send {command} to scheduler: {e}");
@@ -38,10 +48,16 @@ impl SchedulerCmd {
     }
 }
 
-/// Shutdown sender to keep the scheduler alive
+/// Shutdown sender wrapper to keep the scheduler alive.
+///
+/// Dropping this sender will signal the scheduler to shut down.
 pub struct ShutdownTx(pub watch::Sender<()>);
 
-/// Request the scheduler to emit its current status
+/// Requests the scheduler to emit its current status.
+///
+/// # Errors
+///
+/// Returns an error if sending the command to the scheduler fails.
 #[tauri::command]
 pub async fn request_break_status(state: State<'_, SchedulerCmd>) -> Result<(), String> {
     state
@@ -50,9 +66,13 @@ pub async fn request_break_status(state: State<'_, SchedulerCmd>) -> Result<(), 
         .map_err(|e| e.to_string())
 }
 
-/// Pause the scheduler manually
+/// Pauses the scheduler manually.
 ///
-/// Pauses the scheduler with [`PauseReason::Manual`].
+/// Pauses the scheduler with `PauseReason::Manual`.
+///
+/// # Errors
+///
+/// Returns an error if sending the command to the scheduler fails.
 #[tauri::command]
 pub async fn pause_scheduler(state: State<'_, SchedulerCmd>) -> Result<(), String> {
     state
@@ -61,7 +81,11 @@ pub async fn pause_scheduler(state: State<'_, SchedulerCmd>) -> Result<(), Strin
         .map_err(|e| e.to_string())
 }
 
-/// Resume the scheduler
+/// Resumes the scheduler from manual pause.
+///
+/// # Errors
+///
+/// Returns an error if sending the command to the scheduler fails.
 #[tauri::command]
 pub async fn resume_scheduler(state: State<'_, SchedulerCmd>) -> Result<(), String> {
     state
@@ -70,7 +94,13 @@ pub async fn resume_scheduler(state: State<'_, SchedulerCmd>) -> Result<(), Stri
         .map_err(|e| e.to_string())
 }
 
-/// Postpone the current or next break
+/// Postpones the current or next break.
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - The scheduler is currently paused
+/// - Sending the command to the scheduler fails
 #[tauri::command]
 pub async fn postpone_break(
     state: State<'_, SchedulerCmd>,
@@ -95,9 +125,13 @@ pub async fn postpone_break(
         .map_err(|e| e.to_string())
 }
 
-/// Manually trigger a break for testing purposes
+/// Manually triggers a break event for testing purposes.
 ///
-/// Returns an error if the scheduler is currently paused.
+/// # Errors
+///
+/// Returns an error if:
+/// - The scheduler is currently paused
+/// - Sending the command to the scheduler fails
 #[tauri::command]
 pub async fn trigger_event(
     scheduler_cmd: State<'_, SchedulerCmd>,
@@ -124,7 +158,13 @@ pub async fn trigger_event(
         .map_err(|e| e.to_string())
 }
 
-/// Skip the current break immediately
+/// Skips the current break immediately.
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - The scheduler is currently paused
+/// - Sending the command to the scheduler fails
 #[tauri::command]
 pub async fn skip_break(
     state: State<'_, SchedulerCmd>,
@@ -149,7 +189,11 @@ pub async fn skip_break(
         .map_err(|e| e.to_string())
 }
 
-/// Notify that a break has finished normally
+/// Notifies that a break has finished normally.
+///
+/// # Errors
+///
+/// Returns an error if sending the command to the scheduler fails.
 #[tauri::command]
 pub async fn prompt_finished(
     state: State<'_, SchedulerCmd>,

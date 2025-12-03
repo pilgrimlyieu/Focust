@@ -1,17 +1,29 @@
+//! Tauri commands for window management.
+//!
+//! This module provides commands to open and close application windows.
+
 use tauri::{AppHandle, Manager, Runtime};
 
 use crate::platform::create_settings_window;
 
-/// Open settings window (create if not exists, show if already exists)
+/// Opens the settings window.
+///
+/// Creates a new window if it doesn't exist, or shows the existing window.
+///
+/// # Errors
+///
+/// Returns an error if creating or showing the settings window fails.
 #[tauri::command]
 pub async fn open_settings_window<R: Runtime>(app: AppHandle<R>) -> Result<(), String> {
     create_settings_window(&app)
 }
 
-/// Close all prompt windows with the given payload ID prefix
+/// Closes all prompt windows with the given payload ID prefix.
 ///
-/// IMPORTANT: This command returns immediately and closes windows asynchronously
+/// This command returns immediately and closes windows asynchronously
 /// to avoid deadlock when called from within a prompt window.
+///
+/// # Deadlock Prevention
 ///
 /// The deadlock scenario:
 /// 1. Frontend calls this command and waits for response
@@ -19,7 +31,12 @@ pub async fn open_settings_window<R: Runtime>(app: AppHandle<R>) -> Result<(), S
 /// 3. Window closure needs `WebView` thread, but it's blocked waiting for command response
 /// 4. Result: deadlock - window appears frozen
 ///
-/// Solution: Return immediately, spawn async task to close windows after a small delay
+/// Solution: Return immediately, spawn async task to close windows after a small delay.
+///
+/// # Errors
+///
+/// This function does not return errors in normal operation. Individual window
+/// closure failures are logged but do not prevent other windows from closing.
 #[tauri::command]
 pub async fn close_all_prompt_windows<R: Runtime>(
     app: AppHandle<R>,

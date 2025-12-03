@@ -1,3 +1,19 @@
+//! # Focust - A Cross-Platform Break Reminder Application
+//!
+//! Focust is a Tauri-based application that helps users take regular breaks
+//! with customizable schedules and themes. This crate provides the Rust backend
+//! for the application.
+//!
+//! ## Architecture
+//!
+//! - **`cmd`**: Tauri command handlers for IPC communication
+//! - **`config`**: Configuration management and persistence
+//! - **`core`**: Core business logic (audio, scheduling, themes, suggestions)
+//! - **`monitors`**: Environment monitoring (idle detection, DND, app exclusions)
+//! - **`platform`**: Platform-specific integrations (tray, hotkeys, notifications)
+//! - **`scheduler`**: Event-driven break scheduling system
+//! - **`utils`**: Utility functions (logging, error handling)
+
 use tauri::Manager;
 use tauri_plugin_autostart::ManagerExt;
 
@@ -15,6 +31,30 @@ pub mod platform;
 pub mod scheduler;
 pub mod utils;
 
+/// Runs the Tauri application with all plugins and setup logic.
+///
+/// This function initializes the application with the following components:
+/// - Updater plugin for automatic updates
+/// - Single instance plugin to prevent multiple app instances
+/// - Autostart plugin for system startup integration
+/// - Dialog, filesystem, and opener plugins
+/// - Global shortcut handler for break postponement
+/// - Notification system
+/// - Process management
+///
+/// The setup phase includes:
+/// 1. Initializing logging with configured log level
+/// 2. Setting up audio player (platform-dependent, disabled on macOS)
+/// 3. Loading and managing application configuration
+/// 4. Configuring system tray and global shortcuts
+/// 5. Initializing break suggestions
+/// 6. Starting the scheduler manager
+/// 7. Spawning monitoring tasks (idle, DND, app exclusions)
+///
+/// # Platform Notes
+///
+/// - **macOS**: Audio temporarily disabled due to cpal Send trait issue
+/// - **Windows/Linux**: Full audio support enabled
 #[expect(clippy::too_many_lines, clippy::expect_used, clippy::print_stderr)]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {

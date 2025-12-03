@@ -1,6 +1,17 @@
+//! Tauri commands for system-level operations.
+//!
+//! This module provides commands to open application directories in the
+//! system file explorer.
+
 use tauri::{AppHandle, Manager};
 
-/// Open the configuration directory in the system file explorer
+/// Opens the configuration directory in the system file explorer.
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - Getting the config directory path fails
+/// - Opening the directory in the file explorer fails
 #[tauri::command]
 pub async fn open_config_directory(app: AppHandle) -> Result<(), String> {
     let config_dir = app
@@ -11,7 +22,13 @@ pub async fn open_config_directory(app: AppHandle) -> Result<(), String> {
     open_directory_in_explorer(&config_dir)
 }
 
-/// Open the log directory in the system file explorer
+/// Opens the log directory in the system file explorer.
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - Getting the log directory path fails
+/// - Opening the directory in the file explorer fails
 #[tauri::command]
 pub async fn open_log_directory(app: AppHandle) -> Result<(), String> {
     let log_dir = app
@@ -22,7 +39,16 @@ pub async fn open_log_directory(app: AppHandle) -> Result<(), String> {
     open_directory_in_explorer(&log_dir)
 }
 
-/// Helper function to open a directory in the system file explorer
+/// Opens a directory in the system file explorer.
+///
+/// Uses platform-specific commands:
+/// - Windows: `explorer`
+/// - macOS: `open`
+/// - Linux: `xdg-open`
+///
+/// # Errors
+///
+/// Returns an error if spawning the file explorer process fails.
 fn open_directory_in_explorer(dir: &std::path::Path) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {

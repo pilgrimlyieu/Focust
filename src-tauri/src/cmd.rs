@@ -1,3 +1,17 @@
+//! Tauri command handlers for frontend-backend communication.
+//!
+//! This module contains all Tauri commands that can be invoked from the frontend
+//! via the IPC bridge. Commands are organized into logical submodules:
+//!
+//! - **`audio`**: Audio playback control
+//! - **`autostart`**: System autostart management
+//! - **`config`**: Application configuration CRUD
+//! - **`payload`**: Break prompt payload storage
+//! - **`scheduler`**: Scheduler state management and control
+//! - **`suggestions`**: Break suggestion management
+//! - **`system`**: System-level operations (directory access)
+//! - **`window`**: Window management (open/close)
+
 pub mod audio;
 pub mod autostart;
 pub mod config;

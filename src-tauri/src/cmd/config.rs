@@ -1,3 +1,8 @@
+//! Tauri commands for application configuration management.
+//!
+//! This module provides commands to read, write, and manipulate the application
+//! configuration, including picking random background images.
+
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
@@ -14,11 +19,31 @@ use crate::{
     scheduler::Command,
 };
 
+/// Retrieves the current application configuration.
+///
+/// # Errors
+///
+/// This function does not return errors in normal operation.
 #[tauri::command]
 pub async fn get_config(config_state: State<'_, SharedConfig>) -> Result<AppConfig, String> {
     Ok(config_state.read().await.clone())
 }
 
+/// Saves the application configuration.
+///
+/// This function performs the following operations:
+/// 1. Preserves advanced settings that are not exposed to the frontend
+/// 2. Saves the configuration to disk
+/// 3. Notifies the scheduler of the configuration update
+/// 4. Updates the shared configuration state
+/// 5. Re-registers global shortcuts if the postpone shortcut changed
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - Saving the configuration file fails
+/// - Sending the update command to the scheduler fails
+/// - Re-registering shortcuts fails (when shortcut changed)
 #[tauri::command]
 pub async fn save_config(
     mut config: AppConfig,
@@ -90,6 +115,17 @@ pub async fn save_config(
     Ok(())
 }
 
+/// Picks a random background image from the specified folder.
+///
+/// Searches the folder for image files (png, jpg, jpeg, bmp, gif, webp) and
+/// returns a randomly selected one. Returns `None` if the folder doesn't exist
+/// or contains no images.
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - Reading the directory fails
+/// - The background picker task panics
 #[tauri::command]
 pub async fn pick_background_image(folder: String) -> Result<Option<String>, String> {
     use anyhow::{Result as AnyhowResult, anyhow};
@@ -123,6 +159,9 @@ pub async fn pick_background_image(folder: String) -> Result<Option<String>, Str
     Ok(result.map(|path| path.to_string_lossy().to_string()))
 }
 
+/// Checks if a file path has an image extension.
+///
+/// Supports: png, jpg, jpeg, bmp, gif, webp
 fn is_image(path: &Path) -> bool {
     match path.extension().and_then(OsStr::to_str) {
         Some(ext) => matches!(
