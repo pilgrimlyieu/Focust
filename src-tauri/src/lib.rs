@@ -35,8 +35,11 @@ pub mod utils;
 ///
 /// # Panics
 ///
-/// Panics if the Tauri application fails to build (wrapped in `expect`).
-/// This is intentional as the application cannot function without a valid Tauri runtime.
+/// Panics if:
+/// - Retrieving the app log directory fails (wrapped in `expect`)
+/// - The Tauri application fails to build (wrapped in `expect`)
+///
+/// These are intentional as the application cannot function without valid paths and a Tauri runtime.
 #[expect(clippy::too_many_lines, clippy::expect_used, clippy::print_stderr)]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {

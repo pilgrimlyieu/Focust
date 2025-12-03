@@ -42,8 +42,6 @@ pub async fn close_all_prompt_windows<R: Runtime>(
     app: AppHandle<R>,
     payload_id: String,
 ) -> Result<(), String> {
-    tracing::debug!("Scheduling closure of all prompt windows for payload: {payload_id}");
-
     tracing::debug!("Closing prompt windows for payload: {payload_id}");
 
     // Get all windows

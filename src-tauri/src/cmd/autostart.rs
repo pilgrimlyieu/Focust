@@ -30,7 +30,7 @@ pub async fn is_autostart_enabled(app: tauri::AppHandle) -> Result<bool, String>
 ///
 /// Returns an error if:
 /// - Checking the current autostart status fails
-/// - Enabling or disabling system autostart fails (note: config is still saved)
+/// - Enabling or disabling system autostart fails
 #[tauri::command]
 pub async fn set_autostart_enabled(app: tauri::AppHandle, enabled: bool) -> Result<(), String> {
     let autolaunch = app.autolaunch();
@@ -43,19 +43,20 @@ pub async fn set_autostart_enabled(app: tauri::AppHandle, enabled: bool) -> Resu
 
     if current_status == enabled {
         tracing::warn!("Autostart is already set to {enabled}");
-        return Ok(());
-    }
-
-    // Try to set system autostart
-    if enabled {
-        autolaunch.enable()
+        // Still update config to ensure sync with OS state
     } else {
-        autolaunch.disable()
+        // Try to set system autostart
+        let result = if enabled {
+            autolaunch.enable()
+        } else {
+            autolaunch.disable()
+        };
+
+        result.map_err(|e| {
+            tracing::error!("Failed to set system autostart: {e}");
+            format!("Failed to set system autostart (but preference saved): {e}")
+        })?;
     }
-    .map_err(|e| {
-        tracing::error!("Failed to set system autostart: {e}");
-        format!("Failed to set system autostart (but preference saved): {e}")
-    })?;
 
     // Update config
     {

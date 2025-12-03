@@ -66,6 +66,7 @@ impl LinuxDndMonitor {
     /// Returns an error if:
     /// - Connecting to the D-Bus session fails  
     /// - Setting up property change monitoring fails
+    /// - The desktop environment is unsupported
     pub async fn start(&mut self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
         if self.is_monitoring.load(Ordering::Acquire) {
             tracing::debug!("Linux DND monitoring is already running");

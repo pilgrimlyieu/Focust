@@ -106,19 +106,7 @@ pub async fn postpone_break(
     state: State<'_, SchedulerCmd>,
     shared_state: State<'_, SharedState>,
 ) -> Result<(), String> {
-    // Validate pause state before sending command
-    if shared_state.read().is_paused() {
-        let reasons = shared_state
-            .read()
-            .pause_reasons()
-            .iter()
-            .map(std::string::ToString::to_string)
-            .collect::<Vec<_>>()
-            .join(", ");
-        return Err(format!(
-            "Cannot postpone break while scheduler is paused (reasons: {reasons})"
-        ));
-    }
+    validate_not_paused(&shared_state)?;
     state
         .send(Command::PostponeBreak)
         .await
@@ -138,20 +126,7 @@ pub async fn trigger_event(
     shared_state: State<'_, SharedState>,
     break_kind: SchedulerEvent,
 ) -> Result<(), String> {
-    // Validate pause state before sending command
-    if shared_state.read().is_paused() {
-        let reasons = shared_state
-            .read()
-            .pause_reasons()
-            .iter()
-            .map(std::string::ToString::to_string)
-            .collect::<Vec<_>>()
-            .join(", ");
-        return Err(format!(
-            "Cannot trigger event while scheduler is paused (reasons: {reasons})"
-        ));
-    }
-
+    validate_not_paused(&shared_state)?;
     scheduler_cmd
         .send(Command::TriggerEvent(break_kind))
         .await
@@ -170,19 +145,7 @@ pub async fn skip_break(
     state: State<'_, SchedulerCmd>,
     shared_state: State<'_, SharedState>,
 ) -> Result<(), String> {
-    // Validate pause state before sending command
-    if shared_state.read().is_paused() {
-        let reasons = shared_state
-            .read()
-            .pause_reasons()
-            .iter()
-            .map(std::string::ToString::to_string)
-            .collect::<Vec<_>>()
-            .join(", ");
-        return Err(format!(
-            "Cannot skip break while scheduler is paused (reasons: {reasons})"
-        ));
-    }
+    validate_not_paused(&shared_state)?;
     state
         .send(Command::SkipBreak)
         .await
@@ -203,4 +166,25 @@ pub async fn prompt_finished(
         .send(Command::PromptFinished(event))
         .await
         .map_err(|e| e.to_string())
+}
+
+/// Validates that the scheduler is not paused, returning a descriptive error if it is.
+///
+/// # Errors
+///
+/// Returns an error if the scheduler is currently paused.
+fn validate_not_paused(shared_state: &SharedState) -> Result<(), String> {
+    if shared_state.read().is_paused() {
+        let reasons = shared_state
+            .read()
+            .pause_reasons()
+            .iter()
+            .map(std::string::ToString::to_string)
+            .collect::<Vec<_>>()
+            .join(", ");
+        return Err(format!(
+            "Cannot perform action while scheduler is paused (reasons: {reasons})"
+        ));
+    }
+    Ok(())
 }

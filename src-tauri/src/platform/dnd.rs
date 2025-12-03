@@ -40,7 +40,7 @@ pub struct DndMonitor {
 }
 
 impl DndMonitor {
-    /// Creates a new DND monitor with the given enabled state.
+    /// Creates a new DND monitor.
     ///
     /// # Errors
     ///
