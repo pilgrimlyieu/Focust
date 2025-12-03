@@ -76,7 +76,7 @@ pub async fn load_suggestions(app_handle: &AppHandle) -> SuggestionsConfig {
             let default = SuggestionsConfig::default();
 
             // Try to save default config
-            save_suggestions(app_handle, &default)
+            save_suggestions_internal(app_handle, &default)
                 .await
                 .unwrap_or_else(|e| {
                     tracing::error!("Failed to save default suggestions: {e}");
@@ -119,7 +119,10 @@ async fn try_load_suggestions(app_handle: &AppHandle) -> Result<SuggestionsConfi
 /// - Creating the parent directory fails
 /// - Serializing the configuration to TOML fails
 /// - Writing the file fails
-pub async fn save_suggestions(app_handle: &AppHandle, config: &SuggestionsConfig) -> Result<()> {
+pub async fn save_suggestions_internal(
+    app_handle: &AppHandle,
+    config: &SuggestionsConfig,
+) -> Result<()> {
     let suggestions_path = get_suggestions_path(app_handle)?;
 
     // Ensure parent directory exists
@@ -141,14 +144,20 @@ pub async fn save_suggestions(app_handle: &AppHandle, config: &SuggestionsConfig
             )
         })?;
 
-    tracing::info!("Suggestions saved successfully to {suggestions_path:?}");
+    tracing::info!(
+        "Suggestions saved successfully to {}",
+        suggestions_path.display()
+    );
     Ok(())
 }
 
 /// Get suggestions for a specific language
 /// Falls back to en-US if language not found
 #[must_use]
-pub fn get_suggestions_for_language(config: &SuggestionsConfig, language: &str) -> Vec<String> {
+pub fn get_suggestions_for_language_internal(
+    config: &SuggestionsConfig,
+    language: &str,
+) -> Vec<String> {
     if let Some(lang_suggestions) = config.by_language.get(language) {
         return lang_suggestions.suggestions.clone();
     }
@@ -166,7 +175,7 @@ pub fn get_suggestions_for_language(config: &SuggestionsConfig, language: &str) 
 /// Returns None if no suggestions available
 #[must_use]
 pub fn sample_suggestion(config: &SuggestionsConfig, language: &str) -> Option<String> {
-    let suggestions = get_suggestions_for_language(config, language);
+    let suggestions = get_suggestions_for_language_internal(config, language);
     if suggestions.is_empty() {
         return None;
     }
@@ -289,7 +298,7 @@ mod tests {
         ];
 
         for lang in test_languages {
-            let suggestions = get_suggestions_for_language(&config, lang);
+            let suggestions = get_suggestions_for_language_internal(&config, lang);
             assert!(
                 !suggestions.is_empty(),
                 "Expected non-empty suggestions for {lang}"
@@ -297,8 +306,8 @@ mod tests {
         }
 
         // Test fallback to en-US for unknown language
-        let en_suggestions = get_suggestions_for_language(&config, "en-US");
-        let unknown_suggestions = get_suggestions_for_language(&config, "unknown");
+        let en_suggestions = get_suggestions_for_language_internal(&config, "en-US");
+        let unknown_suggestions = get_suggestions_for_language_internal(&config, "unknown");
         assert_eq!(unknown_suggestions, en_suggestions);
     }
 

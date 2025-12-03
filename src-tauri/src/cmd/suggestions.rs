@@ -5,7 +5,10 @@
 
 use tauri::{AppHandle, State, command};
 
-use crate::core::suggestions::{SharedSuggestions, SuggestionsConfig};
+use crate::core::suggestions::{
+    SharedSuggestions, SuggestionsConfig, get_suggestions_for_language_internal,
+    save_suggestions_internal,
+};
 
 /// Retrieves the suggestions configuration.
 ///
@@ -31,7 +34,7 @@ pub async fn get_suggestions_for_language(
     state: State<'_, SharedSuggestions>,
 ) -> Result<Vec<String>, String> {
     let suggestions = state.read().await;
-    Ok(crate::core::suggestions::get_suggestions_for_language(
+    Ok(get_suggestions_for_language_internal(
         &suggestions,
         &language,
     ))
@@ -49,13 +52,15 @@ pub async fn save_suggestions(
     config: SuggestionsConfig,
 ) -> Result<(), String> {
     // Save to file
-    crate::core::suggestions::save_suggestions(&app, &config)
+    save_suggestions_internal(&app, &config)
         .await
         .map_err(|e| e.to_string())?;
 
     // Update state
-    let mut suggestions = state.write().await;
-    *suggestions = config;
+    {
+        let mut suggestions = state.write().await;
+        *suggestions = config;
+    }
 
     tracing::info!("Suggestions updated successfully");
     Ok(())

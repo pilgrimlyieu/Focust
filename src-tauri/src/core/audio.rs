@@ -71,15 +71,13 @@ pub fn play_audio(
     path: &str,
     volume: f32,
 ) -> Result<(), PlaybackError> {
-    let mut player_guard = player_state.lock();
-
-    if let Some(ref mut player) = *player_guard {
-        player.play(path, volume)?;
-        tracing::debug!("Playing audio: {path} at volume {volume}");
-        Ok(())
-    } else {
-        Err(PlaybackError::NotInitialized)
-    }
+    player_state
+        .lock()
+        .as_mut()
+        .ok_or(PlaybackError::NotInitialized)?
+        .play(path, volume)?;
+    tracing::debug!("Playing audio: {path} at volume {volume}");
+    Ok(())
 }
 
 /// Plays audio (macOS stub).
@@ -90,7 +88,7 @@ pub fn play_audio(
 #[cfg(target_os = "macos")]
 pub fn play_audio(_path: &str, _volume: f32) -> Result<(), PlaybackError> {
     Err(PlaybackError::PlaybackFailed(
-        "Audio playback is not supported on macOS".to_string(),
+        "Audio playback is not supported on macOS".to_owned(),
     ))
 }
 
@@ -101,15 +99,13 @@ pub fn play_audio(_path: &str, _volume: f32) -> Result<(), PlaybackError> {
 /// Returns an error if the audio player is not initialized.
 #[cfg(not(target_os = "macos"))]
 pub fn stop_audio(player_state: &AudioPlayerState) -> Result<(), PlaybackError> {
-    let mut player_guard = player_state.lock();
-
-    if let Some(ref mut player) = *player_guard {
-        player.stop();
-        tracing::debug!("Audio playback stopped");
-        Ok(())
-    } else {
-        Err(PlaybackError::NotInitialized)
-    }
+    player_state
+        .lock()
+        .as_mut()
+        .ok_or(PlaybackError::NotInitialized)?
+        .stop();
+    tracing::debug!("Audio playback stopped");
+    Ok(())
 }
 
 /// Stops audio (macOS stub).
@@ -120,6 +116,6 @@ pub fn stop_audio(player_state: &AudioPlayerState) -> Result<(), PlaybackError> 
 #[cfg(target_os = "macos")]
 pub fn stop_audio() -> Result<(), PlaybackError> {
     Err(PlaybackError::PlaybackFailed(
-        "Audio playback is not supported on macOS".to_string(),
+        "Audio playback is not supported on macOS".to_owned(),
     ))
 }
