@@ -20,7 +20,11 @@ pub struct MacosDndMonitor {
 }
 
 impl MacosDndMonitor {
-    /// Create a new macOS DND monitor
+    /// Creates a new macOS DND monitor.
+    ///
+    /// # Errors
+    ///
+    /// This function does not return errors in normal operation.
     pub fn new() -> Result<Self> {
         Ok(Self {
             is_monitoring: Arc::new(AtomicBool::new(false)),
@@ -28,7 +32,13 @@ impl MacosDndMonitor {
         })
     }
 
-    /// Start monitoring Focus Mode status
+    /// Starts monitoring Focus Mode status.
+    ///
+    /// Uses polling to periodically check the Focus Mode state.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if getting the initial Focus Mode state fails.
     pub async fn start(&mut self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
         if self.is_monitoring.load(Ordering::Acquire) {
             tracing::debug!("macOS DND monitoring is already running");
@@ -64,7 +74,11 @@ impl MacosDndMonitor {
         Ok(())
     }
 
-    /// Stop monitoring Focus Mode status
+    /// Stops monitoring Focus Mode status.
+    ///
+    /// # Errors
+    ///
+    /// This function does not return errors in normal operation.
     pub async fn stop(&mut self) -> Result<()> {
         if !self.is_monitoring.load(Ordering::Acquire) {
             return Ok(());
@@ -75,7 +89,13 @@ impl MacosDndMonitor {
         Ok(())
     }
 
-    /// Get current Focus Mode status
+    /// Gets the current Focus Mode status.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Executing the `defaults` command fails
+    /// - Parsing the command output fails
     pub async fn is_enabled(&self) -> Result<bool> {
         check_focus_mode_status().await
     }

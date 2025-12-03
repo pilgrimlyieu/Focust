@@ -68,7 +68,11 @@ pub struct WindowsDndMonitor {
 }
 
 impl WindowsDndMonitor {
-    /// Create a new Windows DND monitor
+    /// Creates a new Windows DND monitor.
+    ///
+    /// # Errors
+    ///
+    /// This function does not return errors in normal operation.
     pub fn new() -> Result<Self> {
         Ok(Self {
             is_monitoring: Arc::new(AtomicBool::new(false)),
@@ -77,7 +81,15 @@ impl WindowsDndMonitor {
         })
     }
 
-    /// Start monitoring Focus Assist state changes
+    /// Starts monitoring Focus Assist state changes.
+    ///
+    /// Subscribes to WNF notifications for real-time Focus Assist updates.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Subscribing to WNF notifications fails
+    /// - The WNF callback registration fails
     pub async fn start(&mut self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
         if self.is_monitoring.load(Ordering::Acquire) {
             tracing::debug!("Windows DND monitoring is already running");
@@ -107,7 +119,11 @@ impl WindowsDndMonitor {
         }
     }
 
-    /// Stop monitoring Focus Assist state
+    /// Stops monitoring Focus Assist state.
+    ///
+    /// # Errors
+    ///
+    /// This function does not return errors in normal operation.
     pub async fn stop(&mut self) -> Result<()> {
         if !self.is_monitoring.load(Ordering::Acquire) {
             return Ok(());
@@ -125,7 +141,11 @@ impl WindowsDndMonitor {
         Ok(())
     }
 
-    /// Get current Focus Assist state
+    /// Gets the current Focus Assist state.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if reading the WNF state data fails.
     #[expect(clippy::unused_async, reason = "for consistency with other platforms")]
     pub async fn is_enabled(&self) -> Result<bool> {
         Ok(query_focus_assist_state())
