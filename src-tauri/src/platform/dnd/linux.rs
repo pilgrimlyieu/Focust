@@ -64,7 +64,7 @@ impl LinuxDndMonitor {
     /// # Errors
     ///
     /// Returns an error if:
-    /// - Connecting to the D-Bus session fails  
+    /// - Connecting to the D-Bus session fails
     /// - Setting up property change monitoring fails
     /// - The desktop environment is unsupported
     pub async fn start(&mut self, sender: mpsc::Sender<DndEvent>) -> Result<()> {

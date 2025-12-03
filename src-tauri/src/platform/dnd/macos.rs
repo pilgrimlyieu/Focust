@@ -92,6 +92,10 @@ impl MacosDndMonitor {
     }
 
     /// Gets the current Focus Mode status.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if executing the `defaults` command fails.
     pub async fn is_enabled(&self) -> Result<bool> {
         check_focus_mode_status().await
     }
