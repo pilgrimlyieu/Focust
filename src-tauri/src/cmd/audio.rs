@@ -52,10 +52,8 @@ pub async fn play_audio(
 ///
 /// # Errors
 ///
-/// Returns an error if:
-/// - The audio file cannot be loaded or decoded
-/// - The audio device fails to initialize
-/// - The playback fails to start
+/// Always returns an error indicating that audio playback is not supported on macOS
+/// due to `CoreAudio` backend limitations.
 #[cfg(target_os = "macos")]
 #[tauri::command]
 pub async fn play_audio(path: String, volume: f32) -> Result<(), String> {
@@ -105,12 +103,8 @@ pub async fn play_builtin_audio(
 ///
 /// # Errors
 ///
-/// Returns an error if:
-/// - The resource path cannot be resolved
-/// - The built-in audio file is not found
-/// - The audio file cannot be loaded or decoded
-/// - The audio device fails to initialize
-/// - The playback fails to start
+/// Always returns an error indicating that audio playback is not supported on macOS
+/// due to `CoreAudio` backend limitations.
 #[cfg(target_os = "macos")]
 #[tauri::command]
 pub async fn play_builtin_audio(
@@ -149,7 +143,8 @@ pub async fn stop_audio(player: State<'_, AudioPlayerState>) -> Result<(), Strin
 ///
 /// # Errors
 ///
-/// Returns an error if the audio player fails to stop playback.
+/// Always returns an error indicating that audio playback is not supported on macOS
+/// due to `CoreAudio` backend limitations.
 #[cfg(target_os = "macos")]
 #[tauri::command]
 pub async fn stop_audio() -> Result<(), String> {
