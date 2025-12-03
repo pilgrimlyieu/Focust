@@ -110,7 +110,15 @@ async fn try_load_suggestions(app_handle: &AppHandle) -> Result<SuggestionsConfi
     Ok(config)
 }
 
-/// Save suggestions to file
+/// Saves suggestions to file.
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - Getting the suggestions path fails
+/// - Creating the parent directory fails
+/// - Serializing the configuration to TOML fails
+/// - Writing the file fails
 pub async fn save_suggestions(app_handle: &AppHandle, config: &SuggestionsConfig) -> Result<()> {
     let suggestions_path = get_suggestions_path(app_handle)?;
 

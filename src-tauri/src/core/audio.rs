@@ -4,8 +4,8 @@
 //!
 //! # Platform Support
 //!
-//! **Note**: Audio is temporarily disabled on macOS due to CoreAudio backend
-//! limitations in `rodio`/`cpal`. The CoreAudio backend doesn't implement `Send`,
+//! **Note**: Audio is temporarily disabled on macOS due to `CoreAudio` backend
+//! limitations in `rodio`/`cpal`. The `CoreAudio` backend doesn't implement `Send`,
 //! making it incompatible with Tauri's state management which requires `Send + Sync`.
 //!
 //! **Status**: Waiting for cpal 0.17.0+ which includes

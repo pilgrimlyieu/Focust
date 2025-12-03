@@ -40,7 +40,11 @@ pub struct AudioPlayer {
 }
 
 impl AudioPlayer {
-    /// Create a new audio player
+    /// Creates a new audio player.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if initializing the default output stream fails.
     pub fn new() -> Result<Self, PlaybackError> {
         // Initialize output stream using rodio 0.21 API
         let stream_handle = OutputStreamBuilder::open_default_stream()
@@ -58,7 +62,14 @@ impl AudioPlayer {
         })
     }
 
-    /// Play an audio file at the specified volume
+    /// Plays an audio file at the specified volume.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - The volume is not between 0.0 and 1.0
+    /// - The file does not exist
+    /// - Opening or decoding the audio file fails
     pub fn play(&mut self, path: &str, volume: f32) -> Result<(), PlaybackError> {
         // Validate volume
         if !(0.0..=1.0).contains(&volume) {
@@ -134,7 +145,11 @@ impl AudioPlayer {
         self.current_volume
     }
 
-    /// Set volume (0.0 to 1.0)
+    /// Sets the playback volume.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the volume is not between 0.0 and 1.0.
     pub fn set_volume(&mut self, volume: f32) -> Result<(), PlaybackError> {
         if !(0.0..=1.0).contains(&volume) {
             return Err(PlaybackError::InvalidVolume(volume));

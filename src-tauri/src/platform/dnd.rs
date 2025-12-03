@@ -40,10 +40,11 @@ pub struct DndMonitor {
 }
 
 impl DndMonitor {
-    /// Create a new DND monitor with the given enabled state
+    /// Creates a new DND monitor with the given enabled state.
     ///
-    /// # Arguments
-    /// * `enabled` - Whether DND monitoring should be enabled
+    /// # Errors
+    ///
+    /// Returns an error if initializing the platform-specific monitor fails.
     pub fn new() -> Result<Self> {
         #[cfg(target_os = "windows")]
         let platform = windows::WindowsDndMonitor::new()?;
@@ -57,22 +58,34 @@ impl DndMonitor {
         Ok(Self { platform })
     }
 
-    /// Start monitoring DND status changes
+    /// Starts monitoring DND status changes.
     ///
-    /// This will spawn a background task that monitors the system DND state
+    /// This spawns a background task that monitors the system DND state
     /// and sends events through the provided channel when changes occur.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if starting the platform-specific monitor fails.
     pub async fn start(&mut self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
         self.platform.start(sender).await
     }
 
-    /// Stop monitoring DND status
+    /// Stops monitoring DND status.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if stopping the platform-specific monitor fails.
     pub async fn stop(&mut self) -> Result<()> {
         self.platform.stop().await
     }
 
-    /// Get the current DND status
+    /// Gets the current DND status.
     ///
     /// This is useful for initialization or fallback scenarios.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if querying the DND status fails.
     pub async fn is_enabled(&self) -> Result<bool> {
         self.platform.is_enabled().await
     }
