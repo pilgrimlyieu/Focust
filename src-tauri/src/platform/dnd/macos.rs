@@ -146,9 +146,9 @@ async fn poll_focus_mode(
     sender: mpsc::Sender<DndEvent>,
     last_state: Arc<AtomicBool>,
 ) -> Result<()> {
-    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(INTERVAL_SECS));
+    let mut current_interval = INTERVAL_SECS;
     loop {
-        interval.tick().await;
+        tokio::time::sleep(tokio::time::Duration::from_secs(current_interval)).await;
 
         match check_focus_mode_status().await {
             Ok(current_state) => {
@@ -172,13 +172,12 @@ async fn poll_focus_mode(
                     }
                 }
 
-                // Adaptive polling: slower when DND is active
-                interval =
-                    tokio::time::interval(tokio::time::Duration::from_secs(if current_state {
-                        INTERVAL_SECS * 3 // 3x slower when active
-                    } else {
-                        INTERVAL_SECS // Normal speed when inactive
-                    }));
+                // Update interval based on state
+                current_interval = if current_state {
+                    INTERVAL_SECS * 3
+                } else {
+                    INTERVAL_SECS
+                };
             }
             Err(e) => {
                 tracing::debug!("Failed to check Focus Mode status: {e}");

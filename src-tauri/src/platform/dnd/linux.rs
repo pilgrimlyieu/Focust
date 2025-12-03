@@ -581,10 +581,10 @@ where
     F: Fn() -> Fut,
     Fut: std::future::Future<Output = Result<bool>>,
 {
-    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(INTERVAL_SECS));
+    let mut interval = tokio::time::Duration::from_secs(INTERVAL_SECS);
 
     loop {
-        interval.tick().await;
+        tokio::time::sleep(interval).await;
 
         if let Ok(current_state) = check_fn().await {
             let last = last_state.load(Ordering::Relaxed);

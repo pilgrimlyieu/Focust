@@ -217,15 +217,13 @@ async fn run_monitors(
     }
 
     // Find minimum interval for check duration
-    let check_interval = monitors.iter().map(|m| m.interval()).min().unwrap_or(1);
+    let check_interval =
+        tokio::time::Duration::from_secs(monitors.iter().map(|m| m.interval()).min().unwrap_or(1));
 
-    let mut interval_timer =
-        tokio::time::interval(tokio::time::Duration::from_secs(check_interval));
-
-    tracing::debug!("Monitor check interval: {check_interval}s");
+    tracing::debug!("Monitor check interval: {check_interval:?}");
 
     loop {
-        interval_timer.tick().await;
+        tokio::time::sleep(check_interval).await;
 
         let in_session = shared_state.read().in_any_session();
 
