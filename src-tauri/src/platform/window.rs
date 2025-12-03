@@ -1,3 +1,8 @@
+//! Window creation and management for prompt and settings windows.
+//!
+//! This module handles creating and configuring Tauri windows for displaying
+//! break prompts and the settings interface.
+
 use rand::{Rng, seq::IndexedRandom};
 use std::{
     path::{Path, PathBuf},
@@ -21,7 +26,18 @@ use crate::{config::SharedConfig, core::payload::PromptPayloadStore};
 
 const ALLOWED_EXTENSIONS_LOWERCASE: &[&str] = &["jpg", "jpeg", "png", "webp", "bmp", "gif"];
 
-/// Create prompt windows for monitors based on configuration
+/// Creates prompt windows for monitors based on configuration.
+///
+/// Displays break or attention prompts on one or all monitors depending on
+/// configuration settings.
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - Building the prompt payload fails
+/// - Storing the payload fails
+/// - Getting available monitors fails
+/// - Creating windows for monitors fails
 pub async fn create_prompt_windows<R: Runtime>(
     app: &AppHandle<R>,
     event: SchedulerEvent,
@@ -104,7 +120,16 @@ pub async fn create_prompt_windows<R: Runtime>(
     Ok(())
 }
 
-/// Create settings window (internal function used by both command and single instance)
+/// Creates the settings window.
+///
+/// If the window already exists, shows and focuses it instead of creating a new one.
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - Showing or focusing an existing window fails
+/// - Creating a new window fails
+/// - Loading the webview URL fails
 pub fn create_settings_window<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {
     // Check if window already exists
     if let Some(window) = app.get_webview_window("settings") {

@@ -55,6 +55,11 @@ pub mod utils;
 ///
 /// - **macOS**: Audio temporarily disabled due to cpal Send trait issue
 /// - **Windows/Linux**: Full audio support enabled
+///
+/// # Panics
+///
+/// Panics if the Tauri application fails to build (wrapped in `expect`).
+/// This is intentional as the application cannot function without a valid Tauri runtime.
 #[expect(clippy::too_many_lines, clippy::expect_used, clippy::print_stderr)]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {

@@ -1,15 +1,19 @@
+//! System notification functionality.
+//!
+//! This module provides functions to send desktop notifications to users,
+//! including localized break notifications.
+
 use tauri::{AppHandle, Manager, Runtime};
 use tauri_plugin_notification::NotificationExt;
 
 use crate::platform::i18n;
 use crate::{config::SharedConfig, platform::i18n::LANGUAGE_FALLBACK};
 
-/// Send a notification to the user
+/// Sends a notification to the user.
 ///
-/// # Arguments
-/// * `app` - Tauri app handle
-/// * `title` - Notification title
-/// * `body` - Notification body text
+/// # Errors
+///
+/// Returns an error if the notification fails to display.
 pub fn send_notification<R: Runtime>(
     app: &AppHandle<R>,
     title: &str,
@@ -26,12 +30,14 @@ pub fn send_notification<R: Runtime>(
     Ok(())
 }
 
-/// Send a notification before a break starts
+/// Sends a localized notification before a break starts.
 ///
-/// # Arguments
-/// * `app` - Tauri app handle
-/// * `break_type` - Type of break (e.g., "`MiniBreak`", "`LongBreak`", "Attention")
-/// * `seconds` - Seconds until the break starts
+/// The notification uses the user's configured language and displays
+/// the break type and countdown in a localized format.
+///
+/// # Errors
+///
+/// Returns an error if the notification fails to display.
 pub async fn send_break_notification<R: Runtime>(
     app: &AppHandle<R>,
     break_type: &str,
