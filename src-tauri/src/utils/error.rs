@@ -87,8 +87,11 @@ pub enum AudioError {
     InvalidFormat(String),
 }
 
-/// Trait for converting errors to Tauri-compatible string errors
+/// Trait for converting errors to Tauri-compatible string errors.
+///
+/// Automatically implemented for all types implementing `std::error::Error`.
 pub trait IntoTauriError {
+    /// Converts the error to a `String` for Tauri IPC.
     fn into_tauri_error(self) -> String;
 }
 
@@ -98,12 +101,28 @@ impl<E: std::error::Error> IntoTauriError for E {
     }
 }
 
-/// Helper function to convert Result to Tauri-compatible Result
+/// Converts a `Result` with any error type to a Tauri-compatible `Result<T, String>`.
+///
+/// # Errors
+///
+/// Returns `Err(String)` if the input result is an error, with the error message
+/// converted to a string.
 pub fn to_tauri_result<T, E: std::error::Error>(result: Result<T, E>) -> Result<T, String> {
     result.map_err(|e| e.to_string())
 }
 
-/// Macro for quick error conversion in Tauri commands
+/// Macro for quick error conversion in Tauri commands.
+///
+/// Converts errors to strings using `to_string()`.
+///
+/// # Examples
+///
+/// ```ignore
+/// #[tauri::command]
+/// pub async fn my_command() -> Result<(), String> {
+///     tauri_error!(some_fallible_operation())
+/// }
+/// ```
 #[macro_export]
 macro_rules! tauri_error {
     ($result:expr) => {

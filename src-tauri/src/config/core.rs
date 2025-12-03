@@ -1,3 +1,8 @@
+//! Core configuration loading and saving logic.
+//!
+//! This module handles reading and writing the application configuration
+//! to/from TOML files, with fallback to defaults if loading fails.
+
 use std::fs;
 use std::path::PathBuf;
 
@@ -12,6 +17,10 @@ use tokio::fs as a_fs;
 
 use crate::config::{AdvancedConfig, AppConfig};
 
+/// Loads the application configuration.
+///
+/// Attempts to load from disk, falling back to default configuration if loading fails.
+/// Errors during loading are logged but do not prevent application startup.
 pub async fn load_config(app_handle: &AppHandle) -> AppConfig {
     try_load_or_create_config(app_handle)
         .await
@@ -23,6 +32,16 @@ pub async fn load_config(app_handle: &AppHandle) -> AppConfig {
         .unwrap_or_default()
 }
 
+/// Saves the application configuration to disk.
+///
+/// Serializes the configuration to TOML format, including advanced settings.
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - Getting the config path fails
+/// - Serializing the configuration to TOML fails
+/// - Writing the file to disk fails
 pub async fn save_config(app_handle: &AppHandle, config: &AppConfig) -> Result<()> {
     // Create a wrapper struct to properly serialize with advanced section
     #[derive(Serialize)]
@@ -52,7 +71,13 @@ pub async fn save_config(app_handle: &AppHandle, config: &AppConfig) -> Result<(
     Ok(())
 }
 
-/// Get the path to the config file, creating the config directory if it doesn't exist
+/// Gets the path to the config file, creating the config directory if it doesn't exist.
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - Getting the app config directory fails
+/// - Creating the config directory fails
 fn get_config_path(app_handle: &AppHandle) -> Result<PathBuf> {
     let config_dir = app_handle
         .path()
