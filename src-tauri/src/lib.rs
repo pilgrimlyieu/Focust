@@ -33,29 +33,6 @@ pub mod utils;
 
 /// Runs the Tauri application with all plugins and setup logic.
 ///
-/// This function initializes the application with the following components:
-/// - Updater plugin for automatic updates
-/// - Single instance plugin to prevent multiple app instances
-/// - Autostart plugin for system startup integration
-/// - Dialog, filesystem, and opener plugins
-/// - Global shortcut handler for break postponement
-/// - Notification system
-/// - Process management
-///
-/// The setup phase includes:
-/// 1. Initializing logging with configured log level
-/// 2. Setting up audio player (platform-dependent, disabled on macOS)
-/// 3. Loading and managing application configuration
-/// 4. Configuring system tray and global shortcuts
-/// 5. Initializing break suggestions
-/// 6. Starting the scheduler manager
-/// 7. Spawning monitoring tasks (idle, DND, app exclusions)
-///
-/// # Platform Notes
-///
-/// - **macOS**: Audio temporarily disabled due to cpal Send trait issue
-/// - **Windows/Linux**: Full audio support enabled
-///
 /// # Panics
 ///
 /// Panics if the Tauri application fails to build (wrapped in `expect`).

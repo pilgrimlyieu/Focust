@@ -95,7 +95,6 @@ impl WindowsDndMonitor {
     ///
     /// Returns an error if:
     /// - Subscribing to WNF notifications fails
-    /// - The WNF callback registration fails
     pub async fn start(&mut self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
         if self.is_monitoring.load(Ordering::Acquire) {
             tracing::debug!("Windows DND monitoring is already running");
@@ -105,7 +104,7 @@ impl WindowsDndMonitor {
         tracing::info!("Starting Windows DND monitoring via WNF API");
 
         // Skip initial state query - callback will fire immediately with current state
-        // This avoids potential issues with RtlQueryWnfStateData function signature
+        // This avoids potential issues with `RtlQueryWnfStateData` function signature
         self.last_state.store(false, Ordering::Relaxed);
 
         // Subscribe to WNF notifications
@@ -151,7 +150,7 @@ impl WindowsDndMonitor {
     ///
     /// # Errors
     ///
-    /// Returns an error if reading the WNF state data fails.
+    /// This function does not return errors in normal operation.
     #[expect(clippy::unused_async, reason = "for consistency with other platforms")]
     pub async fn is_enabled(&self) -> Result<bool> {
         Ok(query_focus_assist_state())
@@ -256,6 +255,7 @@ unsafe extern "system" {
 /// Query the current Focus Assist state
 ///
 /// # Safety
+///
 /// This function uses undocumented Windows WNF API. All errors are caught and logged
 /// without causing panics. Returns `false` (DND disabled) on any error to fail safely.
 fn query_focus_assist_state() -> bool {
@@ -265,7 +265,6 @@ fn query_focus_assist_state() -> bool {
         // - All pointers passed are valid: `change_stamp` and `state` are stack-allocated
         // - The state name constant is valid and documented by Windows
         // - Error handling is comprehensive, returning `false` on any failure
-        // - Wrapped in `catch_unwind` to prevent any panics from propagating
         unsafe {
             let mut change_stamp: WnfChangeStamp = 0;
             let mut state = FocusAssistState { value: 0 };
@@ -309,6 +308,7 @@ fn query_focus_assist_state() -> bool {
 /// Subscribe to Focus Assist state change notifications
 ///
 /// # Safety
+///
 /// This function uses undocumented Windows WNF API. All errors are caught and logged.
 /// Memory cleanup is guaranteed even on failure paths to prevent leaks.
 fn subscribe_to_focus_assist(
@@ -322,7 +322,6 @@ fn subscribe_to_focus_assist(
         // - `context_ptr` is a valid pointer from `Box::into_raw`, lifetime managed correctly
         // - `focus_assist_callback` is a valid function pointer matching the expected signature
         // - On subscription failure, context is properly cleaned up with `Box::from_raw`
-        // - Wrapped in `catch_unwind` to prevent any panics from propagating
         unsafe {
             let context = Box::new(CallbackContext { sender, last_state });
             let context_ptr = Box::into_raw(context).cast::<()>();
@@ -379,6 +378,7 @@ fn subscribe_to_focus_assist(
 /// Unsubscribe from Focus Assist notifications
 ///
 /// # Safety
+///
 /// This function uses undocumented Windows WNF API. All errors are caught and logged
 /// without propagating. Panics are caught to prevent app crashes during cleanup.
 fn unsubscribe_from_focus_assist(subscription: *mut WnfUserSubscription) {
@@ -392,7 +392,6 @@ fn unsubscribe_from_focus_assist(subscription: *mut WnfUserSubscription) {
         // SAFETY: Calling Windows WNF API function `RtlUnsubscribeWnfStateChangeNotification`.
         // - `subscription` pointer has been validated as non-null and within valid memory range
         // - This is the cleanup function, so errors are logged but not propagated
-        // - Wrapped in `catch_unwind` to ensure cleanup never panics
         unsafe {
             let status = RtlUnsubscribeWnfStateChangeNotification(subscription);
             if status.is_err() {
@@ -413,6 +412,7 @@ fn unsubscribe_from_focus_assist(subscription: *mut WnfUserSubscription) {
 /// WNF callback invoked when Focus Assist state changes
 ///
 /// # Safety
+///
 /// This is a system callback that must never panic. All operations are wrapped in
 /// panic handlers and extensive validation to ensure callback safety.
 ///
@@ -439,7 +439,6 @@ unsafe extern "system" fn focus_assist_callback(
         // - Buffer size is validated against expected size and maximum allowed size
         // - Context pointer from subscription is cast back to `CallbackContext` safely
         // - The `FocusAssistState` is read from validated buffer with proper alignment
-        // - All operations wrapped in `catch_unwind` to ensure callback never panics
         // - Returns NTSTATUS(0) on any validation failure to signal success to Windows
         unsafe {
             // Validate all pointers before dereferencing

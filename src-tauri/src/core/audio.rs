@@ -11,10 +11,6 @@
 //! **Status**: Waiting for cpal 0.17.0+ which includes
 //! [PR #1021](https://github.com/RustAudio/cpal/pull/1021) that fixes the Send trait issue.
 //!
-//! **Workarounds considered**:
-//! - Using `nsound` instead of `rodio` (macOS-specific, adds complexity)
-//! - Thread-local audio player (incompatible with Tauri's async model)
-//!
 //! **Resolution**: Once cpal 0.17.0+ is released, we can re-enable full audio
 //! support on macOS by simply removing the `#[cfg(not(target_os = "macos"))]` guards.
 

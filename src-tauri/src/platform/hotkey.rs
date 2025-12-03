@@ -18,8 +18,7 @@ use crate::scheduler::models::Command;
 /// # Errors
 ///
 /// Returns an error if:
-/// - Parsing the shortcut string fails
-/// - Registering the shortcut with the system fails
+/// - Registering the shortcut fails
 pub async fn register_shortcuts<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {
     let postpone_shortcut = {
         let config_state = app.state::<SharedConfig>();

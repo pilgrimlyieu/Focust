@@ -77,13 +77,13 @@ impl Default for LogLevel {
 ///
 /// Returns an error if:
 /// - Creating the log directory fails
-/// - Setting up the log file appender fails
 ///
 /// # Panics
 ///
 /// Panics if:
 /// - Building the file appender fails (wrapped in `expect`)
 /// - Parsing filter directives fails (wrapped in `unwrap`)
+/// - This is intentional to ensure logging is always correctly initialized.
 #[expect(clippy::unwrap_used, clippy::expect_used)]
 pub fn init_logging(log_dir: &PathBuf, log_level: LogLevel) -> Result<(), String> {
     // Create log directory if it doesn't exist

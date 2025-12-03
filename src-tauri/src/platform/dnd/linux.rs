@@ -64,7 +64,6 @@ impl LinuxDndMonitor {
     /// # Errors
     ///
     /// Returns an error if:
-    /// - Getting the initial DND state fails
     /// - Connecting to the D-Bus session fails  
     /// - Setting up property change monitoring fails
     pub async fn start(&mut self, sender: mpsc::Sender<DndEvent>) -> Result<()> {

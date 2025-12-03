@@ -1,6 +1,7 @@
-use rodio::{Decoder, OutputStream, OutputStreamBuilder, Sink};
 use std::fs::File;
 use std::io::BufReader;
+
+use rodio::{Decoder, OutputStream, OutputStreamBuilder, Sink};
 
 #[derive(Debug, thiserror::Error)]
 pub enum PlaybackError {

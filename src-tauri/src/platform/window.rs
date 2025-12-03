@@ -129,7 +129,6 @@ pub async fn create_prompt_windows<R: Runtime>(
 /// Returns an error if:
 /// - Showing or focusing an existing window fails
 /// - Creating a new window fails
-/// - Loading the webview URL fails
 pub fn create_settings_window<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {
     // Check if window already exists
     if let Some(window) = app.get_webview_window("settings") {

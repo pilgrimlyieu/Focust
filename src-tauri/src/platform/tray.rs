@@ -49,7 +49,6 @@ pub enum TrayUpdate {
 /// # Errors
 ///
 /// Returns an error if:
-/// - The default window icon is not available
 /// - Building the tray menu fails
 /// - Creating the tray icon fails
 pub async fn setup_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
