@@ -256,8 +256,14 @@ async fn run_monitors(
                     "Failed to send command from monitor '{}': {e}",
                     monitor.name()
                 );
-                return;
+                break;
             }
         }
+    }
+    
+    // Graceful shutdown (not currently reachable)
+    for monitor in &mut monitors {
+        tracing::debug!("Stopping monitor: {}", monitor.name());
+        let _ = monitor.on_stop().await;
     }
 }
