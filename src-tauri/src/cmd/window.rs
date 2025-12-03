@@ -20,19 +20,6 @@ pub async fn open_settings_window<R: Runtime>(app: AppHandle<R>) -> Result<(), S
 
 /// Closes all prompt windows with the given payload ID prefix.
 ///
-/// This command returns immediately and closes windows asynchronously
-/// to avoid deadlock when called from within a prompt window.
-///
-/// # Deadlock Prevention
-///
-/// The deadlock scenario:
-/// 1. Frontend calls this command and waits for response
-/// 2. Command tries to close the calling window synchronously
-/// 3. Window closure needs `WebView` thread, but it's blocked waiting for command response
-/// 4. Result: deadlock - window appears frozen
-///
-/// Solution: Return immediately, spawn async task to close windows after a small delay.
-///
 /// # Errors
 ///
 /// This function does not return errors in normal operation. Individual window
