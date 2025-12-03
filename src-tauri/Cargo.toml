@@ -160,7 +160,5 @@ struct_excessive_bools = "allow"
 # These lints will be gradually tightened in the future
 # absolute_paths = "warn"
 # allow_attributes_without_reason = "warn"
-# undocumented_unsafe_blocks = "warn"
 missing_docs_in_private_items = "allow"
-missing_errors_doc = "allow"
-missing_panics_doc = "allow"
+undocumented_unsafe_blocks = "warn"

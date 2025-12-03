@@ -1,3 +1,8 @@
+//! Global shortcut registration and management.
+//!
+//! This module handles registering and parsing keyboard shortcuts for
+//! application-wide hotkeys, particularly for postponing breaks.
+
 use tauri::{AppHandle, Manager, Runtime};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
@@ -5,10 +10,16 @@ use crate::cmd::SchedulerCmd;
 use crate::config::SharedConfig;
 use crate::scheduler::models::Command;
 
-/// Register global shortcuts for the application
+/// Registers global shortcuts for the application.
 ///
 /// Reads the postpone shortcut from config and registers it if specified.
 /// If the shortcut string is empty, no shortcut will be registered.
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - Parsing the shortcut string fails
+/// - Registering the shortcut with the system fails
 pub async fn register_shortcuts<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {
     let postpone_shortcut = {
         let config_state = app.state::<SharedConfig>();
@@ -30,7 +41,13 @@ pub async fn register_shortcuts<R: Runtime>(app: &AppHandle<R>) -> Result<(), St
     Ok(())
 }
 
-/// Register the postpone break shortcut
+/// Registers the postpone break shortcut.
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - Parsing the shortcut string fails
+/// - Registering the shortcut with the system fails
 fn register_postpone_shortcut<R: Runtime>(
     app: &AppHandle<R>,
     shortcut_str: &str,
@@ -58,8 +75,18 @@ fn register_postpone_shortcut<R: Runtime>(
     Ok(())
 }
 
-/// Parse a shortcut string into a Shortcut struct
-/// Supported format: "Ctrl+Shift+X", etc.
+/// Parses a shortcut string into a `Shortcut` struct.
+///
+/// Supported format: "Ctrl+Shift+X", "Alt+F4", etc.
+/// Modifiers: Ctrl/Control, Alt, Shift, Super/Meta/Cmd/Win
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - The shortcut string is empty
+/// - Multiple key codes are specified
+/// - No key code is found
+/// - An unknown key code is specified
 fn parse_shortcut(s: &str) -> Result<Shortcut, String> {
     if s.trim().is_empty() {
         return Err("Empty shortcut string".to_owned());
@@ -99,7 +126,16 @@ fn parse_shortcut(s: &str) -> Result<Shortcut, String> {
     Ok(Shortcut::new(Some(modifiers), key))
 }
 
-/// Parse a key string into a Code enum
+/// Parses a key string into a `Code` enum.
+///
+/// Supports letters (a-z), digits (0-9), function keys (F1-F12),
+/// and special keys (Space, Enter, Escape, etc.).
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - The key string is empty
+/// - The key code is unknown or unsupported
 fn parse_key_code(s: &str) -> Result<Code, String> {
     let lower = s.to_lowercase();
 

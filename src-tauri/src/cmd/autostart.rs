@@ -1,9 +1,18 @@
+//! Tauri commands for system autostart management.
+//!
+//! This module provides commands to check and configure whether the application
+//! launches automatically when the system starts.
+
 use tauri::Manager;
 use tauri_plugin_autostart::ManagerExt;
 
 use crate::config::{SharedConfig, save_config};
 
-/// Check if autostart is enabled
+/// Checks if autostart is enabled in the configuration.
+///
+/// # Errors
+///
+/// This function does not return errors in normal operation.
 #[tauri::command]
 pub async fn is_autostart_enabled(app: tauri::AppHandle) -> Result<bool, String> {
     let config = app.state::<SharedConfig>();
@@ -11,7 +20,17 @@ pub async fn is_autostart_enabled(app: tauri::AppHandle) -> Result<bool, String>
     Ok(config_guard.autostart)
 }
 
-/// Enable or disable autostart
+/// Enables or disables autostart for the application.
+///
+/// Updates both the system autostart configuration and the application's
+/// configuration file. The configuration is saved only if the system autostart
+/// operation succeeds.
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - Checking the current autostart status fails
+/// - Enabling or disabling system autostart fails
 #[tauri::command]
 pub async fn set_autostart_enabled(app: tauri::AppHandle, enabled: bool) -> Result<(), String> {
     let autolaunch = app.autolaunch();
@@ -24,17 +43,22 @@ pub async fn set_autostart_enabled(app: tauri::AppHandle, enabled: bool) -> Resu
 
     if current_status == enabled {
         tracing::warn!("Autostart is already set to {enabled}");
-        return Ok(());
+        // Still update config to ensure sync with OS state
+    } else {
+        // Try to set system autostart
+        let result = if enabled {
+            autolaunch.enable()
+        } else {
+            autolaunch.disable()
+        };
+
+        result.map_err(|e| {
+            tracing::error!("Failed to set system autostart: {e}");
+            format!("Failed to set system autostart (but preference saved): {e}")
+        })?;
     }
 
-    // Try to set system autostart
-    let result = if enabled {
-        autolaunch.enable()
-    } else {
-        autolaunch.disable()
-    };
-
-    // Update config regardless of system autostart result
+    // Update config
     {
         let config = app.state::<SharedConfig>();
         let mut config_guard = config.write().await;
@@ -46,9 +70,5 @@ pub async fn set_autostart_enabled(app: tauri::AppHandle, enabled: bool) -> Resu
         });
     }
 
-    // Return system autostart result
-    result.map_err(|e| {
-        tracing::error!("Failed to set system autostart: {e}");
-        format!("Failed to set system autostart (but preference saved): {e}")
-    })
+    Ok(())
 }

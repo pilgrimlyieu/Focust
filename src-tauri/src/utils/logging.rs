@@ -1,3 +1,8 @@
+//! Logging infrastructure for Focust.
+//!
+//! This module provides structured logging using the `tracing` crate with
+//! both file and console output. Log files are rotated daily.
+
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
@@ -6,22 +11,27 @@ use tracing::Level;
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
-/// Log level configuration
+/// Log level configuration for the application.
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Display, EnumString, EnumIter,
 )]
 #[strum(serialize_all = "lowercase")]
 #[serde(rename_all = "lowercase")]
 pub enum LogLevel {
+    /// Trace-level logging (most verbose).
     Trace,
+    /// Debug-level logging.
     Debug,
+    /// Info-level logging (default for release builds).
     Info,
+    /// Warning-level logging.
     Warn,
+    /// Error-level logging (least verbose).
     Error,
 }
 
 impl LogLevel {
-    /// Convert to tracing Level
+    /// Converts this log level to a `tracing::Level`.
     #[must_use]
     pub fn to_tracing_level(self) -> Level {
         match self {
@@ -33,7 +43,9 @@ impl LogLevel {
         }
     }
 
-    /// Get default log level based on build configuration
+    /// Returns the default log level based on build configuration.
+    ///
+    /// Returns `Trace` for debug builds, `Info` for release builds.
     #[must_use]
     pub fn default_for_build() -> Self {
         #[cfg(debug_assertions)]
@@ -53,14 +65,25 @@ impl Default for LogLevel {
     }
 }
 
-/// Initialize the logging system
+/// Initializes the logging system with both console and file output.
 ///
-/// Sets up tracing with both console and file output
-/// Log files are rotated daily and stored in the app's data directory
+/// Sets up tracing with:
+/// - Daily rotating log files stored in the specified directory
+/// - Console output to stdout
+/// - Filtering based on the specified log level
+/// - Suppressed logs from noisy dependencies (tao, symphonia)
 ///
-/// # Arguments
-/// * `log_dir` - Directory to store log files
-/// * `log_level` - Log level configuration
+/// # Errors
+///
+/// Returns an error if:
+/// - Creating the log directory fails
+///
+/// # Panics
+///
+/// Panics if:
+/// - Building the file appender fails (wrapped in `expect`)
+/// - Parsing filter directives fails (wrapped in `unwrap`)
+/// - This is intentional to ensure logging is always correctly initialized.
 #[expect(clippy::unwrap_used, clippy::expect_used)]
 pub fn init_logging(log_dir: &PathBuf, log_level: LogLevel) -> Result<(), String> {
     // Create log directory if it doesn't exist

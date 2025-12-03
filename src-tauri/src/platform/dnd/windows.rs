@@ -46,8 +46,14 @@ const EXPECTED_STATE_SIZE: u32 = mem::size_of::<FocusAssistState>() as u32;
 /// Wrapper to make `WnfUserSubscription` pointer Send
 struct SendPtr(*mut WnfUserSubscription);
 
-/// SAFETY: The WNF subscription is thread-safe and can be safely sent between threads
+/// SAFETY: The WNF subscription is thread-safe and can be safely sent between threads.
+/// The underlying Windows WNF API handles synchronization internally and the pointer
+/// is only accessed through the Windows API functions which are thread-safe.
 unsafe impl Send for SendPtr {}
+
+/// SAFETY: The WNF subscription pointer can be safely shared between threads.
+/// The underlying Windows WNF API handles synchronization internally and the pointer
+/// is only accessed through the Windows API functions which are thread-safe.
 unsafe impl Sync for SendPtr {}
 
 impl SendPtr {
@@ -68,7 +74,11 @@ pub struct WindowsDndMonitor {
 }
 
 impl WindowsDndMonitor {
-    /// Create a new Windows DND monitor
+    /// Creates a new Windows DND monitor.
+    ///
+    /// # Errors
+    ///
+    /// This function does not return errors in normal operation.
     pub fn new() -> Result<Self> {
         Ok(Self {
             is_monitoring: Arc::new(AtomicBool::new(false)),
@@ -77,7 +87,14 @@ impl WindowsDndMonitor {
         })
     }
 
-    /// Start monitoring Focus Assist state changes
+    /// Starts monitoring Focus Assist state changes.
+    ///
+    /// Subscribes to WNF notifications for real-time Focus Assist updates.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Subscribing to WNF notifications fails
     pub async fn start(&mut self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
         if self.is_monitoring.load(Ordering::Acquire) {
             tracing::debug!("Windows DND monitoring is already running");
@@ -87,7 +104,7 @@ impl WindowsDndMonitor {
         tracing::info!("Starting Windows DND monitoring via WNF API");
 
         // Skip initial state query - callback will fire immediately with current state
-        // This avoids potential issues with RtlQueryWnfStateData function signature
+        // This avoids potential issues with `RtlQueryWnfStateData` function signature
         self.last_state.store(false, Ordering::Relaxed);
 
         // Subscribe to WNF notifications
@@ -107,7 +124,11 @@ impl WindowsDndMonitor {
         }
     }
 
-    /// Stop monitoring Focus Assist state
+    /// Stops monitoring Focus Assist state.
+    ///
+    /// # Errors
+    ///
+    /// This function does not return errors in normal operation.
     pub async fn stop(&mut self) -> Result<()> {
         if !self.is_monitoring.load(Ordering::Acquire) {
             return Ok(());
@@ -125,7 +146,11 @@ impl WindowsDndMonitor {
         Ok(())
     }
 
-    /// Get current Focus Assist state
+    /// Gets the current Focus Assist state.
+    ///
+    /// # Errors
+    ///
+    /// This function does not return errors in normal operation.
     #[expect(clippy::unused_async, reason = "for consistency with other platforms")]
     pub async fn is_enabled(&self) -> Result<bool> {
         Ok(query_focus_assist_state())
@@ -230,40 +255,47 @@ unsafe extern "system" {
 /// Query the current Focus Assist state
 ///
 /// # Safety
+///
 /// This function uses undocumented Windows WNF API. All errors are caught and logged
 /// without causing panics. Returns `false` (DND disabled) on any error to fail safely.
 fn query_focus_assist_state() -> bool {
     // Wrap the entire unsafe block in a catch_unwind to prevent panics from propagating
-    std::panic::catch_unwind(|| unsafe {
-        let mut change_stamp: WnfChangeStamp = 0;
-        let mut state = FocusAssistState { value: 0 };
+    std::panic::catch_unwind(|| {
+        // SAFETY: Calling Windows WNF API function `RtlQueryWnfStateData`.
+        // - All pointers passed are valid: `change_stamp` and `state` are stack-allocated
+        // - The state name constant is valid and documented by Windows
+        // - Error handling is comprehensive, returning `false` on any failure
+        unsafe {
+            let mut change_stamp: WnfChangeStamp = 0;
+            let mut state = FocusAssistState { value: 0 };
 
-        let status = RtlQueryWnfStateData(
-            &raw mut change_stamp,
-            WNF_SHEL_QUIETHOURS_ACTIVE_PROFILE_CHANGED,
-            None,
-            std::ptr::null_mut(),
-            (&raw mut state).cast::<()>(),
-        );
-
-        if status.is_err() {
-            tracing::warn!(
-                "RtlQueryWnfStateData failed with status: {status:?}. This is non-fatal."
+            let status = RtlQueryWnfStateData(
+                &raw mut change_stamp,
+                WNF_SHEL_QUIETHOURS_ACTIVE_PROFILE_CHANGED,
+                None,
+                std::ptr::null_mut(),
+                (&raw mut state).cast::<()>(),
             );
-            return false;
-        }
 
-        // Validate state value is within expected range (0-2)
-        if state.value < 0 || state.value > 2 {
-            tracing::warn!(
-                "Unexpected Focus Assist state value: {}. Treating as disabled.",
-                state.value
-            );
-            return false;
-        }
+            if status.is_err() {
+                tracing::warn!(
+                    "RtlQueryWnfStateData failed with status: {status:?}. This is non-fatal."
+                );
+                return false;
+            }
 
-        // 0 = Off, 1 = Priority Only, 2 = Alarms Only
-        state.value != 0
+            // Validate state value is within expected range (0-2)
+            if state.value < 0 || state.value > 2 {
+                tracing::warn!(
+                    "Unexpected Focus Assist state value: {}. Treating as disabled.",
+                    state.value
+                );
+                return false;
+            }
+
+            // 0 = Off, 1 = Priority Only, 2 = Alarms Only
+            state.value != 0
+        }
     })
     .unwrap_or_else(|panic_err| {
         tracing::error!(
@@ -276,6 +308,7 @@ fn query_focus_assist_state() -> bool {
 /// Subscribe to Focus Assist state change notifications
 ///
 /// # Safety
+///
 /// This function uses undocumented Windows WNF API. All errors are caught and logged.
 /// Memory cleanup is guaranteed even on failure paths to prevent leaks.
 fn subscribe_to_focus_assist(
@@ -283,42 +316,49 @@ fn subscribe_to_focus_assist(
     last_state: Arc<AtomicBool>,
 ) -> Result<SendPtr> {
     // Wrap the entire unsafe block in a catch_unwind to prevent panics from propagating
-    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unsafe {
-        let context = Box::new(CallbackContext { sender, last_state });
-        let context_ptr = Box::into_raw(context).cast::<()>();
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        // SAFETY: Calling Windows WNF API function `RtlSubscribeWnfStateChangeNotification`.
+        // - `subscription` pointer is valid (stack-allocated, passed as mutable reference)
+        // - `context_ptr` is a valid pointer from `Box::into_raw`, lifetime managed correctly
+        // - `focus_assist_callback` is a valid function pointer matching the expected signature
+        // - On subscription failure, context is properly cleaned up with `Box::from_raw`
+        unsafe {
+            let context = Box::new(CallbackContext { sender, last_state });
+            let context_ptr = Box::into_raw(context).cast::<()>();
 
-        let mut subscription: *mut WnfUserSubscription = std::ptr::null_mut();
+            let mut subscription: *mut WnfUserSubscription = std::ptr::null_mut();
 
-        let status = RtlSubscribeWnfStateChangeNotification(
-            &raw mut subscription,
-            WNF_SHEL_QUIETHOURS_ACTIVE_PROFILE_CHANGED,
-            0, // Change stamp
-            focus_assist_callback,
-            context_ptr,
-            std::ptr::null(),
-            0, // No serialization group
-            0, // No flags
-        );
-
-        if status.is_err() {
-            // Clean up context if subscription failed
-            let _ = Box::from_raw(context_ptr.cast::<CallbackContext>());
-            tracing::error!(
-                "RtlSubscribeWnfStateChangeNotification failed: {status:?}. DND monitoring will be unavailable."
+            let status = RtlSubscribeWnfStateChangeNotification(
+                &raw mut subscription,
+                WNF_SHEL_QUIETHOURS_ACTIVE_PROFILE_CHANGED,
+                0, // Change stamp
+                focus_assist_callback,
+                context_ptr,
+                std::ptr::null(),
+                0, // No serialization group
+                0, // No flags
             );
-            return Err(anyhow::anyhow!(
-                "Failed to subscribe to WNF notifications: {status:?}"
-            ));
-        }
 
-        if !is_valid_ptr(subscription) {
-            let _ = Box::from_raw(context_ptr.cast::<CallbackContext>());
-            tracing::error!("WNF subscription handle appears invalid: {subscription:p}");
-            return Err(anyhow::anyhow!("Invalid subscription handle"));
-        }
+            if status.is_err() {
+                // Clean up context if subscription failed
+                let _ = Box::from_raw(context_ptr.cast::<CallbackContext>());
+                tracing::error!(
+                    "RtlSubscribeWnfStateChangeNotification failed: {status:?}. DND monitoring will be unavailable."
+                );
+                return Err(anyhow::anyhow!(
+                    "Failed to subscribe to WNF notifications: {status:?}"
+                ));
+            }
 
-        // Return the subscription pointer wrapped in SendPtr
-        Ok(SendPtr::new(subscription))
+            if !is_valid_ptr(subscription) {
+                let _ = Box::from_raw(context_ptr.cast::<CallbackContext>());
+                tracing::error!("WNF subscription handle appears invalid: {subscription:p}");
+                return Err(anyhow::anyhow!("Invalid subscription handle"));
+            }
+
+            // Return the subscription pointer wrapped in SendPtr
+            Ok(SendPtr::new(subscription))
+        }
     }));
 
     match result {
@@ -338,6 +378,7 @@ fn subscribe_to_focus_assist(
 /// Unsubscribe from Focus Assist notifications
 ///
 /// # Safety
+///
 /// This function uses undocumented Windows WNF API. All errors are caught and logged
 /// without propagating. Panics are caught to prevent app crashes during cleanup.
 fn unsubscribe_from_focus_assist(subscription: *mut WnfUserSubscription) {
@@ -347,12 +388,17 @@ fn unsubscribe_from_focus_assist(subscription: *mut WnfUserSubscription) {
     }
 
     // Wrap in catch_unwind to prevent panics during cleanup
-    let result = std::panic::catch_unwind(|| unsafe {
-        let status = RtlUnsubscribeWnfStateChangeNotification(subscription);
-        if status.is_err() {
-            tracing::error!(
-                "Failed to unsubscribe from WNF notifications: {status:?}. This is non-fatal."
-            );
+    let result = std::panic::catch_unwind(|| {
+        // SAFETY: Calling Windows WNF API function `RtlUnsubscribeWnfStateChangeNotification`.
+        // - `subscription` pointer has been validated as non-null and within valid memory range
+        // - This is the cleanup function, so errors are logged but not propagated
+        unsafe {
+            let status = RtlUnsubscribeWnfStateChangeNotification(subscription);
+            if status.is_err() {
+                tracing::error!(
+                    "Failed to unsubscribe from WNF notifications: {status:?}. This is non-fatal."
+                );
+            }
         }
     });
 
@@ -366,6 +412,7 @@ fn unsubscribe_from_focus_assist(subscription: *mut WnfUserSubscription) {
 /// WNF callback invoked when Focus Assist state changes
 ///
 /// # Safety
+///
 /// This is a system callback that must never panic. All operations are wrapped in
 /// panic handlers and extensive validation to ensure callback safety.
 ///
@@ -386,80 +433,88 @@ unsafe extern "system" fn focus_assist_callback(
     let buf_ptr = buffer;
     let buf_len = length;
 
-    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unsafe {
-        // Validate all pointers before dereferencing
-        if !is_valid_ptr(ctx_ptr) {
-            tracing::error!("WNF callback: invalid callback_context pointer: {ctx_ptr:p}");
-            return NTSTATUS(0);
-        }
-        if !is_valid_ptr(buf_ptr) {
-            tracing::error!("WNF callback: invalid buffer pointer: {buf_ptr:p}");
-            return NTSTATUS(0);
-        }
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        // SAFETY: This is a Windows system callback handling WNF state change notifications.
+        // - All pointers are validated before dereferencing (null checks, range checks)
+        // - Buffer size is validated against expected size and maximum allowed size
+        // - Context pointer from subscription is cast back to `CallbackContext` safely
+        // - The `FocusAssistState` is read from validated buffer with proper alignment
+        // - Returns NTSTATUS(0) on any validation failure to signal success to Windows
+        unsafe {
+            // Validate all pointers before dereferencing
+            if !is_valid_ptr(ctx_ptr) {
+                tracing::error!("WNF callback: invalid callback_context pointer: {ctx_ptr:p}");
+                return NTSTATUS(0);
+            }
+            if !is_valid_ptr(buf_ptr) {
+                tracing::error!("WNF callback: invalid buffer pointer: {buf_ptr:p}");
+                return NTSTATUS(0);
+            }
 
-        // Validate buffer size
-        let expected_size = EXPECTED_STATE_SIZE;
-        if buf_len < expected_size {
-            tracing::error!(
-                "WNF callback: buffer too small. Expected at least {expected_size} bytes, got {buf_len}"
+            // Validate buffer size
+            let expected_size = EXPECTED_STATE_SIZE;
+            if buf_len < expected_size {
+                tracing::error!(
+                    "WNF callback: buffer too small. Expected at least {expected_size} bytes, got {buf_len}"
+                );
+                return NTSTATUS(0);
+            }
+
+            // Validate buffer size is not unreasonably large (detect corruption)
+            if buf_len > MAX_BUFFER_SIZE {
+                tracing::error!(
+                    "WNF callback: buffer suspiciously large: {buf_len} bytes. Possible corruption."
+                );
+                return NTSTATUS(0);
+            }
+
+            // Parse Focus Assist state with additional safety
+            let mut state_aligned = FocusAssistState { value: 0 };
+            std::ptr::copy_nonoverlapping(
+                buf_ptr,
+                (&raw mut state_aligned).cast::<u8>(),
+                EXPECTED_STATE_SIZE as usize,
             );
-            return NTSTATUS(0);
-        }
+            let state = state_aligned;
 
-        // Validate buffer size is not unreasonably large (detect corruption)
-        if buf_len > MAX_BUFFER_SIZE {
-            tracing::error!(
-                "WNF callback: buffer suspiciously large: {buf_len} bytes. Possible corruption."
-            );
-            return NTSTATUS(0);
-        }
+            // Validate state value is within expected range
+            if state.value < 0 || state.value > 2 {
+                tracing::warn!(
+                    "WNF callback: unexpected Focus Assist state value: {}. Processing anyway.",
+                    state.value
+                );
+            }
 
-        // Parse Focus Assist state with additional safety
-        let mut state_aligned = FocusAssistState { value: 0 };
-        std::ptr::copy_nonoverlapping(
-            buf_ptr,
-            (&raw mut state_aligned).cast::<u8>(),
-            EXPECTED_STATE_SIZE as usize,
-        );
-        let state = state_aligned;
+            let is_active = state.value != 0; // 0 = Off, 1 = Priority Only, 2 = Alarms Only
 
-        // Validate state value is within expected range
-        if state.value < 0 || state.value > 2 {
-            tracing::warn!(
-                "WNF callback: unexpected Focus Assist state value: {}. Processing anyway.",
-                state.value
-            );
-        }
+            // Get context with validation
+            let context = &*ctx_ptr;
 
-        let is_active = state.value != 0; // 0 = Off, 1 = Priority Only, 2 = Alarms Only
+            // Try to lock the state mutex - if this fails, skip this update
+            let previous_state = context.last_state.swap(is_active, Ordering::Relaxed);
 
-        // Get context with validation
-        let context = &*ctx_ptr;
+            if previous_state != is_active {
+                // Only emit event if state actually changed
+                let event = if is_active {
+                    DndEvent::Started
+                } else {
+                    DndEvent::Finished
+                };
 
-        // Try to lock the state mutex - if this fails, skip this update
-        let previous_state = context.last_state.swap(is_active, Ordering::Relaxed);
+                tracing::info!("Focus Assist state changed: {}", event.description());
 
-        if previous_state != is_active {
-            // Only emit event if state actually changed
-            let event = if is_active {
-                DndEvent::Started
-            } else {
-                DndEvent::Finished
-            };
-
-            tracing::info!("Focus Assist state changed: {}", event.description());
-
-            // Send event asynchronously using Tauri runtime (not tokio::spawn, as we're not in a tokio context)
-            // This callback is executed on a Windows thread pool thread, not a tokio thread
-            let sender = context.sender.clone();
-            tauri::async_runtime::spawn(async move {
-                sender.send(event).await.unwrap_or_else(|e| {
-                    tracing::error!("Failed to send DND event: {e}");
+                // Send event asynchronously using Tauri runtime (not tokio::spawn, as we're not in a tokio context)
+                // This callback is executed on a Windows thread pool thread, not a tokio thread
+                let sender = context.sender.clone();
+                tauri::async_runtime::spawn(async move {
+                    sender.send(event).await.unwrap_or_else(|e| {
+                        tracing::error!("Failed to send DND event: {e}");
+                    });
                 });
-            });
-        }
+            }
 
-        NTSTATUS(0) // Success
+            NTSTATUS(0) // Success
+        }
     }));
 
     match result {
@@ -475,6 +530,8 @@ unsafe extern "system" fn focus_assist_callback(
     }
 }
 
+/// Validates that a pointer is non-null and above the Windows reserved address space.
+/// On Windows, addresses below 0x10000 (64KB) are reserved and cannot be valid user pointers.
 fn is_valid_ptr<T>(ptr: *const T) -> bool {
     !ptr.is_null() && (ptr as usize) >= MIN_VALID_POINTER_ADDR
 }

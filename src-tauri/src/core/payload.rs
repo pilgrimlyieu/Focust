@@ -125,7 +125,11 @@ impl PromptPayloadStore {
     }
 }
 
-/// Store a prompt payload (non-command version for internal use)
+/// Stores a prompt payload (non-command version for internal use).
+///
+/// # Errors
+///
+/// This function does not return errors in normal operation.
 pub async fn store_payload_internal(
     store: &PromptPayloadStore,
     payload: PromptPayload,

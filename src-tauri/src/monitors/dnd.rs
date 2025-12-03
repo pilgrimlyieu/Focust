@@ -49,7 +49,7 @@ impl Default for DndMonitor {
 }
 
 impl DndMonitor {
-    /// Create a new DND monitor
+    /// Creates a new DND monitor.
     #[must_use]
     pub fn new() -> Self {
         Self {

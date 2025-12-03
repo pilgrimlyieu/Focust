@@ -43,7 +43,11 @@ enum DesktopEnvironment {
 }
 
 impl LinuxDndMonitor {
-    /// Create a new Linux DND monitor
+    /// Creates a new Linux DND monitor.
+    ///
+    /// # Errors
+    ///
+    /// This function does not return errors in normal operation.
     pub fn new() -> Result<Self> {
         let desktop_env = detect_desktop_environment();
         tracing::info!("Detected desktop environment: {desktop_env:?}");
@@ -55,7 +59,14 @@ impl LinuxDndMonitor {
         })
     }
 
-    /// Start monitoring DND state changes
+    /// Starts monitoring DND state changes.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Connecting to the D-Bus session fails  
+    /// - Setting up property change monitoring fails
+    /// - The desktop environment is unsupported
     pub async fn start(&mut self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
         if self.is_monitoring.load(Ordering::Acquire) {
             tracing::debug!("Linux DND monitoring is already running");
@@ -107,7 +118,11 @@ impl LinuxDndMonitor {
         }
     }
 
-    /// Stop monitoring DND state
+    /// Stops monitoring DND state.
+    ///
+    /// # Errors
+    ///
+    /// This function does not return errors in normal operation.
     #[expect(clippy::unused_async, reason = "for consistency with other platforms")]
     pub async fn stop(&mut self) -> Result<()> {
         if !self.is_monitoring.load(Ordering::Acquire) {
@@ -120,7 +135,11 @@ impl LinuxDndMonitor {
         Ok(())
     }
 
-    /// Get current DND state
+    /// Gets the current DND state.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if querying the desktop environment's DND status fails.
     pub async fn is_enabled(&self) -> Result<bool> {
         match self.desktop_env {
             DesktopEnvironment::Kde => check_kde_dnd().await,

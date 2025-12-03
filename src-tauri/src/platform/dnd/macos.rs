@@ -20,7 +20,11 @@ pub struct MacosDndMonitor {
 }
 
 impl MacosDndMonitor {
-    /// Create a new macOS DND monitor
+    /// Creates a new macOS DND monitor.
+    ///
+    /// # Errors
+    ///
+    /// This function does not return errors in normal operation.
     pub fn new() -> Result<Self> {
         Ok(Self {
             is_monitoring: Arc::new(AtomicBool::new(false)),
@@ -28,7 +32,13 @@ impl MacosDndMonitor {
         })
     }
 
-    /// Start monitoring Focus Mode status
+    /// Starts monitoring Focus Mode status.
+    ///
+    /// Uses polling to periodically check the Focus Mode state.
+    ///
+    /// # Errors
+    ///
+    /// This function does not return errors in normal operation.
     pub async fn start(&mut self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
         if self.is_monitoring.load(Ordering::Acquire) {
             tracing::debug!("macOS DND monitoring is already running");
@@ -54,9 +64,11 @@ impl MacosDndMonitor {
         let last_state = self.last_state.clone();
 
         tokio::spawn(async move {
-            if let Err(e) = poll_focus_mode(sender, last_state).await {
-                tracing::error!("macOS Focus Mode polling terminated with error: {e}");
-            }
+            poll_focus_mode(sender, last_state)
+                .await
+                .unwrap_or_else(|e| {
+                    tracing::error!("macOS Focus Mode polling terminated with error: {e}");
+                });
         });
 
         self.is_monitoring.store(true, Ordering::Release);
@@ -64,7 +76,11 @@ impl MacosDndMonitor {
         Ok(())
     }
 
-    /// Stop monitoring Focus Mode status
+    /// Stops monitoring Focus Mode status.
+    ///
+    /// # Errors
+    ///
+    /// This function does not return errors in normal operation.
     pub async fn stop(&mut self) -> Result<()> {
         if !self.is_monitoring.load(Ordering::Acquire) {
             return Ok(());
@@ -75,7 +91,7 @@ impl MacosDndMonitor {
         Ok(())
     }
 
-    /// Get current Focus Mode status
+    /// Gets the current Focus Mode status.
     pub async fn is_enabled(&self) -> Result<bool> {
         check_focus_mode_status().await
     }
@@ -88,6 +104,11 @@ impl MacosDndMonitor {
 /// Check if Focus Mode is currently enabled
 ///
 /// This reads the system preference using the `defaults` command.
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - Executing the `defaults` command fails
 async fn check_focus_mode_status() -> Result<bool> {
     let output = tokio::process::Command::new("defaults")
         .args(&[

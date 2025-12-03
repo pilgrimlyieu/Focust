@@ -1,3 +1,19 @@
+//! # Focust - A Cross-Platform Break Reminder Application
+//!
+//! Focust is a Tauri-based application that helps users take regular breaks
+//! with customizable schedules and themes. This crate provides the Rust backend
+//! for the application.
+//!
+//! ## Architecture
+//!
+//! - **`cmd`**: Tauri command handlers for IPC communication
+//! - **`config`**: Configuration management and persistence
+//! - **`core`**: Core business logic (audio, scheduling, themes, suggestions)
+//! - **`monitors`**: Environment monitoring (idle detection, DND, app exclusions)
+//! - **`platform`**: Platform-specific integrations (tray, hotkeys, notifications)
+//! - **`scheduler`**: Event-driven break scheduling system
+//! - **`utils`**: Utility functions (logging, error handling)
+
 use tauri::Manager;
 use tauri_plugin_autostart::ManagerExt;
 
@@ -15,6 +31,15 @@ pub mod platform;
 pub mod scheduler;
 pub mod utils;
 
+/// Runs the Tauri application with all plugins and setup logic.
+///
+/// # Panics
+///
+/// Panics if:
+/// - Retrieving the app log directory fails (wrapped in `expect`)
+/// - The Tauri application fails to build (wrapped in `expect`)
+///
+/// These are intentional as the application cannot function without valid paths and a Tauri runtime.
 #[expect(clippy::too_many_lines, clippy::expect_used, clippy::print_stderr)]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {

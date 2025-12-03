@@ -1,3 +1,8 @@
+//! System tray icon and menu management.
+//!
+//! This module manages the system tray icon, handles menu updates based on
+//! scheduler state, and provides tray-related event handling.
+
 use std::sync::{
     Arc, Mutex,
     atomic::{AtomicBool, Ordering},
@@ -21,20 +26,31 @@ use crate::{
 };
 use crate::{config::SharedConfig, platform::i18n::LANGUAGE_FALLBACK};
 
-/// Global state to track scheduler pause status and tray reference for menu updates
+/// Global state to track scheduler pause status and tray reference for menu updates.
 #[derive(Clone)]
 pub struct TrayState {
+    /// Atomic flag indicating whether the scheduler is paused.
     pub scheduler_paused: Arc<AtomicBool>,
+    /// Sender for tray menu update messages.
     pub tray_sender: Arc<Mutex<Option<tokio::sync::mpsc::UnboundedSender<TrayUpdate>>>>,
 }
 
-/// Messages for updating the tray menu
+/// Messages for updating the tray menu.
 #[non_exhaustive]
 pub enum TrayUpdate {
+    /// Updates the menu with the specified pause state.
     UpdateMenu(bool), // bool: paused state
 }
 
-/// Setup system tray icon with menu (should be called after config is loaded)
+/// Sets up the system tray icon with menu.
+///
+/// Should be called after configuration is loaded.
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - Building the tray menu fails
+/// - Creating the tray icon fails
 pub async fn setup_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
     let (tray_state, tray_rx) = initialize_tray_state(app);
 

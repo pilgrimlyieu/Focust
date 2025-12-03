@@ -1,3 +1,19 @@
+//! Audio playback functionality for break notifications.
+//!
+//! This module provides audio playback capabilities using the `rodio` crate.
+//!
+//! # Platform Support
+//!
+//! **Note**: Audio is temporarily disabled on macOS due to `CoreAudio` backend
+//! limitations in `rodio`/`cpal`. The `CoreAudio` backend doesn't implement `Send`,
+//! making it incompatible with Tauri's state management which requires `Send + Sync`.
+//!
+//! **Status**: Waiting for cpal 0.17.0+ which includes
+//! [PR #1021](https://github.com/RustAudio/cpal/pull/1021) that fixes the Send trait issue.
+//!
+//! **Resolution**: Once cpal 0.17.0+ is released, we can re-enable full audio
+//! support on macOS by simply removing the `#[cfg(not(target_os = "macos"))]` guards.
+
 mod models;
 mod player;
 
@@ -14,11 +30,15 @@ use parking_lot::Mutex;
 #[cfg(not(target_os = "macos"))]
 use std::sync::Arc;
 
-/// Audio player state managed by Tauri (non-macOS only)
+/// Audio player state managed by Tauri (non-macOS only).
 #[cfg(not(target_os = "macos"))]
 pub type AudioPlayerState = Arc<Mutex<Option<AudioPlayer>>>;
 
-/// Initialize the audio player and store it in Tauri state (non-macOS)
+/// Initializes the audio player and stores it in Tauri state (non-macOS).
+///
+/// # Errors
+///
+/// Returns an error if initializing the audio device or output stream fails.
 #[cfg(not(target_os = "macos"))]
 pub fn init_audio_player() -> Result<AudioPlayerState, PlaybackError> {
     let player = AudioPlayer::new()?;
@@ -26,57 +46,76 @@ pub fn init_audio_player() -> Result<AudioPlayerState, PlaybackError> {
     Ok(Arc::new(Mutex::new(Some(player))))
 }
 
-/// Initialize audio (macOS stub - audio not supported)
+/// Initializes audio (macOS stub - audio not supported).
+///
+/// # Errors
+///
+/// This function does not return errors in normal operation (always returns `Ok(())`).
 #[cfg(target_os = "macos")]
 pub fn init_audio_player() -> Result<(), PlaybackError> {
     tracing::warn!("Audio playback is not supported on macOS due to CoreAudio backend limitations");
     Ok(())
 }
 
-/// Play audio from a file path (non-macOS)
+/// Plays audio from a file path (non-macOS).
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - The audio player is not initialized
+/// - Loading or decoding the audio file fails
+/// - Starting playback fails
 #[cfg(not(target_os = "macos"))]
 pub fn play_audio(
     player_state: &AudioPlayerState,
     path: &str,
     volume: f32,
 ) -> Result<(), PlaybackError> {
-    let mut player_guard = player_state.lock();
-
-    if let Some(ref mut player) = *player_guard {
-        player.play(path, volume)?;
-        tracing::debug!("Playing audio: {path} at volume {volume}");
-        Ok(())
-    } else {
-        Err(PlaybackError::NotInitialized)
-    }
+    player_state
+        .lock()
+        .as_mut()
+        .ok_or(PlaybackError::NotInitialized)?
+        .play(path, volume)?;
+    tracing::debug!("Playing audio: {path} at volume {volume}");
+    Ok(())
 }
 
-/// Play audio (macOS stub)
+/// Plays audio (macOS stub).
+///
+/// # Errors
+///
+/// Always returns an error indicating audio is not supported on macOS.
 #[cfg(target_os = "macos")]
 pub fn play_audio(_path: &str, _volume: f32) -> Result<(), PlaybackError> {
     Err(PlaybackError::PlaybackFailed(
-        "Audio playback is not supported on macOS".to_string(),
+        "Audio playback is not supported on macOS".to_owned(),
     ))
 }
 
-/// Stop currently playing audio (non-macOS)
+/// Stops currently playing audio (non-macOS).
+///
+/// # Errors
+///
+/// Returns an error if the audio player is not initialized.
 #[cfg(not(target_os = "macos"))]
 pub fn stop_audio(player_state: &AudioPlayerState) -> Result<(), PlaybackError> {
-    let mut player_guard = player_state.lock();
-
-    if let Some(ref mut player) = *player_guard {
-        player.stop();
-        tracing::debug!("Audio playback stopped");
-        Ok(())
-    } else {
-        Err(PlaybackError::NotInitialized)
-    }
+    player_state
+        .lock()
+        .as_mut()
+        .ok_or(PlaybackError::NotInitialized)?
+        .stop();
+    tracing::debug!("Audio playback stopped");
+    Ok(())
 }
 
-/// Stop audio (macOS stub)
+/// Stops audio (macOS stub).
+///
+/// # Errors
+///
+/// Always returns an error indicating audio is not supported on macOS.
 #[cfg(target_os = "macos")]
 pub fn stop_audio() -> Result<(), PlaybackError> {
     Err(PlaybackError::PlaybackFailed(
-        "Audio playback is not supported on macOS".to_string(),
+        "Audio playback is not supported on macOS".to_owned(),
     ))
 }
