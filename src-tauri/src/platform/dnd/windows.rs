@@ -530,6 +530,8 @@ unsafe extern "system" fn focus_assist_callback(
     }
 }
 
+/// Validates that a pointer is non-null and above the Windows reserved address space.
+/// On Windows, addresses below 0x10000 (64KB) are reserved and cannot be valid user pointers.
 fn is_valid_ptr<T>(ptr: *const T) -> bool {
     !ptr.is_null() && (ptr as usize) >= MIN_VALID_POINTER_ADDR
 }
