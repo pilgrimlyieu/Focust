@@ -131,7 +131,7 @@ impl LinuxDndMonitor {
         }
 
         tracing::info!("Stopping Linux DND monitoring");
-        // Cancel the spawned tasks properly instead of just setting the flag.
+        // TODO: Cancel the spawned tasks properly instead of just setting the flag.
         self.is_monitoring.store(false, Ordering::Release);
         Ok(())
     }

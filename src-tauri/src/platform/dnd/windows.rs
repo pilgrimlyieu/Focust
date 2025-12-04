@@ -6,7 +6,7 @@
 //!
 //! # Why WNF instead of official `FocusSessionManager` API?
 //!
-//! Microsoft provides an official [`FocusSessionManager`] API with the `IsFocusActiveChanged` event:
+//! Microsoft provides an official `FocusSessionManager` API with the `IsFocusActiveChanged` event:
 //! - Advantages: Official, documented, type-safe `WinRT` interface
 //! - **Critical limitation**: Only available on Windows 11 Build 22621+ (October 2022 Update)
 //!
