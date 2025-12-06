@@ -93,6 +93,7 @@ const enUS = {
     addTimeHint: "Click the button above to add reminder times",
     create: "Add Reminder",
     days: "Active days",
+    daysActive: "days active",
     description:
       "Timed reminders work like alarm clocks—they pop up at specific times to remind you to do something. Unlike break reminders, they don't interrupt your work.",
     disabledStatus: "Disabled",
@@ -222,6 +223,7 @@ const enUS = {
     audio: "Sound",
     create: "Create schedule",
     days: "Days of week",
+    daysActive: "days active",
     description: "Configure break schedules and timing",
     disabledStatus: "Disabled",
     durationSeconds: "Duration",

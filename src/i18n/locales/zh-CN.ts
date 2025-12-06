@@ -86,6 +86,7 @@ const zhCN: LocaleStrings = {
     addTimeHint: "点击上方按钮添加提醒时间",
     create: "新增提醒",
     days: "生效日期",
+    daysActive: "天生效",
     description:
       "定时提醒就像闹钟，在指定时间弹出通知，提醒您去做某件事情。不同于休息提醒，它不会强制您停止工作。",
     disabledStatus: "已禁用",
@@ -212,6 +213,7 @@ const zhCN: LocaleStrings = {
     audio: "提示音",
     create: "新建计划",
     days: "适用星期",
+    daysActive: "天生效",
     description: "配置休息计划和时间安排",
     disabledStatus: "已禁用",
     durationSeconds: "时长",

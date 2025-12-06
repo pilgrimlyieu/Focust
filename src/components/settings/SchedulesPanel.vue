@@ -13,57 +13,18 @@ const { t } = useI18n();
 const configStore = useConfigStore();
 
 const schedules = computed(() => props.config.schedules);
-const draggedIndex = ref<number | null>(null);
+const expandedIds = ref<Set<number>>(new Set());
 
 /**
- * Handle drag start from the drag handle
- * @param {DragEvent} event The drag event
- * @param {number} index The index of the dragged item
+ * Toggle the expanded state of a schedule item.
+ * @param {number} id The ID of the schedule to toggle.
  */
-function handleDragStart(event: DragEvent, index: number) {
-  // Only allow drag if started from the drag handle
-  const target = event.target as HTMLElement;
-  if (!target.classList.contains("drag-handle")) {
-    event.preventDefault();
-    return;
+function toggleExpand(id: number) {
+  if (expandedIds.value.has(id)) {
+    expandedIds.value.delete(id);
+  } else {
+    expandedIds.value.add(id);
   }
-
-  draggedIndex.value = index;
-  // Set data transfer for compatibility
-  if (event.dataTransfer) {
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", String(index));
-  }
-}
-
-/**
- * Handle drag over
- * @param {DragEvent} event The drag event
- * @param {number} index The target index
- */
-function handleDragOver(event: DragEvent, index: number) {
-  event.preventDefault();
-  if (
-    draggedIndex.value === null ||
-    draggedIndex.value === index ||
-    !schedules.value
-  )
-    return;
-
-  const items = [...schedules.value];
-  const draggedItem = items[draggedIndex.value];
-  items.splice(draggedIndex.value, 1);
-  items.splice(index, 0, draggedItem);
-
-  props.config.schedules = items;
-  draggedIndex.value = index;
-}
-
-/**
- * Handle drag end
- */
-function handleDragEnd() {
-  draggedIndex.value = null;
 }
 
 /** Add a new schedule. */
@@ -154,13 +115,11 @@ function removeSchedule(id: number) {
 
     <!-- Schedules List -->
     <TransitionGroup v-else name="list" tag="div" class="space-y-6">
-      <div v-for="(schedule, index) in schedules" :key="schedule.miniBreaks.id" :class="{
-        'opacity-50 scale-95': draggedIndex === index,
-        'ring-2 ring-primary/50 rounded-2xl': draggedIndex !== null && draggedIndex !== index,
-      }" @dragover="handleDragOver($event, index)" @dragend="handleDragEnd">
-        <ScheduleCard :schedule="schedule" :index="index" :dragged-index="draggedIndex"
-          @duplicate="duplicateSchedule(schedule.miniBreaks.id)" @remove="removeSchedule(schedule.miniBreaks.id)"
-          @dragstart="handleDragStart($event, index)" />
+      <div v-for="(schedule, index) in schedules" :key="schedule.miniBreaks.id">
+        <ScheduleCard :schedule="schedule" :index="index"
+          :expanded="expandedIds.has(schedule.miniBreaks.id)" @duplicate="duplicateSchedule(schedule.miniBreaks.id)"
+          @remove="removeSchedule(schedule.miniBreaks.id)"
+          @toggle-expand="toggleExpand(schedule.miniBreaks.id)" />
       </div>
     </TransitionGroup>
   </section>

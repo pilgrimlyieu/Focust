@@ -3,7 +3,6 @@ import { computed, onMounted, ref, TransitionGroup, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import CloseIcon from "@/components/icons/CloseIcon.vue";
 import DocumentIcon from "@/components/icons/DocumentIcon.vue";
-import GripVerticalIcon from "@/components/icons/GripVerticalIcon.vue";
 import ImportIcon from "@/components/icons/ImportIcon.vue";
 import InfoIcon from "@/components/icons/InfoIcon.vue";
 import ListIcon from "@/components/icons/ListIcon.vue";
@@ -34,7 +33,6 @@ const suggestionsText = ref("");
 
 const newSuggestionInput = ref("");
 const isSaving = ref(false);
-const draggedIndex = ref<number | null>(null);
 
 watch(
   [() => suggestionsStore.config, currentLanguage],
@@ -134,40 +132,6 @@ function importFromBulk() {
   editMode.value = "list";
   saveSuggestions();
 }
-
-/**
- * Handle drag start
- * @param {number} index The index of the dragged item
- */
-function handleDragStart(index: number) {
-  draggedIndex.value = index;
-}
-
-/**
- * Handle drag over
- * @param {DragEvent} event The drag event
- * @param {number} index The target index
- */
-function handleDragOver(event: DragEvent, index: number) {
-  event.preventDefault();
-  if (draggedIndex.value === null || draggedIndex.value === index) return;
-
-  const items = [...suggestionsList.value];
-  const draggedItem = items[draggedIndex.value];
-  items.splice(draggedIndex.value, 1);
-  items.splice(index, 0, draggedItem);
-
-  suggestionsList.value = items;
-  draggedIndex.value = index;
-}
-
-/**
- * Handle drag end
- */
-function handleDragEnd() {
-  draggedIndex.value = null;
-  saveSuggestions();
-}
 </script>
 
 <template>
@@ -239,14 +203,8 @@ function handleDragEnd() {
 
         <!-- Suggestions List -->
         <TransitionGroup name="list" tag="div" class="space-y-2 max-h-96 overflow-y-auto pr-2">
-          <div v-for="(suggestion, index) in suggestionsList" :key="`suggestion-${index}`" :draggable="true"
-            class="flex gap-2 items-center group bg-base-200/50 hover:bg-base-200 rounded-lg p-3 transition-all cursor-move"
-            :class="{
-              'opacity-50 scale-95': draggedIndex === index,
-              'ring-2 ring-primary/50': draggedIndex !== null && draggedIndex !== index,
-            }" @dragstart="handleDragStart(index)" @dragover="handleDragOver($event, index)" @dragend="handleDragEnd">
-            <GripVerticalIcon
-              class-name="h-4 w-4 text-base-content/20 group-hover:text-base-content/50 transition-colors cursor-grab active:cursor-grabbing" />
+          <div v-for="(suggestion, index) in suggestionsList" :key="`suggestion-${index}`"
+            class="flex gap-2 items-center group bg-base-200/50 hover:bg-base-200 rounded-lg p-3 transition-all">
             <span class="text-base-content/40 font-mono text-xs w-8 text-right shrink-0">{{ index + 1 }}</span>
             <input :value="suggestion" type="text"
               class="input input-sm input-bordered flex-1 bg-base-100 transition-all focus:input-primary" @blur="

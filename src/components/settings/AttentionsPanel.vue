@@ -3,9 +3,9 @@ import { computed, ref, TransitionGroup } from "vue";
 import { useI18n } from "vue-i18n";
 import BellIcon from "@/components/icons/BellIcon.vue";
 import CheckCircleIcon from "@/components/icons/CheckCircleIcon.vue";
+import ChevronDownIcon from "@/components/icons/ChevronDownIcon.vue";
 import CloseIcon from "@/components/icons/CloseIcon.vue";
 import DuplicateIcon from "@/components/icons/DuplicateIcon.vue";
-import GripVerticalIcon from "@/components/icons/GripVerticalIcon.vue";
 import InfoIcon from "@/components/icons/InfoIcon.vue";
 import PauseCircleIcon from "@/components/icons/PauseCircleIcon.vue";
 import PlusIcon from "@/components/icons/PlusIcon.vue";
@@ -22,57 +22,18 @@ const configStore = useConfigStore();
 const dayOrder = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 
 const attentions = computed(() => props.config.attentions);
-const draggedIndex = ref<number | null>(null);
+const expandedIds = ref<Set<number>>(new Set());
 
 /**
- * Handle drag start from the drag handle
- * @param {DragEvent} event The drag event
- * @param {number} index The index of the dragged item
+ * Toggle the expanded state of an attention item.
+ * @param {number} id The ID of the attention to toggle.
  */
-function handleDragStart(event: DragEvent, index: number) {
-  // Only allow drag if started from the drag handle
-  const target = event.target as HTMLElement;
-  if (!target.classList.contains("drag-handle")) {
-    event.preventDefault();
-    return;
+function toggleExpand(id: number) {
+  if (expandedIds.value.has(id)) {
+    expandedIds.value.delete(id);
+  } else {
+    expandedIds.value.add(id);
   }
-
-  draggedIndex.value = index;
-  // Set data transfer for compatibility
-  if (event.dataTransfer) {
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", String(index));
-  }
-}
-
-/**
- * Handle drag over
- * @param {DragEvent} event The drag event
- * @param {number} index The target index
- */
-function handleDragOver(event: DragEvent, index: number) {
-  event.preventDefault();
-  if (
-    draggedIndex.value === null ||
-    draggedIndex.value === index ||
-    !attentions.value
-  )
-    return;
-
-  const items = [...attentions.value];
-  const draggedItem = items[draggedIndex.value];
-  items.splice(draggedIndex.value, 1);
-  items.splice(index, 0, draggedItem);
-
-  props.config.attentions = items;
-  draggedIndex.value = index;
-}
-
-/**
- * Handle drag end
- */
-function handleDragEnd() {
-  draggedIndex.value = null;
 }
 
 /**
@@ -221,35 +182,41 @@ function updateTime(attentionIndex: number, timeIndex: number, value: string) {
     <!-- Attentions List -->
     <TransitionGroup v-else name="list" tag="div" class="space-y-5">
       <article v-for="(attention, index) in attentions" :key="attention.id"
-        class="group rounded-2xl border border-base-300 bg-linear-to-br from-base-100 to-base-200/30 p-6 shadow-md transition-all hover:shadow-xl"
-        :class="{
-          'opacity-50 scale-95': draggedIndex === index,
-          'ring-2 ring-primary/50': draggedIndex !== null && draggedIndex !== index,
-        }" @dragover="handleDragOver($event, index)" @dragend="handleDragEnd">
-        <!-- Header -->
-        <header class="mb-6 flex flex-wrap items-start gap-4">
-          <div draggable="true" class="drag-handle flex items-center gap-3 shrink-0 cursor-grab active:cursor-grabbing"
-            @dragstart="handleDragStart($event, index)">
-            <GripVerticalIcon
-              class-name="h-5 w-5 text-base-content/20 group-hover:text-base-content/50 transition-colors" />
+        class="group rounded-2xl border border-base-300 bg-linear-to-br from-base-100 to-base-200/30 shadow-md transition-all hover:shadow-xl overflow-hidden">
+        <!-- Header (Clickable) -->
+        <header class="flex flex-wrap items-start gap-4 p-6 cursor-pointer" @click="toggleExpand(attention.id)">
+          <div class="flex items-center gap-3 shrink-0" @click.stop>
             <input v-model="attention.enabled" type="checkbox" class="toggle toggle-lg transition-all"
-              :class="{ 'toggle-success': attention.enabled }" draggable="false" @mousedown.stop @click.stop />
+              :class="{ 'toggle-success': attention.enabled }" @click.stop />
           </div>
           <div class="flex-1 min-w-0">
-            <input v-model="attention.name" type="text" :placeholder="t('attention.nameHint')"
-              class="input input-ghost input-lg -ml-4 w-full font-bold text-xl focus:input-bordered transition-all" />
-            <p class="text-xs text-base-content/50 ml-0.5 mt-1.5 flex items-center gap-1.5">
-              <template v-if="attention.enabled">
-                <CheckCircleIcon class-name="h-3.5 w-3.5 text-success" />
-                <span class="text-success font-medium">{{ t("attention.enabledStatus") }}</span>
-              </template>
-              <template v-else>
-                <PauseCircleIcon class-name="h-3.5 w-3.5 text-base-content/30" />
-                <span class="text-base-content/50">{{ t("attention.disabledStatus") }}</span>
-              </template>
-            </p>
+            <div class="flex items-center gap-3">
+              <input v-model="attention.name" type="text" :placeholder="t('attention.nameHint')"
+                class="input input-ghost input-lg -ml-4 w-full font-bold text-xl focus:input-bordered transition-all"
+                @click.stop />
+              <ChevronDownIcon class-name="h-5 w-5 text-base-content/50 transition-transform duration-300 shrink-0"
+                :class="{ 'rotate-180': expandedIds.has(attention.id) }" />
+            </div>
+            <div class="text-xs text-base-content/50 ml-0.5 mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+              <div class="flex items-center gap-1.5">
+                <template v-if="attention.enabled">
+                  <CheckCircleIcon class-name="h-3.5 w-3.5 text-success" />
+                  <span class="text-success font-medium">{{ t("attention.enabledStatus") }}</span>
+                </template>
+                <template v-else>
+                  <PauseCircleIcon class-name="h-3.5 w-3.5 text-base-content/30" />
+                  <span class="text-base-content/50">{{ t("attention.disabledStatus") }}</span>
+                </template>
+              </div>
+              <div class="badge badge-sm badge-ghost">
+                {{ attention.times.length }} {{ t("attention.times") }}
+              </div>
+              <div class="badge badge-sm badge-ghost">
+                {{ attention.daysOfWeek.length }} {{ t("attention.daysActive") }}
+              </div>
+            </div>
           </div>
-          <div class="flex gap-2 shrink-0">
+          <div class="flex gap-2 shrink-0" @click.stop>
             <button class="btn btn-sm btn-ghost gap-2 opacity-60 hover:opacity-100 transition-all"
               :title="t('actions.duplicate')" @click="duplicateAttention(attention.id)">
               <DuplicateIcon class-name="h-4 w-4" />
@@ -263,98 +230,101 @@ function updateTime(attentionIndex: number, timeIndex: number, value: string) {
           </div>
         </header>
 
-        <!-- Content -->
-        <div class="space-y-6">
-          <!-- Basic Info -->
-          <div class="grid gap-5 sm:grid-cols-2">
+        <!-- Content (Collapsible) -->
+        <Transition name="expand">
+          <div v-if="expandedIds.has(attention.id)" class="space-y-6 px-6 pb-6">
+            <!-- Basic Info -->
+            <div class="grid gap-5 sm:grid-cols-2">
+              <label class="form-control w-full">
+                <div class="label pb-2">
+                  <span class="label-text font-medium text-sm">{{ t("attention.titleLabel") }}</span>
+                  <span class="label-text-alt text-base-content/50 text-xs">{{ t("attention.titleHint") }}</span>
+                </div>
+                <input v-model="attention.title" type="text"
+                  class="input input-bordered focus:input-primary w-full transition-all"
+                  :placeholder="t('attention.titleLabel')" />
+              </label>
+              <label class="form-control w-full">
+                <div class="label pb-2">
+                  <span class="label-text font-medium text-sm">{{ t("attention.durationSeconds") }}</span>
+                </div>
+                <div class="join w-full">
+                  <input v-model.number="attention.durationS" type="number" min="5" max="300"
+                    class="input input-bordered join-item flex-1 focus:input-primary transition-all" />
+                  <span class="btn btn-ghost join-item pointer-events-none text-sm">{{ t("schedule.secondsUnit")
+                    }}</span>
+                </div>
+              </label>
+            </div>
+
+            <!-- Message -->
             <label class="form-control w-full">
               <div class="label pb-2">
-                <span class="label-text font-medium text-sm">{{ t("attention.titleLabel") }}</span>
-                <span class="label-text-alt text-base-content/50 text-xs">{{ t("attention.titleHint") }}</span>
+                <span class="label-text font-medium text-sm">{{ t("attention.message") }}</span>
+                <span class="label-text-alt text-base-content/50 text-xs">{{ t("attention.messageHint") }}</span>
               </div>
-              <input v-model="attention.title" type="text"
-                class="input input-bordered focus:input-primary w-full transition-all"
-                :placeholder="t('attention.titleLabel')" />
+              <textarea v-model="attention.message"
+                class="textarea textarea-bordered textarea-lg h-24 resize-none focus:textarea-primary leading-relaxed w-full transition-all"
+                :placeholder="t('attention.messagePlaceholder')" />
             </label>
-            <label class="form-control w-full">
-              <div class="label pb-2">
-                <span class="label-text font-medium text-sm">{{ t("attention.durationSeconds") }}</span>
-              </div>
-              <div class="join w-full">
-                <input v-model.number="attention.durationS" type="number" min="5" max="300"
-                  class="input input-bordered join-item flex-1 focus:input-primary transition-all" />
-                <span class="btn btn-ghost join-item pointer-events-none text-sm">{{ t("schedule.secondsUnit") }}</span>
-              </div>
-            </label>
-          </div>
 
-          <!-- Message -->
-          <label class="form-control w-full">
-            <div class="label pb-2">
-              <span class="label-text font-medium text-sm">{{ t("attention.message") }}</span>
-              <span class="label-text-alt text-base-content/50 text-xs">{{ t("attention.messageHint") }}</span>
-            </div>
-            <textarea v-model="attention.message"
-              class="textarea textarea-bordered textarea-lg h-24 resize-none focus:textarea-primary leading-relaxed w-full transition-all"
-              :placeholder="t('attention.messagePlaceholder')" />
-          </label>
-
-          <!-- Days of Week -->
-          <div class="rounded-xl bg-base-200/50 p-5">
-            <div class="label pb-3">
-              <span class="label-text font-medium text-sm">{{ t("attention.days") }}</span>
-            </div>
-            <div class="flex flex-wrap gap-2">
-              <button v-for="day in dayOrder" :key="day" class="btn btn-sm min-w-14 transition-all font-medium"
-                :class="attention.daysOfWeek.includes(day) ? 'btn-primary shadow-md' : 'btn-ghost btn-outline'"
-                @click="toggleDay(index, day)">
-                {{ t(`days.${day}`) }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Times -->
-          <div class="rounded-xl bg-base-200/50 p-5">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4">
-              <div class="label pb-0">
-                <span class="label-text font-medium text-sm flex items-center gap-2">
-                  {{ t("attention.times") }}
-                  <span class="badge badge-sm badge-ghost font-normal">
-                    {{ attention.times.length }}
-                  </span>
-                </span>
+            <!-- Days of Week -->
+            <div class="rounded-xl bg-base-200/50 p-5">
+              <div class="label pb-3">
+                <span class="label-text font-medium text-sm">{{ t("attention.days") }}</span>
               </div>
-              <button class="btn btn-xs btn-primary gap-1.5 font-medium" @click="addTime(index)">
-                <PlusIcon class-name="h-3.5 w-3.5" />
-                {{ t("attention.addTime") }}
-              </button>
-            </div>
-            <div v-if="attention.times.length" class="flex flex-wrap gap-3">
-              <div v-for="(_, timeIdx) in attention.times" :key="timeIdx"
-                class="group/time flex items-center gap-2 rounded-lg border border-base-300 bg-base-100 p-2.5 shadow-sm hover:shadow-md transition-all">
-                <input v-model="attention.times[timeIdx]" type="time"
-                  class="input input-sm input-ghost w-32 font-mono text-sm"
-                  @input="updateTime(index, timeIdx, attention.times[timeIdx])" />
-                <button
-                  class="btn btn-xs btn-ghost btn-circle text-error opacity-0 group-hover/time:opacity-100 transition-opacity"
-                  :title="t('actions.delete')" @click="removeTime(index, timeIdx)">
-                  <CloseIcon class-name="h-3.5 w-3.5" />
+              <div class="flex flex-wrap gap-2">
+                <button v-for="day in dayOrder" :key="day" class="btn btn-sm min-w-14 transition-all font-medium"
+                  :class="attention.daysOfWeek.includes(day) ? 'btn-primary shadow-md' : 'btn-ghost btn-outline'"
+                  @click="toggleDay(index, day)">
+                  {{ t(`days.${day}`) }}
                 </button>
               </div>
             </div>
-            <div v-else class="text-center py-6 text-sm text-base-content/40">
-              {{ t("attention.addTimeHint") }}
-            </div>
-          </div>
 
-          <!-- Theme Designer -->
-          <div class="rounded-xl border border-base-300/50 bg-base-200/20 p-5">
-            <div class="label pb-4">
-              <span class="label-text font-medium text-base">{{ t("schedule.theme") }}</span>
+            <!-- Times -->
+            <div class="rounded-xl bg-base-200/50 p-5">
+              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4">
+                <div class="label pb-0">
+                  <span class="label-text font-medium text-sm flex items-center gap-2">
+                    {{ t("attention.times") }}
+                    <span class="badge badge-sm badge-ghost font-normal">
+                      {{ attention.times.length }}
+                    </span>
+                  </span>
+                </div>
+                <button class="btn btn-xs btn-primary gap-1.5 font-medium" @click="addTime(index)">
+                  <PlusIcon class-name="h-3.5 w-3.5" />
+                  {{ t("attention.addTime") }}
+                </button>
+              </div>
+              <div v-if="attention.times.length" class="flex flex-wrap gap-3">
+                <div v-for="(_, timeIdx) in attention.times" :key="timeIdx"
+                  class="group/time flex items-center gap-2 rounded-lg border border-base-300 bg-base-100 p-2.5 shadow-sm hover:shadow-md transition-all">
+                  <input v-model="attention.times[timeIdx]" type="time"
+                    class="input input-sm input-ghost w-32 font-mono text-sm"
+                    @input="updateTime(index, timeIdx, attention.times[timeIdx])" />
+                  <button
+                    class="btn btn-xs btn-ghost btn-circle text-error opacity-0 group-hover/time:opacity-100 transition-opacity"
+                    :title="t('actions.delete')" @click="removeTime(index, timeIdx)">
+                    <CloseIcon class-name="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+              <div v-else class="text-center py-6 text-sm text-base-content/40">
+                {{ t("attention.addTimeHint") }}
+              </div>
             </div>
-            <ThemeDesigner :theme="attention.theme" :label="t('schedule.theme')" />
+
+            <!-- Theme Designer -->
+            <div class="rounded-xl border border-base-300/50 bg-base-200/20 p-5">
+              <div class="label pb-4">
+                <span class="label-text font-medium text-base">{{ t("schedule.theme") }}</span>
+              </div>
+              <ThemeDesigner :theme="attention.theme" :label="t('schedule.theme')" />
+            </div>
           </div>
-        </div>
+        </Transition>
       </article>
     </TransitionGroup>
   </section>
@@ -380,5 +350,23 @@ function updateTime(attentionIndex: number, timeIndex: number, value: string) {
 .list-leave-active {
   position: absolute;
   width: calc(100% - 2.5rem);
+}
+
+.expand-enter-active,
+.expand-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.expand-enter-from,
+.expand-leave-to {
+  opacity: 0;
+  max-height: 0;
+}
+
+.expand-enter-to,
+.expand-leave-from {
+  opacity: 1;
+  max-height: 2000px;
 }
 </style>

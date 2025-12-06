@@ -100,6 +100,7 @@ const itIT: LocaleStrings = {
       "Fai clic sul pulsante sopra per aggiungere orari di promemoria",
     create: "Aggiungi promemoria",
     days: "Giorni attivi",
+    daysActive: "giorni attivi",
     description:
       "I promemoria temporizzati funzionano come sveglie—appaiono in orari specifici per ricordarti di fare qualcosa. A differenza dei promemoria di pausa, non interrompono il tuo lavoro.",
     disabledStatus: "Disabilitato",
@@ -235,6 +236,7 @@ const itIT: LocaleStrings = {
     audio: "Suono",
     create: "Crea programma",
     days: "Giorni della settimana",
+    daysActive: "giorni attivi",
     description: "Configura programmi e tempistiche delle pause",
     disabledStatus: "Disabilitato",
     durationSeconds: "Durata",

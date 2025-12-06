@@ -99,6 +99,7 @@ const frFR: LocaleStrings = {
       "Cliquez sur le bouton ci-dessus pour ajouter des heures de rappel",
     create: "Ajouter un rappel",
     days: "Jours actifs",
+    daysActive: "jours actifs",
     description:
       "Les rappels chronométrés fonctionnent comme des alarmes—ils apparaissent à des moments spécifiques pour vous rappeler de faire quelque chose. Contrairement aux rappels de pause, ils n'interrompent pas votre travail.",
     disabledStatus: "Désactivé",
@@ -237,6 +238,7 @@ const frFR: LocaleStrings = {
     audio: "Son",
     create: "Créer un horaire",
     days: "Jours de la semaine",
+    daysActive: "jours actifs",
     description: "Configurer les horaires et les temps de pause",
     disabledStatus: "Désactivé",
     durationSeconds: "Durée",
