@@ -616,7 +616,7 @@ Check [open issues](https://github.com/pilgrimlyieu/Focust/issues) labeled `enha
 
 ```bash
 # Pre-commit checks (format, lint, check)
-just pre-commit
+just pre-commit-checks
 
 # Watch mode for tests
 bun run test:ui         # Frontend tests with UI
