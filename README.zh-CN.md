@@ -126,14 +126,24 @@ Focust 以性能为设计理念，提供卓越的资源效率：
 
 ---
 
+## 💻 系统要求
+
+| 平台        | 最低版本               | 推荐版本                         | 备注                                   |
+| ----------- | ---------------------- | -------------------------------- | -------------------------------------- |
+| **Windows** | Windows 7              | Windows 10 (1803+) 或 Windows 11 | 需要 WebView2（Windows 10 1803+ 预装） |
+| **macOS**   | macOS 10.15 (Catalina) | macOS 11.0+ (Big Sur)            | 由于后端限制，音频暂时禁用             |
+| **Linux**   | 大多数发行版           | Ubuntu 20.04+、Fedora 35+        | 需要 webkit2gtk-4.1 及相关库           |
+
+---
+
 ## 📥 安装
 
 ### 下载预构建二进制文件
 
 请[为您的平台下载最新版本](https://github.com/pilgrimlyieu/Focust/releases/latest)：
-- **Windows**：`setup.exe` 安装程序
-- **macOS**：`.dmg` 安装程序
-- **Linux**：`.AppImage`、`.deb` 或 `.rpm` 软件包
+- **Windows**：`setup.exe` 安装程序（x86_64）
+- **macOS**：`.dmg` 安装程序（Intel 和 Apple Silicon）
+- **Linux**：`.AppImage`、`.deb` 或 `.rpm` 软件包（x86_64）
 
 ### 从源码构建
 

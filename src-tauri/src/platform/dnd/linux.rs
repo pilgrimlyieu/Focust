@@ -582,7 +582,7 @@ where
     F: Fn() -> Fut,
     Fut: std::future::Future<Output = Result<bool>>,
 {
-    let mut interval = tokio::time::Duration::from_secs(INTERVAL_SECS);
+    let interval = tokio::time::Duration::from_secs(INTERVAL_SECS);
 
     loop {
         tokio::time::sleep(interval).await;
