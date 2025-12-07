@@ -11,10 +11,6 @@
 
 <!-- Release notes content starts here -->
 
-## 🎉 Features
+## 🐛 Bug Fixes
 
-- Added folding/collapsing functionality (default collapsed) to the breaking schedule and attention settings panel to improve space efficiency and presentation. Dragging functionality has been removed from these panels since it is no longer necessary and does not work.
-
-## 🚀 Improvements
-
-- Replaced the tick mechanism with sleep for dynamic event calculation. This ensures more accurate timing and prevents unintended time compensation.
+- Fix: ID overflow error when creating new attentions, ensuring IDs remain within proper range.

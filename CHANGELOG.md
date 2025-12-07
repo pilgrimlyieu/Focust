@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## 0.3.1 (2025.12.7)
+
+### 🐛 Bug Fixes
+
+- Fix: ID overflow error when creating new attentions, ensuring IDs remain within proper range.
+
 ## 0.3.0 (2025.12.7)
 
 ### 🎉 Features
