@@ -51,8 +51,12 @@ function duplicateAttention(id: number) {
   const target = attentions.value.find((a) => a.id === id);
   if (!target) return;
 
+  const existingIds = attentions.value.map((a) => a.id);
+  const maxId = existingIds.length ? Math.max(...existingIds) : 0;
+  const newId = maxId + 1;
+
   const newAttention = safeClone(target);
-  newAttention.id = Date.now();
+  newAttention.id = newId;
   newAttention.name = `${target.name} (${t("actions.copy")})`;
   props.config.attentions = [...attentions.value, newAttention];
 }

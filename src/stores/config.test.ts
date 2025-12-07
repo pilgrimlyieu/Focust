@@ -408,6 +408,27 @@ describe("useConfigStore", () => {
       const uniqueIds = new Set(ids);
       expect(uniqueIds.size).toBe(ids.length);
     });
+
+    it("should generate IDs within u32 range (regression test)", () => {
+      const store = useConfigStore();
+      const u32Max = 4_294_967_295;
+
+      // Add multiple attentions
+      for (let i = 0; i < 10; i++) {
+        store.addAttention();
+      }
+
+      // Verify all IDs are within u32 range
+      const ids = store.draft?.attentions.map((a) => a.id) ?? [];
+      for (const id of ids) {
+        expect(id).toBeGreaterThan(0);
+        expect(id).toBeLessThanOrEqual(u32Max);
+      }
+
+      // Verify IDs are reasonable (not timestamp-based)
+      const maxId = Math.max(...ids);
+      expect(maxId).toBeLessThan(1000); // Should be small sequential IDs
+    });
   });
 
   describe("getRawDraft", () => {
