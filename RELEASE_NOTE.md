@@ -11,6 +11,10 @@
 
 <!-- Release notes content starts here -->
 
-## 🐛 Bug Fixes
+## 🎉 Features
 
-- Fix: Older log files are not deleted automatically. This is an upstream issue, and has been fixed in the latest version. (https://github.com/tokio-rs/tracing/pull/2966)
+- Added folding/collapsing functionality (default collapsed) to the breaking schedule and attention settings panel to improve space efficiency and presentation. Dragging functionality has been removed from these panels since it is no longer necessary and does not work.
+
+## 🚀 Improvements
+
+- Replaced the tick mechanism with sleep for dynamic event calculation. This ensures more accurate timing and prevents unintended time compensation.

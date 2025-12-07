@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## 0.3.0 (2025.12.7)
+
+### 🎉 Features
+
+- Added folding/collapsing functionality (default collapsed) to the breaking schedule and attention settings panel to improve space efficiency and presentation. Dragging functionality has been removed from these panels since it is no longer necessary and does not work.
+
+### 🚀 Improvements
+
+- Replaced the tick mechanism with sleep for dynamic event calculation. This ensures more accurate timing and prevents unintended time compensation.
+
 ## 0.2.16 (2025.12.1)
 
 ### 🐛 Bug Fixes
