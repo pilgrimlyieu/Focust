@@ -1,3 +1,5 @@
+use std::env;
+
 // https://github.com/tauri-apps/tauri/issues/13419#issuecomment-3398457618
 // Fix `STATUS_ENTRYPOINT_NOT_FOUND` error on Windows when testing.
 fn main() {
@@ -21,7 +23,7 @@ fn main() {
 fn add_manifest() {
     static WINDOWS_MANIFEST_FILE: &str = "windows-app-manifest.xml";
 
-    let manifest = std::env::current_dir()
+    let manifest = env::current_dir()
         .expect("Failed to get current directory during build")
         .join(WINDOWS_MANIFEST_FILE);
 

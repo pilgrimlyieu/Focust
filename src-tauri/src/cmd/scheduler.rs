@@ -179,7 +179,7 @@ fn validate_not_paused(shared_state: &SharedState) -> Result<(), String> {
             .read()
             .pause_reasons()
             .iter()
-            .map(std::string::ToString::to_string)
+            .map(ToString::to_string)
             .collect::<Vec<_>>()
             .join(", ");
         return Err(format!(

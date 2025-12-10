@@ -1,9 +1,12 @@
-use std::fmt::Display;
+use std::fmt::{self, Display};
 use std::future::Future;
 use std::pin::Pin;
+use std::time::Duration as StdDuration;
 
 use chrono::{DateTime, Datelike, Duration, Local, Utc};
 use futures::future::pending;
+#[cfg(not(test))]
+use tauri::async_runtime::spawn as tauri_spawn;
 use tauri::{AppHandle, Manager, Runtime};
 use tokio::sync::{mpsc, watch};
 use tokio::time::sleep;
@@ -35,7 +38,7 @@ enum BreakSchedulerState {
 }
 
 impl Display for BreakSchedulerState {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let state_str = match self {
             BreakSchedulerState::Paused(reason) => format!("Paused({reason})"),
             BreakSchedulerState::Idle => "Idle".to_owned(),
@@ -123,7 +126,7 @@ where
             let timer_duration = self.get_duration_for_current_state();
             let mut sleep_fut: Pin<Box<dyn Future<Output = ()> + Send>> =
                 if let Some(duration) = timer_duration {
-                    let std_duration = duration.to_std().unwrap_or(std::time::Duration::ZERO);
+                    let std_duration = duration.to_std().unwrap_or(StdDuration::ZERO);
                     Box::pin(sleep(std_duration))
                 } else {
                     Box::pin(pending()) // This future never completes
@@ -261,9 +264,9 @@ where
 
             tracing::debug!("Scheduling asynchronous closure of break windows");
 
-            tauri::async_runtime::spawn(async move {
+            tauri_spawn(async move {
                 // Small delay to ensure any pending command responses are sent first
-                tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+                sleep(StdDuration::from_millis(100)).await;
 
                 tracing::debug!("Closing break windows (async)");
 
@@ -454,8 +457,10 @@ where
 
         #[cfg(test)]
         {
+            use futures::future;
+
             // In tests, just log that we would create windows
-            futures::future::ready(()).await; // yield to allow async context
+            future::ready(()).await; // yield to allow async context
             tracing::debug!("Test mode: skipping window creation for event: {event}");
         }
     }

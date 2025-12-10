@@ -8,7 +8,7 @@ use std::pin::Pin;
 use sysinfo::{ProcessRefreshKind, System};
 
 use super::{Monitor, MonitorAction, MonitorResult};
-use crate::config::AppExclusion;
+use crate::config::{AppExclusion, ExclusionRule};
 use crate::scheduler::models::PauseReason;
 
 const INTERVAL_SECS: u64 = 10;
@@ -101,11 +101,11 @@ impl AppWhitelistMonitor {
 
         // Apply the rule logic
         match exclusion.rule {
-            crate::config::ExclusionRule::Pause => {
+            ExclusionRule::Pause => {
                 // Pause when matching processes are running
                 has_matching_process
             }
-            crate::config::ExclusionRule::Resume => {
+            ExclusionRule::Resume => {
                 // Pause when matching processes are NOT running
                 !has_matching_process
             }

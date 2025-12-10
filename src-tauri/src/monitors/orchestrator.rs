@@ -38,8 +38,11 @@
 //! - Dynamic monitor addition/removal
 //! - Monitor health monitoring and automatic restart
 
+use std::time::Duration as StdDuration;
+
 use tauri::AppHandle;
 use tokio::sync::mpsc;
+use tokio::time;
 
 use super::{Monitor, action_to_command};
 use crate::scheduler::models::Command;
@@ -218,12 +221,12 @@ async fn run_monitors(
 
     // Find minimum interval for check duration
     let check_interval =
-        tokio::time::Duration::from_secs(monitors.iter().map(|m| m.interval()).min().unwrap_or(1));
+        StdDuration::from_secs(monitors.iter().map(|m| m.interval()).min().unwrap_or(1));
 
     tracing::debug!("Monitor check interval: {check_interval:?}");
 
     loop {
-        tokio::time::sleep(check_interval).await;
+        time::sleep(check_interval).await;
 
         let in_session = shared_state.read().in_any_session();
 

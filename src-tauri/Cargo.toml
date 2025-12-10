@@ -2,7 +2,7 @@
 name = "focust"
 version = "0.1.0"
 description = "A cross-platform break reminder app — Take regular breaks, protect your eyes, and maintain healthy work habits."
-authors = ["PilgrimLyieu (Fesmoph)"]
+authors = ["PilgrimLyieu (Fesmoph) <pilgrimlyieu@outlook.com>"]
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -104,6 +104,7 @@ todo = "deny"
 unimplemented = "deny"
 unwrap_used = "deny"
 
+absolute_paths = "warn"
 alloc_instead_of_core = "warn"
 allow_attributes = "warn"
 assertions_on_result_states = "warn"
@@ -144,6 +145,7 @@ string_add = "warn"
 string_lit_chars_any = "warn"
 tests_outside_test_module = "warn"
 try_err = "warn"
+undocumented_unsafe_blocks = "warn"
 unnecessary_safety_comment = "warn"
 unnecessary_safety_doc = "warn"
 unnecessary_self_imports = "warn"
@@ -157,8 +159,7 @@ cast_possible_wrap = "allow"
 cast_sign_loss = "allow"
 struct_excessive_bools = "allow"
 
+
 # These lints will be gradually tightened in the future
-# absolute_paths = "warn"
 # allow_attributes_without_reason = "warn"
 missing_docs_in_private_items = "allow"
-undocumented_unsafe_blocks = "warn"

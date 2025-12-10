@@ -82,7 +82,7 @@ pub use dnd::DndMonitor;
 pub use idle::IdleMonitor;
 pub use orchestrator::spawn_monitor_tasks;
 
-use std::fmt::Display;
+use std::fmt::{self, Display};
 use std::future::Future;
 use std::pin::Pin;
 
@@ -128,7 +128,7 @@ pub enum MonitorAction {
 }
 
 impl Display for MonitorAction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             MonitorAction::None => write!(f, "None"),
             MonitorAction::Pause(reason) => write!(f, "Pause({reason})"),

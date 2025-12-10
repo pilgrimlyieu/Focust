@@ -4,6 +4,7 @@
 //! both file and console output. Log files are rotated daily.
 
 use std::path::PathBuf;
+use std::{fs, io};
 
 use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter, EnumString};
@@ -87,7 +88,7 @@ impl Default for LogLevel {
 #[expect(clippy::unwrap_used, clippy::expect_used)]
 pub fn init_logging(log_dir: &PathBuf, log_level: LogLevel) -> Result<(), String> {
     // Create log directory if it doesn't exist
-    std::fs::create_dir_all(log_dir).map_err(|e| format!("Failed to create log directory: {e}"))?;
+    fs::create_dir_all(log_dir).map_err(|e| format!("Failed to create log directory: {e}"))?;
 
     // Create a file appender that rotates daily
     let file_appender = RollingFileAppender::builder()
@@ -106,7 +107,7 @@ pub fn init_logging(log_dir: &PathBuf, log_level: LogLevel) -> Result<(), String
 
     // Create a layer that writes to stdout (for dev mode)
     let stdout_layer = fmt::layer()
-        .with_writer(std::io::stdout)
+        .with_writer(io::stdout)
         .with_target(true)
         .with_line_number(true);
 
@@ -147,6 +148,7 @@ pub fn init_logging(log_dir: &PathBuf, log_level: LogLevel) -> Result<(), String
 #[cfg(test)]
 mod tests {
     use super::*;
+
     use std::str::FromStr;
 
     #[test]

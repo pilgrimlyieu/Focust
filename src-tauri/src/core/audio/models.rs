@@ -190,6 +190,7 @@ impl AudioSettings {
 #[expect(clippy::float_cmp)]
 mod tests {
     use super::*;
+
     use serde_json;
 
     #[test]

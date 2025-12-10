@@ -9,6 +9,7 @@
 //! See `src/core/audio.rs` for detailed explanation and restoration plan.
 //! Expected to be resolved in cpal 0.17.0+.
 
+use anyhow::{Context, anyhow};
 #[cfg(not(target_os = "macos"))]
 use tauri::State;
 use tauri::path::BaseDirectory;
@@ -163,8 +164,6 @@ pub async fn stop_audio() -> Result<(), String> {
 /// - The resource file does not exist at the resolved path
 /// - The path contains invalid UTF-8 encoding
 fn resolve_builtin_audio_path(app: &AppHandle, resource_name: &str) -> Result<String, String> {
-    use anyhow::{Context, anyhow};
-
     let resource_relative_path = format!("assets/sounds/{resource_name}.mp3");
 
     tracing::debug!("Attempting to resolve builtin audio resource: {resource_relative_path}");
@@ -192,5 +191,5 @@ fn resolve_builtin_audio_path(app: &AppHandle, resource_name: &str) -> Result<St
     resolved_path_buf
         .to_str()
         .ok_or_else(|| anyhow!("Invalid path encoding for resource '{resource_name}'").to_string())
-        .map(std::string::ToString::to_string)
+        .map(ToString::to_string)
 }

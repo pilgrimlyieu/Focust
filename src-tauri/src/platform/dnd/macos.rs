@@ -6,9 +6,11 @@
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::Duration as StdDuration;
 
 use anyhow::{Context, Result};
 use tokio::sync::mpsc;
+use tokio::time;
 
 use super::DndEvent;
 use crate::platform::dnd::INTERVAL_SECS;
@@ -148,7 +150,7 @@ async fn poll_focus_mode(
 ) -> Result<()> {
     let mut current_interval = INTERVAL_SECS;
     loop {
-        tokio::time::sleep(tokio::time::Duration::from_secs(current_interval)).await;
+        time::sleep(StdDuration::from_secs(current_interval)).await;
 
         match check_focus_mode_status().await {
             Ok(current_state) => {

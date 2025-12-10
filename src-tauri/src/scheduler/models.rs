@@ -1,7 +1,7 @@
 use bitflags::bitflags;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::fmt::Display;
+use std::fmt::{self, Display};
 use strum_macros::{Display as StrumDisplay, EnumIter, EnumString};
 use ts_rs::TS;
 
@@ -24,7 +24,7 @@ pub enum SchedulerEvent {
 }
 
 impl Display for SchedulerEvent {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             SchedulerEvent::MiniBreak(id) => write!(f, "MiniBreak({id})"),
             SchedulerEvent::LongBreak(id) => write!(f, "LongBreak({id})"),
@@ -102,7 +102,7 @@ pub enum Command {
 }
 
 impl Display for Command {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Command::UpdateConfig(_) => write!(f, "UpdateConfig"),
             Command::Pause(reason) => write!(f, "Pause({reason})"),

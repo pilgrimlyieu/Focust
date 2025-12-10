@@ -1,4 +1,6 @@
-use std::{fmt::Display, ops::Deref, str::FromStr};
+use std::fmt::{self, Display};
+use std::ops::Deref;
+use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter, EnumString};
@@ -41,7 +43,7 @@ impl Default for HexColor {
 }
 
 impl Display for HexColor {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }
 }

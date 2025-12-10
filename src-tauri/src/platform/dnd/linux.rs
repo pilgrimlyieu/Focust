@@ -13,11 +13,20 @@
 //! All D-Bus implementations are event-driven for zero-polling performance.
 
 use std::env;
+use std::future::Future;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::Duration as StdDuration;
 
 use anyhow::{Context, Result};
+use futures_util::StreamExt;
+use tokio::fs as tokio_fs;
+use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::process::Command;
 use tokio::sync::mpsc;
+use tokio::time;
+use zbus::zvariant::{OwnedValue, Value};
+use zbus::{Connection, MessageStream, proxy};
 
 use super::DndEvent;
 use crate::platform::dnd::INTERVAL_SECS;
@@ -290,8 +299,6 @@ fn detect_desktop_environment() -> DesktopEnvironment {
 /// Check KDE DND state via D-Bus
 #[expect(clippy::same_name_method)]
 async fn check_kde_dnd() -> Result<bool> {
-    use zbus::{Connection, proxy};
-
     #[proxy(
         interface = "org.freedesktop.DBus.Properties",
         default_service = "org.freedesktop.Notifications",
@@ -312,9 +319,6 @@ async fn check_kde_dnd() -> Result<bool> {
 /// Check XFCE DND state via D-Bus
 #[expect(clippy::same_name_method)]
 async fn check_xfce_dnd() -> Result<bool> {
-    use zbus::zvariant::{OwnedValue, Value};
-    use zbus::{Connection, proxy};
-
     #[proxy(
         interface = "org.xfce.Xfconf",
         default_service = "org.xfce.Xfconf",
@@ -374,12 +378,10 @@ async fn check_mate_dnd() -> Result<bool> {
 
 /// Check `LXQt` DND state from config file
 async fn check_lxqt_dnd() -> Result<bool> {
-    use tokio::fs;
-
     let home = env::var("HOME")?;
     let config_path = format!("{home}/.config/lxqt/notifications.conf");
 
-    let content = fs::read_to_string(&config_path).await?;
+    let content = tokio_fs::read_to_string(&config_path).await?;
     for line in content.lines() {
         if let Some((key, value)) = line.split_once('=')
             && key.trim() == "doNotDisturb"
@@ -400,9 +402,6 @@ async fn monitor_kde_dbus(
     sender: mpsc::Sender<DndEvent>,
     last_state: Arc<AtomicBool>,
 ) -> Result<()> {
-    use futures_util::StreamExt;
-    use zbus::{Connection, MessageStream};
-
     let connection = Connection::session().await?;
 
     // Subscribe to PropertiesChanged signals
@@ -448,9 +447,6 @@ async fn monitor_gnome_dconf(
     sender: mpsc::Sender<DndEvent>,
     last_state: Arc<AtomicBool>,
 ) -> Result<()> {
-    use tokio::io::{AsyncBufReadExt, BufReader};
-    use tokio::process::Command;
-
     let mut child = Command::new("dconf")
         .args(["watch", "/org/gnome/desktop/notifications/"])
         .stdout(std::process::Stdio::piped())
@@ -489,9 +485,6 @@ async fn monitor_cinnamon_dconf(
     sender: mpsc::Sender<DndEvent>,
     last_state: Arc<AtomicBool>,
 ) -> Result<()> {
-    use tokio::io::{AsyncBufReadExt, BufReader};
-    use tokio::process::Command;
-
     let mut child = Command::new("dconf")
         .args(["watch", "/org/cinnamon/desktop/notifications/"])
         .stdout(std::process::Stdio::piped())
@@ -529,9 +522,6 @@ async fn monitor_mate_dconf(
     sender: mpsc::Sender<DndEvent>,
     last_state: Arc<AtomicBool>,
 ) -> Result<()> {
-    use tokio::io::{AsyncBufReadExt, BufReader};
-    use tokio::process::Command;
-
     let mut child = Command::new("dconf")
         .args(["watch", "/org/mate/NotificationDaemon/"])
         .stdout(std::process::Stdio::piped())
@@ -580,12 +570,12 @@ async fn poll_dnd_state<F, Fut>(
 ) -> Result<()>
 where
     F: Fn() -> Fut,
-    Fut: std::future::Future<Output = Result<bool>>,
+    Fut: Future<Output = Result<bool>>,
 {
-    let interval = tokio::time::Duration::from_secs(INTERVAL_SECS);
+    let interval = StdDuration::from_secs(INTERVAL_SECS);
 
     loop {
-        tokio::time::sleep(interval).await;
+        time::sleep(interval).await;
 
         if let Ok(current_state) = check_fn().await {
             let last = last_state.load(Ordering::Relaxed);

@@ -13,7 +13,7 @@ use figment::{
 };
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
-use tokio::fs as a_fs;
+use tokio::fs as tokio_fs;
 
 use crate::config::{AdvancedConfig, AppConfig};
 
@@ -63,7 +63,7 @@ pub async fn save_config(app_handle: &AppHandle, config: &AppConfig) -> Result<(
         toml::to_string_pretty(&config_file).context("Failed to serialize config to TOML")?;
 
     // Write to file
-    a_fs::write(&config_path, toml_string)
+    tokio_fs::write(&config_path, toml_string)
         .await
         .with_context(|| format!("Failed to write config to {}", config_path.display()))?;
 
@@ -139,7 +139,7 @@ async fn load_advanced_config(config_path: &PathBuf) -> Result<AdvancedConfig> {
         advanced: AdvancedConfig,
     }
 
-    let file_content = a_fs::read_to_string(config_path)
+    let file_content = tokio_fs::read_to_string(config_path)
         .await
         .context("Failed to read config file for advanced section")?;
 

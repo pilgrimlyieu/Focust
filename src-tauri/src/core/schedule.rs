@@ -1,4 +1,5 @@
-use std::{fmt::Display, sync::atomic::AtomicU32};
+use std::fmt::{self, Display};
+use std::sync::atomic::{AtomicU32, Ordering};
 
 use bitflags::bitflags;
 use chrono::Weekday;
@@ -139,14 +140,14 @@ impl<'de> Deserialize<'de> for DaysOfWeek {
 pub struct BreakId(u32);
 
 impl Display for BreakId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "B{}", self.0)
     }
 }
 
 impl BreakId {
     pub fn new() -> Self {
-        BreakId(NEXT_SCHEDULE_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed))
+        BreakId(NEXT_SCHEDULE_ID.fetch_add(1, Ordering::Relaxed))
     }
 }
 
@@ -297,14 +298,14 @@ impl ScheduleSettings {
 pub struct AttentionId(u32);
 
 impl Display for AttentionId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "A{}", self.0)
     }
 }
 
 impl AttentionId {
     pub fn new() -> Self {
-        AttentionId(NEXT_ATTENTION_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed))
+        AttentionId(NEXT_ATTENTION_ID.fetch_add(1, Ordering::Relaxed))
     }
 }
 

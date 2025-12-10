@@ -29,10 +29,13 @@
 //! - Official API Documentation: <https://learn.microsoft.com/en-us/uwp/api/windows.ui.shell.focussessionmanager>
 
 use std::mem;
+use std::panic::{self, AssertUnwindSafe};
+use std::ptr;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use anyhow::{Context, Result};
+use tauri::async_runtime::spawn as tauri_spawn;
 use tokio::sync::Mutex as TokioMutex;
 use tokio::sync::mpsc;
 use windows::Win32::Foundation::NTSTATUS;
@@ -161,7 +164,7 @@ impl Drop for WindowsDndMonitor {
     fn drop(&mut self) {
         // **SAFETY**: Drop must never panic as it's called during unwinding
         // Wrap everything in catch_unwind to be absolutely safe
-        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let _ = panic::catch_unwind(AssertUnwindSafe(|| {
             // Use blocking_lock in Drop since we're in a sync context
             // This is safe because Drop is called when the monitor is being destroyed
             if let Ok(mut subscription_guard) = self.subscription.try_lock() {
@@ -260,7 +263,7 @@ unsafe extern "system" {
 /// without causing panics. Returns `false` (DND disabled) on any error to fail safely.
 fn query_focus_assist_state() -> bool {
     // Wrap the entire unsafe block in a catch_unwind to prevent panics from propagating
-    std::panic::catch_unwind(|| {
+    panic::catch_unwind(|| {
         // SAFETY: Calling Windows WNF API function `RtlQueryWnfStateData`.
         // - All pointers passed are valid: `change_stamp` and `state` are stack-allocated
         // - The state name constant is valid and documented by Windows
@@ -273,7 +276,7 @@ fn query_focus_assist_state() -> bool {
                 &raw mut change_stamp,
                 WNF_SHEL_QUIETHOURS_ACTIVE_PROFILE_CHANGED,
                 None,
-                std::ptr::null_mut(),
+                ptr::null_mut(),
                 (&raw mut state).cast::<()>(),
             );
 
@@ -316,7 +319,7 @@ fn subscribe_to_focus_assist(
     last_state: Arc<AtomicBool>,
 ) -> Result<SendPtr> {
     // Wrap the entire unsafe block in a catch_unwind to prevent panics from propagating
-    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+    let result = panic::catch_unwind(AssertUnwindSafe(|| {
         // SAFETY: Calling Windows WNF API function `RtlSubscribeWnfStateChangeNotification`.
         // - `subscription` pointer is valid (stack-allocated, passed as mutable reference)
         // - `context_ptr` is a valid pointer from `Box::into_raw`, lifetime managed correctly
@@ -326,7 +329,7 @@ fn subscribe_to_focus_assist(
             let context = Box::new(CallbackContext { sender, last_state });
             let context_ptr = Box::into_raw(context).cast::<()>();
 
-            let mut subscription: *mut WnfUserSubscription = std::ptr::null_mut();
+            let mut subscription: *mut WnfUserSubscription = ptr::null_mut();
 
             let status = RtlSubscribeWnfStateChangeNotification(
                 &raw mut subscription,
@@ -334,7 +337,7 @@ fn subscribe_to_focus_assist(
                 0, // Change stamp
                 focus_assist_callback,
                 context_ptr,
-                std::ptr::null(),
+                ptr::null(),
                 0, // No serialization group
                 0, // No flags
             );
@@ -388,7 +391,7 @@ fn unsubscribe_from_focus_assist(subscription: *mut WnfUserSubscription) {
     }
 
     // Wrap in catch_unwind to prevent panics during cleanup
-    let result = std::panic::catch_unwind(|| {
+    let result = panic::catch_unwind(|| {
         // SAFETY: Calling Windows WNF API function `RtlUnsubscribeWnfStateChangeNotification`.
         // - `subscription` pointer has been validated as non-null and within valid memory range
         // - This is the cleanup function, so errors are logged but not propagated
@@ -433,7 +436,7 @@ unsafe extern "system" fn focus_assist_callback(
     let buf_ptr = buffer;
     let buf_len = length;
 
-    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+    let result = panic::catch_unwind(AssertUnwindSafe(|| {
         // SAFETY: This is a Windows system callback handling WNF state change notifications.
         // - All pointers are validated before dereferencing (null checks, range checks)
         // - Buffer size is validated against expected size and maximum allowed size
@@ -470,7 +473,7 @@ unsafe extern "system" fn focus_assist_callback(
 
             // Parse Focus Assist state with additional safety
             let mut state_aligned = FocusAssistState { value: 0 };
-            std::ptr::copy_nonoverlapping(
+            ptr::copy_nonoverlapping(
                 buf_ptr,
                 (&raw mut state_aligned).cast::<u8>(),
                 EXPECTED_STATE_SIZE as usize,
@@ -506,7 +509,7 @@ unsafe extern "system" fn focus_assist_callback(
                 // Send event asynchronously using Tauri runtime (not tokio::spawn, as we're not in a tokio context)
                 // This callback is executed on a Windows thread pool thread, not a tokio thread
                 let sender = context.sender.clone();
-                tauri::async_runtime::spawn(async move {
+                tauri_spawn(async move {
                     sender.send(event).await.unwrap_or_else(|e| {
                         tracing::error!("Failed to send DND event: {e}");
                     });

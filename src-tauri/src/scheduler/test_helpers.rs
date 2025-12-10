@@ -11,14 +11,19 @@
 //! - **Flexibility**: Support diverse test scenarios
 //! - **Stability**: Depend on public APIs, not internal implementation
 
+use std::time::{Duration as StdDuration, Instant};
+
 use chrono::{DateTime, Datelike, Duration, Local, NaiveTime, TimeZone, Timelike, Utc};
 use tauri::Manager;
+use tokio::task;
+use tokio::time;
 
 use crate::config::AppConfig;
 use crate::core::schedule::{
     BaseBreakSettings, DaysOfWeek, LongBreakSettings, MiniBreakSettings, ScheduleSettings,
 };
 use crate::core::time::TimeRange;
+use crate::scheduler::shared_state;
 
 // ============================================================================
 // Configuration Builders
@@ -509,14 +514,14 @@ pub mod state_machine {
     /// 2. Yields multiple times to let tasks process
     /// 3. Sleeps briefly to ensure all async operations complete
     pub async fn advance_time_and_yield(duration: chrono::Duration) {
-        let std_duration = duration.to_std().unwrap_or(std::time::Duration::ZERO);
-        tokio::time::advance(std_duration).await;
+        let std_duration = duration.to_std().unwrap_or(StdDuration::ZERO);
+        time::advance(std_duration).await;
         // Yield multiple times to ensure scheduler processes
         for _ in 0..5 {
-            tokio::task::yield_now().await;
+            task::yield_now().await;
         }
         // Extra small sleep to ensure all async tasks complete
-        tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+        time::sleep(StdDuration::from_millis(10)).await;
     }
 
     /// Assert that an event was emitted with the given name
@@ -581,14 +586,14 @@ pub mod state_machine {
         event_name: &str,
         timeout_ms: u64,
     ) -> Option<serde_json::Value> {
-        let start = std::time::Instant::now();
-        let timeout = std::time::Duration::from_millis(timeout_ms);
+        let start = Instant::now();
+        let timeout = StdDuration::from_millis(timeout_ms);
 
         while start.elapsed() < timeout {
             if emitter.has_event(event_name) {
                 return Some(assert_event_emitted(emitter, event_name));
             }
-            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+            time::sleep(StdDuration::from_millis(50)).await;
         }
         None
     }
@@ -718,7 +723,7 @@ pub mod manager {
         // Create channels
         let (cmd_tx, _cmd_rx) = mpsc::channel(32);
         let (shutdown_tx, _shutdown_rx) = watch::channel(());
-        let shared_state = crate::scheduler::shared_state::create_shared_state();
+        let shared_state = shared_state::create_shared_state();
 
         // Note: We don't spawn SchedulerManager here - each test will do that
         // This gives tests full control over the lifecycle

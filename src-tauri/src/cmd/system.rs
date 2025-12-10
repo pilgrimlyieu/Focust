@@ -3,6 +3,9 @@
 //! This module provides commands to open application directories in the
 //! system file explorer.
 
+use std::path::Path;
+use std::process::Command;
+
 use tauri::{AppHandle, Manager};
 
 /// Opens the configuration directory in the system file explorer.
@@ -49,10 +52,10 @@ pub async fn open_log_directory(app: AppHandle) -> Result<(), String> {
 /// # Errors
 ///
 /// Returns an error if spawning the file explorer process fails.
-fn open_directory_in_explorer(dir: &std::path::Path) -> Result<(), String> {
+fn open_directory_in_explorer(dir: &Path) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
-        std::process::Command::new("explorer")
+        Command::new("explorer")
             .arg(dir)
             .spawn()
             .map_err(|e| format!("Failed to open directory: {e}"))?;
@@ -60,7 +63,7 @@ fn open_directory_in_explorer(dir: &std::path::Path) -> Result<(), String> {
 
     #[cfg(target_os = "macos")]
     {
-        std::process::Command::new("open")
+        Command::new("open")
             .arg(dir)
             .spawn()
             .map_err(|e| format!("Failed to open directory: {e}"))?;
@@ -68,7 +71,7 @@ fn open_directory_in_explorer(dir: &std::path::Path) -> Result<(), String> {
 
     #[cfg(target_os = "linux")]
     {
-        std::process::Command::new("xdg-open")
+        Command::new("xdg-open")
             .arg(dir)
             .spawn()
             .map_err(|e| format!("Failed to open directory: {e}"))?;

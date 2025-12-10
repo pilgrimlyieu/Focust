@@ -4,6 +4,7 @@
 //! configuration, including picking random background images.
 
 use std::ffi::OsStr;
+use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::Context;
@@ -137,7 +138,7 @@ pub async fn pick_background_image(folder: String) -> Result<Option<String>, Str
     }
 
     let result = task::spawn_blocking(move || -> AnyhowResult<Option<PathBuf>> {
-        let mut entries: Vec<PathBuf> = std::fs::read_dir(&folder)
+        let mut entries: Vec<PathBuf> = fs::read_dir(&folder)
             .with_context(|| format!("Failed to read folder {}", folder.display()))?
             .filter_map(|entry| entry.ok().map(|e| e.path()))
             .filter(|path| path.is_file() && is_image(path))

@@ -1,11 +1,13 @@
-use std::fmt::Display;
+use std::fmt::{self, Display};
 use std::future::Future;
 use std::pin::Pin;
+use std::time::Duration as StdDuration;
 
 use chrono::offset::LocalResult;
 use chrono::{DateTime, Duration, Local, Utc};
 use chrono::{Datelike, NaiveDate, NaiveTime};
 use futures::future::pending;
+use tauri::async_runtime::spawn as tauri_spawn;
 use tauri::{AppHandle, Manager, Runtime};
 use tokio::sync::{mpsc, watch};
 use tokio::time::sleep;
@@ -13,9 +15,10 @@ use tokio::time::sleep;
 use super::event_emitter::EventEmitter;
 use super::models::{Command, PauseReason, SchedulerEvent};
 use super::shared_state::SharedState;
+use crate::config::{AppConfig, SharedConfig};
+use crate::core::schedule::AttentionId;
 use crate::core::schedule::AttentionSettings;
 use crate::platform::create_prompt_windows;
-use crate::{config::SharedConfig, core::schedule::AttentionId};
 
 /// Information about a scheduled attention
 #[derive(Debug, Clone)]
@@ -36,7 +39,7 @@ enum AttentionTimerState {
 }
 
 impl Display for AttentionTimerState {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             AttentionTimerState::Paused(reason) => write!(f, "Paused({reason})"),
             AttentionTimerState::Idle => write!(f, "Idle"),
@@ -113,7 +116,7 @@ where
             let timer_duration = self.get_duration_for_current_state();
             let mut sleep_fut: Pin<Box<dyn Future<Output = ()> + Send>> =
                 if let Some(duration) = timer_duration {
-                    let std_duration = duration.to_std().unwrap_or(std::time::Duration::ZERO);
+                    let std_duration = duration.to_std().unwrap_or(StdDuration::ZERO);
                     Box::pin(sleep(std_duration))
                 } else {
                     Box::pin(pending()) // This future never completes
@@ -175,7 +178,7 @@ where
         let event = SchedulerEvent::Attention(attention_id);
 
         let app_handle = self.app_handle.clone();
-        tauri::async_runtime::spawn(async move {
+        tauri_spawn(async move {
             create_prompt_windows(&app_handle, event, 0)
                 .await
                 .unwrap_or_else(|e| {
@@ -257,7 +260,7 @@ where
     }
 
     /// Handle `UpdateConfig` command
-    async fn handle_update_config_command(&mut self, new_config: crate::config::AppConfig) {
+    async fn handle_update_config_command(&mut self, new_config: AppConfig) {
         tracing::debug!("Updating config in AttentionTimer");
         {
             let config = self.app_handle.state::<SharedConfig>();

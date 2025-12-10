@@ -8,6 +8,7 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
 };
 
+use tauri::async_runtime::spawn as tauri_spawn;
 use tauri::{
     AppHandle, Listener, Manager, Runtime,
     menu::{Menu, MenuBuilder, MenuItemBuilder},
@@ -32,7 +33,7 @@ pub struct TrayState {
     /// Atomic flag indicating whether the scheduler is paused.
     pub scheduler_paused: Arc<AtomicBool>,
     /// Sender for tray menu update messages.
-    pub tray_sender: Arc<Mutex<Option<tokio::sync::mpsc::UnboundedSender<TrayUpdate>>>>,
+    pub tray_sender: Arc<Mutex<Option<mpsc::UnboundedSender<TrayUpdate>>>>,
 }
 
 /// Messages for updating the tray menu.
@@ -216,7 +217,7 @@ fn handle_tray_menu_event<R: Runtime>(app: &AppHandle<R>, event_id: &str) {
 /// Show or focus the settings window (create on demand)
 fn show_settings_window<R: Runtime>(app: &AppHandle<R>) {
     let app_clone = app.clone();
-    tauri::async_runtime::spawn(async move {
+    tauri_spawn(async move {
         open_settings_window(app_clone).await.unwrap_or_else(|e| {
             tracing::error!("Failed to open settings window: {e}");
         });

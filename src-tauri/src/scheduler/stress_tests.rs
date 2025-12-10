@@ -26,12 +26,16 @@
 
 #[cfg(test)]
 mod tests {
+    use std::time::Duration as StdDuration;
+
+    use chrono::Duration;
+    use tokio::sync::mpsc;
+    use tokio::time;
+
     use crate::scheduler::models::{Command, PauseReason};
     use crate::scheduler::test_helpers::TestConfigBuilder;
     use crate::scheduler::test_helpers::manager::{create_manager_test_env, spawn_test_manager};
     use crate::scheduler::test_helpers::state_machine::advance_time_and_yield;
-    use chrono::Duration;
-    use tokio::sync::mpsc;
 
     /// Test concurrent signals from all three monitors simultaneously
     ///
@@ -239,7 +243,7 @@ mod tests {
                 let _ = storm_tx.send(Command::Resume(PauseReason::UserIdle)).await;
                 let _ = storm_tx.send(Command::Pause(PauseReason::Dnd)).await;
                 let _ = storm_tx.send(Command::Resume(PauseReason::Dnd)).await;
-                tokio::time::sleep(std::time::Duration::from_micros(100)).await;
+                time::sleep(StdDuration::from_micros(100)).await;
             }
         });
 

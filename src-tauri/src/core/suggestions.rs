@@ -6,6 +6,8 @@ use anyhow::{Context, Result};
 use rand::prelude::IndexedRandom;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
+use tokio::fs as tokio_fs;
+use tokio::sync::RwLock;
 use ts_rs::TS;
 
 use crate::platform::i18n::LANGUAGE_FALLBACK;
@@ -40,7 +42,7 @@ pub struct SuggestionsConfig {
 }
 
 /// Global shared suggestions state
-pub type SharedSuggestions = tokio::sync::RwLock<SuggestionsConfig>;
+pub type SharedSuggestions = RwLock<SuggestionsConfig>;
 
 /// Suggestions for a specific language
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -95,7 +97,7 @@ async fn try_load_suggestions(app_handle: &AppHandle) -> Result<SuggestionsConfi
         anyhow::bail!("Suggestions file does not exist");
     }
 
-    let content = tokio::fs::read_to_string(&suggestions_path)
+    let content = tokio_fs::read_to_string(&suggestions_path)
         .await
         .with_context(|| {
             format!(
@@ -135,7 +137,7 @@ pub async fn save_suggestions_internal(
     let toml_string =
         toml::to_string_pretty(config).context("Failed to serialize suggestions to TOML")?;
 
-    tokio::fs::write(&suggestions_path, toml_string)
+    tokio_fs::write(&suggestions_path, toml_string)
         .await
         .with_context(|| {
             format!(

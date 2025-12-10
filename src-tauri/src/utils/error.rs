@@ -1,3 +1,4 @@
+use std::error;
 /// Centralized error handling for Focust
 ///
 /// This module defines custom error types and conversion utilities.
@@ -95,7 +96,7 @@ pub trait IntoTauriError {
     fn into_tauri_error(self) -> String;
 }
 
-impl<E: std::error::Error> IntoTauriError for E {
+impl<E: error::Error> IntoTauriError for E {
     fn into_tauri_error(self) -> String {
         self.to_string()
     }
@@ -107,7 +108,7 @@ impl<E: std::error::Error> IntoTauriError for E {
 ///
 /// Returns `Err(String)` if the input result is an error, with the error message
 /// converted to a string.
-pub fn to_tauri_result<T, E: std::error::Error>(result: Result<T, E>) -> Result<T, String> {
+pub fn to_tauri_result<T, E: error::Error>(result: Result<T, E>) -> Result<T, String> {
     result.map_err(|e| e.to_string())
 }
 

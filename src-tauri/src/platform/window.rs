@@ -5,11 +5,15 @@
 
 use rand::{Rng, seq::IndexedRandom};
 use std::{
+    fs,
     path::{Path, PathBuf},
     sync::Arc,
+    time::Duration as StdDuration,
 };
+use tauri::async_runtime::spawn as tauri_spawn;
 use tauri::{AppHandle, Listener, Manager, Monitor, Runtime, WebviewUrl, WebviewWindowBuilder};
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, oneshot};
+use tokio::time;
 
 use crate::core::{
     payload::store_payload_internal,
@@ -141,7 +145,7 @@ pub fn create_settings_window<R: Runtime>(app: &AppHandle<R>) -> Result<(), Stri
     tracing::info!("Creating new settings window");
 
     // Register event listener BEFORE creating the window
-    let (tx, rx) = tokio::sync::oneshot::channel();
+    let (tx, rx) = oneshot::channel();
     let tx = Arc::new(Mutex::new(Some(tx)));
 
     let tx_clone = tx.clone();
@@ -149,7 +153,7 @@ pub fn create_settings_window<R: Runtime>(app: &AppHandle<R>) -> Result<(), Stri
     let unlisten = app.listen("settings-ready", move |_event| {
         tracing::info!("Received settings-ready event from frontend");
         let tx_clone = tx_clone.clone();
-        tauri::async_runtime::spawn(async move {
+        tauri_spawn(async move {
             if let Some(sender) = tx_clone.lock().await.take() {
                 let _ = sender.send(());
             }
@@ -169,8 +173,8 @@ pub fn create_settings_window<R: Runtime>(app: &AppHandle<R>) -> Result<(), Stri
 
     // Wait for ready event with timeout
     let app_clone2 = app.clone();
-    tauri::async_runtime::spawn(async move {
-        let ready = tokio::time::timeout(tokio::time::Duration::from_millis(2000), rx).await;
+    tauri_spawn(async move {
+        let ready = time::timeout(StdDuration::from_millis(2000), rx).await;
         app_clone.unlisten(unlisten);
 
         match ready {
@@ -397,7 +401,7 @@ fn resolve_random_image_from_folder(
         return None;
     }
 
-    let entries: Vec<PathBuf> = match std::fs::read_dir(&folder_path) {
+    let entries: Vec<PathBuf> = match fs::read_dir(&folder_path) {
         Ok(read_dir) => read_dir
             .filter_map(|entry| entry.ok().map(|e| e.path()))
             .filter(|path| path.is_file() && is_allowed_image_extension(path))

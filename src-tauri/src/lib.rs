@@ -15,6 +15,7 @@
 //! - **`utils`**: Utility functions (logging, error handling)
 
 use tauri::Manager;
+use tauri::async_runtime::spawn as tauri_spawn;
 use tauri_plugin_autostart::ManagerExt;
 
 use crate::{
@@ -86,7 +87,7 @@ pub fn run() {
 
             let handle = app.handle().clone();
 
-            tauri::async_runtime::spawn(async move {
+            tauri_spawn(async move {
                 // Load app config first to get log level
                 let app_config = config::load_config(&handle).await;
 

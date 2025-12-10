@@ -1,5 +1,6 @@
 use std::fs::File;
-use std::io::BufReader;
+use std::io::{self, BufReader, ErrorKind};
+use std::path::Path;
 
 use rodio::{Decoder, OutputStream, OutputStreamBuilder, Sink};
 
@@ -19,7 +20,7 @@ pub enum PlaybackError {
 
     /// Failed to open audio file
     #[error("Failed to open audio file: {0}")]
-    FileError(#[from] std::io::Error),
+    FileError(#[from] io::Error),
 
     /// Failed to decode audio file
     #[error("Failed to decode audio file: {0}")]
@@ -78,9 +79,9 @@ impl AudioPlayer {
         }
 
         // Validate file exists before attempting to open
-        if !std::path::Path::new(path).exists() {
-            return Err(PlaybackError::FileError(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
+        if !Path::new(path).exists() {
+            return Err(PlaybackError::FileError(io::Error::new(
+                ErrorKind::NotFound,
                 format!("Audio file not found: {path}"),
             )));
         }
@@ -168,8 +169,10 @@ impl AudioPlayer {
 #[expect(clippy::float_cmp)]
 mod tests {
     use super::{AudioPlayer, PlaybackError};
-    use std::fs::File;
+
+    use std::fs::{self, File};
     use std::io::Write;
+
     use tempfile::TempDir;
 
     /// Helper to create a temporary WAV file for testing
@@ -245,7 +248,7 @@ mod tests {
     fn play_invalid_audio_file() {
         let temp_dir = TempDir::new().unwrap();
         let invalid_file = temp_dir.path().join("invalid.mp3");
-        std::fs::write(&invalid_file, b"not a valid audio file").unwrap();
+        fs::write(&invalid_file, b"not a valid audio file").unwrap();
 
         if let Ok(mut player) = AudioPlayer::new() {
             let result = player.play(&invalid_file.to_string_lossy(), 0.5);
