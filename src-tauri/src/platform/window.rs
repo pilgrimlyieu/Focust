@@ -229,6 +229,16 @@ fn create_prompt_window_for_monitor<R: Runtime>(
 
     let is_fullscreen = window_size >= 1.0;
 
+    let (width, height, x, y) = if is_fullscreen {
+        (monitor_width, monitor_height, monitor_x, monitor_y)
+    } else {
+        let w = monitor_width * window_size;
+        let h = monitor_height * window_size;
+        let wx = monitor_x + (monitor_width - w) / 2.0;
+        let wy = monitor_y + (monitor_height - h) / 2.0;
+        (w, h, wx, wy)
+    };
+
     let mut builder = WebviewWindowBuilder::new(app, label, WebviewUrl::App(url.into()))
         .title("Focust - Break")
         .always_on_top(true)
@@ -239,19 +249,12 @@ fn create_prompt_window_for_monitor<R: Runtime>(
         .maximizable(false)
         .minimizable(false)
         .closable(false)
-        .focused(false);
+        .focused(false)
+        .inner_size(width, height)
+        .position(x, y);
 
     if is_fullscreen {
-        builder = builder.fullscreen(true).position(monitor_x, monitor_y);
-    } else {
-        let window_width = monitor_width * window_size;
-        let window_height = monitor_height * window_size;
-        let window_x = monitor_x + (monitor_width - window_width) / 2.0;
-        let window_y = monitor_y + (monitor_height - window_height) / 2.0;
-
-        builder = builder
-            .inner_size(window_width, window_height)
-            .position(window_x, window_y);
+        builder = builder.fullscreen(true);
     }
 
     let _window = builder
