@@ -13,4 +13,5 @@
 
 ## 🐛 Bug Fixes
 
-- Fix: ID overflow error when creating new attentions, ensuring IDs remain within proper range.
+- Fix: Prompt window position is incorrect in Linux platform.
+- Prevents layout shifts/thrashing observed in Linux VM environments during style updates.
