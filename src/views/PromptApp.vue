@@ -499,9 +499,15 @@ defineExpose({
           </div>
 
           <div class="flex flex-col items-center gap-4">
-            <div class="radial-progress text-5xl font-bold" role="progressbar" :aria-valuenow="elapsed"
-              aria-valuemin="0" aria-valuemax="100" :style="`--value:${elapsed}; --size:12rem; --thickness:12px`">
-              {{ formatTime(remaining) }}
+            <div class="relative flex flex-none items-center justify-center w-48 h-48 overflow-hidden rounded-full">
+              <div class="radial-progress text-5xl font-bold" role="progressbar" :aria-valuenow="elapsed"
+                aria-valuemin="0" aria-valuemax="100" style="--size: 12rem; --thickness: 12px;"
+                :style="{ '--value': elapsed }"> </div>
+              <div class="absolute inset-0 flex items-center justify-center z-10">
+                <span class="text-5xl font-bold">
+                  {{ formatTime(remaining) }}
+                </span>
+              </div>
             </div>
             <p class="text-xs uppercase tracking-wide"
               :class="controlsDisabled ? 'text-orange-400 font-semibold' : 'opacity-60'">
