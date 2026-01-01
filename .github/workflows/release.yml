@@ -215,7 +215,7 @@ jobs:
           find src-tauri/target/universal-apple-darwin/release/bundle/macos -name "*.app.tar.gz.sig" -exec cp {} artifacts/focust_${version}_${{ matrix.os_name }}.app.tar.gz.sig \; 2>/dev/null || true
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: startsWith(github.ref, 'refs/tags/v')
         with:
           name: focust-${{ matrix.os_name }}
