@@ -14,6 +14,7 @@
 
 use std::env;
 use std::future::Future;
+use std::process::Stdio;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration as StdDuration;
@@ -341,7 +342,7 @@ async fn check_xfce_dnd() -> Result<bool> {
 
 /// Check GNOME DND state via gsettings
 async fn check_gnome_dnd() -> Result<bool> {
-    let output = tokio::process::Command::new("gsettings")
+    let output = Command::new("gsettings")
         .args(["get", "org.gnome.desktop.notifications", "show-banners"])
         .output()
         .await?;
@@ -352,7 +353,7 @@ async fn check_gnome_dnd() -> Result<bool> {
 
 /// Check Cinnamon DND state via gsettings
 async fn check_cinnamon_dnd() -> Result<bool> {
-    let output = tokio::process::Command::new("gsettings")
+    let output = Command::new("gsettings")
         .args([
             "get",
             "org.cinnamon.desktop.notifications",
@@ -367,7 +368,7 @@ async fn check_cinnamon_dnd() -> Result<bool> {
 
 /// Check MATE DND state via gsettings
 async fn check_mate_dnd() -> Result<bool> {
-    let output = tokio::process::Command::new("gsettings")
+    let output = Command::new("gsettings")
         .args(["get", "org.mate.NotificationDaemon", "do-not-disturb"])
         .output()
         .await?;
@@ -449,7 +450,7 @@ async fn monitor_gnome_dconf(
 ) -> Result<()> {
     let mut child = Command::new("dconf")
         .args(["watch", "/org/gnome/desktop/notifications/"])
-        .stdout(std::process::Stdio::piped())
+        .stdout(Stdio::piped())
         .spawn()?;
 
     let stdout = child.stdout.take().context("Failed to get stdout")?;
@@ -487,7 +488,7 @@ async fn monitor_cinnamon_dconf(
 ) -> Result<()> {
     let mut child = Command::new("dconf")
         .args(["watch", "/org/cinnamon/desktop/notifications/"])
-        .stdout(std::process::Stdio::piped())
+        .stdout(Stdio::piped())
         .spawn()?;
 
     let stdout = child.stdout.take().context("Failed to get stdout")?;
@@ -524,7 +525,7 @@ async fn monitor_mate_dconf(
 ) -> Result<()> {
     let mut child = Command::new("dconf")
         .args(["watch", "/org/mate/NotificationDaemon/"])
-        .stdout(std::process::Stdio::piped())
+        .stdout(Stdio::piped())
         .spawn()?;
 
     let stdout = child.stdout.take().context("Failed to get stdout")?;
