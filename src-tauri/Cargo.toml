@@ -65,7 +65,7 @@ tauri-plugin-updater = "2"
 thiserror = "2.0.17"
 tokio = { version = "*", features = ["time", "macros"] }
 toml = "0.9"
-tracing = "0.1.43"
+tracing = "0.1.44"
 tracing-appender = "0.2.4"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
 ts-rs = { version = "11.0.1", features = ["chrono-impl"] }
@@ -73,7 +73,7 @@ user-idle2 = "0.6.2"
 
 [dev-dependencies]
 tauri = { version = "2", features = ["test"] }
-tempfile = "3.23.0"
+tempfile = "3.24.0"
 tokio = { version = "*", features = ["test-util"] }
 
 [target.'cfg(windows)'.dependencies]
