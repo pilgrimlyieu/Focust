@@ -11,7 +11,7 @@
 
 <!-- Release notes content starts here -->
 
-## 🐛 Bug Fixes
+## 🎉 Features
 
-- Fix: Prompt window position is incorrect in Linux platform.
-- Prevents layout shifts/thrashing observed in Linux VM environments during style updates.
+- Support play audio notification at the end of breaks, using the same audio settings as the start notification. (#34)
+- Add configuration option to show/hide system tray icon. 
