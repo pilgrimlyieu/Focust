@@ -181,6 +181,22 @@ const playAudio = async (settings?: AudioSettings | null) => {
   }
 };
 
+const playAudioInPrimaryWindow = async (settings?: AudioSettings | null) => {
+  if (!settings) {
+    return;
+  }
+  const currentWindow = getCurrentWindow();
+  const windowLabel = currentWindow.label;
+  const isPrimaryWindow = windowLabel.endsWith("-0");
+
+  if (isPrimaryWindow) {
+    console.log("[PromptApp] Playing audio in primary window");
+    await playAudio(settings);
+  } else {
+    console.log("[PromptApp] Skipping audio playback in secondary window");
+  }
+};
+
 const preloadBackground = async (data: PromptPayload): Promise<void> => {
   if (isResolvedImageBackground(data.background)) {
     return new Promise((resolve) => {
@@ -216,15 +232,9 @@ const handlePayload = async (data: PromptPayload) => {
   const windowLabel = currentWindow.label;
   const isPrimaryWindow = windowLabel.endsWith("-0");
 
-  if (isPrimaryWindow) {
-    console.log("[PromptApp] Playing break audio (primary window)");
-    // Don't await audio playback to avoid blocking window display
-    playAudio(data.audio).catch((err) => {
-      console.error("[PromptApp] Audio playback error:", err);
-    });
-  } else {
-    console.log("[PromptApp] Skipping audio playback (secondary window)");
-  }
+  playAudioInPrimaryWindow(data.audio).catch((err) => {
+    console.error("[PromptApp] Audio playback error:", err);
+  });
 
   // Show window after everything is ready
   console.log("[PromptApp] Content rendered, showing window...");
@@ -266,11 +276,10 @@ const finishPrompt = async (isAutoFinish = false) => {
     console.log("[PromptApp] Timer cleared");
   }
 
-  try {
-    await stopAudio();
-    console.log("[PromptApp] Audio stopped");
-  } catch (err) {
-    console.warn("[PromptApp] Failed to stop audio:", err);
+  if (isAutoFinish) {
+    playAudioInPrimaryWindow(payload.value?.audio).catch((err) => {
+      console.error("[PromptApp] Audio playback error on auto-finish:", err);
+    });
   }
 
   // Notify backend that break has finished (so it can update timers)

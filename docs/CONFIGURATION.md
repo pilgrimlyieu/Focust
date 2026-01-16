@@ -554,6 +554,8 @@ fontFamily = "Tahoma"
 
 Audio settings control sound playback during breaks.
 
+> **Note**: The same audio plays when a break **starts** and when it **naturally ends**, helping you stay aware of both transitions.
+
 **Structure**:
 
 ```toml

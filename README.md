@@ -87,6 +87,7 @@ See the [QUICKSTART.md](docs/QUICKSTART.md) for a step-by-step guide to getting 
 - **Custom Audio**: Use your own MP3, WAV, OGG, or FLAC files
 - **Volume Control**: Adjust audio volume to your preference
 - **Preview**: Test sounds before saving
+- **Dual Playback**: Audio plays when breaks start AND when they naturally end to help you stay aware of transitions
 
 ### ⚙️ Advanced Features
 
