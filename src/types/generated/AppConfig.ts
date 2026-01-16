@@ -24,6 +24,10 @@ inactiveS: number,
  */
 allScreens: boolean, 
 /**
+ * If system tray icon should be displayed (requires restart)
+ */
+showTrayIcon: boolean, 
+/**
  * Language code, e.g., "en-US"
  */
 language: import('@/i18n').LocaleKey, 

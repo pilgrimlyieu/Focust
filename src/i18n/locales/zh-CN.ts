@@ -184,6 +184,10 @@ const zhCN: LocaleStrings = {
     running: "调度器运行中",
     scheduler: "调度控制",
     secondsRemaining: "{seconds} 秒",
+    showTrayIcon: "显示托盘图标",
+    showTrayIconHint: "在系统托盘显示应用图标，需要重启应用生效。",
+    showTrayIconWarning:
+      "隐藏后，可通过再次打开应用来显示设置窗口，或通过任务管理器（Windows）/活动监视器（macOS）/系统监视器（Linux）关闭应用。",
     themeMode: "主题",
     themeModeDark: "深色",
     themeModeLight: "浅色",

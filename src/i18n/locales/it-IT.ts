@@ -207,6 +207,11 @@ const itIT: LocaleStrings = {
     running: "Scheduler in esecuzione",
     scheduler: "Controlli scheduler",
     secondsRemaining: "{seconds} sec",
+    showTrayIcon: "Mostra icona nella barra delle applicazioni",
+    showTrayIconHint:
+      "Mostra l'icona dell'app nella barra delle applicazioni. Richiede il riavvio.",
+    showTrayIconWarning:
+      "Se nascosto, riapri le impostazioni avviando nuovamente l'app, o chiudi tramite Task Manager (Windows) / Monitor Attività (macOS) / Monitor di Sistema (Linux).",
     themeMode: "Tema",
     themeModeDark: "Scuro",
     themeModeLight: "Chiaro",

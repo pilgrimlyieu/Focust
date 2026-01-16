@@ -194,6 +194,11 @@ const enUS = {
     running: "Scheduler running",
     scheduler: "Scheduler controls",
     secondsRemaining: "{seconds} sec",
+    showTrayIcon: "Show system tray icon",
+    showTrayIconHint:
+      "Display app icon in system tray. Requires restart to take effect.",
+    showTrayIconWarning:
+      "If hidden, reopen settings by launching the app again, or close via Task Manager (Windows) / Activity Monitor (macOS) / System Monitor (Linux).",
     themeMode: "Theme",
     themeModeDark: "Dark",
     themeModeLight: "Light",

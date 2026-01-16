@@ -201,6 +201,11 @@ const ruRU: LocaleStrings = {
     running: "Планировщик работает",
     scheduler: "Управление планировщиком",
     secondsRemaining: "{seconds} сек",
+    showTrayIcon: "Показывать значок в системном трее",
+    showTrayIconHint:
+      "Отображать значок приложения в системном трее. Требуется перезапуск.",
+    showTrayIconWarning:
+      "Если скрыто, откройте настройки, запустив приложение снова, или закройте через Диспетчер задач (Windows) / Мониторинг системы (macOS) / Системный монитор (Linux).",
     themeMode: "Тема",
     themeModeDark: "Темная",
     themeModeLight: "Светлая",

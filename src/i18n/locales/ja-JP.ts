@@ -196,6 +196,11 @@ const jaJP: LocaleStrings = {
     running: "スケジューラー実行中",
     scheduler: "スケジューラーコントロール",
     secondsRemaining: "{seconds}秒",
+    showTrayIcon: "システムトレイにアイコンを表示",
+    showTrayIconHint:
+      "システムトレイにアプリアイコンを表示します。再起動が必要です。",
+    showTrayIconWarning:
+      "非表示の場合、アプリを再起動して設定を開くか、タスクマネージャー（Windows）/アクティビティモニタ（macOS）/システムモニター（Linux）で終了してください。",
     themeMode: "テーマ",
     themeModeDark: "ダーク",
     themeModeLight: "ライト",

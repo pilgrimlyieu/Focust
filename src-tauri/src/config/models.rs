@@ -35,6 +35,8 @@ pub struct AppConfig {
     pub inactive_s: u32,
     /// If breaks should be shown on all screens
     pub all_screens: bool,
+    /// If system tray icon should be displayed (requires restart)
+    pub show_tray_icon: bool,
     /// Language code, e.g., "en-US"
     #[ts(type = "import('@/i18n').LocaleKey")]
     pub language: String,
@@ -63,6 +65,7 @@ impl Default for AppConfig {
             monitor_dnd: true,
             inactive_s: 300,
             all_screens: false,
+            show_tray_icon: true,
             language: detect_system_language(),
             theme_mode: "system".to_owned(),
             postpone_shortcut: String::new(),

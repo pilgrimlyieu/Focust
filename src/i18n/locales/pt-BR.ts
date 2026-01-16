@@ -201,6 +201,11 @@ const ptBR: LocaleStrings = {
     running: "Agendador em execução",
     scheduler: "Controles do agendador",
     secondsRemaining: "{seconds} seg",
+    showTrayIcon: "Mostrar ícone na bandeja do sistema",
+    showTrayIconHint:
+      "Exibir ícone do aplicativo na bandeja do sistema. Requer reinicialização.",
+    showTrayIconWarning:
+      "Se oculto, reabra as configurações iniciando o aplicativo novamente, ou feche via Gerenciador de Tarefas (Windows) / Monitor de Atividade (macOS) / Monitor do Sistema (Linux).",
     themeMode: "Tema",
     themeModeDark: "Escuro",
     themeModeLight: "Claro",

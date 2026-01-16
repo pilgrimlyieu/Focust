@@ -186,6 +186,23 @@ onMounted(() => {
           <input v-model="config.allScreens" type="checkbox"
             class="toggle toggle-primary toggle-lg shrink-0 transition-all" />
         </div>
+
+        <div class="divider my-0"></div>
+
+        <div class="flex items-center justify-between gap-4 p-4 rounded-lg hover:bg-base-200/50 transition-all">
+          <div class="flex-1 min-w-0">
+            <div class="font-medium text-sm">{{ t("general.showTrayIcon") }}</div>
+            <p class="text-xs text-base-content/50 mt-1">
+              {{ t("general.showTrayIconHint") }}
+            </p>
+            <div v-if="!config.showTrayIcon" class="alert alert-warning mt-2 py-2 px-3 text-xs">
+              <InfoIcon class-name="h-4 w-4 shrink-0" />
+              <span>{{ t("general.showTrayIconWarning") }}</span>
+            </div>
+          </div>
+          <input v-model="config.showTrayIcon" type="checkbox"
+            class="toggle toggle-primary toggle-lg shrink-0 transition-all" />
+        </div>
       </div>
     </div>
 

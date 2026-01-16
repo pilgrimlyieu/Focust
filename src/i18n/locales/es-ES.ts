@@ -202,6 +202,11 @@ const esES: LocaleStrings = {
     running: "Programador en ejecución",
     scheduler: "Controles del programador",
     secondsRemaining: "{seconds} seg",
+    showTrayIcon: "Mostrar icono en bandeja del sistema",
+    showTrayIconHint:
+      "Mostrar icono de la aplicación en la bandeja del sistema. Requiere reinicio.",
+    showTrayIconWarning:
+      "Si está oculto, reabra la configuración iniciando la aplicación nuevamente, o ciérrela mediante el Administrador de tareas (Windows) / Monitor de actividad (macOS) / Monitor del sistema (Linux).",
     themeMode: "Tema",
     themeModeDark: "Oscuro",
     themeModeLight: "Claro",

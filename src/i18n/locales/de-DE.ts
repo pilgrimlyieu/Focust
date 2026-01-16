@@ -208,6 +208,11 @@ const deDE: LocaleStrings = {
     running: "Planer läuft",
     scheduler: "Planer-Steuerungen",
     secondsRemaining: "{seconds} Sek",
+    showTrayIcon: "Taskleistensymbol anzeigen",
+    showTrayIconHint:
+      "App-Symbol in der Taskleiste anzeigen. Erfordert Neustart.",
+    showTrayIconWarning:
+      "Wenn ausgeblendet, Einstellungen durch erneutes Starten der App öffnen oder über Task-Manager (Windows) / Aktivitätsanzeige (macOS) / Systemmonitor (Linux) beenden.",
     themeMode: "Design",
     themeModeDark: "Dunkel",
     themeModeLight: "Hell",

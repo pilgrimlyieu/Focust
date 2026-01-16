@@ -46,6 +46,7 @@ pub enum TrayUpdate {
 /// Sets up the system tray icon with menu.
 ///
 /// Should be called after configuration is loaded.
+/// If `show_tray_icon` is disabled in config, this function does nothing.
 ///
 /// # Errors
 ///
@@ -53,6 +54,20 @@ pub enum TrayUpdate {
 /// - Building the tray menu fails
 /// - Creating the tray icon fails
 pub async fn setup_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
+    // Check if tray icon should be shown
+    let show_tray = if let Some(config_state) = app.try_state::<SharedConfig>() {
+        let config = config_state.read().await;
+        config.show_tray_icon
+    } else {
+        tracing::warn!("Config not yet loaded, defaulting to show tray icon");
+        true
+    };
+
+    if !show_tray {
+        tracing::info!("Tray icon disabled in config, skipping tray setup");
+        return Ok(());
+    }
+
     let (tray_state, tray_rx) = initialize_tray_state(app);
 
     let strings = get_localized_strings(app).await;

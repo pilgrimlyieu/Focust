@@ -85,6 +85,7 @@ const mockConfig: RawAppConfig = {
       timeRange: createTimeRange("09:00", "18:00"),
     },
   ],
+  showTrayIcon: true,
   themeMode: "system",
   windowSize: 0.8,
 };

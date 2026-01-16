@@ -209,6 +209,11 @@ const frFR: LocaleStrings = {
     running: "Planificateur en cours d'exécution",
     scheduler: "Contrôles du planificateur",
     secondsRemaining: "{seconds} sec",
+    showTrayIcon: "Afficher l'icône dans la barre d'état",
+    showTrayIconHint:
+      "Afficher l'icône de l'application dans la barre d'état système. Nécessite un redémarrage.",
+    showTrayIconWarning:
+      "Si masqué, rouvrez les paramètres en lançant à nouveau l'application, ou fermez via le Gestionnaire des tâches (Windows) / Moniteur d'activité (macOS) / Moniteur système (Linux).",
     themeMode: "Thème",
     themeModeDark: "Sombre",
     themeModeLight: "Clair",

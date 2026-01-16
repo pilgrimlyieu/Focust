@@ -194,6 +194,11 @@ const koKR: LocaleStrings = {
     running: "스케줄러 실행 중",
     scheduler: "스케줄러 제어",
     secondsRemaining: "{seconds}초",
+    showTrayIcon: "시스템 트레이 아이콘 표시",
+    showTrayIconHint:
+      "시스템 트레이에 앱 아이콘을 표시합니다. 재시작이 필요합니다.",
+    showTrayIconWarning:
+      "숨긴 경우, 앱을 다시 실행하여 설정을 열거나, 작업 관리자 (Windows) / 활동 모니터 (macOS) / 시스템 모니터 (Linux)를 통해 종료하세요.",
     themeMode: "테마",
     themeModeDark: "다크",
     themeModeLight: "라이트",

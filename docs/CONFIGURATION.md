@@ -94,6 +94,12 @@ patterns = ["chrome.exe", "firefox"]
 - **Default**: `false`
 - **Description**: Show break windows on all monitors in a multi-monitor setup. When disabled, breaks only appear on the primary monitor.
 
+### `showTrayIcon`
+- **Type**: Boolean
+- **Default**: `true`
+- **Description**: Display the application icon in the system tray. Requires application restart to take effect.
+- **Note**: When hidden, you can reopen settings by launching the app again (uses single instance), or close the app via Task Manager (Windows) / Activity Monitor (macOS) / System Monitor (Linux).
+
 ### `language`
 - **Type**: String
 - **Default**: Auto-detected from system locale
