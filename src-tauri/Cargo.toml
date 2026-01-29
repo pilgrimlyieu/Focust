@@ -40,7 +40,7 @@ ts-rs = { version = "11.0.1", features = ["chrono-impl"] }
 [dependencies]
 anyhow = "1.0.98"
 bitflags = "2.10.0"
-chrono = { version = "0.4.42", features = ["serde"] }
+chrono = { version = "0.4.43", features = ["serde"] }
 figment = { version = "0.10", features = ["toml"] }
 futures = "0.3.31"
 parking_lot = "0.12"
@@ -62,7 +62,7 @@ tauri-plugin-opener = "2"
 tauri-plugin-process = "2"
 tauri-plugin-single-instance = "2"
 tauri-plugin-updater = "2"
-thiserror = "2.0.17"
+thiserror = "2.0.18"
 tokio = { version = "*", features = ["time", "macros"] }
 toml = "0.9"
 tracing = "0.1.44"
