@@ -677,7 +677,7 @@ just dev
 
 ## License
 
-By contributing to Focust, you agree that your contributions will be licensed under the same license as the project (MIT License).
+By contributing to Focust, you agree that your contributions will be licensed under the same license as the project (GPL-3.0 License).
 
 ---
 

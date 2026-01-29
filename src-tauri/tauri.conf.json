@@ -22,7 +22,7 @@
   "bundle": {
     "active": true,
     "createUpdaterArtifacts": true,
-    "copyright": "MIT License",
+    "copyright": "GPL-3.0 License",
     "targets": ["deb", "rpm", "appimage", "nsis", "app", "dmg"],
     "icon": [
       "icons/32x32.png",

@@ -25,7 +25,7 @@ const frFR: LocaleStrings = {
     patchUpdate: "Mise à jour corrective",
     patchUpdateDesc:
       "Cette mise à jour inclut des corrections de bogues et des améliorations mineures.",
-    projectLicense: "(Licence MIT)",
+    projectLicense: "(Licence GPL-3.0)",
     releaseNotes: "Notes de version",
     starOnGitHub: "⭐ Étoiler sur GitHub",
     title: "À propos de Focust",

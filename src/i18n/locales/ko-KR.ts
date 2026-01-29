@@ -25,7 +25,7 @@ const koKR: LocaleStrings = {
     patchUpdate: "패치 업데이트",
     patchUpdateDesc:
       "이 업데이트에는 버그 수정과 사소한 개선사항이 포함되어 있습니다.",
-    projectLicense: "(MIT 라이선스)",
+    projectLicense: "(GPL-3.0 라이선스)",
     releaseNotes: "릴리스 노트",
     starOnGitHub: "⭐ GitHub에서 별표 추가",
     title: "Focust 정보",

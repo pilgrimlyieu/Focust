@@ -25,7 +25,7 @@ const deDE: LocaleStrings = {
     patchUpdate: "Patch-Update",
     patchUpdateDesc:
       "Dieses Update enthält Fehlerbehebungen und kleinere Verbesserungen.",
-    projectLicense: "(MIT-Lizenz)",
+    projectLicense: "(GPL-3.0-Lizenz)",
     releaseNotes: "Versionshinweise",
     starOnGitHub: "⭐ Auf GitHub markieren",
     title: "Über Focust",

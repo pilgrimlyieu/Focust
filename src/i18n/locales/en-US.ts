@@ -21,7 +21,7 @@ const enUS = {
     noUpdateAvailable: "You're already using the latest version",
     patchUpdate: "Patch Update",
     patchUpdateDesc: "This update includes bug fixes and minor improvements.",
-    projectLicense: "(MIT License)",
+    projectLicense: "(GPL-3.0 License)",
     releaseNotes: "Release Notes",
     starOnGitHub: "⭐ Star on GitHub",
     title: "About Focust",

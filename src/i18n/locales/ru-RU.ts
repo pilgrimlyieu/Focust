@@ -24,7 +24,7 @@ const ruRU: LocaleStrings = {
     patchUpdate: "Обновление-патч",
     patchUpdateDesc:
       "Это обновление включает исправления ошибок и незначительные улучшения.",
-    projectLicense: "(Лицензия MIT)",
+    projectLicense: "(Лицензия GPL-3.0)",
     releaseNotes: "Примечания к выпуску",
     starOnGitHub: "⭐ Добавить звезду на GitHub",
     title: "О Focust",

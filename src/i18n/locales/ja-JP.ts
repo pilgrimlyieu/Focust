@@ -24,7 +24,7 @@ const jaJP: LocaleStrings = {
     patchUpdate: "パッチアップデート",
     patchUpdateDesc:
       "このアップデートにはバグ修正と小さな改善が含まれています。",
-    projectLicense: "（MITライセンス）",
+    projectLicense: "（GPL-3.0ライセンス）",
     releaseNotes: "リリースノート",
     starOnGitHub: "⭐ GitHubでスター",
     title: "Focustについて",

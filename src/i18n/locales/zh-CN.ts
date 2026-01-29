@@ -22,7 +22,7 @@ const zhCN: LocaleStrings = {
     noUpdateAvailable: "您已经在使用最新版本",
     patchUpdate: "补丁更新",
     patchUpdateDesc: "此更新包含错误修复和小幅改进。",
-    projectLicense: "（MIT 许可证）",
+    projectLicense: "（GPL-3.0 许可证）",
     releaseNotes: "发布说明",
     starOnGitHub: "⭐ 在 GitHub 上 Star",
     title: "关于 Focust",
