@@ -19,7 +19,7 @@
     "@tauri-apps/plugin-fs": "^2.4.5",
     "@tauri-apps/plugin-opener": "~2.5.3",
     "@tauri-apps/plugin-updater": "~2.9.0",
-    "@vueuse/core": "^14.1.0",
+    "@vueuse/core": "^14.2.0",
     "biome": "^0.3.3",
     "pinia": "^3.0.4",
     "vue": "^3.5.27",
