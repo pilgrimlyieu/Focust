@@ -175,7 +175,8 @@ where
             BreakSchedulerState::WaitingForNotification(info) => {
                 tracing::debug!("Timer fired: sending notification");
                 self.send_notification(&info.event).await;
-                self.state = BreakSchedulerState::WaitingForBreak(info);
+                self.state = BreakSchedulerState::WaitingForBreak(info.clone());
+                self.emit_status(&info);
             }
             BreakSchedulerState::WaitingForBreak(info) => {
                 tracing::debug!("Timer fired: executing break");
@@ -327,6 +328,16 @@ where
                 _ => s.mini_breaks.base.max_postpone_count, // fallback
             }
         })
+    }
+
+    /// Get notification time before break (in seconds)
+    async fn get_notification_before_s(&self) -> u32 {
+        let config = self.app_handle.state::<SharedConfig>();
+        let config_guard = config.read().await;
+        let now_local = Utc::now().with_timezone(&Local);
+        let active_schedule =
+            get_active_schedule(&config_guard, now_local.time(), now_local.weekday());
+        active_schedule.map_or(0, |s| s.notification_before_s)
     }
 
     /// Emit current status to frontend
@@ -567,6 +578,7 @@ where
 
         let postpone_s = self.get_postpone_duration_s().await;
         let postpone_duration = Duration::seconds(i64::from(postpone_s));
+        let notification_before_s = self.get_notification_before_s().await;
 
         match &self.state {
             BreakSchedulerState::WaitingForNotification(info)
@@ -580,10 +592,16 @@ where
                 let mut new_info = info.clone();
                 new_info.postpone_count += 1;
                 new_info.break_time += postpone_duration;
-                // Remove notification time since we're postponing
-                new_info.notification_time = None;
 
-                self.state = BreakSchedulerState::WaitingForBreak(new_info.clone());
+                // Calculate new state and notification timing
+                let (new_state, should_notify_now) =
+                    calculate_postponed_notification_state(new_info.clone(), notification_before_s);
+
+                if should_notify_now {
+                    self.send_notification(&new_info.event).await;
+                }
+
+                self.state = new_state;
                 self.emit_status(&new_info);
             }
 
@@ -596,11 +614,21 @@ where
 
                 let mut new_info = info.clone();
                 new_info.postpone_count += 1;
-                new_info.break_time = Utc::now() + postpone_duration;
-                new_info.notification_time = None;
+                let now = Utc::now();
+                new_info.break_time = now + postpone_duration;
 
+                // Close the current break window first
                 self.close_break_windows();
-                self.state = BreakSchedulerState::WaitingForBreak(new_info.clone());
+
+                // Calculate new state and notification timing
+                let (new_state, should_notify_now) =
+                    calculate_postponed_notification_state(new_info.clone(), notification_before_s);
+
+                if should_notify_now {
+                    self.send_notification(&new_info.event).await;
+                }
+
+                self.state = new_state;
                 self.emit_status(&new_info);
                 // Do NOT update last break time. This break hasn't been completed, just postponed.
             }
@@ -689,6 +717,42 @@ where
     fn handle_request_break_status_command(&mut self) {
         tracing::debug!("Status request received");
         self.emit_current_status();
+    }
+}
+
+/// Calculate notification state after postponing a break
+///
+/// This helper determines the next state and whether to send notification immediately
+/// based on the postponed break time and notification settings.
+///
+/// Returns: (`new_state`, `should_send_notification_immediately`)
+fn calculate_postponed_notification_state(
+    mut break_info: BreakInfo,
+    notification_before_s: u32,
+) -> (BreakSchedulerState, bool) {
+    let now = Utc::now();
+
+    if notification_before_s > 0 {
+        let notif_time =
+            break_info.break_time - Duration::seconds(i64::from(notification_before_s));
+        if notif_time > now {
+            // Notification time in the future - schedule it
+            break_info.notification_time = Some(notif_time);
+            tracing::debug!("Notification will be sent at {notif_time}");
+            (
+                BreakSchedulerState::WaitingForNotification(break_info),
+                false,
+            )
+        } else {
+            // Notification time already passed - send immediately
+            tracing::debug!("Notification time already passed, sending immediately");
+            break_info.notification_time = None;
+            (BreakSchedulerState::WaitingForBreak(break_info), true)
+        }
+    } else {
+        // No notification configured
+        break_info.notification_time = None;
+        (BreakSchedulerState::WaitingForBreak(break_info), false)
     }
 }
 
