@@ -38,6 +38,7 @@ pub fn get_app_config_dir(app_handle: &AppHandle) -> Result<PathBuf> {
 /// This results in different behavior depending on the platform:
 /// - **Windows & Linux:** `.../com.fesmoph.focust/logs` → `.../com.fesmoph.focust/logs.dev`
 /// - **macOS:** `~/Library/Logs/com.fesmoph.focust` → `~/Library/Logs/com.fesmoph.focust.dev`
+///
 /// In release builds, returns the standard platform paths (no `.dev` suffix).
 ///
 /// # Errors
@@ -68,12 +69,13 @@ pub fn get_app_log_dir(app_handle: &AppHandle) -> Result<PathBuf> {
 #[cfg(debug_assertions)]
 fn modify_app_dir_for_debug(path: PathBuf) -> PathBuf {
     if let Some(dir_name) = path.file_name()
-        && let Some(dir_name_str) = dir_name.to_str() {
-            let new_dir_name = format!("{dir_name_str}.dev");
-            if let Some(parent) = path.parent() {
-                return parent.join(new_dir_name);
-            }
+        && let Some(dir_name_str) = dir_name.to_str()
+    {
+        let new_dir_name = format!("{dir_name_str}.dev");
+        if let Some(parent) = path.parent() {
+            return parent.join(new_dir_name);
         }
+    }
     // Fallback: if path manipulation fails, return original path
     path
 }
@@ -84,7 +86,7 @@ mod tests {
 
     #[cfg(debug_assertions)]
     #[test]
-    fn test_modify_app_dir_for_debug() {
+    fn all_platforms_modify_app_dir_for_debug() {
         // Test Windows-style path
         #[cfg(target_os = "windows")]
         {
