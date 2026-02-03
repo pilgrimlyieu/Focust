@@ -174,7 +174,7 @@ where
         match self.state.clone() {
             BreakSchedulerState::WaitingForNotification(info) => {
                 tracing::debug!("Timer fired: sending notification");
-                self.send_notification(&info.event).await;
+                self.send_notification(&info.event, info.break_time).await;
                 self.state = BreakSchedulerState::WaitingForBreak(info.clone());
                 self.emit_status(&info);
             }
@@ -189,23 +189,22 @@ where
     }
 
     /// Send a notification before a break
-    async fn send_notification(&self, event: &SchedulerEvent) {
+    ///
+    /// # Parameters
+    /// - `event`: The break event
+    /// - `break_time`: The scheduled break time (used to calculate actual remaining seconds)
+    async fn send_notification(&self, event: &SchedulerEvent, break_time: DateTime<Utc>) {
         let break_type = match event {
             SchedulerEvent::MiniBreak(_) => "MiniBreak",
             SchedulerEvent::LongBreak(_) => "LongBreak",
             SchedulerEvent::Attention(_) => return,
         };
 
-        let notification_before_s = {
-            let config = self.app_handle.state::<SharedConfig>();
-            let config_guard = config.read().await;
-            let now_local = Utc::now().with_timezone(&Local);
-            let active_schedule =
-                get_active_schedule(&config_guard, now_local.time(), now_local.weekday());
-            active_schedule.map_or(0, |s| s.notification_before_s)
-        };
+        // Calculate actual remaining seconds until break
+        let now = Utc::now();
+        let remaining_seconds = (break_time - now).num_seconds().max(0) as u32;
 
-        send_break_notification(&self.app_handle, break_type, notification_before_s)
+        send_break_notification(&self.app_handle, break_type, remaining_seconds)
             .await
             .unwrap_or_else(|e| {
                 tracing::warn!("Failed to send break notification: {e}");
@@ -405,7 +404,8 @@ where
             } else if let Some(notif_time) = break_info.notification_time {
                 if notif_time <= now {
                     tracing::debug!("Notification time passed, sending immediately");
-                    self.send_notification(&break_info.event).await;
+                    self.send_notification(&break_info.event, break_info.break_time)
+                        .await;
                     self.state = BreakSchedulerState::WaitingForBreak(break_info.clone());
                     self.emit_status(&break_info);
                 } else {
@@ -598,7 +598,8 @@ where
                     calculate_postponed_notification_state(new_info.clone(), notification_before_s);
 
                 if should_notify_now {
-                    self.send_notification(&new_info.event).await;
+                    self.send_notification(&new_info.event, new_info.break_time)
+                        .await;
                 }
 
                 self.state = new_state;
@@ -625,7 +626,8 @@ where
                     calculate_postponed_notification_state(new_info.clone(), notification_before_s);
 
                 if should_notify_now {
-                    self.send_notification(&new_info.event).await;
+                    self.send_notification(&new_info.event, new_info.break_time)
+                        .await;
                 }
 
                 self.state = new_state;

@@ -8,4 +8,4 @@ export type SuggestionsConfig = {
 /**
  * Suggestions grouped by language code
  */
-byLanguage: { [key in string]?: LanguageSuggestions }, };
+byLanguage: { [key in string]: LanguageSuggestions }, };
