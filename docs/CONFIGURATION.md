@@ -32,9 +32,17 @@ This document provides a comprehensive guide to all configuration options availa
 
 Focust stores its configuration in a platform-specific location:
 
+**Production (Release) Builds:**
 - **Windows**: `%APPDATA%\com.fesmoph.focust\config.toml`
 - **macOS**: `~/Library/Application Support/com.fesmoph.focust/config.toml`
 - **Linux**: `~/.config/com.fesmoph.focust/config.toml`
+
+**Development (Debug) Builds:**
+- **Windows**: `%APPDATA%\com.fesmoph.focust.dev\config.toml`
+- **macOS**: `~/Library/Application Support/com.fesmoph.focust.dev/config.toml`
+- **Linux**: `~/.config/com.fesmoph.focust.dev/config.toml`
+
+> **Note:** Development builds use a `.dev` suffix to separate development and production configurations. The `.dev` suffix is appended to the final path component returned by the platform — on Windows and Linux this causes the logs directory to be stored as `.../com.fesmoph.focust/logs.dev`, while on macOS the logs directory becomes `~/Library/Logs/com.fesmoph.focust.dev/`. This allows developers to test changes without affecting their production settings.
 
 You can quickly open the configuration directory from the settings UI:
 1. Go to **Advanced Options** tab

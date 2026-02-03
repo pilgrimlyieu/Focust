@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use anyhow::{Context, Result};
 use rand::prelude::IndexedRandom;
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 use tokio::fs as tokio_fs;
 use tokio::sync::RwLock;
 use ts_rs::TS;
@@ -198,9 +198,7 @@ fn load_default_suggestions() -> Result<SuggestionsConfig> {
 
 /// Get the path to suggestions.toml file
 fn get_suggestions_path(app_handle: &AppHandle) -> Result<PathBuf> {
-    let config_dir = app_handle
-        .path()
-        .app_config_dir()
+    let config_dir = crate::utils::get_app_config_dir(app_handle)
         .context("Failed to get app config directory")?;
     Ok(config_dir.join("suggestions.toml"))
 }

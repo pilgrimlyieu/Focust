@@ -12,7 +12,7 @@ use figment::{
     providers::{Format, Serialized, Toml},
 };
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 use tokio::fs as tokio_fs;
 
 use crate::config::{AdvancedConfig, AppConfig};
@@ -79,9 +79,7 @@ pub async fn save_config(app_handle: &AppHandle, config: &AppConfig) -> Result<(
 /// - Getting the app config directory fails
 /// - Creating the config directory fails
 fn get_config_path(app_handle: &AppHandle) -> Result<PathBuf> {
-    let config_dir = app_handle
-        .path()
-        .app_config_dir()
+    let config_dir = crate::utils::get_app_config_dir(app_handle)
         .context("Failed to get app config directory")?;
     if !config_dir.exists() {
         fs::create_dir_all(&config_dir).context("Failed to create config directory")?;

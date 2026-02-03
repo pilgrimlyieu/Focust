@@ -80,9 +80,7 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_process::init())
         .setup(|app| {
-            let log_dir = app
-                .path()
-                .app_log_dir()
+            let log_dir = utils::get_app_log_dir(app.handle())
                 .expect("Failed to get app log directory");
 
             let handle = app.handle().clone();

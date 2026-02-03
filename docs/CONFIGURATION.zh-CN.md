@@ -31,9 +31,18 @@
 ## 配置文件位置
 
 Focust 将其配置存储在特定于平台的位置：
+
+**正式版（Release 构建）：**
 - **Windows**：`%APPDATA%\com.fesmoph.focust\config.toml`
 - **macOS**：`~/Library/Application Support/com.fesmoph.focust/config.toml`
 - **Linux**: `~/.config/com.fesmoph.focust/config.toml`
+
+**开发版（Debug 构建）：**
+- **Windows**：`%APPDATA%\com.fesmoph.focust.dev\config.toml`
+- **macOS**：`~/Library/Application Support/com.fesmoph.focust.dev/config.toml`
+- **Linux**: `~/.config/com.fesmoph.focust.dev/config.toml`
+
+> **注意**：开发版本使用 `.dev` 后缀来区分开发和生产配置。`.dev` 后缀会追加到平台返回路径的最后一段 —— 在 Windows 与 Linux 上，这会导致日志目录变为 `.../com.fesmoph.focust/logs.dev`，而在 macOS 上日志目录为 `~/Library/Logs/com.fesmoph.focust.dev/`。这允许开发者测试更改而不会影响他们的生产设置。
 
 您可以从设置界面快速打开配置目录：
 1. 转到**高级选项**选项卡

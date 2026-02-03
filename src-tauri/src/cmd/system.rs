@@ -6,7 +6,7 @@
 use std::path::Path;
 use std::process::Command;
 
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 
 /// Opens the configuration directory in the system file explorer.
 ///
@@ -17,9 +17,7 @@ use tauri::{AppHandle, Manager};
 /// - Opening the directory in the file explorer fails
 #[tauri::command]
 pub async fn open_config_directory(app: AppHandle) -> Result<(), String> {
-    let config_dir = app
-        .path()
-        .app_config_dir()
+    let config_dir = crate::utils::get_app_config_dir(&app)
         .map_err(|e| format!("Failed to get config directory: {e}"))?;
 
     open_directory_in_explorer(&config_dir)
@@ -34,9 +32,7 @@ pub async fn open_config_directory(app: AppHandle) -> Result<(), String> {
 /// - Opening the directory in the file explorer fails
 #[tauri::command]
 pub async fn open_log_directory(app: AppHandle) -> Result<(), String> {
-    let log_dir = app
-        .path()
-        .app_log_dir()
+    let log_dir = crate::utils::get_app_log_dir(&app)
         .map_err(|e| format!("Failed to get log directory: {e}"))?;
 
     open_directory_in_explorer(&log_dir)

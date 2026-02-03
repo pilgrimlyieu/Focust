@@ -3,8 +3,6 @@
 > **Purpose**: Self-contained guide for GitHub Copilot
 > **Audience**: Developers and AI assistants working on Focust
 
----
-
 ## 📋 Project Overview
 
 Focust is a cross-platform break reminder app built with **Tauri 2.9** (Rust backend) + **Vue 3.5** (TypeScript frontend). It helps users take regular breaks with customizable schedules and themes.
@@ -13,8 +11,6 @@ Focust is a cross-platform break reminder app built with **Tauri 2.9** (Rust bac
 - **Backend**: Tauri 2.9, Rust, Tokio, Serde, ts-rs, rodio
 - **Frontend**: Vue 3.5, TypeScript 5.9, Pinia, Tailwind CSS 4
 - **Tools**: Just, Biome, Vitest, Cargo test
-
----
 
 ## 🏗️ Architecture (Self-Contained)
 
@@ -44,8 +40,6 @@ Settings/Break Views                  BreakScheduler + AttentionTimer
 - **`components/`** - Reusable UI components (lazy-loaded panels)
 - **`types/`** - Type system (generated/ from ts-rs, guards, factories)
 
----
-
 ## 📋 Common Commands
 
 ```bash
@@ -55,8 +49,6 @@ just check        # Type check + Clippy
 just test-all     # Run all tests
 just build        # Build production version
 ```
-
----
 
 ## 🎯 Coding Standards (Critical Rules)
 
@@ -108,8 +100,6 @@ const props = withDefaults(defineProps<Props>(), {
 </script>
 ```
 
----
-
 ## 🚨 Common Pitfalls & Solutions
 
 | Issue | Cause | Solution | Location |
@@ -119,8 +109,6 @@ const props = withDefaults(defineProps<Props>(), {
 | **Tokio Runtime error** | Using `tokio::spawn` in Tauri | Use `tauri::async_runtime::spawn` instead | All async code |
 | **`unwrap()` panic** | Calling `unwrap()` on `Option/Result` | Use `?` operator or `ok_or_else()` | All Rust code |
 | **Type generation fails** | Rust struct changed but TS not updated | Run `cargo test export_bindings` | After changing `#[derive(TS)]` structs |
-
----
 
 ## 🧩 Code Templates
 
@@ -225,8 +213,6 @@ onUnmounted(() => unlisten());
 }
 ```
 
----
-
 ## 🔄 IPC Communication Patterns
 
 ### Commands (Frontend → Backend)
@@ -252,8 +238,6 @@ onUnmounted(() => unlisten());
 | `scheduler-paused` | `()` | Scheduler paused |
 | `scheduler-resumed` | `()` | Scheduler resumed |
 | `postpone-limit-reached` | `()` | Max postpones reached |
-
----
 
 ## 🎨 Key Design Patterns
 
@@ -341,8 +325,6 @@ bitflags! {
 - `add_pause_reason()` → Pause if first reason
 - `remove_pause_reason()` → Resume if last reason removed
 
----
-
 ## 🧪 Testing
 
 **Coverage**: 273 tests, 100% pass rate
@@ -370,7 +352,21 @@ async fn break_timing_works() {
 }
 ```
 
----
+## Application Directories
+
+Focust separates development and production environments using different directories:
+
+**Production (Release) Builds**:
+- **Windows**: `%APPDATA%\com.fesmoph.focust\` (config), `%LOCALAPPDATA%\com.fesmoph.focust\logs\` (logs)
+- **macOS**: `~/Library/Application Support/com.fesmoph.focust/` (config), `~/Library/Logs/com.fesmoph.focust/` (logs)
+- **Linux**: `~/.config/com.fesmoph.focust/` (config), `~/.local/share/com.fesmoph.focust/logs/` (logs)
+
+**Development (Debug) Builds**:
+- **Windows**: `%APPDATA%\com.fesmoph.focust.dev\` (config), `%LOCALAPPDATA%\com.fesmoph.focust\logs.dev\` (logs)
+- **macOS**: `~/Library/Application Support/com.fesmoph.focust.dev/` (config), `~/Library/Logs/com.fesmoph.focust.dev/` (logs)
+- **Linux**: `~/.config/com.fesmoph.focust.dev/` (config), `~/.local/share/com.fesmoph.focust/logs.dev/` (logs)
+
+> **Note**: In debug builds the `.dev` suffix is appended to the final path component. This means that on Windows and Linux the logs directory becomes `.../com.fesmoph.focust/logs.dev`, while on macOS the logs directory becomes `~/Library/Logs/com.fesmoph.focust.dev/`. This prevents development work from affecting production configurations and logs. Implementation: `src-tauri/src/utils/paths.rs`.
 
 ## 📚 Additional Resources
 
