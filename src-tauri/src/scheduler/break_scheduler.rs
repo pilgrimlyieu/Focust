@@ -179,7 +179,12 @@ where
             }
             BreakSchedulerState::WaitingForBreak(info) => {
                 tracing::debug!("Timer fired: executing break");
-                self.execute_break(info).await;
+                if let Err(e) = self.execute_break(info).await {
+                    tracing::error!("Failed to execute scheduled break: {e}");
+                    // State already updated by execute_break's error handler
+                    // Recalculate next break to avoid being stuck
+                    self.transition_to_calculating().await;
+                }
             }
             _ => {
                 tracing::warn!("Timer fired in unexpected state: {}", self.state);
@@ -387,36 +392,74 @@ where
     }
 
     /// Transition to calculating next break
+    ///
+    /// Calculates the next break and sets the appropriate state.
+    /// If the break time has already passed, attempts to execute it immediately.
+    /// Uses a retry loop with safeguards to prevent infinite loops from repeated failures.
     async fn transition_to_calculating(&mut self) {
-        let break_info = {
-            let config = self.app_handle.state::<SharedConfig>();
-            let config_guard = config.read().await;
-            self.calculate_next_break(&config_guard)
-        };
+        const MAX_RETRIES: u8 = 3;
+        let mut retry_count = 0;
 
-        if let Some(break_info) = break_info {
+        loop {
+            let break_info = {
+                let config = self.app_handle.state::<SharedConfig>();
+                let config_guard = config.read().await;
+                self.calculate_next_break(&config_guard)
+            };
+
+            // No active schedule -> Idle
+            let Some(break_info) = break_info else {
+                tracing::info!("Transitioning to Idle (no active schedule)");
+                self.set_state(BreakSchedulerState::Idle);
+                return;
+            };
+
             let now = Utc::now();
 
+            // Break time already passed -> execute immediately
             if break_info.break_time <= now {
                 tracing::warn!("Break time already passed, executing immediately");
-                Box::pin(self.execute_break(break_info)).await;
-            } else if let Some(notif_time) = break_info.notification_time {
+
+                if let Err(e) = self.execute_break(break_info).await {
+                    tracing::error!("Failed to execute overdue break: {e}");
+
+                    // Retry with limit to avoid rapid failure loops
+                    retry_count += 1;
+                    if retry_count < MAX_RETRIES {
+                        tracing::warn!(
+                            "Retrying calculation (attempt {retry_count}/{MAX_RETRIES})"
+                        );
+                        // State already updated by execute_break's error handler
+                        // Continue loop to recalculate next break
+                        continue;
+                    }
+                    tracing::error!("Max retries reached, transitioning to Idle");
+                    self.set_state(BreakSchedulerState::Idle);
+                    return;
+                }
+                // Success, exit
+                return;
+            }
+
+            // Check if notification time exists and has passed
+            if let Some(notif_time) = break_info.notification_time {
                 if notif_time <= now {
                     tracing::debug!("Notification time passed, sending immediately");
                     self.send_notification(&break_info.event, break_info.break_time)
                         .await;
                     self.set_state(BreakSchedulerState::WaitingForBreak(break_info));
-                } else {
-                    tracing::info!("Transitioning to WaitingForNotification");
-                    self.set_state(BreakSchedulerState::WaitingForNotification(break_info));
+                    return;
                 }
-            } else {
-                tracing::info!("Transitioning to WaitingForBreak");
-                self.set_state(BreakSchedulerState::WaitingForBreak(break_info));
+                // Notification time in future -> wait for it
+                tracing::info!("Transitioning to WaitingForNotification");
+                self.set_state(BreakSchedulerState::WaitingForNotification(break_info));
+                return;
             }
-        } else {
-            tracing::info!("Transitioning to Idle (no active schedule)");
-            self.set_state(BreakSchedulerState::Idle);
+
+            // No notification -> wait directly for break
+            tracing::info!("Transitioning to WaitingForBreak");
+            self.set_state(BreakSchedulerState::WaitingForBreak(break_info));
+            return;
         }
     }
 
@@ -427,7 +470,10 @@ where
     }
 
     /// Execute a break: create window and play audio, then wait for completion
-    async fn execute_break(&mut self, info: BreakInfo) {
+    ///
+    /// Returns `Ok(())` if break execution succeeds, or `Err(e)` if window creation fails.
+    /// On error, the caller should recalculate the next break.
+    async fn execute_break(&mut self, info: BreakInfo) -> anyhow::Result<()> {
         tracing::info!("Executing break: {}", info.event);
         let event = info.event;
         #[cfg(not(test))]
@@ -458,7 +504,8 @@ where
                 tracing::info!("Break session ended (error cleanup)");
 
                 self.update_state_after_break(event);
-                Box::pin(self.transition_to_calculating()).await;
+                // Return error to let caller recalculate next break
+                return Err(anyhow::anyhow!(e));
             }
         }
 
@@ -470,6 +517,8 @@ where
             future::ready(()).await; // yield to allow async context
             tracing::debug!("Test mode: skipping window creation for event: {event}");
         }
+
+        Ok(())
     }
 
     /// Reset break timers
@@ -549,7 +598,7 @@ where
         tracing::info!("Resuming BreakScheduler");
         if let BreakSchedulerState::Paused(_) = self.state {
             self.update_last_break_time();
-            Box::pin(self.transition_to_calculating()).await;
+            self.transition_to_calculating().await;
         }
     }
 
@@ -692,7 +741,11 @@ where
             event,
             postpone_count: 0,
         };
-        self.execute_break(test_info).await;
+        if let Err(e) = self.execute_break(test_info).await {
+            tracing::error!("Failed to execute manually triggered break: {e}");
+            // For manual triggers, recalculate to restore normal scheduling
+            self.transition_to_calculating().await;
+        }
     }
 
     /// Handle `UpdateConfig` command
