@@ -67,7 +67,7 @@ impl SchedulerEvent {
 // ============================================================================
 
 /// Internal representation of a scheduled break (used by `BreakScheduler`)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct BreakInfo {
     pub break_time: DateTime<Utc>,
     pub notification_time: Option<DateTime<Utc>>,

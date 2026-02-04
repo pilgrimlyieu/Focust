@@ -23,7 +23,7 @@ use crate::platform::send_break_notification;
 use crate::scheduler::event::get_active_schedule;
 
 /// The state of the break scheduler
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 enum BreakSchedulerState {
     /// Paused
     Paused(PauseReason),
@@ -171,12 +171,11 @@ where
 
     /// Handle timer fired event based on current state
     async fn on_timer_fired(&mut self) {
-        match self.state.clone() {
+        match self.state {
             BreakSchedulerState::WaitingForNotification(info) => {
                 tracing::debug!("Timer fired: sending notification");
                 self.send_notification(&info.event, info.break_time).await;
-                self.state = BreakSchedulerState::WaitingForBreak(info.clone());
-                self.emit_status(&info);
+                self.set_state(BreakSchedulerState::WaitingForBreak(info));
             }
             BreakSchedulerState::WaitingForBreak(info) => {
                 tracing::debug!("Timer fired: executing break");
@@ -346,7 +345,7 @@ where
                 self.emit_paused_status(true);
             }
             BreakSchedulerState::Idle | BreakSchedulerState::InBreak(_) => {
-                self.emit_idle_status();
+                self.emit_paused_status(false);
             }
             BreakSchedulerState::WaitingForNotification(info)
             | BreakSchedulerState::WaitingForBreak(info) => {
@@ -406,22 +405,18 @@ where
                     tracing::debug!("Notification time passed, sending immediately");
                     self.send_notification(&break_info.event, break_info.break_time)
                         .await;
-                    self.state = BreakSchedulerState::WaitingForBreak(break_info.clone());
-                    self.emit_status(&break_info);
+                    self.set_state(BreakSchedulerState::WaitingForBreak(break_info));
                 } else {
                     tracing::info!("Transitioning to WaitingForNotification");
-                    self.state = BreakSchedulerState::WaitingForNotification(break_info.clone());
-                    self.emit_status(&break_info);
+                    self.set_state(BreakSchedulerState::WaitingForNotification(break_info));
                 }
             } else {
                 tracing::info!("Transitioning to WaitingForBreak");
-                self.state = BreakSchedulerState::WaitingForBreak(break_info.clone());
-                self.emit_status(&break_info);
+                self.set_state(BreakSchedulerState::WaitingForBreak(break_info));
             }
         } else {
             tracing::info!("Transitioning to Idle (no active schedule)");
-            self.state = BreakSchedulerState::Idle;
-            self.emit_idle_status();
+            self.set_state(BreakSchedulerState::Idle);
         }
     }
 
@@ -437,7 +432,8 @@ where
         let event = info.event;
         #[cfg(not(test))]
         let postpone_count = info.postpone_count;
-        self.state = BreakSchedulerState::InBreak(info);
+
+        self.set_state(BreakSchedulerState::InBreak(info));
 
         // CRITICAL: Mark break session start BEFORE creating windows
         // This prevents DND monitor from reacting to system DND triggered by the fullscreen window
@@ -523,15 +519,19 @@ where
             });
     }
 
-    /// Emit idle status to frontend
-    fn emit_idle_status(&self) {
-        self.emit_paused_status(false);
+    /// Set state and automatically emit corresponding status update
+    ///
+    /// This method ensures that every state change is accompanied by the appropriate
+    /// status emission, eliminating the need for manual `emit_status` calls and reducing
+    /// the risk of forgetting to emit status updates.
+    fn set_state(&mut self, new_state: BreakSchedulerState) {
+        self.state = new_state;
+        self.emit_current_status();
     }
 
     /// Handle Pause command
     fn handle_pause_command(&mut self, reason: PauseReason) {
         tracing::info!("Pausing BreakScheduler: {reason}");
-        self.state = BreakSchedulerState::Paused(reason);
 
         // Reset timers for certain pause reasons
         match reason {
@@ -541,7 +541,7 @@ where
             PauseReason::Manual => {}
         }
         self.close_break_windows();
-        self.emit_paused_status(true);
+        self.set_state(BreakSchedulerState::Paused(reason));
     }
 
     /// Handle Resume command
@@ -589,21 +589,20 @@ where
                     info.postpone_count + 1
                 );
 
-                let mut new_info = info.clone();
+                let mut new_info = *info;
                 new_info.postpone_count += 1;
                 new_info.break_time += postpone_duration;
 
                 // Calculate new state and notification timing
                 let (new_state, should_notify_now) =
-                    calculate_postponed_notification_state(new_info.clone(), notification_before_s);
+                    calculate_postponed_notification_state(new_info, notification_before_s);
 
                 if should_notify_now {
                     self.send_notification(&new_info.event, new_info.break_time)
                         .await;
                 }
 
-                self.state = new_state;
-                self.emit_status(&new_info);
+                self.set_state(new_state);
             }
 
             BreakSchedulerState::InBreak(info) => {
@@ -613,7 +612,7 @@ where
                     info.postpone_count + 1
                 );
 
-                let mut new_info = info.clone();
+                let mut new_info = *info;
                 new_info.postpone_count += 1;
                 let now = Utc::now();
                 new_info.break_time = now + postpone_duration;
@@ -623,15 +622,14 @@ where
 
                 // Calculate new state and notification timing
                 let (new_state, should_notify_now) =
-                    calculate_postponed_notification_state(new_info.clone(), notification_before_s);
+                    calculate_postponed_notification_state(new_info, notification_before_s);
 
                 if should_notify_now {
                     self.send_notification(&new_info.event, new_info.break_time)
                         .await;
                 }
 
-                self.state = new_state;
-                self.emit_status(&new_info);
+                self.set_state(new_state);
                 // Do NOT update last break time. This break hasn't been completed, just postponed.
             }
 
