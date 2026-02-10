@@ -7,12 +7,11 @@ use rand::{Rng, seq::IndexedRandom};
 use std::{
     fs,
     path::{Path, PathBuf},
-    sync::Arc,
     time::Duration as StdDuration,
 };
 use tauri::async_runtime::spawn as tauri_spawn;
 use tauri::{AppHandle, Listener, Manager, Monitor, Runtime, WebviewUrl, WebviewWindowBuilder};
-use tokio::sync::{Mutex, oneshot};
+use tokio::sync::oneshot;
 use tokio::time;
 
 use crate::core::{
@@ -144,20 +143,12 @@ pub fn create_settings_window<R: Runtime>(app: &AppHandle<R>) -> Result<(), Stri
 
     tracing::info!("Creating new settings window");
 
-    // Register event listener BEFORE creating the window
+    // Register one-time event listener BEFORE creating the window
     let (tx, rx) = oneshot::channel();
-    let tx = Arc::new(Mutex::new(Some(tx)));
 
-    let tx_clone = tx.clone();
-    let app_clone = app.clone();
-    let unlisten = app.listen("settings-ready", move |_event| {
+    app.once("settings-ready", move |_event| {
         tracing::info!("Received settings-ready event from frontend");
-        let tx_clone = tx_clone.clone();
-        tauri_spawn(async move {
-            if let Some(sender) = tx_clone.lock().await.take() {
-                let _ = sender.send(());
-            }
-        });
+        let _ = tx.send(());
     });
 
     // Create window
@@ -172,10 +163,9 @@ pub fn create_settings_window<R: Runtime>(app: &AppHandle<R>) -> Result<(), Stri
     tracing::info!("Settings window created, waiting for ready event...");
 
     // Wait for ready event with timeout
-    let app_clone2 = app.clone();
+    let app_clone = app.clone();
     tauri_spawn(async move {
         let ready = time::timeout(StdDuration::from_millis(2000), rx).await;
-        app_clone.unlisten(unlisten);
 
         match ready {
             Ok(Ok(())) => {
@@ -190,7 +180,7 @@ pub fn create_settings_window<R: Runtime>(app: &AppHandle<R>) -> Result<(), Stri
         }
 
         // Show the window now
-        if let Some(win) = app_clone2.get_webview_window("settings") {
+        if let Some(win) = app_clone.get_webview_window("settings") {
             let _ = win.show();
             let _ = win.set_focus();
         }
