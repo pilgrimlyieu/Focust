@@ -9,9 +9,21 @@
 >
 > Audio feature doesn't work in macOS. This is a known upstream issue and will be fixed if its new version is released.
 
+> [!NOTE]
+>
+> If there are no major issues, this version will be the final revision for version 0.3.
+
 <!-- Release notes content starts here -->
+
+## 🧾 License Change
+
+- **Changed project license from MIT to GPL-3.0**.
 
 ## 🎉 Features
 
-- Support play audio notification at the end of breaks, using the same audio settings as the start notification. (#34)
-- Add configuration option to show/hide system tray icon. 
+- Separate configuration and log directories for development and production versions.
+- Support restarting and quitting the application from the about panel in settings.
+
+## 🐛 Bug Fixes
+
+- Fixed an issue where system notifications were not sent before breaks after postponing.

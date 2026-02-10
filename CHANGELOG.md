@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## 0.3.4 (2026.2.11)
+
+### 🧾 License Change
+
+- **Changed project license from MIT to GPL-3.0**.
+
+### 🎉 Features
+
+- Separate configuration and log directories for development and production versions.
+- Support restarting and quitting the application from the about panel in settings.
+
+### 🐛 Bug Fixes
+
+- Fixed an issue where system notifications were not sent before breaks after postponing.
+
 ## 0.3.3 (2026.1.16)
 
 ### 🎉 Features
