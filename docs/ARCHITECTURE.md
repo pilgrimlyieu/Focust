@@ -17,7 +17,7 @@
 │  ├─ Settings Panels           ├─ Suggestion Display         │
 │  └─ Status Display            └─ Audio Playback             │
 └────────────────────┬────────────────────────────────────────┘
-                     │ Tauri IPC (23 Commands + 5 Events)
+                     │ Tauri IPC (26 Commands + 5 Events)
 ┌────────────────────┴─── Backend (Rust + Tauri 2) ───────────┐
 │  Scheduler Manager          Platform Integration            │
 │  ├─ BreakScheduler          ├─ System Tray                  │
@@ -39,7 +39,7 @@
 
 | Module         | Purpose                              | Key Components                                                   |
 | -------------- | ------------------------------------ | ---------------------------------------------------------------- |
-| **cmd/**       | Tauri command handlers (23 commands) | audio, autostart, config, scheduler, suggestions, system, window |
+| **cmd/**       | Tauri command handlers (26 commands) | audio, autostart, config, payload scheduler, suggestions, system, window |
 | **config/**    | TOML config with partial loading     | AppConfig, AdvancedSettings, load/save/merge                     |
 | **scheduler/** | Event-driven scheduling engine       | BreakScheduler, AttentionTimer, SharedState, Command routing     |
 | **monitors/**  | Environment monitoring               | IdleMonitor, DndMonitor, AppWhitelistMonitor, Orchestrator       |
@@ -122,16 +122,17 @@ If any active → Pause schedulers
 
 ### Commands (Frontend → Backend)
 
-| Command                                                                                                                               | Module      | Purpose                   |
-| ------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ------------------------- |
-| `get_config`, `save_config`, `pick_background_image`                                                                                  | config      | Config CRUD               |
-| `get_autostart`, `set_autostart`                                                                                                      | autostart   | Autostart management      |
-| `play_builtin_audio`, `play_audio_file`, `stop_audio`                                                                                 | audio       | Audio control             |
-| `pause_scheduler`, `resume_scheduler`, `postpone_break`, `skip_break`, `trigger_event`, `request_scheduler_status`, `reset_scheduler` | scheduler   | Scheduler control         |
-| `get_suggestions`, `save_suggestions`, `get_suggestions_for_language`                                                                 | suggestions | Suggestion CRUD           |
-| `get_payload`, `cleanup_payload`                                                                                                      | payload     | Prompt payload management |
-| `open_config_dir`, `open_log_dir`, `open_folder`                                                                                      | system      | File explorer             |
-| `open_settings_window`, `close_break_windows`                                                                                         | window      | Window management         |
+| Command                                                                                                                               | Module      | Purpose                      |
+| ------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------------------------- |
+| `get_config`, `save_config`, `pick_background_image`                                                                                  | config      | Config CRUD                  |
+| `get_autostart`, `set_autostart`                                                                                                      | autostart   | Autostart management         |
+| `play_builtin_audio`, `play_audio_file`, `stop_audio`                                                                                 | audio       | Audio control                |
+| `pause_scheduler`, `resume_scheduler`, `postpone_break`, `skip_break`, `trigger_event`, `request_scheduler_status`, `reset_scheduler` | scheduler   | Scheduler control            |
+| `get_suggestions`, `save_suggestions`, `get_suggestions_for_language`                                                                 | suggestions | Suggestion CRUD              |
+| `get_payload`, `cleanup_payload`                                                                                                      | payload     | Prompt payload management    |
+| `open_config_dir`, `open_log_dir`, `open_folder`, `restart_application`, `exit_application`                                           | system      | File explorer, app lifecycle |
+| `open_settings_window`, `close_all_prompt_windows`                                                                                    | window      | Window management            |
+| `store_prompt_payload`, `get_prompt_payload`, `remove_prompt_payload`                                                                 | prompt      | Prompt state management      |
 
 ### Events (Backend → Frontend)
 

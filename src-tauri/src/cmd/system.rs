@@ -77,3 +77,31 @@ fn open_directory_in_explorer(dir: &Path) -> Result<(), String> {
 
     Ok(())
 }
+
+/// Restarts the application.
+///
+/// This command closes all windows and relaunches the application.
+/// The user's configuration and state are preserved.
+#[expect(
+    clippy::needless_pass_by_value,
+    reason = "Reference will make the compilation fail."
+)]
+#[tauri::command]
+pub fn restart_application(app: AppHandle) {
+    tracing::info!("Application restart requested from settings");
+    app.restart();
+}
+
+/// Exits the application.
+///
+/// This command gracefully shuts down the application,
+/// closing all windows and stopping all background tasks.
+#[expect(
+    clippy::needless_pass_by_value,
+    reason = "Reference will make the compilation fail."
+)]
+#[tauri::command]
+pub fn exit_application(app: AppHandle) {
+    tracing::info!("Application exit requested from settings");
+    app.exit(0);
+}

@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { getName, getVersion } from "@tauri-apps/api/app";
+import { invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import { markRaw, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
+import CloseIcon from "@/components/icons/CloseIcon.vue";
 import ExternalLinkIcon from "@/components/icons/ExternalLinkIcon.vue";
 import InfoCircleIcon from "@/components/icons/InfoCircleIcon.vue";
+import RefreshIcon from "@/components/icons/RefreshIcon.vue";
 import type { ToastKind } from "@/composables/useToast";
 
 const emit =
@@ -174,6 +177,26 @@ async function installUpdate() {
 function dismissUpdate() {
   pendingUpdate.value = null;
 }
+
+/** Restart the application */
+async function restartApp() {
+  try {
+    await invoke("restart_application");
+  } catch (err) {
+    console.error("Failed to restart application:", err);
+    emit("notify", "error", "Failed to restart application");
+  }
+}
+
+/** Exit the application */
+async function exitApp() {
+  try {
+    await invoke("exit_application");
+  } catch (err) {
+    console.error("Failed to exit application:", err);
+    emit("notify", "error", "Failed to exit application");
+  }
+}
 </script>
 
 <template>
@@ -316,6 +339,21 @@ function dismissUpdate() {
         <span class="badge badge-lg gap-2">TypeScript</span>
         <span class="badge badge-lg gap-2">Tailwind CSS</span>
         <span class="badge badge-lg gap-2">DaisyUI</span>
+      </div>
+    </div>
+
+    <!-- Application Control Card -->
+    <div class="rounded-2xl border border-base-300 bg-base-100/70 p-6 shadow-md">
+      <h3 class="text-lg font-bold mb-4">{{ t("about.lifecycle") }}</h3>
+      <div class="flex gap-3">
+        <button class="btn btn-outline gap-2 shadow-sm hover:shadow-md transition-all" @click="restartApp">
+          <RefreshIcon class-name="h-4 w-4" />
+          {{ t("about.restartApp") }}
+        </button>
+        <button class="btn btn-outline btn-error gap-2 shadow-sm hover:shadow-md transition-all" @click="exitApp">
+          <CloseIcon class-name="h-4 w-4" />
+          {{ t("about.exitApp") }}
+        </button>
       </div>
     </div>
   </section>

@@ -233,10 +233,11 @@ pub fn run() {
             cmd::suggestions::get_suggestions,
             cmd::suggestions::get_suggestions_for_language,
             cmd::suggestions::save_suggestions,
+            cmd::system::exit_application,
             cmd::system::open_config_directory,
             cmd::system::open_log_directory,
+            cmd::system::restart_application,
             cmd::window::close_all_prompt_windows,
-            cmd::window::open_settings_window,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

@@ -3,7 +3,7 @@
 //! This module provides commands to check and configure whether the application
 //! launches automatically when the system starts.
 
-use tauri::Manager;
+use tauri::{AppHandle, Manager};
 use tauri_plugin_autostart::ManagerExt;
 
 use crate::config::{SharedConfig, save_config};
@@ -14,7 +14,7 @@ use crate::config::{SharedConfig, save_config};
 ///
 /// This function does not return errors in normal operation.
 #[tauri::command]
-pub async fn is_autostart_enabled(app: tauri::AppHandle) -> Result<bool, String> {
+pub async fn is_autostart_enabled(app: AppHandle) -> Result<bool, String> {
     let config = app.state::<SharedConfig>();
     let config_guard = config.read().await;
     Ok(config_guard.autostart)
@@ -32,7 +32,7 @@ pub async fn is_autostart_enabled(app: tauri::AppHandle) -> Result<bool, String>
 /// - Checking the current autostart status fails
 /// - Enabling or disabling system autostart fails
 #[tauri::command]
-pub async fn set_autostart_enabled(app: tauri::AppHandle, enabled: bool) -> Result<(), String> {
+pub async fn set_autostart_enabled(app: AppHandle, enabled: bool) -> Result<(), String> {
     let autolaunch = app.autolaunch();
 
     let current_status = autolaunch.is_enabled().map_err(|e| {

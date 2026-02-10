@@ -17,14 +17,11 @@ use tauri::{
 use tokio::sync::mpsc;
 
 use crate::platform::{
-    get_strings,
+    create_settings_window, get_strings,
     i18n::{LanguageStrings, TrayStrings},
 };
 use crate::scheduler::models::{Command, SchedulerStatus};
-use crate::{
-    cmd::{SchedulerCmd, open_settings_window},
-    scheduler::PauseReason,
-};
+use crate::{cmd::SchedulerCmd, scheduler::PauseReason};
 use crate::{config::SharedConfig, platform::i18n::LANGUAGE_FALLBACK};
 
 /// Global state to track scheduler pause status and tray reference for menu updates.
@@ -233,7 +230,7 @@ fn handle_tray_menu_event<R: Runtime>(app: &AppHandle<R>, event_id: &str) {
 fn show_settings_window<R: Runtime>(app: &AppHandle<R>) {
     let app_clone = app.clone();
     tauri_spawn(async move {
-        open_settings_window(app_clone).await.unwrap_or_else(|e| {
+        create_settings_window(&app_clone).unwrap_or_else(|e| {
             tracing::error!("Failed to open settings window: {e}");
         });
     });

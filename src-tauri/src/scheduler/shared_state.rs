@@ -98,13 +98,13 @@
 //! ```rust,ignore
 //! // Mark break session start
 //! shared_state.write().start_break_session();
-//! create_break_windows(...);
+//! create_prompt_windows(...);
 //! // ... break window open ...
 //! shared_state.write().end_break_session();
 //!
 //! // Mark attention session start
 //! shared_state.write().start_attention_session();
-//! show_attention_prompt(...);
+//! create_prompt_window(...);
 //! // ... prompt displayed ...
 //! shared_state.write().end_attention_session();
 //! ```

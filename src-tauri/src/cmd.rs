@@ -9,7 +9,7 @@
 //! - **`payload`**: Break prompt payload storage
 //! - **`scheduler`**: Scheduler state management and control
 //! - **`suggestions`**: Break suggestion management
-//! - **`system`**: System-level operations (directory access)
+//! - **`system`**: System-level operations (directory access, application lifecycle)
 //! - **`window`**: Window management (open/close)
 
 pub mod audio;
@@ -29,5 +29,7 @@ pub use scheduler::{
     SchedulerCmd, ShutdownTx, pause_scheduler, postpone_break, prompt_finished, resume_scheduler,
 };
 pub use suggestions::{get_suggestions, get_suggestions_for_language, save_suggestions};
-pub use system::{open_config_directory, open_log_directory};
-pub use window::{close_all_prompt_windows, open_settings_window};
+pub use system::{
+    exit_application, open_config_directory, open_log_directory, restart_application,
+};
+pub use window::close_all_prompt_windows;

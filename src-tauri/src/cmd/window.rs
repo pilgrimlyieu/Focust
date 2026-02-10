@@ -4,20 +4,6 @@
 
 use tauri::{AppHandle, Manager, Runtime};
 
-use crate::platform::create_settings_window;
-
-/// Opens the settings window.
-///
-/// Creates a new window if it doesn't exist, or shows the existing window.
-///
-/// # Errors
-///
-/// Returns an error if creating or showing the settings window fails.
-#[tauri::command]
-pub async fn open_settings_window<R: Runtime>(app: AppHandle<R>) -> Result<(), String> {
-    create_settings_window(&app)
-}
-
 /// Closes all prompt windows with the given payload ID prefix.
 ///
 /// # Errors
