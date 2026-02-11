@@ -132,9 +132,8 @@ where
                     self.handle_command(cmd).await;
                 }
                 () = &mut sleep_fut => {
-                    if timer_duration.is_some() {
-                        self.on_timer_fired().await;
-                    }
+                    // If timer_duration was None, sleep_fut would be pending() and never complete
+                    self.on_timer_fired().await;
                 }
                 else => {
                     tracing::info!("Command channel closed, shutting down");

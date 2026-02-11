@@ -17,6 +17,7 @@ use super::models::{
 };
 use super::shared_state::SharedState;
 use crate::config::{AppConfig, SharedConfig};
+use crate::core::schedule::ScheduleSettings;
 #[cfg(not(test))]
 use crate::platform::create_prompt_windows;
 use crate::platform::send_break_notification;
@@ -142,9 +143,8 @@ where
                     self.handle_command(cmd).await;
                 }
                 () = &mut sleep_fut => {
-                    if timer_duration.is_some() {
-                        self.on_timer_fired().await;
-                    }
+                    // If `timer_duration` was None, `sleep_fut` would be `pending()` and never complete
+                    self.on_timer_fired().await;
                 }
                 else => {
                     tracing::info!("Command channel closed, shutting down");
@@ -195,13 +195,21 @@ where
     /// Send a notification before a break
     ///
     /// # Parameters
-    /// - `event`: The break event
+    /// - `event`: The break event (must be `MiniBreak` or `LongBreak`)
     /// - `break_time`: The scheduled break time (used to calculate actual remaining seconds)
     async fn send_notification(&self, event: &SchedulerEvent, break_time: DateTime<Utc>) {
+        debug_assert!(
+            event.is_break(),
+            "`send_notification` should only be called with break events"
+        );
+
         let break_type = match event {
             SchedulerEvent::MiniBreak(_) => "MiniBreak",
             SchedulerEvent::LongBreak(_) => "LongBreak",
-            SchedulerEvent::Attention(_) => return,
+            SchedulerEvent::Attention(_) => {
+                tracing::error!("`send_notification` called with Attention event, this is a bug");
+                return;
+            }
         };
 
         // Calculate actual remaining seconds until break
@@ -217,6 +225,11 @@ where
 
     /// Update state after a break has been executed
     fn update_state_after_break(&mut self, event: SchedulerEvent) {
+        debug_assert!(
+            event.is_break(),
+            "`update_state_after_break` should only be called with break events"
+        );
+
         self.update_last_break_time();
 
         match event {
@@ -226,11 +239,14 @@ where
             SchedulerEvent::LongBreak(_) => {
                 self.mini_break_counter = 0;
             }
-            SchedulerEvent::Attention(_) => {}
+            SchedulerEvent::Attention(_) => {
+                tracing::error!(
+                    "`update_state_after_break` called with Attention event, this is a bug"
+                );
+            }
         }
     }
 
-    /// Execute a break: create window and play audio, then wait for completion
     /// Close all break windows asynchronously to avoid deadlock
     ///
     /// IMPORTANT: This method returns immediately and closes windows in the background.
@@ -291,56 +307,95 @@ where
         }
     }
 
-    /// Get postpone duration based on current break type
-    async fn get_postpone_duration_s(&self) -> u32 {
+    /// Helper to get schedule property (independent of break state)
+    ///
+    /// This is used for properties that don't depend on the current break type
+    async fn get_schedule_property<F, T>(&self, extractor: F, default: T) -> T
+    where
+        F: FnOnce(&ScheduleSettings) -> T,
+    {
         let config = self.app_handle.state::<SharedConfig>();
         let config_guard = config.read().await;
         let now_local = Utc::now().with_timezone(&Local);
-        let active_schedule =
-            get_active_schedule(&config_guard, now_local.time(), now_local.weekday());
-        active_schedule.map_or(300, |s| {
-            match &self.state {
-                BreakSchedulerState::WaitingForBreak(info)
-                | BreakSchedulerState::WaitingForNotification(info)
-                | BreakSchedulerState::InBreak(info) => match info.event {
-                    SchedulerEvent::MiniBreak(_) => s.mini_breaks.base.postponed_s,
-                    SchedulerEvent::LongBreak(_) => s.long_breaks.base.postponed_s,
-                    SchedulerEvent::Attention(_) => unreachable!(),
-                },
-                _ => s.mini_breaks.base.postponed_s, // fallback to mini break postpone
+        get_active_schedule(&config_guard, now_local.time(), now_local.weekday())
+            .map_or(default, extractor)
+    }
+
+    /// Helper to get current break info from state
+    ///
+    /// Returns `Some(BreakInfo)` if in a break-related state, `None` otherwise
+    fn get_current_break_info(&self) -> Option<BreakInfo> {
+        match &self.state {
+            BreakSchedulerState::WaitingForBreak(info)
+            | BreakSchedulerState::WaitingForNotification(info)
+            | BreakSchedulerState::InBreak(info) => {
+                debug_assert!(
+                    info.event.is_break(),
+                    "BreakScheduler state should only contain break events"
+                );
+                Some(*info)
             }
-        })
+            _ => None,
+        }
+    }
+
+    /// Helper function to get schedule property based on current break type
+    ///
+    /// This function extracts the common pattern used by multiple getters:
+    /// 1. Acquire config read lock
+    /// 2. Get active schedule for current time/day
+    /// 3. Extract break-specific property based on current state
+    async fn get_break_property<F, T>(&self, extractor: F, default: T) -> T
+    where
+        F: FnOnce(&ScheduleSettings, &SchedulerEvent) -> T,
+    {
+        let config = self.app_handle.state::<SharedConfig>();
+        let config_guard = config.read().await;
+        let now_local = Utc::now().with_timezone(&Local);
+        get_active_schedule(&config_guard, now_local.time(), now_local.weekday())
+            .and_then(|schedule| {
+                self.get_current_break_info()
+                    .map(|info| extractor(schedule, &info.event))
+            })
+            .unwrap_or(default)
+    }
+
+    /// Get postpone duration based on current break type
+    async fn get_postpone_duration_s(&self) -> u32 {
+        self.get_break_property(
+            |schedule, event| match event {
+                SchedulerEvent::MiniBreak(_) => schedule.mini_breaks.base.postponed_s,
+                SchedulerEvent::LongBreak(_) => schedule.long_breaks.base.postponed_s,
+                SchedulerEvent::Attention(_) => {
+                    tracing::error!("Unexpected Attention event in BreakScheduler");
+                    300 // fallback
+                }
+            },
+            300, // default fallback
+        )
+        .await
     }
 
     /// Get maximum postpone count based on current break type
     async fn get_max_postpone_count(&self) -> u8 {
-        let config = self.app_handle.state::<SharedConfig>();
-        let config_guard = config.read().await;
-        let now_local = Utc::now().with_timezone(&Local);
-        let active_schedule =
-            get_active_schedule(&config_guard, now_local.time(), now_local.weekday());
-        active_schedule.map_or(2, |s| {
-            match &self.state {
-                BreakSchedulerState::WaitingForBreak(info)
-                | BreakSchedulerState::WaitingForNotification(info)
-                | BreakSchedulerState::InBreak(info) => match info.event {
-                    SchedulerEvent::MiniBreak(_) => s.mini_breaks.base.max_postpone_count,
-                    SchedulerEvent::LongBreak(_) => s.long_breaks.base.max_postpone_count,
-                    SchedulerEvent::Attention(_) => 0, // unreachable!(),
-                },
-                _ => s.mini_breaks.base.max_postpone_count, // fallback
-            }
-        })
+        self.get_break_property(
+            |schedule, event| match event {
+                SchedulerEvent::MiniBreak(_) => schedule.mini_breaks.base.max_postpone_count,
+                SchedulerEvent::LongBreak(_) => schedule.long_breaks.base.max_postpone_count,
+                SchedulerEvent::Attention(_) => {
+                    tracing::error!("Unexpected Attention event in BreakScheduler");
+                    0 // fallback
+                }
+            },
+            2, // default fallback
+        )
+        .await
     }
 
     /// Get notification time before break (in seconds)
     async fn get_notification_before_s(&self) -> u32 {
-        let config = self.app_handle.state::<SharedConfig>();
-        let config_guard = config.read().await;
-        let now_local = Utc::now().with_timezone(&Local);
-        let active_schedule =
-            get_active_schedule(&config_guard, now_local.time(), now_local.weekday());
-        active_schedule.map_or(0, |s| s.notification_before_s)
+        self.get_schedule_property(|schedule| schedule.notification_before_s, 0)
+            .await
     }
 
     /// Emit current status to frontend
@@ -354,7 +409,7 @@ where
             }
             BreakSchedulerState::WaitingForNotification(info)
             | BreakSchedulerState::WaitingForBreak(info) => {
-                self.emit_status(info);
+                self.emit_break_status(info);
             }
         }
     }
@@ -476,8 +531,6 @@ where
     async fn execute_break(&mut self, info: BreakInfo) -> anyhow::Result<()> {
         tracing::info!("Executing break: {}", info.event);
         let event = info.event;
-        #[cfg(not(test))]
-        let postpone_count = info.postpone_count;
 
         self.set_state(BreakSchedulerState::InBreak(info));
 
@@ -496,7 +549,9 @@ where
         // The test can still verify that we entered InBreak state via events
         #[cfg(not(test))]
         {
-            if let Err(e) = create_prompt_windows(&self.app_handle, event, postpone_count).await {
+            if let Err(e) =
+                create_prompt_windows(&self.app_handle, event, info.postpone_count).await
+            {
                 tracing::error!("Failed to create break windows: {e}");
 
                 // Clean up session state on error
@@ -531,8 +586,8 @@ where
         self.last_break_time = Some(Utc::now());
     }
 
-    /// Emit current status to frontend
-    fn emit_status(&self, break_info: &BreakInfo) {
+    /// Emit current break status to frontend
+    fn emit_break_status(&self, break_info: &BreakInfo) {
         let duration_to_wait = break_info.break_time - Utc::now();
         let status = SchedulerStatus {
             paused: false,
@@ -578,7 +633,48 @@ where
         self.emit_current_status();
     }
 
-    /// Handle Pause command
+    /// Apply a postponed break: calculate notification state and update scheduler state
+    ///
+    /// # Parameters
+    /// - `new_info`: The updated break info with new `break_time` and `postpone_count`
+    /// - `notification_before_s`: Notification time in seconds before break
+    ///
+    /// # Notes
+    /// This method does NOT update `last_break_time` because the break hasn't been
+    /// completed yet, only postponed.
+    async fn apply_postponed_break(&mut self, mut new_info: BreakInfo, notification_before_s: u32) {
+        let now = Utc::now();
+
+        // Calculate notification state
+        let (new_state, should_notify_now) = if notification_before_s > 0 {
+            let notif_time =
+                new_info.break_time - Duration::seconds(i64::from(notification_before_s));
+            if notif_time > now {
+                // Notification time in the future - schedule it
+                new_info.notification_time = Some(notif_time);
+                tracing::debug!("Notification will be sent at {notif_time}");
+                (BreakSchedulerState::WaitingForNotification(new_info), false)
+            } else {
+                // Notification time already passed - send immediately
+                tracing::debug!("Notification time already passed, sending immediately");
+                new_info.notification_time = None;
+                (BreakSchedulerState::WaitingForBreak(new_info), true)
+            }
+        } else {
+            // No notification configured
+            new_info.notification_time = None;
+            (BreakSchedulerState::WaitingForBreak(new_info), false)
+        };
+
+        if should_notify_now {
+            self.send_notification(&new_info.event, new_info.break_time)
+                .await;
+        }
+
+        self.set_state(new_state);
+    }
+
+    /// Handle `Pause` command
     fn handle_pause_command(&mut self, reason: PauseReason) {
         tracing::info!("Pausing BreakScheduler: {reason}");
 
@@ -593,7 +689,7 @@ where
         self.set_state(BreakSchedulerState::Paused(reason));
     }
 
-    /// Handle Resume command
+    /// Handle `Resume` command
     async fn handle_resume_command(&mut self) {
         tracing::info!("Resuming BreakScheduler");
         if let BreakSchedulerState::Paused(_) = self.state {
@@ -604,101 +700,63 @@ where
 
     /// Handle `PostponeBreak` command
     async fn handle_postpone_break_command(&mut self) {
-        // Check postpone limit first
-        let max_count = self.get_max_postpone_count().await;
-
-        let current_count = match &self.state {
-            BreakSchedulerState::WaitingForNotification(info)
-            | BreakSchedulerState::WaitingForBreak(info)
-            | BreakSchedulerState::InBreak(info) => info.postpone_count,
-            _ => {
-                tracing::warn!("Cannot postpone in current state: {}", self.state);
-                return;
-            }
+        // Get current break info or return early if not in postponable state
+        let Some(current_info) = self.get_current_break_info() else {
+            tracing::warn!("Cannot postpone in current state: {}", self.state);
+            return;
         };
 
-        // Check if limit reached
-        if current_count >= max_count {
+        // Check postpone limit
+        let max_count = self.get_max_postpone_count().await;
+        if current_info.postpone_count >= max_count {
             tracing::warn!("Max postpone count ({max_count}) reached, cannot postpone further");
-            // Emit event to notify frontend
             let _ = self.event_emitter.emit("postpone-limit-reached", ());
             return;
         }
 
+        // Get postpone parameters
         let postpone_s = self.get_postpone_duration_s().await;
         let postpone_duration = Duration::seconds(i64::from(postpone_s));
         let notification_before_s = self.get_notification_before_s().await;
 
-        match &self.state {
-            BreakSchedulerState::WaitingForNotification(info)
-            | BreakSchedulerState::WaitingForBreak(info) => {
-                // Scenario 1: Break not yet triggered - delay the scheduled break time
-                tracing::info!(
-                    "Postponing upcoming break (postpone_count: {})",
-                    info.postpone_count + 1
-                );
+        // Create updated break info
+        let mut new_info = current_info;
+        new_info.postpone_count += 1;
 
-                let mut new_info = *info;
-                new_info.postpone_count += 1;
-                new_info.break_time += postpone_duration;
+        let is_in_break = matches!(self.state, BreakSchedulerState::InBreak(_));
 
-                // Calculate new state and notification timing
-                let (new_state, should_notify_now) =
-                    calculate_postponed_notification_state(new_info, notification_before_s);
-
-                if should_notify_now {
-                    self.send_notification(&new_info.event, new_info.break_time)
-                        .await;
-                }
-
-                self.set_state(new_state);
-            }
-
-            BreakSchedulerState::InBreak(info) => {
-                // Scenario 2: Break already triggered - close window and reschedule
-                tracing::info!(
-                    "Postponing active break, will retry in {postpone_s}s (postpone_count: {})",
-                    info.postpone_count + 1
-                );
-
-                let mut new_info = *info;
-                new_info.postpone_count += 1;
-                let now = Utc::now();
-                new_info.break_time = now + postpone_duration;
-
-                // Close the current break window first
-                self.close_break_windows();
-
-                // Calculate new state and notification timing
-                let (new_state, should_notify_now) =
-                    calculate_postponed_notification_state(new_info, notification_before_s);
-
-                if should_notify_now {
-                    self.send_notification(&new_info.event, new_info.break_time)
-                        .await;
-                }
-
-                self.set_state(new_state);
-                // Do NOT update last break time. This break hasn't been completed, just postponed.
-            }
-
-            _ => unreachable!("Cannot postpone in {} state.", self.state),
+        if is_in_break {
+            // Scenario 2: Break already triggered - close window and reschedule from now
+            tracing::info!(
+                "Postponing active break, will retry in {postpone_s}s (postpone_count: {})",
+                new_info.postpone_count
+            );
+            new_info.break_time = Utc::now() + postpone_duration;
+            self.close_break_windows();
+        } else {
+            // Scenario 1: Break not yet triggered - delay the scheduled break time
+            tracing::info!(
+                "Postponing upcoming break (postpone_count: {})",
+                new_info.postpone_count
+            );
+            new_info.break_time += postpone_duration;
         }
+
+        self.apply_postponed_break(new_info, notification_before_s)
+            .await;
     }
 
     /// Handle `SkipBreak` command
     async fn handle_skip_break_command(&mut self) {
         tracing::info!("Skipping current break");
-        match &self.state {
-            BreakSchedulerState::WaitingForNotification(info)
-            | BreakSchedulerState::WaitingForBreak(info)
-            | BreakSchedulerState::InBreak(info) => {
-                self.update_state_after_break(info.event);
-            }
-            _ => {
-                self.update_last_break_time();
-            }
+
+        if let Some(info) = self.get_current_break_info() {
+            self.update_state_after_break(info.event);
+        } else {
+            // Not in a break state, just update last break time
+            self.update_last_break_time();
         }
+
         self.close_break_windows();
         self.transition_to_calculating().await;
     }
@@ -770,42 +828,6 @@ where
     fn handle_request_break_status_command(&mut self) {
         tracing::debug!("Status request received");
         self.emit_current_status();
-    }
-}
-
-/// Calculate notification state after postponing a break
-///
-/// This helper determines the next state and whether to send notification immediately
-/// based on the postponed break time and notification settings.
-///
-/// Returns: (`new_state`, `should_send_notification_immediately`)
-fn calculate_postponed_notification_state(
-    mut break_info: BreakInfo,
-    notification_before_s: u32,
-) -> (BreakSchedulerState, bool) {
-    let now = Utc::now();
-
-    if notification_before_s > 0 {
-        let notif_time =
-            break_info.break_time - Duration::seconds(i64::from(notification_before_s));
-        if notif_time > now {
-            // Notification time in the future - schedule it
-            break_info.notification_time = Some(notif_time);
-            tracing::debug!("Notification will be sent at {notif_time}");
-            (
-                BreakSchedulerState::WaitingForNotification(break_info),
-                false,
-            )
-        } else {
-            // Notification time already passed - send immediately
-            tracing::debug!("Notification time already passed, sending immediately");
-            break_info.notification_time = None;
-            (BreakSchedulerState::WaitingForBreak(break_info), true)
-        }
-    } else {
-        // No notification configured
-        break_info.notification_time = None;
-        (BreakSchedulerState::WaitingForBreak(break_info), false)
     }
 }
 
