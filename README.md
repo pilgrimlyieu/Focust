@@ -142,7 +142,7 @@ Built with performance in mind, Focust offers exceptional resource efficiency:
 ### Download Pre-built Binaries
 
 Download the [latest release for your platform](https://github.com/pilgrimlyieu/Focust/releases/latest):
-- **Windows**: `setup.exe` installer (x86_64)
+- **Windows**: `installer.exe` installer or `portable.zip` (x86_64)
 - **macOS**: `.dmg` installer (Intel & Apple Silicon)
 - **Linux**: `.AppImage`, `.deb`, or `.rpm` packages (x86_64)
 

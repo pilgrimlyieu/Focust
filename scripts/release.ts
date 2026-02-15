@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Release automation script
+ * Release automation script for Tauri projects
  *
  * Usage:
  *   bun scripts/release.ts 1.2.3      # Specify exact version
@@ -8,68 +8,37 @@
  *   bun scripts/release.ts --minor    # Bump minor: 0.2.11 -> 0.3.0
  *   bun scripts/release.ts --major    # Bump major: 0.2.11 -> 1.0.0
  *   bun scripts/release.ts --no-push  # Skip pushing to remote
+ *   bun scripts/release.ts --all      # Stage all changes (not just release files)
  */
 
-import * as path from "node:path";
-import { confirm, execOrThrow, exitWithError, file, logger } from "./lib/utils";
+import { GIT, MARKERS, PATHS, RELEASE_STAGE_FILES } from "./lib/constants";
+import {
+  anchor,
+  type BumpType,
+  calculateNewVersion,
+  confirm,
+  execOrThrow,
+  exitWithError,
+  file,
+  getCurrentVersion,
+  getDateString,
+  getProjectName,
+  isValidVersion,
+  logger,
+  projectPath,
+  renderTemplate,
+  updateJsonVersion,
+} from "./lib/utils";
 
 // ============================================================================
 // Types
 // ============================================================================
 
-interface PackageJson {
-  version: string;
-  [key: string]: unknown;
-}
-
-type BumpType = "major" | "minor" | "patch";
-
 interface Args {
   version?: string;
   bumpType?: BumpType;
   noPush?: boolean;
-}
-
-// ============================================================================
-// Version Management
-// ============================================================================
-
-function getCurrentVersion(): string {
-  const packageJsonPath = path.join(process.cwd(), "package.json");
-  const packageJson = JSON.parse(file.read(packageJsonPath)) as PackageJson;
-  return packageJson.version;
-}
-
-function calculateNewVersion(current: string, bumpType: BumpType): string {
-  const parts = current.split(".").map(Number);
-  const [major, minor, patch] = parts;
-
-  if (parts.length !== 3 || parts.some(Number.isNaN)) {
-    throw new Error(`Invalid version format: ${current}`);
-  }
-
-  switch (bumpType) {
-    case "major":
-      return `${major + 1}.0.0`;
-    case "minor":
-      return `${major}.${minor + 1}.0`;
-    case "patch":
-      return `${major}.${minor}.${patch + 1}`;
-  }
-}
-
-function isValidVersion(version: string): boolean {
-  return /^\d+\.\d+\.\d+$/.test(version);
-}
-
-function updateJsonVersion(filePath: string, newVersion: string): void {
-  const content = file.read(filePath);
-  const updated = content.replace(
-    /("version"\s*:\s*")([^"]+)(")/,
-    `$1${newVersion}$3`,
-  );
-  file.write(filePath, updated);
-  logger.success(`Updated ${filePath}`);
+  stageAll?: boolean;
 }
 
 // ============================================================================
@@ -77,48 +46,42 @@ function updateJsonVersion(filePath: string, newVersion: string): void {
 // ============================================================================
 
 function extractReleaseNotes(): string {
-  const releaseNotePath = path.join(process.cwd(), "RELEASE_NOTE.md");
+  const releaseNotePath = projectPath(PATHS.RELEASE_NOTE);
 
   if (!file.exists(releaseNotePath)) {
-    exitWithError("RELEASE_NOTE.md not found. Please create it first.");
+    exitWithError(`${PATHS.RELEASE_NOTE} not found. Please create it first.`);
   }
 
   const content = file.read(releaseNotePath);
 
-  // Extract content after separator comment
-  const separatorIndex = content.indexOf(
-    "<!-- Release notes content starts here -->",
-  );
-
-  if (separatorIndex !== -1) {
-    const afterSeparator = content.slice(
-      separatorIndex + "<!-- Release notes content starts here -->".length,
+  if (!anchor.exists(content, MARKERS.RELEASE_NOTE_SEPARATOR)) {
+    logger.warning(
+      `No separator comment found in ${PATHS.RELEASE_NOTE}, using all content`,
     );
-    return afterSeparator.trim();
+    return content.trim();
   }
 
-  logger.warning(
-    "No separator comment found in RELEASE_NOTE.md, using all content",
-  );
-  return content.trim();
+  return anchor.getAfter(content, MARKERS.RELEASE_NOTE_SEPARATOR);
 }
 
 function updateChangelog(newVersion: string, releaseNotes: string): void {
-  const now = new Date();
-  const date = `${now.getFullYear()}.${now.getMonth() + 1}.${now.getDate()}`;
-
-  const changelogPath = path.join(process.cwd(), "CHANGELOG.md");
+  const date = getDateString();
+  const changelogPath = projectPath(PATHS.CHANGELOG);
   const content = file.read(changelogPath);
 
   // Convert ## to ### for changelog format
   const changelogEntry = releaseNotes.replace(/^## /gm, "### ");
 
-  // Insert new version after [Unreleased]
+  // Insert new version after changelog insert marker
   const newEntry = `\n\n## ${newVersion} (${date})\n\n${changelogEntry}`;
-  const updated = content.replace(/(\[Unreleased\])/, `$1${newEntry}`);
+  const updated = anchor.insertAfter(
+    content,
+    MARKERS.CHANGELOG_INSERT,
+    newEntry,
+  );
 
   file.write(changelogPath, updated);
-  logger.success("Updated CHANGELOG.md");
+  logger.success(`Updated ${PATHS.CHANGELOG}`);
 }
 
 // ============================================================================
@@ -129,25 +92,29 @@ function git(...args: string[]): void {
   execOrThrow("git", args);
 }
 
-function commitAndTag(version: string): void {
-  logger.info("🔍 Verifying Staged Changes (Version files only):");
-  git("diff", "-U0", "package.json", "src-tauri/tauri.conf.json");
+function commitAndTag(version: string, stageAll: boolean): void {
+  const tag = renderTemplate(GIT.TAG_TEMPLATE, version);
+  const commitMsg = renderTemplate(GIT.COMMIT_MESSAGE_TEMPLATE, version);
+
+  git("diff", "-U0", PATHS.PACKAGE_JSON, PATHS.TAURI_CONFIG);
   confirm("Proceed with commit?") || exitWithError("Commit cancelled by user");
-  git(
-    "add",
-    "package.json",
-    "src-tauri/tauri.conf.json",
-    "CHANGELOG.md",
-    "RELEASE_NOTE.md",
-  );
-  git("commit", "-m", `"chore: bump version to v${version}"`);
-  git("tag", `v${version}`);
-  logger.success(`Created commit and tag v${version}`);
+  if (stageAll) {
+    logger.info("🔍 Staging all changes");
+    git("add", "-A");
+  } else {
+    logger.info("🔍 Staging specific changes");
+    git("add", ...RELEASE_STAGE_FILES);
+  }
+
+  git("commit", "-m", `"${commitMsg}"`);
+  git("tag", tag);
+  logger.success(`Created commit and tag ${tag}`);
 }
 
 function pushToRemote(version: string): void {
-  git("push", "origin", "main");
-  git("push", "origin", "tag", `v${version}`);
+  const tag = renderTemplate(GIT.TAG_TEMPLATE, version);
+  git("push", "origin", GIT.DEFAULT_BRANCH);
+  git("push", "origin", "tag", tag);
   logger.success("Pushed changes and tag to remote");
 }
 
@@ -173,8 +140,12 @@ function parseArgs(): Args {
       case "--no-push":
         result.noPush = true;
         break;
+      case "--all":
+      case "-a":
+        result.stageAll = true;
+        break;
       default:
-        if (!arg.startsWith("--")) {
+        if (!arg.startsWith("--") && !arg.startsWith("-")) {
           result.version = arg;
         }
         break;
@@ -184,13 +155,30 @@ function parseArgs(): Args {
   return result;
 }
 
+function printUsage(): void {
+  logger.multiline([
+    "Usage: bun scripts/release.ts <version|--patch|--minor|--major> [options]",
+    "",
+    "Version:",
+    "  <X.Y.Z>      Specify exact version",
+    "  --patch      Bump patch version (0.2.11 -> 0.2.12)",
+    "  --minor      Bump minor version (0.2.11 -> 0.3.0)",
+    "  --major      Bump major version (0.2.11 -> 1.0.0)",
+    "",
+    "Options:",
+    "  --no-push    Skip pushing to remote",
+    "  --all, -a    Stage all changes (not just release files)",
+  ]);
+}
+
 // ============================================================================
 // Main Logic
 // ============================================================================
 
 async function main(): Promise<void> {
   try {
-    logger.banner("🚀 Focust Release Automation");
+    const projectName = getProjectName();
+    logger.banner(`🚀 Release Automation - ${projectName}`);
     logger.spacer();
 
     // Parse arguments and determine version
@@ -208,19 +196,21 @@ async function main(): Promise<void> {
     } else if (args.bumpType) {
       newVersion = calculateNewVersion(currentVersion, args.bumpType);
     } else {
-      exitWithError(
-        `Usage: bun scripts/release.ts <version|--patch|--minor|--major>`,
-      );
+      printUsage();
+      process.exit(1);
     }
 
     logger.multiline([
       `Current version: ${currentVersion}`,
       `New version:     ${newVersion}`,
+      args.stageAll
+        ? "Stage mode:      All changes"
+        : "Stage mode:      Release files only",
     ]);
     logger.spacer();
 
-    // Confirm with user
     if (!confirm(`Continue with release v${newVersion}?`)) {
+      // Confirm with user
       logger.warning("Release cancelled");
       process.exit(0);
     }
@@ -229,22 +219,23 @@ async function main(): Promise<void> {
 
     // Step 1: Update version numbers
     logger.step(1, "Updating version numbers");
-    updateJsonVersion("package.json", newVersion);
-    updateJsonVersion("src-tauri/tauri.conf.json", newVersion);
+    updateJsonVersion(PATHS.PACKAGE_JSON, newVersion);
+    updateJsonVersion(PATHS.TAURI_CONFIG, newVersion);
     logger.spacer();
 
     // Step 2: Update CHANGELOG
-    logger.step(2, "Updating CHANGELOG.md");
+    logger.step(2, `Updating ${PATHS.CHANGELOG}`);
     const releaseNotes = extractReleaseNotes();
     updateChangelog(newVersion, releaseNotes);
     logger.spacer();
 
     // Step 3: Commit and tag
     logger.step(3, "Creating commit and tag");
-    commitAndTag(newVersion);
+    commitAndTag(newVersion, args.stageAll ?? false);
     logger.spacer();
 
     // Step 4: Push to remote
+    const tag = renderTemplate(GIT.TAG_TEMPLATE, newVersion);
     if (!args.noPush) {
       if (confirm("Push commit and tag to remote?")) {
         logger.step(4, "Pushing to remote");
@@ -252,13 +243,13 @@ async function main(): Promise<void> {
         logger.spacer();
       } else {
         logger.warning(
-          `Push skipped. Run manually:\n  git push origin main && git push origin tag v${newVersion}`,
+          `Push skipped. Run manually:\n  git push origin ${GIT.DEFAULT_BRANCH} && git push origin tag ${tag}`,
         );
         logger.spacer();
       }
     } else {
       logger.warning(
-        `Push skipped (--no-push). Run manually:\n  git push origin main && git push origin tag v${newVersion}`,
+        `Push skipped (--no-push). Run manually:\n  git push origin ${GIT.DEFAULT_BRANCH} && git push origin tag ${tag}`,
       );
       logger.spacer();
     }

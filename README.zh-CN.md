@@ -142,7 +142,7 @@ Focust 以性能为设计理念，提供卓越的资源效率：
 ### 下载预构建二进制文件
 
 请[为您的平台下载最新版本](https://github.com/pilgrimlyieu/Focust/releases/latest)：
-- **Windows**：`setup.exe` 安装程序（x86_64）
+- **Windows**：`installer.exe` 安装程序或 `portable.zip`（x86_64）
 - **macOS**：`.dmg` 安装程序（Intel 和 Apple Silicon）
 - **Linux**：`.AppImage`、`.deb` 或 `.rpm` 软件包（x86_64）
 

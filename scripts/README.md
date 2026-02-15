@@ -1,69 +1,54 @@
-# Release Scripts
+# Scripts
 
-Automated release scripts for Focust version management.
+Reusable automation scripts for Tauri projects.
 
-## Quick Start
+## Quick Reference
+
+| Script                     | Purpose                                           |
+| -------------------------- | ------------------------------------------------- |
+| `release.ts`               | Version bumping, changelog update, git tag & push |
+| `setup-updater-signing.ts` | Code signing key generation and configuration     |
+
+## Usage
+
+### Release
 
 ```bash
-# Recommended: Use Just commands
-just release-patch    # 0.2.11 -> 0.2.12
-just release-minor    # 0.2.11 -> 0.3.0
-just release-major    # 0.2.11 -> 1.0.0
-just release 1.2.3    # Specify exact version
+# Via Just (recommended)
+just release-patch      # Patch bump: 0.2.1 -> 0.2.2
+just release-minor      # Minor bump: 0.2.1 -> 0.3.0
+just release-major      # Major bump: 0.2.1 -> 1.0.0
+just release 1.2.3      # Exact version
+
+# Direct (Bun)
+bun scripts/release.ts --patch
+bun scripts/release.ts 1.2.3 --no-push
+bun scripts/release.ts --patch --all   # Stage all changes
 ```
 
-## Scripts
+### Code Signing Setup
 
-- `release.ts` - TypeScript script (cross-platform, runs with Bun/Node.js)
-- `setup-updater-signing.ts` - TypeScript script to setup code signing for updater
+```bash
+bun scripts/setup-updater-signing.ts
+```
 
 ## Requirements
 
-1. Bun (recommended) or Node.js 18+
-2. Write release notes in `RELEASE_NOTE.md` before running
-3. Be on `main` branch with clean working directory
-4. Have Git configured properly
+- Bun (recommended) or Node.js 18+
+- Git configured
+- For release: `RELEASE_NOTE.md` with content
 
-## What It Does
+## Options
 
-1. Updates version in `package.json` and `tauri.conf.json`
-2. Extracts content from `RELEASE_NOTE.md` and adds to `CHANGELOG.md`
-3. Commits changes: `chore: bump version to vX.Y.Z`
-4. Creates Git tag: `vX.Y.Z`
-5. Pushes to remote (with confirmation)
+### release.ts
 
-## Usage Examples
+| Option                          | Description                                |
+| ------------------------------- | ------------------------------------------ |
+| `--patch`, `--minor`, `--major` | Version bump type                          |
+| `<X.Y.Z>`                       | Exact version                              |
+| `--no-push`                     | Skip push to remote                        |
+| `--all`, `-a`                   | Stage all changes (not just release files) |
 
-### Via Just (Recommended)
+## See Also
 
-```bash
-# Bump versions
-just release-patch
-just release-minor
-just release-major
-
-# Specify version
-just release 1.2.3
-```
-
-### Direct Execution
-
-**Using Bun (recommended):**
-```bash
-bun scripts/release.ts --patch
-bun scripts/release.ts --minor
-bun scripts/release.ts --major
-bun scripts/release.ts 1.2.3
-bun scripts/release.ts 1.2.3 --no-push  # Skip push
-```
-
-**Using Node.js:**
-```bash
-node --loader ts-node/esm scripts/release.ts --patch
-# Or with tsx:
-npx tsx scripts/release.ts --patch
-```
-
-## Full Documentation
-
-See [docs/RELEASE_WORKFLOW.md](../docs/RELEASE_WORKFLOW.md) for complete workflow documentation.
+- [lib/README.md](lib/README.md) - Shared utilities documentation

@@ -100,9 +100,9 @@ Use the release scripts for streamlined version management:
 2. **Run release script**:
    ```bash
    # Via Just (recommended)
-   just release-patch    # Bump patch version (0.2.11 -> 0.2.12)
-   just release-minor    # Bump minor version (0.2.11 -> 0.3.0)
-   just release-major    # Bump major version (0.2.11 -> 1.0.0)
+   just release-patch    # Bump patch version (0.2.1 -> 0.2.2)
+   just release-minor    # Bump minor version (0.2.1 -> 0.3.0)
+   just release-major    # Bump major version (0.2.1 -> 1.0.0)
    just release 1.2.3    # Specify exact version
    
    # Direct execution with Bun (cross-platform)
