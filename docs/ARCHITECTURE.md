@@ -236,11 +236,11 @@ Layer 1: Unit (SharedState + Config + Core types)
 
 ## Platform Support
 
-| Platform | Status         | Notes                                   |
-| -------- | -------------- | --------------------------------------- |
-| Windows  | ✅ Fully tested | Primary development platform            |
-| Linux    | ✅ Designed     | Event-driven DND (D-Bus), tested in CI  |
-| macOS    | ⚠️ Partial      | Audio disabled (cpal Send), DND polling |
+| Platform | Status         | Notes                                  |
+| -------- | -------------- | -------------------------------------- |
+| Windows  | ✅ Fully tested | Primary development platform           |
+| Linux    | ✅ Designed     | Event-driven DND (D-Bus), tested in CI |
+| macOS    | ⚠️ Partial      | DND polling                            |
 
 **Platform-Specific Code**: `#[cfg(target_os = "...")]` in `platform/dnd/`
 

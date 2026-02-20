@@ -132,7 +132,7 @@ Focust 以性能为设计理念，提供卓越的资源效率：
 | 平台        | 最低版本               | 推荐版本                         | 备注                                   |
 | ----------- | ---------------------- | -------------------------------- | -------------------------------------- |
 | **Windows** | Windows 7              | Windows 10 (1803+) 或 Windows 11 | 需要 WebView2（Windows 10 1803+ 预装） |
-| **macOS**   | macOS 10.15 (Catalina) | macOS 11.0+ (Big Sur)            | 由于后端限制，音频暂时禁用             |
+| **macOS**   | macOS 10.15 (Catalina) | macOS 11.0+ (Big Sur)            | -                                      |
 | **Linux**   | 大多数发行版           | Ubuntu 20.04+、Fedora 35+        | 需要 webkit2gtk-4.1 及相关库           |
 
 ---

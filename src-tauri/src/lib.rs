@@ -50,8 +50,8 @@ pub fn run() {
             // When a second instance is launched, focus the existing settings window
             tracing::info!("Single instance: attempting to focus existing window");
 
-            app.get_webview_window("settings")
-                .map_or_else(|| {
+            app.get_webview_window("settings").map_or_else(
+                || {
                     tracing::warn!("Settings window not found, creating new one");
                     platform::create_settings_window(app).unwrap_or_else(|e| {
                         tracing::error!("Failed to create settings window: {e}");
@@ -67,7 +67,8 @@ pub fn run() {
                     window.unminimize().unwrap_or_else(|e| {
                         tracing::error!("Failed to unminimize settings window: {e}");
                     });
-                });
+                },
+            );
         }))
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
@@ -80,8 +81,8 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_process::init())
         .setup(|app| {
-            let log_dir = utils::get_app_log_dir(app.handle())
-                .expect("Failed to get app log directory");
+            let log_dir =
+                utils::get_app_log_dir(app.handle()).expect("Failed to get app log directory");
 
             let handle = app.handle().clone();
 
@@ -94,36 +95,19 @@ pub fn run() {
                     eprintln!("Failed to initialize logging: {e}");
                 });
 
-                tracing::info!("Logging initialized with level: {}", app_config.advanced.log_level);
+                tracing::info!(
+                    "Logging initialized with level: {}",
+                    app_config.advanced.log_level
+                );
 
-                // Audio initialization (platform-dependent)
-                //
-                // macOS: Audio temporarily disabled due to cpal Send trait issue
-                // - Fixed in cpal PR https://github.com/RustAudio/cpal/pull/1021 (merged, awaiting release in 0.17.0+)
-                // - See src/core/audio.rs for restoration plan
-                // Windows/Linux: Full audio support
-                #[cfg(not(target_os = "macos"))]
-                {
-                    match core::audio::init_audio_player() {
-                        Ok(player_state) => {
-                            handle.manage(player_state);
-                            tracing::info!("Audio player initialized and managed by Tauri");
-                        }
-                        Err(e) => {
-                            tracing::error!("Failed to initialize audio player: {e}");
-                        }
+                // Initialize audio player
+                match core::audio::init_audio_player() {
+                    Ok(player_state) => {
+                        handle.manage(player_state);
+                        tracing::info!("Audio player initialized and managed by Tauri");
                     }
-                }
-
-                #[cfg(target_os = "macos")]
-                {
-                    match core::audio::init_audio_player() {
-                        Ok(()) => {
-                            tracing::info!("Audio player initialization skipped on macOS (awaiting cpal 0.17.0+)");
-                        }
-                        Err(e) => {
-                            tracing::error!("Failed to initialize audio player: {e}");
-                        }
+                    Err(e) => {
+                        tracing::error!("Failed to initialize audio player: {e}");
                     }
                 }
 
@@ -146,9 +130,11 @@ pub fn run() {
                 });
 
                 // Register global shortcuts (after config is managed)
-                platform::register_shortcuts(&handle).await.unwrap_or_else(|e| {
-                    tracing::error!("Failed to register shortcuts: {e}");
-                });
+                platform::register_shortcuts(&handle)
+                    .await
+                    .unwrap_or_else(|e| {
+                        tracing::error!("Failed to register shortcuts: {e}");
+                    });
 
                 // Load suggestions
                 let suggestions_config = core::suggestions::load_suggestions(&handle).await;
@@ -165,10 +151,11 @@ pub fn run() {
                 let mut monitors: Vec<Box<dyn monitors::Monitor>> = vec![];
 
                 // Always add idle monitor (it will self-disable if detection fails)
-                tracing::info!("Idle monitoring enabled (threshold: {}s)", app_config.inactive_s);
-                monitors.push(Box::new(monitors::IdleMonitor::new(
-                    app_config.inactive_s,
-                )));
+                tracing::info!(
+                    "Idle monitoring enabled (threshold: {}s)",
+                    app_config.inactive_s
+                );
+                monitors.push(Box::new(monitors::IdleMonitor::new(app_config.inactive_s)));
 
                 // Add DND monitor if enabled
                 if app_config.monitor_dnd {

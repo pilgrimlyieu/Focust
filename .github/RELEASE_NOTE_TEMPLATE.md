@@ -5,10 +5,6 @@
 > - **macOS**: `~/Library/Logs/com.fesmoph.focust`
 > - **Linux**: `~/.local/share/com.fesmoph.focust/logs`
 
-> [!WARNING]
->
-> Audio feature doesn't work in macOS. This is a known upstream issue and will be fixed if its new version is released.
-
 <!-- Release notes content starts here -->
 
 ## 🎉 Features

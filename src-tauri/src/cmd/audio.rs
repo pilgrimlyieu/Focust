@@ -2,26 +2,16 @@
 //!
 //! This module provides commands to play and stop audio files, including
 //! both custom audio files and built-in sound resources.
-//!
-//! # Platform Support
-//!
-//! **Note**: Audio is temporarily disabled on macOS due to cpal Send trait limitations.
-//! See `src/core/audio.rs` for detailed explanation and restoration plan.
-//! Expected to be resolved in cpal 0.17.0+.
 
 use anyhow::{Context, anyhow};
-#[cfg(not(target_os = "macos"))]
 use tauri::State;
 use tauri::path::BaseDirectory;
 use tauri::{AppHandle, Manager};
 
 use crate::core::audio;
-#[cfg(not(target_os = "macos"))]
 use crate::core::audio::AudioPlayerState;
-#[cfg(target_os = "macos")]
-use crate::tauri_error;
 
-/// Plays an audio file at the specified path with the given volume (non-macOS).
+/// Plays an audio file at the specified path with the given volume.
 ///
 /// # Errors
 ///
@@ -29,7 +19,6 @@ use crate::tauri_error;
 /// - The audio file cannot be loaded or decoded
 /// - The audio device fails to initialize
 /// - The playback fails to start
-#[cfg(not(target_os = "macos"))]
 #[tauri::command]
 pub async fn play_audio(
     player: State<'_, AudioPlayerState>,
@@ -49,19 +38,7 @@ pub async fn play_audio(
         })
 }
 
-/// Plays an audio file at the specified path with the given volume (macOS stub).
-///
-/// # Errors
-///
-/// Always returns an error indicating that audio playback is not supported on macOS
-/// due to `CoreAudio` backend limitations.
-#[cfg(target_os = "macos")]
-#[tauri::command]
-pub async fn play_audio(path: String, volume: f32) -> Result<(), String> {
-    tauri_error!(audio::play_audio(&path, volume), "Failed to play audio")
-}
-
-/// Plays a built-in audio resource by name with the given volume (non-macOS).
+/// Plays a built-in audio resource by name with the given volume.
 ///
 /// The resource is resolved from the `assets/sounds/` directory.
 ///
@@ -73,7 +50,6 @@ pub async fn play_audio(path: String, volume: f32) -> Result<(), String> {
 /// - The audio file cannot be loaded or decoded
 /// - The audio device fails to initialize
 /// - The playback fails to start
-#[cfg(not(target_os = "macos"))]
 #[tauri::command]
 pub async fn play_builtin_audio(
     app: AppHandle,
@@ -98,34 +74,11 @@ pub async fn play_builtin_audio(
         })
 }
 
-/// Plays a built-in audio resource by name with the given volume (macOS stub).
-///
-/// The resource is resolved from the `assets/sounds/` directory.
-///
-/// # Errors
-///
-/// Always returns an error indicating that audio playback is not supported on macOS
-/// due to `CoreAudio` backend limitations.
-#[cfg(target_os = "macos")]
-#[tauri::command]
-pub async fn play_builtin_audio(
-    app: AppHandle,
-    resource_name: String,
-    volume: f32,
-) -> Result<(), String> {
-    let resource_path = resolve_builtin_audio_path(&app, &resource_name)?;
-    tauri_error!(
-        audio::play_audio(&resource_path, volume),
-        "Failed to play builtin audio"
-    )
-}
-
-/// Stops the currently playing audio (non-macOS).
+/// Stops the currently playing audio.
 ///
 /// # Errors
 ///
 /// Returns an error if the audio player fails to stop playback.
-#[cfg(not(target_os = "macos"))]
 #[tauri::command]
 pub async fn stop_audio(player: State<'_, AudioPlayerState>) -> Result<(), String> {
     tracing::debug!("stop_audio command called");
@@ -138,18 +91,6 @@ pub async fn stop_audio(player: State<'_, AudioPlayerState>) -> Result<(), Strin
         .inspect(|_result| {
             tracing::debug!("stop_audio command completed successfully");
         })
-}
-
-/// Stops the currently playing audio (macOS stub).
-///
-/// # Errors
-///
-/// Always returns an error indicating that audio playback is not supported on macOS
-/// due to `CoreAudio` backend limitations.
-#[cfg(target_os = "macos")]
-#[tauri::command]
-pub async fn stop_audio() -> Result<(), String> {
-    tauri_error!(audio::stop_audio(), "Failed to stop audio")
 }
 
 /// Resolves the absolute path of a built-in audio resource.

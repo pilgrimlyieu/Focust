@@ -132,7 +132,7 @@ Built with performance in mind, Focust offers exceptional resource efficiency:
 | Platform    | Minimum Version        | Recommended                      | Notes                                                 |
 | ----------- | ---------------------- | -------------------------------- | ----------------------------------------------------- |
 | **Windows** | Windows 7              | Windows 10 (1803+) or Windows 11 | Requires WebView2 (pre-installed on Windows 10 1803+) |
-| **macOS**   | macOS 10.15 (Catalina) | macOS 11.0+ (Big Sur)            | Audio temporarily disabled due to backend limitations |
+| **macOS**   | macOS 10.15 (Catalina) | macOS 11.0+ (Big Sur)            | -                                                     |
 | **Linux**   | Most distributions     | Ubuntu 20.04+, Fedora 35+        | Requires webkit2gtk-4.1 and related libraries         |
 
 ---

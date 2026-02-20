@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::{self, BufReader, ErrorKind};
 use std::path::Path;
 
-use rodio::{Decoder, OutputStream, OutputStreamBuilder, Sink};
+use rodio::{Decoder, DeviceSinkBuilder, MixerDeviceSink, Player};
 
 #[derive(Debug, thiserror::Error)]
 pub enum PlaybackError {
@@ -33,10 +33,10 @@ pub enum PlaybackError {
 
 /// Audio player using rodio
 pub struct AudioPlayer {
-    /// Output stream (must be kept alive)
-    _stream: OutputStream,
-    /// Current sink for audio playback
-    sink: Sink,
+    /// Device sink (must be kept alive)
+    _sink: MixerDeviceSink,
+    /// Current player for audio playback
+    player: Player,
     /// Current volume (0.0 to 1.0)
     current_volume: f32,
 }
@@ -48,18 +48,18 @@ impl AudioPlayer {
     ///
     /// Returns an error if initializing the default output stream fails.
     pub fn new() -> Result<Self, PlaybackError> {
-        // Initialize output stream using rodio 0.21 API
-        let stream_handle = OutputStreamBuilder::open_default_stream()
+        // Initialize device sink using rodio 0.22 API
+        let device_sink = DeviceSinkBuilder::open_default_sink()
             .map_err(|e| PlaybackError::OutputStreamError(e.to_string()))?;
 
-        // Create a sink connected to the mixer
-        let sink = Sink::connect_new(stream_handle.mixer());
+        // Create a player connected to the mixer
+        let player = Player::connect_new(device_sink.mixer());
 
         tracing::info!("Audio player initialized successfully");
 
         Ok(Self {
-            _stream: stream_handle,
-            sink,
+            _sink: device_sink,
+            player,
             current_volume: 0.6,
         })
     }
@@ -88,7 +88,7 @@ impl AudioPlayer {
 
         // Stop any currently playing audio before starting new playback
         // This ensures clean state and prevents resource conflicts
-        if !self.sink.empty() {
+        if !self.player.empty() {
             tracing::debug!("Stopping current audio before playing new file");
             self.stop();
         }
@@ -109,10 +109,10 @@ impl AudioPlayer {
         })?;
 
         // Set volume and append source
-        self.sink.set_volume(volume);
-        self.sink.append(source);
+        self.player.set_volume(volume);
+        self.player.append(source);
 
-        // Sink plays automatically after appending
+        // Player plays automatically after appending
         self.current_volume = volume;
 
         tracing::debug!("Audio playback started: {path} at volume {volume}");
@@ -121,25 +121,25 @@ impl AudioPlayer {
 
     /// Stop the currently playing audio
     pub fn stop(&mut self) {
-        self.sink.stop();
+        self.player.stop();
         tracing::debug!("Audio playback stopped");
     }
 
     /// Pause the currently playing audio
     pub fn pause(&mut self) {
-        self.sink.pause();
+        self.player.pause();
         tracing::debug!("Audio playback paused");
     }
 
     /// Resume the paused audio
     pub fn resume(&mut self) {
-        self.sink.play();
+        self.player.play();
         tracing::debug!("Audio playback resumed");
     }
 
     /// Check if audio is currently playing
     pub fn is_playing(&self) -> bool {
-        !self.sink.is_paused() && !self.sink.empty()
+        !self.player.is_paused() && !self.player.empty()
     }
 
     /// Get current volume
@@ -158,7 +158,7 @@ impl AudioPlayer {
         }
 
         self.current_volume = volume;
-        self.sink.set_volume(volume);
+        self.player.set_volume(volume);
         tracing::debug!("Volume set to {volume}");
 
         Ok(())
