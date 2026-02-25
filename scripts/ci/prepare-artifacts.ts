@@ -101,7 +101,7 @@ function findFiles(dir: string, ext: string): string[] {
     if (entry.isFile() && entry.name.endsWith(ext)) {
       results.push(fullPath);
     }
-    // Search into immediate subdirectories for nested bundlesSearch one level deep for nested bundles
+    // Search one level into subdirectories for nested bundles
     if (entry.isDirectory()) {
       const nested = fs.readdirSync(fullPath, { withFileTypes: true });
       for (const nEntry of nested) {
@@ -166,9 +166,7 @@ function prepareWindows(version: string, target: string, outDir: string): void {
 
   // --- NSIS installer ---
   const nsisDir = path.join(base, BUNDLE_PATHS.windows.nsis);
-  const installers = findFiles(nsisDir, ".exe").filter(
-    (f) => !f.endsWith(".exe.sig"),
-  );
+  const installers = findFiles(nsisDir, ".exe");
 
   if (installers.length > 0) {
     const destName = artifactName(version, "windows", "installer.exe");
@@ -225,9 +223,7 @@ function prepareLinux(version: string, target: string, outDir: string): void {
 
   // AppImage
   const appImageDir = path.join(base, BUNDLE_PATHS.linux.appimage);
-  const appImages = findFiles(appImageDir, ".AppImage").filter(
-    (f) => !f.endsWith(".sig"),
-  );
+  const appImages = findFiles(appImageDir, ".AppImage");
   if (appImages.length > 0) {
     const destName = artifactName(version, "linux", "amd64.AppImage");
     copyWithSignature(appImages[0], path.join(outDir, destName));
@@ -266,9 +262,7 @@ function prepareMacos(version: string, target: string, outDir: string): void {
 
   // App tarball (used by updater)
   const macosDir = path.join(base, BUNDLE_PATHS.macos.macos);
-  const tarballs = findFiles(macosDir, ".app.tar.gz").filter(
-    (f) => !f.endsWith(".sig"),
-  );
+  const tarballs = findFiles(macosDir, ".app.tar.gz");
   if (tarballs.length > 0) {
     const destName = artifactName(version, "macos", "universal.app.tar.gz");
     copyWithSignature(tarballs[0], path.join(outDir, destName));
