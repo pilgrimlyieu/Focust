@@ -81,6 +81,9 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_process::init())
         .setup(|app| {
+            #[cfg(target_os = "macos")]
+            app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+
             let log_dir =
                 utils::get_app_log_dir(app.handle()).expect("Failed to get app log directory");
 
