@@ -151,8 +151,7 @@ function detectPlatforms(
 
   // macOS: *_macos_*.app.tar.gz
   const macos = files.find(
-    (f) =>
-      f.includes("_macos_") && f.endsWith(".app.tar.gz"),
+    (f) => f.includes("_macos_") && f.endsWith(".app.tar.gz"),
   );
   if (macos) registerPlatform(platforms, "macos", macos, absDir, repo, tag);
 
