@@ -297,7 +297,7 @@ jobs:
         run: >
           bun scripts/ci/generate-release-notes.ts
           --version ${{ needs.setup.outputs.version }}
-          --tag v${{ needs.setup.outputs.version }}
+          --tag ${{ needs.setup.outputs.should_draft == 'true' && 'draft' || format('v{0}', needs.setup.outputs.version) }}
           --repo ${{ github.repository }}
           --output release_body.md
 
@@ -305,7 +305,7 @@ jobs:
         run: >
           bun scripts/ci/generate-manifest.ts
           --version ${{ needs.setup.outputs.version }}
-          --tag v${{ needs.setup.outputs.version }}
+          --tag ${{ needs.setup.outputs.should_draft == 'true' && 'draft' || format('v{0}', needs.setup.outputs.version) }}
           --repo ${{ github.repository }}
           --artifacts-dir artifacts
           --output artifacts/latest.json

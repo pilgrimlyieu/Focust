@@ -145,7 +145,10 @@ export function getPortableResourceDirs(): string[] {
       // Check if it's a file — if so, use the parent directory
       const stats = fs.statSync(tauriPath);
       if (stats.isFile()) {
-        dirs.add(path.dirname(cleaned));
+        const parent = path.dirname(cleaned);
+        if (parent !== ".") {
+          dirs.add(parent);
+        }
       } else {
         dirs.add(cleaned);
       }
