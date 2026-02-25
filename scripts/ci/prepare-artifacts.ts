@@ -190,32 +190,35 @@ function prepareWindows(version: string, target: string, outDir: string): void {
   }
 
   const portableDir = projectPath("portable");
+  fs.rmSync(portableDir, { force: true, recursive: true });
   file.mkdir(portableDir);
 
-  // Copy executable
-  file.copy(exePath, path.join(portableDir, `${config.name}.exe`));
-  logger.success("Copied executable to portable directory");
+  try {
+    // Copy executable
+    file.copy(exePath, path.join(portableDir, `${config.name}.exe`));
+    logger.success("Copied executable to portable directory");
 
-  // Copy resource directories defined in tauri.conf.json
-  const resourceDirs = getPortableResourceDirs();
-  for (const relDir of resourceDirs) {
-    const srcDir = projectPath(PATHS.TAURI_DIR, relDir);
-    if (file.exists(srcDir)) {
-      copyDirRecursive(srcDir, path.join(portableDir, relDir));
-      logger.success(`Copied resource: ${relDir}`);
-    } else {
-      logger.warning(`Resource directory not found: ${relDir}`);
+    // Copy resource directories defined in tauri.conf.json
+    const resourceDirs = getPortableResourceDirs();
+    for (const relDir of resourceDirs) {
+      const srcDir = projectPath(PATHS.TAURI_DIR, relDir);
+      if (file.exists(srcDir)) {
+        copyDirRecursive(srcDir, path.join(portableDir, relDir));
+        logger.success(`Copied resource: ${relDir}`);
+      } else {
+        logger.warning(`Resource directory not found: ${relDir}`);
+      }
     }
+
+    // Create ZIP
+    const zipName = artifactName(version, "windows", "portable.zip");
+    const zipPath = path.join(outDir, zipName);
+    createZip(portableDir, zipPath);
+    logger.success(`Created portable ZIP: ${zipName}`);
+  } finally {
+    // Clean up
+    fs.rmSync(portableDir, { force: true, recursive: true });
   }
-
-  // Create ZIP
-  const zipName = artifactName(version, "windows", "portable.zip");
-  const zipPath = path.join(outDir, zipName);
-  createZip(portableDir, zipPath);
-  logger.success(`Created portable ZIP: ${zipName}`);
-
-  // Clean up
-  fs.rmSync(portableDir, { force: true, recursive: true });
 }
 
 function prepareLinux(version: string, target: string, outDir: string): void {
@@ -300,6 +303,9 @@ function main(): void {
   logger.spacer();
   logger.section("Artifacts prepared:");
   const files = fs.readdirSync(outDir);
+  if (files.length === 0) {
+    exitWithError("No artifacts were prepared.");
+  }
   for (const f of files) {
     const stat = fs.statSync(path.join(outDir, f));
     const sizeMB = (stat.size / (1024 * 1024)).toFixed(2);

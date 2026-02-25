@@ -21,6 +21,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import {
+  exitWithError,
   file,
   logger,
   parseCliArgs,
@@ -170,8 +171,8 @@ function main(): void {
   const platforms = detectPlatforms(artifactsDir, repo, tag);
 
   if (Object.keys(platforms).length === 0) {
-    logger.warning(
-      "No platform artifacts detected. Generating empty manifest.",
+    exitWithError(
+      "No platform artifacts detected. Manifest generation aborted.",
     );
   }
 
