@@ -150,7 +150,9 @@ function createZip(sourceDir: string, outputPath: string): void {
       `Compress-Archive -Path '${sourceDir}/*' -DestinationPath '${outputPath}' -Force`,
     ]);
   } else {
-    logger.error("Portable ZIP creation is only implemented for Windows platform.");
+    logger.error(
+      "Portable ZIP creation is only implemented for Windows platform.",
+    );
   }
 }
 

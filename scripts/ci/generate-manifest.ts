@@ -97,6 +97,7 @@ function readSignature(sigPath: string): string {
   if (file.exists(sigPath)) {
     return file.read(sigPath).trim();
   }
+  logger.warning(`Signature file not found: ${path.basename(sigPath)}`);
   return "";
 }
 

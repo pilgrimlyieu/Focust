@@ -76,29 +76,30 @@ function parseArgs(): Args {
 // ============================================================================
 
 function detectPreviousTag(currentTag: string): string {
-  let previousTag = execCapture("git", [
+  const previousTag = execCapture("git", [
     "describe",
     "--abbrev=0",
     "--tags",
     `${currentTag}^`,
   ]);
   if (!previousTag) {
-    logger.warning(
-      `No previous tag found before ${currentTag}.`,
-    );
+    logger.warning(`No previous tag found before ${currentTag}.`);
   }
   return previousTag;
 }
 
 function generateCommitLog(prevTag: string, currentTag: string): string {
   if (prevTag) {
-    return execCapture("git", [
-      "log",
-      "--pretty=format:- %s (%h)",
-      `${prevTag}..${currentTag}`,
-    ]);
+    return execCapture(
+      "git",
+      ["log", "--pretty=format:- %s (%h)", `${prevTag}..${currentTag}`],
+      { warnOnError: true },
+    );
   }
-  return execCapture("git", ["log", "--pretty=format:- %s (%h)"]);
+  // No previous tag: initial release — cap at 50 commits as a safety net
+  return execCapture("git", ["log", "--pretty=format:- %s (%h)", "-n", "50"], {
+    warnOnError: true,
+  });
 }
 
 // ============================================================================

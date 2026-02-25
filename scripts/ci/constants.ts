@@ -6,6 +6,7 @@
  * at runtime — see {@link getProjectConfig}.
  */
 
+import * as fs from "node:fs";
 import * as path from "node:path";
 import { PATHS } from "../lib/constants";
 import {
@@ -142,7 +143,7 @@ export function getPortableResourceDirs(): string[] {
 
     if (file.exists(tauriPath)) {
       // Check if it's a file — if so, use the parent directory
-      const stats = require("node:fs").statSync(tauriPath);
+      const stats = fs.statSync(tauriPath);
       if (stats.isFile()) {
         dirs.add(path.dirname(cleaned));
       } else {

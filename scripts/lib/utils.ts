@@ -216,14 +216,30 @@ export function exitWithSuccess(message: string): never {
  * Execute shell command and capture stdout
  * @param {string} command - The command to execute
  * @param {string[]} args - Array of arguments to pass to the command
+ * @param {{ warnOnError?: boolean }} [options] - Optional configuration
  * @returns {string} Trimmed stdout output
  */
-export function execCapture(command: string, args: string[]): string {
+export function execCapture(
+  command: string,
+  args: string[],
+  options?: { warnOnError?: boolean },
+): string {
   const result = spawnSync(command, args, {
     encoding: "utf-8",
     shell: true,
     stdio: ["pipe", "pipe", "pipe"],
   });
+  if (
+    options?.warnOnError &&
+    (result.error != null || (result.status !== null && result.status !== 0))
+  ) {
+    const stderr = (result.stderr ?? "").trim();
+    logger.warning(
+      `Command '${command} ${args.join(" ")}' exited with code ${
+        result.status ?? "unknown"
+      }${stderr ? `: ${stderr}` : ""}`,
+    );
+  }
   return (result.stdout ?? "").trim();
 }
 
