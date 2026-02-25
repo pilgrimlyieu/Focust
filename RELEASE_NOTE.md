@@ -5,21 +5,9 @@
 > - **macOS**: `~/Library/Logs/com.fesmoph.focust`
 > - **Linux**: `~/.local/share/com.fesmoph.focust/logs`
 
-> [!NOTE]
->
-> If there are no major issues, this version will be the final revision for version 0.3.
-
 <!-- Release notes content starts here -->
-
-## 🧾 License Change
-
-- **Changed project license from MIT to GPL-3.0**.
 
 ## 🎉 Features
 
-- Separate configuration and log directories for development and production versions.
-- Support restarting and quitting the application from the about panel in settings.
-
-## 🐛 Bug Fixes
-
-- Fixed an issue where system notifications were not sent before breaks after postponing.
+- Update rodio to v0.22 and audio function is supported on macOS now.
+- Hide dock icon on macOS platform (#45).

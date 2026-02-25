@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 <!-- CHANGELOG_INSERT -->
 
+## 0.3.5 (2026.2.25)
+
+### 🎉 Features
+
+- Update rodio to v0.22 and audio function is supported on macOS now.
+- Hide dock icon on macOS platform (#45).
+
 ## 0.3.4 (2026.2.11)
 
 ### 🧾 License Change
