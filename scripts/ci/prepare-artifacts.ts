@@ -101,7 +101,7 @@ function findFiles(dir: string, ext: string): string[] {
     if (entry.isFile() && entry.name.endsWith(ext)) {
       results.push(fullPath);
     }
-    // Search one level deep for nested bundles
+    // Search into immediate subdirectories for nested bundlesSearch one level deep for nested bundles
     if (entry.isDirectory()) {
       const nested = fs.readdirSync(fullPath, { withFileTypes: true });
       for (const nEntry of nested) {
@@ -141,7 +141,7 @@ function copyDirRecursive(src: string, dest: string): void {
   }
 }
 
-/** Create ZIP archive using platform-appropriate tool */
+/** Create ZIP archive */
 function createZip(sourceDir: string, outputPath: string): void {
   if (process.platform === "win32") {
     execOrThrow("powershell", [
@@ -150,7 +150,7 @@ function createZip(sourceDir: string, outputPath: string): void {
       `Compress-Archive -Path '${sourceDir}/*' -DestinationPath '${outputPath}' -Force`,
     ]);
   } else {
-    execOrThrow("zip", ["-r", "-j", outputPath, sourceDir]);
+    logger.error("Portable ZIP creation is only implemented for Windows platform.");
   }
 }
 

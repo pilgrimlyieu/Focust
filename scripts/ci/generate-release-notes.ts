@@ -76,12 +76,18 @@ function parseArgs(): Args {
 // ============================================================================
 
 function detectPreviousTag(currentTag: string): string {
-  return execCapture("git", [
+  let previousTag = execCapture("git", [
     "describe",
     "--abbrev=0",
     "--tags",
     `${currentTag}^`,
   ]);
+  if (!previousTag) {
+    logger.warning(
+      `No previous tag found before ${currentTag}.`,
+    );
+  }
+  return previousTag;
 }
 
 function generateCommitLog(prevTag: string, currentTag: string): string {

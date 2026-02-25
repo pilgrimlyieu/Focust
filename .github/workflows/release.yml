@@ -65,8 +65,8 @@ jobs:
           RELEASE_MODE="${{ github.event.inputs.release_mode }}"
 
           # Read project metadata from config files
-          PROJECT_NAME=$(grep '"name"' package.json | head -1 | sed 's/.*"name": *"\([^"]*\)".*/\1/')
-          PRODUCT_NAME=$(grep '"productName"' src-tauri/tauri.conf.json | head -1 | sed 's/.*"productName": *"\([^"]*\)".*/\1/')
+          PROJECT_NAME=$(jq -r '.name' package.json)
+          PRODUCT_NAME=$(jq -r '.productName // empty' src-tauri/tauri.conf.json)
           PRODUCT_NAME=${PRODUCT_NAME:-$PROJECT_NAME}
 
           SHOULD_BUILD=false
@@ -80,7 +80,7 @@ jobs:
             VERSION="${GITHUB_REF_NAME#v}"
           elif [ "$IS_DISPATCH" = "true" ] && [ "$BUILD_INPUT" = "true" ]; then
             SHOULD_BUILD=true
-            VERSION=$(grep '"version"' package.json | head -1 | sed 's/.*"version": *"\([^"]*\)".*/\1/')
+            VERSION=$(jq -r '.version // empty' package.json)
             if [ "$RELEASE_MODE" = "draft-release" ]; then
               SHOULD_DRAFT=true
             fi
