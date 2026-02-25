@@ -212,6 +212,78 @@ export function exitWithSuccess(message: string): never {
   process.exit(0);
 }
 
+/**
+ * Execute shell command and capture stdout
+ * @param {string} command - The command to execute
+ * @param {string[]} args - Array of arguments to pass to the command
+ * @returns {string} Trimmed stdout output
+ */
+export function execCapture(command: string, args: string[]): string {
+  const result = spawnSync(command, args, {
+    encoding: "utf-8",
+    shell: true,
+    stdio: ["pipe", "pipe", "pipe"],
+  });
+  return (result.stdout ?? "").trim();
+}
+
+/**
+ * Parse CLI arguments into a key-value map.
+ *
+ * Supports `--key value` pairs and `--flag` booleans.
+ * @param {string[]} argv - Raw process.argv (will be sliced from index 2)
+ * @param {{ helpText?: string }} [options] - Optional help text printed on --help
+ * @returns {Record<string, string | true>} Parsed arguments map
+ */
+export function parseCliArgs(
+  argv: string[],
+  options?: { helpText?: string },
+): Record<string, string | true> {
+  const args = argv.slice(2);
+  const result: Record<string, string | true> = {};
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === "--help" || arg === "-h") {
+      if (options?.helpText) {
+        logger.multiline([options.helpText]);
+      }
+      process.exit(0);
+    }
+    if (arg.startsWith("--")) {
+      const key = arg.slice(2);
+      const next = args[i + 1];
+      if (next && !next.startsWith("--")) {
+        result[key] = next;
+        i++;
+      } else {
+        result[key] = true;
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Require a string argument from parsed CLI args, exit with error if missing.
+ * @param {Record<string, string | true>} args - Parsed args map
+ * @param {string} key - Argument key (without --)
+ * @param {string} [label] - Human-readable label for error messages
+ * @returns {string} The argument value
+ */
+export function requireArg(
+  args: Record<string, string | true>,
+  key: string,
+  label?: string,
+): string {
+  const val = args[key];
+  if (!val || val === true) {
+    exitWithError(`Missing required argument: --${label ?? key}`);
+  }
+  return val;
+}
+
 // ============================================================================
 // Files
 // ============================================================================
