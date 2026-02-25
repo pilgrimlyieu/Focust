@@ -219,7 +219,10 @@ jobs:
 
       # ── Cache warm (non-build push to main) ──
       - name: Pre-warm Rust dependencies
-        if: steps.filter.outputs.skip != 'true' && needs.setup.outputs.should_build != 'true'
+        if: >
+          steps.filter.outputs.skip != 'true' &&
+          github.ref == 'refs/heads/main' &&
+          needs.setup.outputs.should_build != 'true'
         shell: bash
         run: |
           echo "🔥 Warming Rust cache by compiling dependencies..."
@@ -294,7 +297,7 @@ jobs:
         run: >
           bun scripts/ci/generate-release-notes.ts
           --version ${{ needs.setup.outputs.version }}
-          --tag ${{ github.ref_name }}
+          --tag v${{ needs.setup.outputs.version }}
           --repo ${{ github.repository }}
           --output release_body.md
 
@@ -302,7 +305,7 @@ jobs:
         run: >
           bun scripts/ci/generate-manifest.ts
           --version ${{ needs.setup.outputs.version }}
-          --tag ${{ github.ref_name }}
+          --tag v${{ needs.setup.outputs.version }}
           --repo ${{ github.repository }}
           --artifacts-dir artifacts
           --output artifacts/latest.json
@@ -310,7 +313,11 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          name: ${{ needs.setup.outputs.product_name }} v${{ needs.setup.outputs.version }}
+          # Draft releases use a fixed 'draft' tag so they never conflict with
+          # real version tags. The tag is auto-created/updated each time.
+          # Real releases (tag push) use the proper vX.Y.Z tag from github.ref.
+          tag_name: ${{ needs.setup.outputs.should_draft == 'true' && 'draft' || format('v{0}', needs.setup.outputs.version) }}
+          name: ${{ needs.setup.outputs.product_name }} v${{ needs.setup.outputs.version }}${{ needs.setup.outputs.should_draft == 'true' && ' (Draft)' || '' }}
           body_path: release_body.md
           files: artifacts/*
           draft: ${{ needs.setup.outputs.should_draft == 'true' }}
