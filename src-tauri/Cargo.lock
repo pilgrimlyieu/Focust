@@ -1183,7 +1183,7 @@ dependencies = [
  "futures",
  "futures-util",
  "parking_lot",
- "rand 0.9.2",
+ "rand 0.10.0",
  "rodio",
  "serde",
  "serde_json",
