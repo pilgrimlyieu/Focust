@@ -3,7 +3,7 @@
 //! This module handles creating and configuring Tauri windows for displaying
 //! break prompts and the settings interface.
 
-use rand::{Rng, seq::IndexedRandom};
+use rand::{RngExt, seq::IndexedRandom};
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -382,7 +382,7 @@ fn resolve_background(source: &BackgroundSource) -> ResolvedBackground {
 /// Resolve a random image from the specified folder
 fn resolve_random_image_from_folder(
     folder_str: &str,
-    rng: &mut impl Rng,
+    rng: &mut impl RngExt,
 ) -> Option<ResolvedBackground> {
     let folder_path = PathBuf::from(folder_str);
 
