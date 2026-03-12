@@ -19,7 +19,6 @@ export const useSuggestionsStore = defineStore("suggestions", () => {
     try {
       const result = await invoke<SuggestionsConfig>("get_suggestions");
       config.value = result;
-      console.log("Suggestions loaded successfully");
     } catch (err) {
       console.error("Failed to load suggestions:", err);
       throw err;
@@ -69,16 +68,18 @@ export const useSuggestionsStore = defineStore("suggestions", () => {
    * @returns {string[]} Array of suggestions
    */
   function getSuggestionsSync(language: string): string[] {
-    if (!config.value || !config.value.byLanguage[language]) {
-      console.warn(
-        `No suggestions found for language: ${language}, falling back to ${LANGUAGE_FALLBACK}`,
-      );
-      if (config.value?.byLanguage[LANGUAGE_FALLBACK]) {
-        return config.value.byLanguage[LANGUAGE_FALLBACK].suggestions;
-      }
-      return [];
+    if (!config.value) return [];
+
+    const languageConfig = config.value.byLanguage[language];
+    if (languageConfig) {
+      return languageConfig.suggestions;
     }
-    return config.value.byLanguage[language].suggestions;
+
+    console.warn(
+      `No suggestions found for language: ${language}, falling back to ${LANGUAGE_FALLBACK}`,
+    );
+
+    return config.value.byLanguage[LANGUAGE_FALLBACK]?.suggestions ?? [];
   }
 
   /**
@@ -103,6 +104,11 @@ export const useSuggestionsStore = defineStore("suggestions", () => {
     const pool = getSuggestionsSync(language);
     if (!pool.length) return [];
 
+    const safeCount = Number.isFinite(count)
+      ? Math.max(0, Math.trunc(count))
+      : 0;
+    if (safeCount === 0) return [];
+
     // Fisher-Yates shuffle
     const indices = Array.from({ length: pool.length }, (_, i) => i);
     for (let i = indices.length - 1; i > 0; i--) {
@@ -110,7 +116,9 @@ export const useSuggestionsStore = defineStore("suggestions", () => {
       [indices[i], indices[j]] = [indices[j], indices[i]];
     }
 
-    return indices.slice(0, Math.min(count, pool.length)).map((i) => pool[i]);
+    return indices
+      .slice(0, Math.min(safeCount, pool.length))
+      .map((i) => pool[i]);
   }
 
   return {
