@@ -103,6 +103,11 @@ export const useSuggestionsStore = defineStore("suggestions", () => {
     const pool = getSuggestionsSync(language);
     if (!pool.length) return [];
 
+    const safeCount = Number.isFinite(count)
+      ? Math.max(0, Math.trunc(count))
+      : 0;
+    if (safeCount === 0) return [];
+
     // Fisher-Yates shuffle
     const indices = Array.from({ length: pool.length }, (_, i) => i);
     for (let i = indices.length - 1; i > 0; i--) {
@@ -110,7 +115,9 @@ export const useSuggestionsStore = defineStore("suggestions", () => {
       [indices[i], indices[j]] = [indices[j], indices[i]];
     }
 
-    return indices.slice(0, Math.min(count, pool.length)).map((i) => pool[i]);
+    return indices
+      .slice(0, Math.min(safeCount, pool.length))
+      .map((i) => pool[i]);
   }
 
   return {

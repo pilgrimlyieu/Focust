@@ -197,5 +197,29 @@ describe("useSuggestionsStore", () => {
       const samples = store.sampleMany("en-US", 3);
       expect(samples).toEqual([]);
     });
+
+    it("should return empty array when count is negative", () => {
+      const store = useSuggestionsStore();
+      store.config = {
+        byLanguage: {
+          "en-US": { suggestions: ["Test 1", "Test 2", "Test 3"] },
+        },
+      };
+
+      const samples = store.sampleMany("en-US", -1);
+      expect(samples).toEqual([]);
+    });
+
+    it("should return empty array when count is not finite", () => {
+      const store = useSuggestionsStore();
+      store.config = {
+        byLanguage: {
+          "en-US": { suggestions: ["Test 1", "Test 2", "Test 3"] },
+        },
+      };
+
+      const samples = store.sampleMany("en-US", Number.NaN);
+      expect(samples).toEqual([]);
+    });
   });
 });
