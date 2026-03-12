@@ -111,6 +111,28 @@ describe("useSuggestionsStore", () => {
       const suggestions = store.getSuggestionsSync("en-US");
       expect(suggestions).toEqual([]);
     });
+
+    it("should not warn when config is null", () => {
+      const store = useSuggestionsStore();
+      store.config = null;
+
+      const suggestions = store.getSuggestionsSync("en-US");
+      expect(suggestions).toEqual([]);
+      expect(console.warn).not.toHaveBeenCalled();
+    });
+
+    it("should warn when language is missing and fallback is used", () => {
+      const store = useSuggestionsStore();
+      store.config = {
+        byLanguage: {
+          "en-US": { suggestions: ["English 1"] },
+        },
+      };
+
+      const suggestions = store.getSuggestionsSync("fr-FR");
+      expect(suggestions).toEqual(["English 1"]);
+      expect(console.warn).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe("sample", () => {
