@@ -25,11 +25,11 @@ export const PATHS = {
 } as const;
 
 // ============================================================================
-// Git Staging Configuration
+// Release Staging Configuration
 // ============================================================================
 
 /**
- * Files to stage for version release commits
+ * Files to include in version release commits
  */
 export const RELEASE_STAGE_FILES = [
   PATHS.PACKAGE_JSON,
@@ -53,18 +53,27 @@ export const MARKERS = {
 } as const;
 
 // ============================================================================
-// Git Configuration
+// VCS Configuration
 // ============================================================================
 
 /**
- * Git-related constants
+ * VCS-related constants (shared by Git and JJ)
  */
-export const GIT = {
+export const VCS = {
   /** Commit message template (use with version interpolation) */
   COMMIT_MESSAGE_TEMPLATE: "chore: bump version to v%s",
-  /** Default branch name */
+  /** Default branch/bookmark name */
   DEFAULT_BRANCH: "main",
-  /** Tag prefix */
+  /**
+   * VCS backend to use for release operations.
+   *
+   * Priority chain (highest to lowest):
+   *   CLI --vcs arg > this setting (if not "auto") > auto-detect via .jj directory
+   *
+   * Set to "git" or "jj" to pin the backend; "auto" enables auto-detection.
+   */
+  DEFAULT_VCS: "auto" as "auto" | "git" | "jj",
+  /** Tag template (use with version interpolation) */
   TAG_TEMPLATE: "v%s",
 } as const;
 

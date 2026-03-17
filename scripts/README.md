@@ -4,12 +4,12 @@ Reusable automation scripts for Tauri projects.
 
 ## Quick Reference
 
-| Script                     | Purpose                                           |
-| -------------------------- | ------------------------------------------------- |
-| `release.ts`               | Version bumping, changelog update, git tag & push |
-| `setup-updater-signing.ts` | Code signing key generation and configuration     |
-| `ci/prepare-artifacts.ts`  | Collect & rename Tauri build outputs               |
-| `ci/generate-manifest.ts`  | Generate Tauri updater manifest (`latest.json`)   |
+| Script                         | Purpose                                           |
+| ------------------------------ | ------------------------------------------------- |
+| `release.ts`                   | Version bumping, changelog update, git tag & push |
+| `setup-updater-signing.ts`     | Code signing key generation and configuration     |
+| `ci/prepare-artifacts.ts`      | Collect & rename Tauri build outputs              |
+| `ci/generate-manifest.ts`      | Generate Tauri updater manifest (`latest.json`)   |
 | `ci/generate-release-notes.ts` | Assemble GitHub Release body from notes + git log |
 
 ## Usage

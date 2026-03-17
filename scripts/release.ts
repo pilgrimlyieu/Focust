@@ -2,6 +2,9 @@
 /**
  * Release automation script for Tauri projects
  *
+ * Supports both Git and Jujutsu (JJ) as version control backends.
+ * Auto-detects VCS type (checks for .jj directory), or use --vcs to force.
+ *
  * Usage:
  *   bun scripts/release.ts 1.2.3      # Specify exact version
  *   bun scripts/release.ts --patch    # Bump patch: 0.2.11 -> 0.2.12
@@ -9,15 +12,18 @@
  *   bun scripts/release.ts --major    # Bump major: 0.2.11 -> 1.0.0
  *   bun scripts/release.ts --no-push  # Skip pushing to remote
  *   bun scripts/release.ts --all      # Stage all changes (not just release files)
+ *   bun scripts/release.ts --vcs jj   # Force Jujutsu mode (overrides config)
+ *   bun scripts/release.ts --vcs git  # Force Git mode (overrides config)
+ *
+ * VCS resolution: --vcs arg > VCS.DEFAULT_VCS in constants.ts > auto-detect (.jj dir)
  */
 
-import { GIT, MARKERS, PATHS, RELEASE_STAGE_FILES } from "./lib/constants";
+import { MARKERS, PATHS, RELEASE_STAGE_FILES, VCS } from "./lib/constants";
 import {
   anchor,
   type BumpType,
   calculateNewVersion,
   confirm,
-  execOrThrow,
   exitWithError,
   file,
   getCurrentVersion,
@@ -29,6 +35,12 @@ import {
   renderTemplate,
   updateJsonVersion,
 } from "./lib/utils";
+import {
+  createVcsDriver,
+  getManualPushHint,
+  type VcsDriver,
+  type VcsType,
+} from "./lib/vcs";
 
 // ============================================================================
 // Types
@@ -39,6 +51,7 @@ interface Args {
   bumpType?: BumpType;
   noPush?: boolean;
   stageAll?: boolean;
+  vcsType?: VcsType;
 }
 
 // ============================================================================
@@ -85,36 +98,29 @@ function updateChangelog(newVersion: string, releaseNotes: string): void {
 }
 
 // ============================================================================
-// Git Operations
+// VCS Operations
 // ============================================================================
 
-function git(...args: string[]): void {
-  execOrThrow("git", args);
-}
+function commitAndTag(
+  vcs: VcsDriver,
+  version: string,
+  stageAll: boolean,
+): void {
+  const tag = renderTemplate(VCS.TAG_TEMPLATE, version);
+  const commitMsg = renderTemplate(VCS.COMMIT_MESSAGE_TEMPLATE, version);
 
-function commitAndTag(version: string, stageAll: boolean): void {
-  const tag = renderTemplate(GIT.TAG_TEMPLATE, version);
-  const commitMsg = renderTemplate(GIT.COMMIT_MESSAGE_TEMPLATE, version);
-
-  git("diff", "-U0", PATHS.PACKAGE_JSON, PATHS.TAURI_CONFIG);
+  vcs.showDiff([PATHS.PACKAGE_JSON, PATHS.TAURI_CONFIG]);
   confirm("Proceed with commit?") || exitWithError("Commit cancelled by user");
-  if (stageAll) {
-    logger.info("🔍 Staging all changes");
-    git("add", "-A");
-  } else {
-    logger.info("🔍 Staging specific changes");
-    git("add", ...RELEASE_STAGE_FILES);
-  }
 
-  git("commit", "-m", `"${commitMsg}"`);
-  git("tag", tag);
+  vcs.commit(commitMsg, [...RELEASE_STAGE_FILES], stageAll);
+  vcs.createTag(tag);
   logger.success(`Created commit and tag ${tag}`);
 }
 
-function pushToRemote(version: string): void {
-  const tag = renderTemplate(GIT.TAG_TEMPLATE, version);
-  git("push", "origin", GIT.DEFAULT_BRANCH);
-  git("push", "origin", "tag", tag);
+function pushToRemote(vcs: VcsDriver, version: string): void {
+  const tag = renderTemplate(VCS.TAG_TEMPLATE, version);
+  vcs.pushBranch(VCS.DEFAULT_BRANCH);
+  vcs.pushTag(tag);
   logger.success("Pushed changes and tag to remote");
 }
 
@@ -126,7 +132,8 @@ function parseArgs(): Args {
   const args = process.argv.slice(2);
   const result: Args = {};
 
-  for (const arg of args) {
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
     switch (arg) {
       case "--patch":
         result.bumpType = "patch";
@@ -144,6 +151,16 @@ function parseArgs(): Args {
       case "-a":
         result.stageAll = true;
         break;
+      case "--vcs": {
+        const next = args[i + 1];
+        if (next === "git" || next === "jj") {
+          result.vcsType = next;
+          i++;
+        } else {
+          exitWithError(`Invalid --vcs value: ${next}. Expected: git | jj`);
+        }
+        break;
+      }
       default:
         if (!arg.startsWith("--") && !arg.startsWith("-")) {
           result.version = arg;
@@ -168,6 +185,7 @@ function printUsage(): void {
     "Options:",
     "  --no-push    Skip pushing to remote",
     "  --all, -a    Stage all changes (not just release files)",
+    "  --vcs <type> Force VCS backend: git | jj (overrides VCS.DEFAULT_VCS and auto-detect)",
   ]);
 }
 
@@ -200,6 +218,9 @@ async function main(): Promise<void> {
       process.exit(1);
     }
 
+    // Initialize VCS driver: CLI arg > VCS.DEFAULT_VCS > auto-detect
+    const vcs = createVcsDriver(args.vcsType);
+
     logger.multiline([
       `Current version: ${currentVersion}`,
       `New version:     ${newVersion}`,
@@ -210,7 +231,6 @@ async function main(): Promise<void> {
     logger.spacer();
 
     if (!confirm(`Continue with release v${newVersion}?`)) {
-      // Confirm with user
       logger.warning("Release cancelled");
       process.exit(0);
     }
@@ -231,25 +251,25 @@ async function main(): Promise<void> {
 
     // Step 3: Commit and tag
     logger.step(3, "Creating commit and tag");
-    commitAndTag(newVersion, args.stageAll ?? false);
+    commitAndTag(vcs, newVersion, args.stageAll ?? false);
     logger.spacer();
 
     // Step 4: Push to remote
-    const tag = renderTemplate(GIT.TAG_TEMPLATE, newVersion);
+    const tag = renderTemplate(VCS.TAG_TEMPLATE, newVersion);
     if (!args.noPush) {
       if (confirm("Push commit and tag to remote?")) {
         logger.step(4, "Pushing to remote");
-        pushToRemote(newVersion);
+        pushToRemote(vcs, newVersion);
         logger.spacer();
       } else {
         logger.warning(
-          `Push skipped. Run manually:\n  git push origin ${GIT.DEFAULT_BRANCH} && git push origin tag ${tag}`,
+          `Push skipped. Run manually:\n${getManualPushHint(vcs.type, tag)}`,
         );
         logger.spacer();
       }
     } else {
       logger.warning(
-        `Push skipped (--no-push). Run manually:\n  git push origin ${GIT.DEFAULT_BRANCH} && git push origin tag ${tag}`,
+        `Push skipped (--no-push). Run manually:\n${getManualPushHint(vcs.type, tag)}`,
       );
       logger.spacer();
     }

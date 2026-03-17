@@ -8,13 +8,28 @@ Shared utilities for Tauri project automation scripts.
 
 Centralized configuration values:
 
-| Export | Description |
-|--------|-------------|
-| `PATHS` | File paths (`PACKAGE_JSON`, `TAURI_CONFIG`, `CHANGELOG`, etc.) |
-| `RELEASE_STAGE_FILES` | Files staged for release commits |
-| `MARKERS` | Content markers (changelog insert point, release note separator) |
-| `GIT` | Git settings (branch, commit template, tag template) |
-| `SIGNING_KEY_*` | Signing key path defaults |
+| Export                | Description                                                                                                       |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `PATHS`               | File paths (`PACKAGE_JSON`, `TAURI_CONFIG`, `CHANGELOG`, etc.)                                                    |
+| `RELEASE_STAGE_FILES` | Files staged for release commits                                                                                  |
+| `MARKERS`             | Content markers (changelog insert point, release note separator)                                                  |
+| `VCS`                 | VCS settings: `DEFAULT_VCS` (manual config / "auto"), `DEFAULT_BRANCH`, `COMMIT_MESSAGE_TEMPLATE`, `TAG_TEMPLATE` |
+| `SIGNING_KEY_*`       | Signing key path defaults                                                                                         |
+
+### vcs.ts
+
+VCS abstraction layer (Git + Jujutsu):
+
+| Export              | Description                                                                     |
+| ------------------- | ------------------------------------------------------------------------------- |
+| `VcsType`           | VCS type: `"git"` \| `"jj"`                                                     |
+| `VcsDriver`         | Interface for VCS operations (showDiff, commit, createTag, pushBranch, pushTag) |
+| `gitDriver`         | Git driver implementation                                                       |
+| `jjDriver`          | Jujutsu driver implementation (colocated mode)                                  |
+| `detectVcsType`     | Auto-detect VCS type (checks for `.jj` directory)                               |
+| `resolveVcsType`    | Resolve effective VCS type using priority chain (CLI > config > auto-detect)    |
+| `createVcsDriver`   | Factory: create driver using `resolveVcsType`                                   |
+| `getManualPushHint` | Generate manual push command hint for skipped pushes                            |
 
 ### utils.ts
 

@@ -76,6 +76,14 @@ export const logger = {
   },
 
   /**
+   * Print message
+   * @param {string} msg - The message to display
+   */
+  log: (msg: string) => {
+    console.log(msg);
+  },
+
+  /**
    * Print multi-line message with consistent indentation
    * @param {string[]} messages - Array of message lines to display
    * @param {number} [indent=0] - Number of spaces to indent each line

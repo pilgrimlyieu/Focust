@@ -194,7 +194,7 @@ function main(): void {
 
   logger.spacer();
   logger.section("Generated latest.json:");
-  logger.multiline(json.split("\n"));
+  logger.log(json);
   logger.spacer();
   logger.success(`Manifest written to ${output}`);
 }
