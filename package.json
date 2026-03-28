@@ -22,8 +22,8 @@
     "@vueuse/core": "^14.2.1",
     "biome": "^0.3.3",
     "pinia": "^3.0.4",
-    "vue": "^3.5.29",
-    "vue-i18n": "^11.2.8"
+    "vue": "^3.5.30",
+    "vue-i18n": "^11.3.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.8",
