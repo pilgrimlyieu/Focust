@@ -23,7 +23,7 @@ export type VcsType = "git" | "jj";
 
 /**
  *  VCS driver interface
- * 
+ *
  *  All version control operations required by the release script.
  */
 export interface VcsDriver {
