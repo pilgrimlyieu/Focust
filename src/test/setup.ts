@@ -148,4 +148,4 @@ beforeEach(() => {
 });
 
 // Export mocks for use in tests
-export { mockInvoke, mockListen, mockEmit };
+export { mockEmit, mockInvoke, mockListen };

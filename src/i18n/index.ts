@@ -10,7 +10,7 @@ import ptBR from "./locales/pt-BR";
 import ruRU from "./locales/ru-RU";
 import zhCN from "./locales/zh-CN";
 
-export type { LocaleStrings, LocaleKey };
+export type { LocaleKey, LocaleStrings };
 
 const messages = {
   "de-DE": deDE,
