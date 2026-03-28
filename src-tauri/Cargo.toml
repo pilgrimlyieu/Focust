@@ -51,7 +51,7 @@ serde_json = "1"
 strum = "0.28.0"
 strum_macros = "0.28.0"
 sys-locale = "0.3.2"
-sysinfo = "0.38.0"
+sysinfo = "0.38.4"
 tauri = { version = "2", features = ["protocol-asset", "tray-icon"] }
 tauri-plugin-autostart = "2"
 tauri-plugin-dialog = "2"
@@ -67,13 +67,13 @@ tokio = { version = "*", features = ["time", "macros"] }
 toml = "1.0"
 tracing = "0.1.44"
 tracing-appender = "0.2.4"
-tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 ts-rs = { version = "12.0.1", features = ["chrono-impl"] }
 user-idle2 = "0.6.2"
 
 [dev-dependencies]
 tauri = { version = "2", features = ["test"] }
-tempfile = "3.26.0"
+tempfile = "3.27.0"
 tokio = { version = "*", features = ["test-util"] }
 
 [target.'cfg(windows)'.dependencies]
