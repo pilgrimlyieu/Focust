@@ -240,7 +240,7 @@ Layer 1: Unit (SharedState + Config + Core types)
 | -------- | -------------- | -------------------------------------- |
 | Windows  | ✅ Fully tested | Primary development platform           |
 | Linux    | ✅ Designed     | Event-driven DND (D-Bus), tested in CI |
-| macOS    | ⚠️ Partial      | DND polling                            |
+| macOS    | ✅ Designed     | DND polling                            |
 
 **Platform-Specific Code**: `#[cfg(target_os = "...")]` in `platform/dnd/`
 
