@@ -363,9 +363,9 @@ defineExpose({
       </div>
     </header>
 
-    <div class="flex flex-1">
-      <!-- Sidebar navigation with icons -->
-      <aside class="hidden w-64 border-r border-base-300/50 bg-base-100/40 backdrop-blur-sm lg:block">
+    <div class="flex flex-1 flex-col lg:flex-row">
+      <!-- Sidebar navigation with icons (desktop only) -->
+      <aside class="hidden w-64 shrink-0 border-r border-base-300/50 bg-base-100/40 backdrop-blur-sm lg:block">
         <nav class="sticky top-20 p-4">
           <ul class="menu gap-2">
             <li v-for="(tab, index) in tabs" :key="tab.key">
@@ -387,8 +387,8 @@ defineExpose({
         </nav>
       </aside>
 
-      <!-- Mobile tabs -->
-      <div class="lg:hidden w-full">
+      <!-- Mobile tabs (shown when sidebar is hidden) -->
+      <div class="shrink-0 lg:hidden">
         <div class="tabs tabs-boxed sticky top-16 z-40 bg-base-100/95 backdrop-blur-md p-2 overflow-x-auto">
           <a v-for="tab in tabs" :key="tab.key" class="tab tab-sm whitespace-nowrap"
             :class="{ 'tab-active': activeTab === tab.key }" @click="activeTab = tab.key">
