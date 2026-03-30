@@ -257,158 +257,115 @@ unsafe extern "system" {
 
 /// Query the current Focus Assist state
 ///
-/// # Safety
-///
-/// This function uses undocumented Windows WNF API. All errors are caught and logged
-/// without causing panics. Returns `false` (DND disabled) on any error to fail safely.
+/// Returns `false` (DND disabled) on any error to fail safely.
 fn query_focus_assist_state() -> bool {
-    // Wrap the entire unsafe block in a catch_unwind to prevent panics from propagating
-    panic::catch_unwind(|| {
-        // SAFETY: Calling Windows WNF API function `RtlQueryWnfStateData`.
-        // - All pointers passed are valid: `change_stamp` and `state` are stack-allocated
-        // - The state name constant is valid and documented by Windows
-        // - Error handling is comprehensive, returning `false` on any failure
-        unsafe {
-            let mut change_stamp: WnfChangeStamp = 0;
-            let mut state = FocusAssistState { value: 0 };
+    // SAFETY: Calling Windows WNF API function `RtlQueryWnfStateData`.
+    // - All pointers passed are valid: `change_stamp` and `state` are stack-allocated
+    // - The state name constant is valid and documented by Windows
+    // - Error handling is comprehensive, returning `false` on any failure
+    unsafe {
+        let mut change_stamp: WnfChangeStamp = 0;
+        let mut state = FocusAssistState { value: 0 };
 
-            let status = RtlQueryWnfStateData(
-                &raw mut change_stamp,
-                WNF_SHEL_QUIETHOURS_ACTIVE_PROFILE_CHANGED,
-                None,
-                ptr::null_mut(),
-                (&raw mut state).cast::<()>(),
-            );
-
-            if status.is_err() {
-                tracing::warn!(
-                    "RtlQueryWnfStateData failed with status: {status:?}. This is non-fatal."
-                );
-                return false;
-            }
-
-            // Validate state value is within expected range (0-2)
-            if state.value < 0 || state.value > 2 {
-                tracing::warn!(
-                    "Unexpected Focus Assist state value: {}. Treating as disabled.",
-                    state.value
-                );
-                return false;
-            }
-
-            // 0 = Off, 1 = Priority Only, 2 = Alarms Only
-            state.value != 0
-        }
-    })
-    .unwrap_or_else(|panic_err| {
-        tracing::error!(
-            "Panic caught in query_focus_assist_state: {panic_err:?}. This is a safety fallback.",
+        let status = RtlQueryWnfStateData(
+            &raw mut change_stamp,
+            WNF_SHEL_QUIETHOURS_ACTIVE_PROFILE_CHANGED,
+            None,
+            ptr::null_mut(),
+            (&raw mut state).cast::<()>(),
         );
-        false // Return false (disabled) as safe default
-    })
+
+        if status.is_err() {
+            tracing::warn!(
+                "RtlQueryWnfStateData failed with status: {status:?}. This is non-fatal."
+            );
+            return false;
+        }
+
+        // Validate state value is within expected range (0-2)
+        if state.value < 0 || state.value > 2 {
+            tracing::warn!(
+                "Unexpected Focus Assist state value: {}. Treating as disabled.",
+                state.value
+            );
+            return false;
+        }
+
+        // 0 = Off, 1 = Priority Only, 2 = Alarms Only
+        state.value != 0
+    }
 }
 
 /// Subscribe to Focus Assist state change notifications
 ///
-/// # Safety
-///
-/// This function uses undocumented Windows WNF API. All errors are caught and logged.
 /// Memory cleanup is guaranteed even on failure paths to prevent leaks.
 fn subscribe_to_focus_assist(
     sender: mpsc::Sender<DndEvent>,
     last_state: Arc<AtomicBool>,
 ) -> Result<SendPtr> {
-    // Wrap the entire unsafe block in a catch_unwind to prevent panics from propagating
-    let result = panic::catch_unwind(AssertUnwindSafe(|| {
-        // SAFETY: Calling Windows WNF API function `RtlSubscribeWnfStateChangeNotification`.
-        // - `subscription` pointer is valid (stack-allocated, passed as mutable reference)
-        // - `context_ptr` is a valid pointer from `Box::into_raw`, lifetime managed correctly
-        // - `focus_assist_callback` is a valid function pointer matching the expected signature
-        // - On subscription failure, context is properly cleaned up with `Box::from_raw`
-        unsafe {
-            let context = Box::new(CallbackContext { sender, last_state });
-            let context_ptr = Box::into_raw(context).cast::<()>();
+    // SAFETY: Calling Windows WNF API function `RtlSubscribeWnfStateChangeNotification`.
+    // - `subscription` pointer is valid (stack-allocated, passed as mutable reference)
+    // - `context_ptr` is a valid pointer from `Box::into_raw`, lifetime managed correctly
+    // - `focus_assist_callback` is a valid function pointer matching the expected signature
+    // - On subscription failure, context is properly cleaned up with `Box::from_raw`
+    unsafe {
+        let context = Box::new(CallbackContext { sender, last_state });
+        let context_ptr = Box::into_raw(context).cast::<()>();
 
-            let mut subscription: *mut WnfUserSubscription = ptr::null_mut();
+        let mut subscription: *mut WnfUserSubscription = ptr::null_mut();
 
-            let status = RtlSubscribeWnfStateChangeNotification(
-                &raw mut subscription,
-                WNF_SHEL_QUIETHOURS_ACTIVE_PROFILE_CHANGED,
-                0, // Change stamp
-                focus_assist_callback,
-                context_ptr,
-                ptr::null(),
-                0, // No serialization group
-                0, // No flags
-            );
+        let status = RtlSubscribeWnfStateChangeNotification(
+            &raw mut subscription,
+            WNF_SHEL_QUIETHOURS_ACTIVE_PROFILE_CHANGED,
+            0, // Change stamp
+            focus_assist_callback,
+            context_ptr,
+            ptr::null(),
+            0, // No serialization group
+            0, // No flags
+        );
 
-            if status.is_err() {
-                // Clean up context if subscription failed
-                let _ = Box::from_raw(context_ptr.cast::<CallbackContext>());
-                tracing::error!(
-                    "RtlSubscribeWnfStateChangeNotification failed: {status:?}. DND monitoring will be unavailable."
-                );
-                return Err(anyhow::anyhow!(
-                    "Failed to subscribe to WNF notifications: {status:?}"
-                ));
-            }
-
-            if !is_valid_ptr(subscription) {
-                let _ = Box::from_raw(context_ptr.cast::<CallbackContext>());
-                tracing::error!("WNF subscription handle appears invalid: {subscription:p}");
-                return Err(anyhow::anyhow!("Invalid subscription handle"));
-            }
-
-            // Return the subscription pointer wrapped in SendPtr
-            Ok(SendPtr::new(subscription))
-        }
-    }));
-
-    match result {
-        Ok(Ok(ptr)) => Ok(ptr),
-        Ok(Err(e)) => Err(e),
-        Err(panic_err) => {
+        if status.is_err() {
+            // Clean up context if subscription failed
+            let _ = Box::from_raw(context_ptr.cast::<CallbackContext>());
             tracing::error!(
-                "Panic caught in subscribe_to_focus_assist: {panic_err:?}. This prevents app crash.",
+                "RtlSubscribeWnfStateChangeNotification failed: {status:?}. DND monitoring will be unavailable."
             );
-            Err(anyhow::anyhow!(
-                "Panic occurred during WNF subscription: {panic_err:?}"
-            ))
+            return Err(anyhow::anyhow!(
+                "Failed to subscribe to WNF notifications: {status:?}"
+            ));
         }
+
+        if !is_valid_ptr(subscription) {
+            let _ = Box::from_raw(context_ptr.cast::<CallbackContext>());
+            tracing::error!("WNF subscription handle appears invalid: {subscription:p}");
+            return Err(anyhow::anyhow!("Invalid subscription handle"));
+        }
+
+        // Return the subscription pointer wrapped in SendPtr
+        Ok(SendPtr::new(subscription))
     }
 }
 
-/// Unsubscribe from Focus Assist notifications
+/// Unsubscribe from Focus Assist notifications.
 ///
-/// # Safety
-///
-/// This function uses undocumented Windows WNF API. All errors are caught and logged
-/// without propagating. Panics are caught to prevent app crashes during cleanup.
+/// Errors are logged but not propagated as this is a cleanup function.
 fn unsubscribe_from_focus_assist(subscription: *mut WnfUserSubscription) {
     if !is_valid_ptr(subscription) {
         tracing::warn!("Invalid subscription pointer during unsubscribe: {subscription:p}");
         return; // Non-fatal, just skip unsubscribe
     }
 
-    // Wrap in catch_unwind to prevent panics during cleanup
-    let result = panic::catch_unwind(|| {
-        // SAFETY: Calling Windows WNF API function `RtlUnsubscribeWnfStateChangeNotification`.
-        // - `subscription` pointer has been validated as non-null and within valid memory range
-        // - This is the cleanup function, so errors are logged but not propagated
-        unsafe {
-            let status = RtlUnsubscribeWnfStateChangeNotification(subscription);
-            if status.is_err() {
-                tracing::error!(
-                    "Failed to unsubscribe from WNF notifications: {status:?}. This is non-fatal."
-                );
-            }
+    // SAFETY: Calling Windows WNF API function `RtlUnsubscribeWnfStateChangeNotification`.
+    // - `subscription` pointer has been validated as non-null and within valid memory range
+    // - This is the cleanup function, so errors are logged but not propagated
+    unsafe {
+        let status = RtlUnsubscribeWnfStateChangeNotification(subscription);
+        if status.is_err() {
+            tracing::error!(
+                "Failed to unsubscribe from WNF notifications: {status:?}. This is non-fatal."
+            );
         }
-    });
-
-    if let Err(panic_err) = result {
-        tracing::error!(
-            "Panic caught during WNF unsubscribe: {panic_err:?}. Memory may leak but app continues."
-        );
     }
 }
 
