@@ -92,18 +92,14 @@ function generateCommitLog(prevTag: string, currentTag: string): string {
   if (prevTag) {
     return execCapture(
       "git",
-      ["log", '--pretty=format:"- %s (%h)"', `${prevTag}..${currentTag}`],
+      ["log", "--pretty=format:- %s (%h)", `${prevTag}..${currentTag}`],
       { warnOnError: true },
     );
   }
   // No previous tag: initial release — cap at 50 commits as a safety net
-  return execCapture(
-    "git",
-    ["log", '--pretty=format:"- %s (%h)"', "-n", "50"],
-    {
-      warnOnError: true,
-    },
-  );
+  return execCapture("git", ["log", "--pretty=format:- %s (%h)", "-n", "50"], {
+    warnOnError: true,
+  });
 }
 
 // ============================================================================

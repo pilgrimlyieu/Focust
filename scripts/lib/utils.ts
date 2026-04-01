@@ -167,7 +167,7 @@ export function confirm(message: string): boolean {
 }
 
 // ============================================================================
-// Shell
+// Execution
 // ============================================================================
 
 /**
@@ -267,7 +267,7 @@ export function parseCliArgs(
     const arg = args[i];
     if (arg === "--help" || arg === "-h") {
       if (options?.helpText) {
-        logger.multiline([options.helpText]);
+        logger.log(options.helpText);
       }
       process.exit(0);
     }
