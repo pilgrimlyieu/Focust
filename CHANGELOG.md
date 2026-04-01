@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 <!-- CHANGELOG_INSERT -->
 
+## 0.3.6 (2026.4.1)
+
+### 🐛 Bug Fixes
+
+- Fixed an issue where only the tab navigation bar was displayed with a white background in smaller settings windows, while the actual settings content was not visible. (#65)
+
 ## 0.3.5 (2026.2.25)
 
 ### 🎉 Features

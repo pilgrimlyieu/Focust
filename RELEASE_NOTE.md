@@ -7,7 +7,6 @@
 
 <!-- Release notes content starts here -->
 
-## 🎉 Features
+## 🐛 Bug Fixes
 
-- Update rodio to v0.22 and audio function is supported on macOS now.
-- Hide dock icon on macOS platform (#45).
+- Fixed an issue where only the tab navigation bar was displayed with a white background in smaller settings windows, while the actual settings content was not visible. (#65)
