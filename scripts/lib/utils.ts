@@ -171,28 +171,26 @@ export function confirm(message: string): boolean {
 // ============================================================================
 
 /**
- * Execute shell command
+ * Execute command
  * @param {string} command - The command to execute
  * @param {string[]} args - Array of arguments to pass to the command
  * @returns {boolean} True if command succeeded (exit code 0), false otherwise
  */
 export function exec(command: string, args: string[]): boolean {
   const result = spawnSync(command, args, {
-    shell: true,
     stdio: "inherit",
   });
   return result.status === 0;
 }
 
 /**
- * Execute shell command and throw on error
+ * Execute command and throw on error
  * @param {string} command - The command to execute
  * @param {string[]} args - Array of arguments to pass to the command
  * @throws {Error} If the command exits with a non-zero status
  */
 export function execOrThrow(command: string, args: string[]): void {
   const result = spawnSync(command, args, {
-    shell: true,
     stdio: "inherit",
   });
 
@@ -221,7 +219,7 @@ export function exitWithSuccess(message: string): never {
 }
 
 /**
- * Execute shell command and capture stdout
+ * Execute command and capture stdout
  * @param {string} command - The command to execute
  * @param {string[]} args - Array of arguments to pass to the command
  * @param {{ warnOnError?: boolean }} [options] - Optional configuration
@@ -234,7 +232,6 @@ export function execCapture(
 ): string {
   const result = spawnSync(command, args, {
     encoding: "utf-8",
-    shell: true,
     stdio: ["pipe", "pipe", "pipe"],
   });
   if (

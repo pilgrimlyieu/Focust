@@ -69,7 +69,7 @@ export const gitDriver: VcsDriver = {
       logger.info("🔍 Staging specific changes");
       git("add", ...files);
     }
-    git("commit", "-m", `"${message}"`);
+    git("commit", "-m", message);
   },
 
   createTag(tag) {
