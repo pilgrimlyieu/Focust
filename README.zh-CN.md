@@ -7,7 +7,7 @@
 **现代化、跨平台的休息提醒应用**
 
 [![GPL-3.0 许可证](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![Tauri](https://img.shields.io/badge/Tauri-2.9-blue?logo=tauri)](https://tauri.app/)
+[![Tauri](https://img.shields.io/badge/Tauri-2.10-blue?logo=tauri)](https://tauri.app/)
 [![Vue 3](https://img.shields.io/badge/Vue-3.5-green?logo=vue.js)](https://vuejs.org/)
 [![Rust](https://img.shields.io/badge/Rust-2024-orange?logo=rust)](https://www.rust-lang.org/)
 
