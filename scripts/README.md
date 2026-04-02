@@ -88,7 +88,7 @@ Any stage returning `false` aborts the pipeline.
 
 **Example** — skip Tauri config and add a custom notification:
 ```typescript
-import { defaults } from "./lib/default-hooks";
+import { defaults } from "./lib/default-release-hooks";
 import type { ReleaseStage } from "./lib/release-hooks";
 
 const notify: ReleaseStage = async (ctx) => {
@@ -109,7 +109,7 @@ export const stages: ReleaseStage[] = [
 ];
 ```
 
-See `lib/release-hooks.ts` for type definitions and `lib/default-hooks.ts` for stage implementations.
+See `lib/release-hooks.ts` for type definitions and `lib/default-release-hooks.ts` for stage implementations.
 
 ## See Also
 

@@ -4,7 +4,7 @@
  *
  * Executes a configurable pipeline of release stages.
  * Stages are loaded from `scripts/release-hooks.ts` (user config)
- * or fall back to `DEFAULT_STAGES` from `scripts/lib/default-hooks.ts`.
+ * or fall back to `DEFAULT_STAGES` from `scripts/lib/default-release-hooks.ts`.
  *
  * Usage:
  *   bun scripts/release.ts 1.2.3      # Specify exact version
