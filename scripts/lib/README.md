@@ -16,6 +16,27 @@ Centralized configuration values:
 | `VCS`                 | VCS settings: `DEFAULT_VCS` (manual config / "auto"), `DEFAULT_BRANCH`, `COMMIT_MESSAGE_TEMPLATE`, `TAG_TEMPLATE` |
 | `SIGNING_KEY_*`       | Signing key path defaults                                                                                         |
 
+### hooks.ts
+
+Release workflow hook system:
+
+| Export                     | Description                                                        |
+| -------------------------- | ------------------------------------------------------------------ |
+| `ReleaseHookContext`       | Context passed to hooks (current/new version, flags, project root) |
+| `ReleaseHookFn`            | Hook function signature `(ctx) => void \| boolean \| Promise<...>` |
+| `ReleaseHooks`             | Interface defining all available hook points                       |
+| `ReleaseHookPoint`         | Hook point names (preRelease, postVersion, postChangelog, etc.)    |
+| `loadReleaseHooks`         | Load hooks from `scripts/release-hooks.ts` if exists               |
+| `runReleaseHook`           | Execute a specific hook (returns false if hook aborts)             |
+| `createReleaseHookContext` | Create hook context with version and options                       |
+
+**Hook Points** (execution order):
+1. `preRelease` - Before any steps (abortable)
+2. `preCommit` - Before commit (abortable)
+3. `postCommit` - After commit/tag created
+4. `postPush` - After push (skipped if `--no-push`)
+5. `postRelease` - After all steps complete
+
 ### vcs.ts
 
 VCS abstraction layer (Git + Jujutsu):

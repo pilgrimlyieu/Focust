@@ -7,6 +7,7 @@ Reusable automation scripts for Tauri projects.
 | Script                         | Purpose                                           |
 | ------------------------------ | ------------------------------------------------- |
 | `release.ts`                   | Version bumping, changelog update, git tag & push |
+| `release-hooks.ts`             | Customizable hooks for release automation         |
 | `setup-updater-signing.ts`     | Code signing key generation and configuration     |
 | `ci/prepare-artifacts.ts`      | Collect & rename Tauri build outputs              |
 | `ci/generate-manifest.ts`      | Generate Tauri updater manifest (`latest.json`)   |
@@ -66,6 +67,29 @@ bun scripts/ci/generate-release-notes.ts --version 0.3.4 --tag v0.3.4 --repo own
 | `<X.Y.Z>`                       | Exact version                              |
 | `--no-push`                     | Skip push to remote                        |
 | `--all`, `-a`                   | Stage all changes (not just release files) |
+
+### release-hooks.ts
+
+Customize release workflow with hooks at specific points:
+
+**Available hook points** (in execution order):
+- `preRelease` - Before any release steps (can abort by returning `false`)
+- `preCommit` - Before creating commit (can abort by returning `false`)
+- `postCommit` - After commit and tag created
+- `postPush` - After pushing to remote (skipped if `--no-push`)
+- `postRelease` - After all release steps complete
+
+**Example**:
+```typescript
+export const hooks: ReleaseHooks = {
+  postRelease: (ctx) => {
+    // Reset RELEASE_NOTE.md to template
+    file.copy(".github/RELEASE_NOTE_TEMPLATE.md", "RELEASE_NOTE.md");
+  },
+};
+```
+
+See `lib/release-hooks.ts` for type definitions and `release-hooks.ts` for examples.
 
 ## See Also
 

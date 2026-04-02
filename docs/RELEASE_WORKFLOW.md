@@ -121,6 +121,7 @@ Use the release scripts for streamlined version management:
    - ✅ Commits changes with message: `chore: bump version to vX.Y.Z`
    - ✅ Creates Git tag: `vX.Y.Z`
    - ✅ Pushes commit and tag to remote (with confirmation)
+   - ✅ Executes custom hooks if configured (see [Release Hooks](#release-hooks))
 
 4. **(Optional) GPG sign the commit**:
    ```bash
@@ -388,6 +389,95 @@ The script automatically extracts content from `RELEASE_NOTE.md` after the separ
 ```
 
 The content is converted from `##` headers to `###` headers for CHANGELOG format, preserving all other formatting.
+
+## Release Hooks
+
+### Overview
+
+The release script supports custom hooks to extend the workflow at specific points. This allows you to automate tasks like:
+- Resetting release notes to template
+- Updating documentation
+- Triggering notifications
+- Running custom validations
+
+### Configuration
+
+Create or edit `scripts/release-hooks.ts`:
+
+```typescript
+import type { ReleaseHookContext, ReleaseHooks } from "./lib/release-hooks";
+import { file } from "./lib/utils";
+
+export const hooks: ReleaseHooks = {
+  // Example: Reset RELEASE_NOTE.md after release
+  postRelease: (ctx) => {
+    const template = file.read(".github/RELEASE_NOTE_TEMPLATE.md");
+    file.write("RELEASE_NOTE.md", template);
+  },
+};
+```
+
+### Available Hook Points
+
+Hooks are executed in the following order:
+
+| Hook          | When                            | Can Abort | Use Cases                                    |
+| ------------- | ------------------------------- | --------- | -------------------------------------------- |
+| `preRelease`  | Before any release steps        | ✅ Yes     | Validation, prerequisites check              |
+| `preCommit`   | Before creating commit          | ✅ Yes     | Final checks, lint staged files              |
+| `postCommit`  | After commit and tag created    | ❌ No      | Local post-processing                        |
+| `postPush`    | After push (if not `--no-push`) | ❌ No      | Trigger CI/CD, notify team                   |
+| `postRelease` | After all steps complete        | ❌ No      | Cleanup, reset templates, send notifications |
+
+### Hook Context
+
+Each hook receives a `ReleaseHookContext` object:
+
+```typescript
+interface ReleaseHookContext {
+  currentVersion: string;  // Version before release (e.g., "0.2.1")
+  newVersion: string;      // Version being released (e.g., "0.3.0")
+  noPush: boolean;         // Whether --no-push flag was used
+  stageAll: boolean;       // Whether --all flag was used
+}
+```
+
+### Examples
+
+**Abort release if working directory is dirty:**
+```typescript
+export const hooks: ReleaseHooks = {
+  preRelease: (ctx) => {
+    const status = execCapture("git", ["status", "--porcelain"]);
+    if (status) {
+      logger.error("Working directory has uncommitted changes");
+      return false; // Abort release
+    }
+  },
+};
+```
+
+**Send Slack notification after release:**
+```typescript
+export const hooks: ReleaseHooks = {
+  postPush: async (ctx) => {
+    await fetch(process.env.SLACK_WEBHOOK_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        text: `🚀 Released v${ctx.newVersion}!`,
+      }),
+    });
+  },
+};
+```
+
+### Best Practices
+
+1. **Keep hooks simple**: Complex logic should be extracted to separate functions
+2. **Handle errors gracefully**: Wrap risky operations in try-catch
+3. **Log what you're doing**: Use `logger.info()` to inform users
+4. **Only abort when necessary**: Use `return false` sparingly in pre-hooks
+5. **Test hooks locally**: Use `--no-push` to test without affecting remote
 
 ## Additional Resources
 

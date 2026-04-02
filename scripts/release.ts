@@ -7,9 +7,9 @@
  *
  * Usage:
  *   bun scripts/release.ts 1.2.3      # Specify exact version
- *   bun scripts/release.ts --patch    # Bump patch: 0.2.11 -> 0.2.12
- *   bun scripts/release.ts --minor    # Bump minor: 0.2.11 -> 0.3.0
- *   bun scripts/release.ts --major    # Bump major: 0.2.11 -> 1.0.0
+ *   bun scripts/release.ts --patch    # Bump patch: 0.2.1 -> 0.2.2
+ *   bun scripts/release.ts --minor    # Bump minor: 0.2.1 -> 0.3.0
+ *   bun scripts/release.ts --major    # Bump major: 0.2.1 -> 1.0.0
  *   bun scripts/release.ts --no-push  # Skip pushing to remote
  *   bun scripts/release.ts --all      # Stage all changes (not just release files)
  *   bun scripts/release.ts --vcs jj   # Force Jujutsu mode (overrides config)
@@ -19,6 +19,11 @@
  */
 
 import { MARKERS, PATHS, RELEASE_STAGE_FILES, VCS } from "./lib/constants";
+import {
+  createReleaseHookContext,
+  loadReleaseHooks,
+  runReleaseHook,
+} from "./lib/release-hooks";
 import {
   anchor,
   type BumpType,
@@ -199,6 +204,9 @@ async function main(): Promise<void> {
     logger.banner(`🚀 Release Automation - ${projectName}`);
     logger.spacer();
 
+    // Load hooks
+    await loadReleaseHooks();
+
     // Parse arguments and determine version
     const args = parseArgs();
     const currentVersion = getCurrentVersion();
@@ -221,6 +229,12 @@ async function main(): Promise<void> {
     // Initialize VCS driver: CLI arg > VCS.DEFAULT_VCS > auto-detect
     const vcs = createVcsDriver(args.vcsType);
 
+    // Create hook context
+    const hookCtx = createReleaseHookContext(currentVersion, newVersion, {
+      noPush: args.noPush,
+      stageAll: args.stageAll,
+    });
+
     logger.multiline([
       `Current version: ${currentVersion}`,
       `New version:     ${newVersion}`,
@@ -237,6 +251,11 @@ async function main(): Promise<void> {
 
     logger.spacer();
 
+    // Hook: preRelease
+    if (!(await runReleaseHook("preRelease", hookCtx))) {
+      process.exit(1);
+    }
+
     // Step 1: Update version numbers
     logger.step(1, "Updating version numbers");
     updateJsonVersion(PATHS.PACKAGE_JSON, newVersion);
@@ -249,10 +268,18 @@ async function main(): Promise<void> {
     updateChangelog(newVersion, releaseNotes);
     logger.spacer();
 
+    // Hook: preCommit
+    if (!(await runReleaseHook("preCommit", hookCtx))) {
+      process.exit(1);
+    }
+
     // Step 3: Commit and tag
     logger.step(3, "Creating commit and tag");
     commitAndTag(vcs, newVersion, args.stageAll ?? false);
     logger.spacer();
+
+    // Hook: postCommit
+    await runReleaseHook("postCommit", hookCtx);
 
     // Step 4: Push to remote
     const tag = renderTemplate(VCS.TAG_TEMPLATE, newVersion);
@@ -261,6 +288,9 @@ async function main(): Promise<void> {
         logger.step(4, "Pushing to remote");
         pushToRemote(vcs, newVersion);
         logger.spacer();
+
+        // Hook: postPush
+        await runReleaseHook("postPush", hookCtx);
       } else {
         logger.warning(
           `Push skipped. Run manually:\n${getManualPushHint(vcs.type, tag)}`,
@@ -273,6 +303,9 @@ async function main(): Promise<void> {
       );
       logger.spacer();
     }
+
+    // Hook: postRelease
+    await runReleaseHook("postRelease", hookCtx);
 
     // Success!
     logger.success(`Release v${newVersion} completed! 🎉`);
