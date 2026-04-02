@@ -33,4 +33,6 @@ dist-ssr
 !public.key
 
 AGENTS.md
+CLAUDE.md
+.claude/*
 docs/agent

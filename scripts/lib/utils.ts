@@ -492,29 +492,6 @@ export function getDateString(): string {
 }
 
 // ============================================================================
-// Chore
-// ============================================================================
-
-/**
- * Render template string with placeholders (e.g. "Hello, %s!" with "World" => "Hello, World!")
- * @param {string} template - The template string containing "%s" as placeholder(s)
- * @param {string} value - The value to replace the placeholder(s) with
- * @returns {string} The rendered string with placeholders replaced by the value
- */
-export function renderTemplate(template: string, value: string): string {
-  return template.replaceAll("%s", value);
-}
-
-/**
- * Join path segments relative to project root
- * @param {...string} segments - The path segments to join
- * @returns {string} The joined path relative to the project root
- */
-export function projectPath(...segments: string[]): string {
-  return path.join(process.cwd(), ...segments);
-}
-
-// ============================================================================
 // Anchor Operations
 // ============================================================================
 
@@ -640,3 +617,38 @@ export const anchor = {
     );
   },
 } as const;
+
+// ============================================================================
+// Chore
+// ============================================================================
+
+/**
+ * Render template string with placeholders (e.g. "Hello, %s!" with "World" => "Hello, World!")
+ * @param {string} template - The template string containing "%s" as placeholder(s)
+ * @param {string} value - The value to replace the placeholder(s) with
+ * @returns {string} The rendered string with placeholders replaced by the value
+ */
+export function renderTemplate(template: string, value: string): string {
+  return template.replaceAll("%s", value);
+}
+
+/**
+ * Join path segments relative to project root
+ * @param {...string} segments - The path segments to join
+ * @returns {string} The joined path relative to the project root
+ */
+export function projectPath(...segments: string[]): string {
+  return path.join(process.cwd(), ...segments);
+}
+
+/**
+ * Get error message from unknown error object
+ * @param {unknown} err - The error object to extract the message from
+ * @returns {string} The error message as a string
+ */
+export function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) {
+    return err.message;
+  }
+  return String(err);
+}

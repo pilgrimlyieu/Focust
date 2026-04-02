@@ -11,31 +11,47 @@ Centralized configuration values:
 | Export                | Description                                                                                                       |
 | --------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | `PATHS`               | File paths (`PACKAGE_JSON`, `TAURI_CONFIG`, `CHANGELOG`, etc.)                                                    |
-| `RELEASE_STAGE_FILES` | Files staged for release commits                                                                                  |
 | `MARKERS`             | Content markers (changelog insert point, release note separator)                                                  |
 | `VCS`                 | VCS settings: `DEFAULT_VCS` (manual config / "auto"), `DEFAULT_BRANCH`, `COMMIT_MESSAGE_TEMPLATE`, `TAG_TEMPLATE` |
 | `SIGNING_KEY_*`       | Signing key path defaults                                                                                         |
 
-### hooks.ts
+### release-hooks.ts
 
-Release workflow hook system:
+Release pipeline types and stage loader:
 
-| Export                     | Description                                                        |
-| -------------------------- | ------------------------------------------------------------------ |
-| `ReleaseHookContext`       | Context passed to hooks (current/new version, flags, project root) |
-| `ReleaseHookFn`            | Hook function signature `(ctx) => void \| boolean \| Promise<...>` |
-| `ReleaseHooks`             | Interface defining all available hook points                       |
-| `ReleaseHookPoint`         | Hook point names (preRelease, postVersion, postChangelog, etc.)    |
-| `loadReleaseHooks`         | Load hooks from `scripts/release-hooks.ts` if exists               |
-| `runReleaseHook`           | Execute a specific hook (returns false if hook aborts)             |
-| `createReleaseHookContext` | Create hook context with version and options                       |
+| Export                   | Description                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------ |
+| `ReleasePipelineContext` | Context flowing through all stages (readonly inputs + shared data + extra bag) |
+| `ReleaseStage`           | Stage function signature `(ctx) => void \| boolean \| Promise<...>`            |
+| `loadReleaseStages`      | Load stage list from `scripts/release-hooks.ts`, fallback to `DEFAULT_STAGES`  |
+| `createPipelineContext`  | Create initial context with version, flags, VCS driver, and stages             |
 
-**Hook Points** (execution order):
-1. `preRelease` - Before any steps (abortable)
-2. `preCommit` - Before commit (abortable)
-3. `postCommit` - After commit/tag created
-4. `postPush` - After push (skipped if `--no-push`)
-5. `postRelease` - After all steps complete
+**Pipeline Context** fields:
+
+| Category        | Fields                                                                                                       |
+| --------------- | ------------------------------------------------------------------------------------------------------------ |
+| Readonly inputs | `currentVersion`, `newVersion`, `noPush`, `stageAll`, `vcs`, `vcsType`, `tagName`, `commitMessage`, `stages` |
+| Shared data     | `modifiedFiles`, `filesToStage`, `releaseNotes`                                                              |
+| Custom          | `extra` — generic `Record<string, unknown>` for stage-specific data                                          |
+
+### default-release-hooks.ts
+
+Default release pipeline stages:
+
+| Stage                  | Description                                          |
+| ---------------------- | ---------------------------------------------------- |
+| `updatePackageVersion` | Update `package.json` version                        |
+| `updateTauriConfig`    | Update `tauri.conf.json` version (skips if missing)  |
+| `updateChangelog`      | Extract release notes, update `CHANGELOG.md`         |
+| `commit`               | Stage files and create commit                        |
+| `tag`                  | Create version tag                                   |
+| `push`                 | Push branch and tag to remote (respects `--no-push`) |
+| `resetReleaseNote`     | Reset `RELEASE_NOTE.md` to template                  |
+
+| Export           | Description                                        |
+| ---------------- | -------------------------------------------------- |
+| `defaults`       | Object with all stages, importable for composition |
+| `DEFAULT_STAGES` | Ordered array of all default stages                |
 
 ### vcs.ts
 

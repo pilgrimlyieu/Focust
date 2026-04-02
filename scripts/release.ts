@@ -1,9 +1,10 @@
 #!/usr/bin/env bun
 /**
- * Release automation script for Tauri projects
+ * Release automation script
  *
- * Supports both Git and Jujutsu (JJ) as version control backends.
- * Auto-detects VCS type (checks for .jj directory), or use --vcs to force.
+ * Executes a configurable pipeline of release stages.
+ * Stages are loaded from `scripts/release-hooks.ts` (user config)
+ * or fall back to `DEFAULT_STAGES` from `scripts/lib/default-hooks.ts`.
  *
  * Usage:
  *   bun scripts/release.ts 1.2.3      # Specify exact version
@@ -18,34 +19,23 @@
  * VCS resolution: --vcs arg > VCS.DEFAULT_VCS in constants.ts > auto-detect (.jj dir)
  */
 
-import { MARKERS, PATHS, RELEASE_STAGE_FILES, VCS } from "./lib/constants";
 import {
-  createReleaseHookContext,
-  loadReleaseHooks,
-  runReleaseHook,
+  createPipelineContext,
+  loadReleaseStages,
+  type ReleasePipelineContext,
 } from "./lib/release-hooks";
 import {
-  anchor,
   type BumpType,
   calculateNewVersion,
   confirm,
   exitWithError,
-  file,
   getCurrentVersion,
-  getDateString,
+  getErrorMessage,
   getProjectName,
   isValidVersion,
   logger,
-  projectPath,
-  renderTemplate,
-  updateJsonVersion,
 } from "./lib/utils";
-import {
-  createVcsDriver,
-  getManualPushHint,
-  type VcsDriver,
-  type VcsType,
-} from "./lib/vcs";
+import { createVcsDriver, type VcsType } from "./lib/vcs";
 
 // ============================================================================
 // Types
@@ -57,76 +47,6 @@ interface Args {
   noPush?: boolean;
   stageAll?: boolean;
   vcsType?: VcsType;
-}
-
-// ============================================================================
-// Changelog Management
-// ============================================================================
-
-function extractReleaseNotes(): string {
-  const releaseNotePath = projectPath(PATHS.RELEASE_NOTE);
-
-  if (!file.exists(releaseNotePath)) {
-    exitWithError(`${PATHS.RELEASE_NOTE} not found. Please create it first.`);
-  }
-
-  const content = file.read(releaseNotePath);
-
-  if (!anchor.exists(content, MARKERS.RELEASE_NOTE_SEPARATOR)) {
-    logger.warning(
-      `No separator comment found in ${PATHS.RELEASE_NOTE}, using all content`,
-    );
-    return content.trim();
-  }
-
-  return anchor.getAfter(content, MARKERS.RELEASE_NOTE_SEPARATOR);
-}
-
-function updateChangelog(newVersion: string, releaseNotes: string): void {
-  const date = getDateString();
-  const changelogPath = projectPath(PATHS.CHANGELOG);
-  const content = file.read(changelogPath);
-
-  // Convert ## to ### for changelog format
-  const changelogEntry = releaseNotes.replace(/^## /gm, "### ");
-
-  // Insert new version after changelog insert marker
-  const newEntry = `\n\n## ${newVersion} (${date})\n\n${changelogEntry}`;
-  const updated = anchor.insertAfter(
-    content,
-    MARKERS.CHANGELOG_INSERT,
-    newEntry,
-  );
-
-  file.write(changelogPath, updated);
-  logger.success(`Updated ${PATHS.CHANGELOG}`);
-}
-
-// ============================================================================
-// VCS Operations
-// ============================================================================
-
-function commitAndTag(
-  vcs: VcsDriver,
-  version: string,
-  stageAll: boolean,
-): void {
-  const tag = renderTemplate(VCS.TAG_TEMPLATE, version);
-  const commitMsg = renderTemplate(VCS.COMMIT_MESSAGE_TEMPLATE, version);
-
-  vcs.showDiff([PATHS.PACKAGE_JSON, PATHS.TAURI_CONFIG]);
-  confirm("Proceed with commit?") || exitWithError("Commit cancelled by user");
-
-  vcs.commit(commitMsg, [...RELEASE_STAGE_FILES], stageAll);
-  vcs.createTag(tag);
-  logger.success(`Created commit and tag ${tag}`);
-}
-
-function pushToRemote(vcs: VcsDriver, version: string): void {
-  const tag = renderTemplate(VCS.TAG_TEMPLATE, version);
-  vcs.pushBranch(VCS.DEFAULT_BRANCH);
-  vcs.pushTag(tag);
-  logger.success("Pushed changes and tag to remote");
 }
 
 // ============================================================================
@@ -195,125 +115,89 @@ function printUsage(): void {
 }
 
 // ============================================================================
-// Main Logic
+// Pipeline Setup
+// ============================================================================
+
+/**
+ * Resolve new version from CLI arguments
+ */
+function resolveNewVersion(args: Args, currentVersion: string): string {
+  if (args.version) {
+    if (!isValidVersion(args.version)) {
+      exitWithError(`Invalid version format: ${args.version}. Expected: X.Y.Z`);
+    }
+    return args.version;
+  }
+
+  if (args.bumpType) {
+    return calculateNewVersion(currentVersion, args.bumpType);
+  }
+
+  printUsage();
+  process.exit(1);
+}
+
+/**
+ * Initialize the pipeline: parse args, load stages, build context
+ */
+async function initialize(): Promise<ReleasePipelineContext> {
+  const projectName = getProjectName();
+  logger.banner(`🚀 Release Automation - ${projectName}`);
+  logger.spacer();
+
+  const args = parseArgs();
+  const currentVersion = getCurrentVersion();
+  const newVersion = resolveNewVersion(args, currentVersion);
+  const vcs = createVcsDriver(args.vcsType);
+  const stages = await loadReleaseStages();
+
+  return createPipelineContext(currentVersion, newVersion, args, vcs, stages);
+}
+
+/**
+ * Display release info and ask for confirmation
+ */
+function confirmRelease(ctx: ReleasePipelineContext): void {
+  logger.multiline([
+    `Current version: ${ctx.currentVersion}`,
+    `New version:     ${ctx.newVersion}`,
+    ctx.stageAll
+      ? "Stage mode:      All changes"
+      : "Stage mode:      Release files only",
+  ]);
+  logger.spacer();
+
+  if (!confirm(`Continue with release v${ctx.newVersion}?`)) {
+    logger.warning("Release cancelled");
+    process.exit(0);
+  }
+
+  logger.spacer();
+}
+
+// ============================================================================
+// Main
 // ============================================================================
 
 async function main(): Promise<void> {
   try {
-    const projectName = getProjectName();
-    logger.banner(`🚀 Release Automation - ${projectName}`);
-    logger.spacer();
+    const ctx = await initialize();
+    confirmRelease(ctx);
 
-    // Load hooks
-    await loadReleaseHooks();
-
-    // Parse arguments and determine version
-    const args = parseArgs();
-    const currentVersion = getCurrentVersion();
-    let newVersion = "";
-
-    if (args.version) {
-      if (!isValidVersion(args.version)) {
-        exitWithError(
-          `Invalid version format: ${args.version}. Expected: X.Y.Z`,
-        );
+    for (const [index, stage] of ctx.stages.entries()) {
+      const name = stage.stageName ?? stage.name;
+      logger.step(index + 1, name);
+      const result = await stage(ctx);
+      if (result === false) {
+        exitWithError(`Release aborted by stage: ${name}`);
       }
-      newVersion = args.version;
-    } else if (args.bumpType) {
-      newVersion = calculateNewVersion(currentVersion, args.bumpType);
-    } else {
-      printUsage();
-      process.exit(1);
-    }
-
-    // Initialize VCS driver: CLI arg > VCS.DEFAULT_VCS > auto-detect
-    const vcs = createVcsDriver(args.vcsType);
-
-    // Create hook context
-    const hookCtx = createReleaseHookContext(currentVersion, newVersion, {
-      noPush: args.noPush,
-      stageAll: args.stageAll,
-    });
-
-    logger.multiline([
-      `Current version: ${currentVersion}`,
-      `New version:     ${newVersion}`,
-      args.stageAll
-        ? "Stage mode:      All changes"
-        : "Stage mode:      Release files only",
-    ]);
-    logger.spacer();
-
-    if (!confirm(`Continue with release v${newVersion}?`)) {
-      logger.warning("Release cancelled");
-      process.exit(0);
-    }
-
-    logger.spacer();
-
-    // Hook: preRelease
-    if (!(await runReleaseHook("preRelease", hookCtx))) {
-      process.exit(1);
-    }
-
-    // Step 1: Update version numbers
-    logger.step(1, "Updating version numbers");
-    updateJsonVersion(PATHS.PACKAGE_JSON, newVersion);
-    updateJsonVersion(PATHS.TAURI_CONFIG, newVersion);
-    logger.spacer();
-
-    // Step 2: Update CHANGELOG
-    logger.step(2, `Updating ${PATHS.CHANGELOG}`);
-    const releaseNotes = extractReleaseNotes();
-    updateChangelog(newVersion, releaseNotes);
-    logger.spacer();
-
-    // Hook: preCommit
-    if (!(await runReleaseHook("preCommit", hookCtx))) {
-      process.exit(1);
-    }
-
-    // Step 3: Commit and tag
-    logger.step(3, "Creating commit and tag");
-    commitAndTag(vcs, newVersion, args.stageAll ?? false);
-    logger.spacer();
-
-    // Hook: postCommit
-    await runReleaseHook("postCommit", hookCtx);
-
-    // Step 4: Push to remote
-    const tag = renderTemplate(VCS.TAG_TEMPLATE, newVersion);
-    if (!args.noPush) {
-      if (confirm("Push commit and tag to remote?")) {
-        logger.step(4, "Pushing to remote");
-        pushToRemote(vcs, newVersion);
-        logger.spacer();
-
-        // Hook: postPush
-        await runReleaseHook("postPush", hookCtx);
-      } else {
-        logger.warning(
-          `Push skipped. Run manually:\n${getManualPushHint(vcs.type, tag)}`,
-        );
-        logger.spacer();
-      }
-    } else {
-      logger.warning(
-        `Push skipped (--no-push). Run manually:\n${getManualPushHint(vcs.type, tag)}`,
-      );
       logger.spacer();
     }
 
-    // Hook: postRelease
-    await runReleaseHook("postRelease", hookCtx);
-
-    // Success!
-    logger.success(`Release v${newVersion} completed! 🎉`);
+    logger.success(`Release v${ctx.newVersion} completed! 🎉`);
   } catch (error) {
     logger.spacer();
-    exitWithError(
-      `Release failed: ${error instanceof Error ? error.message : String(error)}`,
-    );
+    exitWithError(`Release failed: ${getErrorMessage(error)}`);
   }
 }
 

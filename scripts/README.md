@@ -6,8 +6,8 @@ Reusable automation scripts for Tauri projects.
 
 | Script                         | Purpose                                           |
 | ------------------------------ | ------------------------------------------------- |
-| `release.ts`                   | Version bumping, changelog update, git tag & push |
-| `release-hooks.ts`             | Customizable hooks for release automation         |
+| `release.ts`                   | Release pipeline runner                           |
+| `release-hooks.ts`             | Configurable stage list for release pipeline      |
 | `setup-updater-signing.ts`     | Code signing key generation and configuration     |
 | `ci/prepare-artifacts.ts`      | Collect & rename Tauri build outputs              |
 | `ci/generate-manifest.ts`      | Generate Tauri updater manifest (`latest.json`)   |
@@ -70,26 +70,46 @@ bun scripts/ci/generate-release-notes.ts --version 0.3.4 --tag v0.3.4 --repo own
 
 ### release-hooks.ts
 
-Customize release workflow with hooks at specific points:
+Customize the release pipeline by composing stages. The release process is a flat ordered list of stage functions — each receives a shared context and can be freely added, removed, or reordered.
 
-**Available hook points** (in execution order):
-- `preRelease` - Before any release steps (can abort by returning `false`)
-- `preCommit` - Before creating commit (can abort by returning `false`)
-- `postCommit` - After commit and tag created
-- `postPush` - After pushing to remote (skipped if `--no-push`)
-- `postRelease` - After all release steps complete
+**Default stages** (in execution order):
 
-**Example**:
+| Stage                  | Description                                          |
+| ---------------------- | ---------------------------------------------------- |
+| `updatePackageVersion` | Update `package.json` version                        |
+| `updateTauriConfig`    | Update `tauri.conf.json` version (skips if missing)  |
+| `updateChangelog`      | Extract release notes, update `CHANGELOG.md`         |
+| `commit`               | Stage files and create commit                        |
+| `tag`                  | Create version tag                                   |
+| `push`                 | Push branch and tag to remote (respects `--no-push`) |
+| `resetReleaseNote`     | Reset `RELEASE_NOTE.md` to template                  |
+
+Any stage returning `false` aborts the pipeline.
+
+**Example** — skip Tauri config and add a custom notification:
 ```typescript
-export const hooks: ReleaseHooks = {
-  postRelease: (ctx) => {
-    // Reset RELEASE_NOTE.md to template
-    file.copy(".github/RELEASE_NOTE_TEMPLATE.md", "RELEASE_NOTE.md");
-  },
+import { defaults } from "./lib/default-hooks";
+import type { ReleaseStage } from "./lib/release-hooks";
+
+const notify: ReleaseStage = async (ctx) => {
+  await fetch(WEBHOOK, {
+    method: "POST",
+    body: JSON.stringify({ text: `Released v${ctx.newVersion}` }),
+  });
 };
+
+export const stages: ReleaseStage[] = [
+  defaults.updatePackageVersion,
+  defaults.updateChangelog,
+  defaults.commit,
+  defaults.tag,
+  defaults.push,
+  notify,
+  defaults.resetReleaseNote,
+];
 ```
 
-See `lib/release-hooks.ts` for type definitions and `release-hooks.ts` for examples.
+See `lib/release-hooks.ts` for type definitions and `lib/default-hooks.ts` for stage implementations.
 
 ## See Also
 

@@ -18,6 +18,7 @@ import {
   exec,
   exitWithError,
   file,
+  getErrorMessage,
   getProjectName,
   logger,
   projectPath,
@@ -209,9 +210,7 @@ async function main(): Promise<void> {
     ]);
   } catch (error) {
     logger.spacer();
-    exitWithError(
-      `Setup failed: ${error instanceof Error ? error.message : String(error)}`,
-    );
+    exitWithError(`Setup failed: ${getErrorMessage(error)}`);
   }
 }
 

@@ -115,13 +115,15 @@ Use the release scripts for streamlined version management:
    npx tsx scripts/release.ts --patch
    ```
 
-3. **What the script does**:
+3. **What the script does** (default pipeline):
    - ✅ Updates `package.json` and `tauri.conf.json` version numbers
    - ✅ Extracts content from `RELEASE_NOTE.md` and adds to `CHANGELOG.md`
+   - ✅ Shows diff
    - ✅ Commits changes with message: `chore: bump version to vX.Y.Z`
    - ✅ Creates Git tag: `vX.Y.Z`
    - ✅ Pushes commit and tag to remote (with confirmation)
-   - ✅ Executes custom hooks if configured (see [Release Hooks](#release-hooks))
+   - ✅ Resets `RELEASE_NOTE.md` to template
+   - ✅ Pipeline is fully customizable via `scripts/release-hooks.ts`
 
 4. **(Optional) GPG sign the commit**:
    ```bash
@@ -390,94 +392,120 @@ The script automatically extracts content from `RELEASE_NOTE.md` after the separ
 
 The content is converted from `##` headers to `###` headers for CHANGELOG format, preserving all other formatting.
 
-## Release Hooks
+## Release Pipeline
 
 ### Overview
 
-The release script supports custom hooks to extend the workflow at specific points. This allows you to automate tasks like:
-- Resetting release notes to template
-- Updating documentation
-- Triggering notifications
-- Running custom validations
+The release process is a configurable pipeline of ordered stages. Each stage is a function that receives a shared context and can modify it. Stages can be freely added, removed, or reordered in `scripts/release-hooks.ts`.
+
+### Default Stages
+
+| Stage                  | Description                                          |
+| ---------------------- | ---------------------------------------------------- |
+| `updatePackageVersion` | Update `package.json` version                        |
+| `updateTauriConfig`    | Update `tauri.conf.json` version (skips if missing)  |
+| `updateChangelog`      | Extract release notes, update `CHANGELOG.md`         |
+| `commit`               | Stage files and create commit                        |
+| `tag`                  | Create version tag                                   |
+| `push`                 | Push branch and tag to remote (respects `--no-push`) |
+| `resetReleaseNote`     | Reset `RELEASE_NOTE.md` to template                  |
+
+Any stage returning `false` aborts the pipeline.
+
+### Pipeline Context
+
+Each stage receives a `ReleasePipelineContext` object:
+
+```typescript
+interface ReleasePipelineContext {
+  // Readonly inputs
+  readonly currentVersion: string;  // e.g., "0.2.1"
+  readonly newVersion: string;      // e.g., "0.3.0"
+  readonly noPush: boolean;
+  readonly stageAll: boolean;
+  readonly vcs: VcsDriver;
+  readonly tagName: string;         // e.g., "v0.3.0"
+  readonly commitMessage: string;
+
+  // Cross-stage shared data
+  modifiedFiles: string[];
+  filesToStage: string[];
+  releaseNotes: string;
+
+  // Custom data bag for user stages
+  extra: Record<string, unknown>;
+}
+```
 
 ### Configuration
 
-Create or edit `scripts/release-hooks.ts`:
+Edit `scripts/release-hooks.ts` to customize the pipeline:
 
 ```typescript
-import type { ReleaseHookContext, ReleaseHooks } from "./lib/release-hooks";
-import { file } from "./lib/utils";
+import { defaults } from "./lib/default-release-hooks";
+import type { ReleaseStage } from "./lib/release-hooks";
 
-export const hooks: ReleaseHooks = {
-  // Example: Reset RELEASE_NOTE.md after release
-  postRelease: (ctx) => {
-    const template = file.read(".github/RELEASE_NOTE_TEMPLATE.md");
-    file.write("RELEASE_NOTE.md", template);
-  },
-};
-```
-
-### Available Hook Points
-
-Hooks are executed in the following order:
-
-| Hook          | When                            | Can Abort | Use Cases                                    |
-| ------------- | ------------------------------- | --------- | -------------------------------------------- |
-| `preRelease`  | Before any release steps        | ✅ Yes     | Validation, prerequisites check              |
-| `preCommit`   | Before creating commit          | ✅ Yes     | Final checks, lint staged files              |
-| `postCommit`  | After commit and tag created    | ❌ No      | Local post-processing                        |
-| `postPush`    | After push (if not `--no-push`) | ❌ No      | Trigger CI/CD, notify team                   |
-| `postRelease` | After all steps complete        | ❌ No      | Cleanup, reset templates, send notifications |
-
-### Hook Context
-
-Each hook receives a `ReleaseHookContext` object:
-
-```typescript
-interface ReleaseHookContext {
-  currentVersion: string;  // Version before release (e.g., "0.2.1")
-  newVersion: string;      // Version being released (e.g., "0.3.0")
-  noPush: boolean;         // Whether --no-push flag was used
-  stageAll: boolean;       // Whether --all flag was used
-}
+export const stages: ReleaseStage[] = [
+  defaults.updatePackageVersion,
+  defaults.updateChangelog,
+  defaults.commit,
+  defaults.tag,
+  defaults.push,
+  defaults.resetReleaseNote,
+];
 ```
 
 ### Examples
 
-**Abort release if working directory is dirty:**
+**Add a validation stage:**
 ```typescript
-export const hooks: ReleaseHooks = {
-  preRelease: (ctx) => {
-    const status = execCapture("git", ["status", "--porcelain"]);
-    if (status) {
-      logger.error("Working directory has uncommitted changes");
-      return false; // Abort release
-    }
-  },
-};
+import { defaults } from "./lib/default-release-hooks";
+import { execCapture, logger } from "./lib/utils";
+
+function checkCleanWorkdir(ctx) {
+  const status = execCapture("git", ["status", "--porcelain"]);
+  if (status) {
+    logger.error("Working directory has uncommitted changes");
+    return false;
+  }
+}
+
+export const stages = [
+  checkCleanWorkdir,
+  ...Object.values(defaults),
+];
 ```
 
-**Send Slack notification after release:**
+**Send notification after push:**
 ```typescript
-export const hooks: ReleaseHooks = {
-  postPush: async (ctx) => {
-    await fetch(process.env.SLACK_WEBHOOK_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        text: `🚀 Released v${ctx.newVersion}!`,
-      }),
-    });
-  },
+import { defaults } from "./lib/default-release-hooks";
+
+const notify = async (ctx) => {
+  await fetch(process.env.SLACK_WEBHOOK_URL, {
+    method: "POST",
+    body: JSON.stringify({ text: `Released v${ctx.newVersion}` }),
+  });
 };
+
+export const stages = [
+  defaults.updatePackageVersion,
+  defaults.updateTauriConfig,
+  defaults.updateChangelog,
+  defaults.commit,
+  defaults.tag,
+  defaults.push,
+  notify,
+  defaults.resetReleaseNote,
+];
 ```
 
 ### Best Practices
 
-1. **Keep hooks simple**: Complex logic should be extracted to separate functions
+1. **Keep stages focused**: One responsibility per stage
 2. **Handle errors gracefully**: Wrap risky operations in try-catch
-3. **Log what you're doing**: Use `logger.info()` to inform users
-4. **Only abort when necessary**: Use `return false` sparingly in pre-hooks
-5. **Test hooks locally**: Use `--no-push` to test without affecting remote
+3. **Log what you're doing**: Use `logger.info()` / `logger.success()`
+4. **Use `return false` to abort**: Any stage can abort the pipeline
+5. **Test locally**: Use `--no-push` to test without affecting remote
 
 ## Additional Resources
 

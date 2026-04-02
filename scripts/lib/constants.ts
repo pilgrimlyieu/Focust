@@ -25,20 +25,6 @@ export const PATHS = {
 } as const;
 
 // ============================================================================
-// Release Staging Configuration
-// ============================================================================
-
-/**
- * Files to include in version release commits
- */
-export const RELEASE_STAGE_FILES = [
-  PATHS.PACKAGE_JSON,
-  PATHS.TAURI_CONFIG,
-  PATHS.CHANGELOG,
-  PATHS.RELEASE_NOTE,
-] as const;
-
-// ============================================================================
 // Markers and Patterns
 // ============================================================================
 
