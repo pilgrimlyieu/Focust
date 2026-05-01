@@ -165,7 +165,7 @@ pub fn create_settings_window<R: Runtime>(app: &AppHandle<R>) -> Result<(), Stri
     // Wait for ready event with timeout
     let app_clone = app.clone();
     tauri_spawn(async move {
-        let ready = time::timeout(StdDuration::from_millis(2000), rx).await;
+        let ready = time::timeout(StdDuration::from_secs(2), rx).await;
 
         match ready {
             Ok(Ok(())) => {

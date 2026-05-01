@@ -132,5 +132,5 @@ fn resolve_builtin_audio_path(app: &AppHandle, resource_name: &str) -> Result<St
     resolved_path_buf
         .to_str()
         .ok_or_else(|| anyhow!("Invalid path encoding for resource '{resource_name}'").to_string())
-        .map(ToString::to_string)
+        .map(str::to_owned)
 }
