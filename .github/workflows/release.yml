@@ -311,7 +311,7 @@ jobs:
           --output artifacts/latest.json
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           # Draft releases use a fixed 'draft' tag so they never conflict with
           # real version tags. The tag is auto-created/updated each time.
