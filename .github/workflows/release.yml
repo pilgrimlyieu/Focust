@@ -37,6 +37,9 @@ on:
 # Centralised in the `setup` job so every downstream job can reference them
 # without duplicating `startsWith(github.ref, ...)` everywhere.
 
+permissions:
+  contents: read
+
 jobs:
   # ═══════════════════════════════════════════════════════════════════════════
   # Setup — compute once, share everywhere
@@ -54,7 +57,10 @@ jobs:
       product_name:   ${{ steps.flags.outputs.product_name }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
       - id: flags
         shell: bash
@@ -64,10 +70,33 @@ jobs:
           BUILD_INPUT=${{ github.event.inputs.build_artifacts == 'true' }}
           RELEASE_MODE="${{ github.event.inputs.release_mode }}"
 
+          reject_multiline() {
+            local name="$1"
+            local value="$2"
+
+            if [[ "$value" == *$'\n'* || "$value" == *$'\r'* ]]; then
+              echo "$name must not contain newline characters" >&2
+              exit 1
+            fi
+          }
+
+          validate_version() {
+            local name="$1"
+            local value="$2"
+
+            if [[ ! "$value" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+              echo "Invalid $name: $value" >&2
+              exit 1
+            fi
+          }
+
           # Read project metadata from config files
           PROJECT_NAME=$(jq -r '.name' package.json)
           PRODUCT_NAME=$(jq -r '.productName // empty' src-tauri/tauri.conf.json)
           PRODUCT_NAME=${PRODUCT_NAME:-$PROJECT_NAME}
+
+          reject_multiline PROJECT_NAME "$PROJECT_NAME"
+          reject_multiline PRODUCT_NAME "$PRODUCT_NAME"
 
           SHOULD_BUILD=false
           SHOULD_RELEASE=false
@@ -75,24 +104,47 @@ jobs:
           VERSION="0.0.0"
 
           if [ "$IS_TAG" = "true" ]; then
+            if [[ ! "$GITHUB_REF_NAME" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)(-[0-9A-Za-z.-]+)?$ ]]; then
+              echo "Invalid release tag: $GITHUB_REF_NAME" >&2
+              exit 1
+            fi
+
+            VERSION="${GITHUB_REF_NAME#v}"
+            validate_version VERSION "$VERSION"
+
+            if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+              echo "Release tag must point to a commit reachable from main" >&2
+              exit 1
+            fi
+
             SHOULD_BUILD=true
             SHOULD_RELEASE=true
-            VERSION="${GITHUB_REF_NAME#v}"
           elif [ "$IS_DISPATCH" = "true" ] && [ "$BUILD_INPUT" = "true" ]; then
+            if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+              echo "Manual release builds are only allowed on main" >&2
+              exit 1
+            fi
+
             SHOULD_BUILD=true
             VERSION=$(jq -r '.version // empty' package.json)
+            validate_version VERSION "$VERSION"
+
             if [ "$RELEASE_MODE" = "draft-release" ]; then
               SHOULD_DRAFT=true
             fi
           fi
 
-          echo "project_name=$PROJECT_NAME"     >> $GITHUB_OUTPUT
-          echo "product_name=$PRODUCT_NAME"     >> $GITHUB_OUTPUT
-          echo "is_tag=$IS_TAG"                 >> $GITHUB_OUTPUT
-          echo "should_build=$SHOULD_BUILD"     >> $GITHUB_OUTPUT
-          echo "should_release=$SHOULD_RELEASE" >> $GITHUB_OUTPUT
-          echo "should_draft=$SHOULD_DRAFT"     >> $GITHUB_OUTPUT
-          echo "version=$VERSION"               >> $GITHUB_OUTPUT
+          reject_multiline VERSION "$VERSION"
+
+          {
+            echo "project_name=$PROJECT_NAME"
+            echo "product_name=$PRODUCT_NAME"
+            echo "is_tag=$IS_TAG"
+            echo "should_build=$SHOULD_BUILD"
+            echo "should_release=$SHOULD_RELEASE"
+            echo "should_draft=$SHOULD_DRAFT"
+            echo "version=$VERSION"
+          } >> "$GITHUB_OUTPUT"
 
           echo "### Build Flags" >> $GITHUB_STEP_SUMMARY
           echo "| Flag | Value |" >> $GITHUB_STEP_SUMMARY
@@ -147,20 +199,22 @@ jobs:
       # ── Environment setup ──
       - name: Checkout code
         if: steps.filter.outputs.skip != 'true'
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup Bun
         if: steps.filter.outputs.skip != 'true'
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
-          bun-version: latest
+          bun-version: 1.3.13
 
       - name: Setup Rust
         if: steps.filter.outputs.skip != 'true'
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
         with:
+          toolchain: 1.95.0
           targets: ${{ matrix.target }}
 
       - name: Install x86_64 target for macOS universal binary
@@ -183,21 +237,18 @@ jobs:
       # ── Caching ──
       - name: Cache Rust dependencies
         if: steps.filter.outputs.skip != 'true'
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae # v2
         with:
           workspaces: src-tauri
           shared-key: ${{ matrix.target }}
 
-      - name: Cache Node modules
+      - name: Cache Bun downloads
         if: steps.filter.outputs.skip != 'true'
-        uses: actions/cache@v5
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
-          path: |
-            node_modules
-            ~/.bun/install/cache
+          path: ~/.bun/install/cache
           key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
-          # restore-keys: |
-          #   ${{ runner.os }}-bun-
+          restore-keys: ${{ runner.os }}-bun-
 
       - name: Install dependencies
         if: steps.filter.outputs.skip != 'true'
@@ -207,14 +258,16 @@ jobs:
         if: steps.filter.outputs.skip != 'true'
         shell: bash
         env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          HAS_SIGNING_KEY: ${{ needs.setup.outputs.should_release == 'true' && secrets.TAURI_SIGNING_PRIVATE_KEY != '' }}
+          SHOULD_RELEASE: ${{ needs.setup.outputs.should_release }}
         run: |
-          if [ -n "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+          if [ "$HAS_SIGNING_KEY" = "true" ]; then
             echo "✅ Code signing key detected"
-          else
-            echo "⚠️ No code signing key found. Build will proceed without signing."
+          elif [ "$SHOULD_RELEASE" = "true" ]; then
+            echo "⚠️ No code signing key found. Release build will proceed without signing."
             echo "   To enable code signing, add TAURI_SIGNING_PRIVATE_KEY to GitHub Secrets"
+          else
+            echo "Code signing is disabled for non-release builds."
           fi
 
       # ── Cache warm (non-build push to main) ──
@@ -240,52 +293,60 @@ jobs:
       # ── Full Tauri build (tag release or manual build) ──
       - name: Build application
         if: steps.filter.outputs.skip != 'true' && needs.setup.outputs.should_build == 'true'
+        shell: bash
         env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        run: bun run tauri build --target ${{ matrix.build_target || matrix.target }}
+          BUILD_TARGET: ${{ matrix.build_target || matrix.target }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ needs.setup.outputs.should_release == 'true' && secrets.TAURI_SIGNING_PRIVATE_KEY || '' }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ needs.setup.outputs.should_release == 'true' && secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD || '' }}
+        run: bun run tauri build --target "$BUILD_TARGET"
 
       # ── Prepare & upload artifacts via script ──
       - name: Prepare artifacts
         if: steps.filter.outputs.skip != 'true' && needs.setup.outputs.should_build == 'true'
-        run: >
-          bun scripts/ci/prepare-artifacts.ts
-          --platform ${{ matrix.os_name }}
-          --version ${{ needs.setup.outputs.version }}
-          --target ${{ matrix.build_target || matrix.target }}
+        shell: bash
+        env:
+          PLATFORM: ${{ matrix.os_name }}
+          VERSION: ${{ needs.setup.outputs.version }}
+          TARGET: ${{ matrix.build_target || matrix.target }}
+        run: |
+          bun scripts/ci/prepare-artifacts.ts \
+            --platform "$PLATFORM" \
+            --version "$VERSION" \
+            --target "$TARGET"
 
       - name: Upload artifacts
         if: steps.filter.outputs.skip != 'true' && needs.setup.outputs.should_build == 'true'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ${{ needs.setup.outputs.project_name }}-${{ matrix.os_name }}
           path: artifacts/*
           if-no-files-found: error
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # Release — only on tag push or draft-release dispatch
+  # Prepare release metadata with read-only permissions.
   # ═══════════════════════════════════════════════════════════════════════════
-  release:
-    name: Create Release
+  prepare-release:
+    name: Prepare Release
     needs: [setup, build]
     if: needs.setup.outputs.should_release == 'true' || needs.setup.outputs.should_draft == 'true'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
-          bun-version: latest
+          bun-version: 1.3.13
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           path: artifacts
           merge-multiple: true
@@ -294,34 +355,111 @@ jobs:
         run: ls -lh artifacts/
 
       - name: Generate release notes
-        run: >
-          bun scripts/ci/generate-release-notes.ts
-          --version ${{ needs.setup.outputs.version }}
-          --tag ${{ needs.setup.outputs.should_draft == 'true' && 'draft' || format('v{0}', needs.setup.outputs.version) }}
-          --repo ${{ github.repository }}
-          --output release_body.md
+        shell: bash
+        env:
+          VERSION: ${{ needs.setup.outputs.version }}
+          TAG_NAME: ${{ needs.setup.outputs.should_draft == 'true' && format('draft-{0}', github.run_id) || format('v{0}', needs.setup.outputs.version) }}
+          REPO: ${{ github.repository }}
+        run: |
+          bun scripts/ci/generate-release-notes.ts \
+            --version "$VERSION" \
+            --tag "$TAG_NAME" \
+            --repo "$REPO" \
+            --output release_body.md
 
       - name: Generate update manifest
-        run: >
-          bun scripts/ci/generate-manifest.ts
-          --version ${{ needs.setup.outputs.version }}
-          --tag ${{ needs.setup.outputs.should_draft == 'true' && 'draft' || format('v{0}', needs.setup.outputs.version) }}
-          --repo ${{ github.repository }}
-          --artifacts-dir artifacts
-          --output artifacts/latest.json
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v3
-        with:
-          # Draft releases use a fixed 'draft' tag so they never conflict with
-          # real version tags. The tag is auto-created/updated each time.
-          # Real releases (tag push) use the proper vX.Y.Z tag from github.ref.
-          tag_name: ${{ needs.setup.outputs.should_draft == 'true' && 'draft' || format('v{0}', needs.setup.outputs.version) }}
-          name: ${{ needs.setup.outputs.product_name }} v${{ needs.setup.outputs.version }}${{ needs.setup.outputs.should_draft == 'true' && ' (Draft)' || '' }}
-          body_path: release_body.md
-          files: artifacts/*
-          draft: ${{ needs.setup.outputs.should_draft == 'true' }}
-          prerelease: false
-          generate_release_notes: false
+        shell: bash
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.setup.outputs.version }}
+          TAG_NAME: ${{ needs.setup.outputs.should_draft == 'true' && format('draft-{0}', github.run_id) || format('v{0}', needs.setup.outputs.version) }}
+          REPO: ${{ github.repository }}
+        run: |
+          bun scripts/ci/generate-manifest.ts \
+            --version "$VERSION" \
+            --tag "$TAG_NAME" \
+            --repo "$REPO" \
+            --artifacts-dir artifacts \
+            --output artifacts/latest.json
+
+      - name: Upload release assets
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: release-assets
+          path: artifacts/*
+          if-no-files-found: error
+
+      - name: Upload release metadata
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: release-metadata
+          path: release_body.md
+          if-no-files-found: error
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Publish release without checking out repository code.
+  # ═══════════════════════════════════════════════════════════════════════════
+  publish-release:
+    name: Publish Release
+    needs: [setup, prepare-release]
+    if: needs.setup.outputs.should_release == 'true' || needs.setup.outputs.should_draft == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download release assets
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: release-assets
+          path: release-assets
+
+      - name: Download release metadata
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: release-metadata
+          path: release-metadata
+
+      - name: Publish release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ needs.setup.outputs.should_draft == 'true' && format('draft-{0}', github.run_id) || format('v{0}', needs.setup.outputs.version) }}
+          RELEASE_NAME: ${{ needs.setup.outputs.product_name }} v${{ needs.setup.outputs.version }}${{ needs.setup.outputs.should_draft == 'true' && ' (Draft)' || '' }}
+          IS_DRAFT: ${{ needs.setup.outputs.should_draft }}
+          REPO: ${{ github.repository }}
+          RELEASE_TARGET: ${{ github.sha }}
+        run: |
+          shopt -s nullglob
+
+          assets=()
+          for asset in release-assets/*; do
+            assets+=("$asset")
+          done
+
+          if [ "${#assets[@]}" -eq 0 ]; then
+            echo "No release assets found." >&2
+            exit 1
+          fi
+
+          release_args=(
+            "$TAG_NAME"
+            --repo "$REPO"
+            --title "$RELEASE_NAME"
+            --notes-file release-metadata/release_body.md
+          )
+
+          if [ "$IS_DRAFT" = "true" ]; then
+            release_args+=(--draft --target "$RELEASE_TARGET")
+          else
+            release_args+=(--verify-tag)
+          fi
+
+          if gh release view "$TAG_NAME" --repo "$REPO" >/dev/null 2>&1; then
+            gh release edit "$TAG_NAME" \
+              --repo "$REPO" \
+              --title "$RELEASE_NAME" \
+              --notes-file release-metadata/release_body.md
+            gh release upload "$TAG_NAME" --repo "$REPO" --clobber -- "${assets[@]}"
+          else
+            gh release create "${release_args[@]}" -- "${assets[@]}"
+          fi
