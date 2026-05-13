@@ -57,7 +57,7 @@ jobs:
       product_name:   ${{ steps.flags.outputs.product_name }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -199,21 +199,22 @@ jobs:
       # ── Environment setup ──
       - name: Checkout code
         if: steps.filter.outputs.skip != 'true'
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Setup Bun
         if: steps.filter.outputs.skip != 'true'
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
-          bun-version: latest
+          bun-version: 1.3.13
 
       - name: Setup Rust
         if: steps.filter.outputs.skip != 'true'
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
         with:
+          toolchain: 1.95.0
           targets: ${{ matrix.target }}
 
       - name: Install x86_64 target for macOS universal binary
@@ -236,14 +237,14 @@ jobs:
       # ── Caching ──
       - name: Cache Rust dependencies
         if: steps.filter.outputs.skip != 'true'
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae # v2
         with:
           workspaces: src-tauri
           shared-key: ${{ matrix.target }}
 
       - name: Cache Bun downloads
         if: steps.filter.outputs.skip != 'true'
-        uses: actions/cache@v5
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
           path: ~/.bun/install/cache
           key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
@@ -313,7 +314,7 @@ jobs:
 
       - name: Upload artifacts
         if: steps.filter.outputs.skip != 'true' && needs.setup.outputs.should_build == 'true'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ${{ needs.setup.outputs.project_name }}-${{ matrix.os_name }}
           path: artifacts/*
@@ -332,18 +333,18 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
-          bun-version: latest
+          bun-version: 1.3.13
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           path: artifacts
           merge-multiple: true
@@ -379,14 +380,14 @@ jobs:
             --output artifacts/latest.json
 
       - name: Upload release assets
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: release-assets
           path: artifacts/*
           if-no-files-found: error
 
       - name: Upload release metadata
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: release-metadata
           path: release_body.md
@@ -405,13 +406,13 @@ jobs:
 
     steps:
       - name: Download release assets
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: release-assets
           path: release-assets
 
       - name: Download release metadata
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: release-metadata
           path: release-metadata
