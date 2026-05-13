@@ -429,6 +429,8 @@ jobs:
           REPO: ${{ github.repository }}
           RELEASE_TARGET: ${{ github.sha }}
         run: |
+          shopt -s nullglob
+
           assets=()
           for asset in release-assets/*; do
             assets+=("$asset")
