@@ -258,14 +258,16 @@ jobs:
         if: steps.filter.outputs.skip != 'true'
         shell: bash
         env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          HAS_SIGNING_KEY: ${{ needs.setup.outputs.should_release == 'true' && secrets.TAURI_SIGNING_PRIVATE_KEY != '' }}
+          SHOULD_RELEASE: ${{ needs.setup.outputs.should_release }}
         run: |
-          if [ -n "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+          if [ "$HAS_SIGNING_KEY" = "true" ]; then
             echo "✅ Code signing key detected"
-          else
-            echo "⚠️ No code signing key found. Build will proceed without signing."
+          elif [ "$SHOULD_RELEASE" = "true" ]; then
+            echo "⚠️ No code signing key found. Release build will proceed without signing."
             echo "   To enable code signing, add TAURI_SIGNING_PRIVATE_KEY to GitHub Secrets"
+          else
+            echo "Code signing is disabled for non-release builds."
           fi
 
       # ── Cache warm (non-build push to main) ──
@@ -294,8 +296,8 @@ jobs:
         shell: bash
         env:
           BUILD_TARGET: ${{ matrix.build_target || matrix.target }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ needs.setup.outputs.should_release == 'true' && secrets.TAURI_SIGNING_PRIVATE_KEY || '' }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ needs.setup.outputs.should_release == 'true' && secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD || '' }}
         run: bun run tauri build --target "$BUILD_TARGET"
 
       # ── Prepare & upload artifacts via script ──
