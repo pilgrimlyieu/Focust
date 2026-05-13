@@ -320,15 +320,15 @@ jobs:
           if-no-files-found: error
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # Release — only on tag push or draft-release dispatch
+  # Prepare release metadata with read-only permissions.
   # ═══════════════════════════════════════════════════════════════════════════
-  release:
-    name: Create Release
+  prepare-release:
+    name: Prepare Release
     needs: [setup, build]
     if: needs.setup.outputs.should_release == 'true' || needs.setup.outputs.should_draft == 'true'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
 
     steps:
       - name: Checkout code
@@ -352,34 +352,108 @@ jobs:
         run: ls -lh artifacts/
 
       - name: Generate release notes
-        run: >
-          bun scripts/ci/generate-release-notes.ts
-          --version ${{ needs.setup.outputs.version }}
-          --tag ${{ needs.setup.outputs.should_draft == 'true' && 'draft' || format('v{0}', needs.setup.outputs.version) }}
-          --repo ${{ github.repository }}
-          --output release_body.md
+        shell: bash
+        env:
+          VERSION: ${{ needs.setup.outputs.version }}
+          TAG_NAME: ${{ needs.setup.outputs.should_draft == 'true' && format('draft-{0}', github.run_id) || format('v{0}', needs.setup.outputs.version) }}
+          REPO: ${{ github.repository }}
+        run: |
+          bun scripts/ci/generate-release-notes.ts \
+            --version "$VERSION" \
+            --tag "$TAG_NAME" \
+            --repo "$REPO" \
+            --output release_body.md
 
       - name: Generate update manifest
-        run: >
-          bun scripts/ci/generate-manifest.ts
-          --version ${{ needs.setup.outputs.version }}
-          --tag ${{ needs.setup.outputs.should_draft == 'true' && 'draft' || format('v{0}', needs.setup.outputs.version) }}
-          --repo ${{ github.repository }}
-          --artifacts-dir artifacts
-          --output artifacts/latest.json
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v3
-        with:
-          # Draft releases use a fixed 'draft' tag so they never conflict with
-          # real version tags. The tag is auto-created/updated each time.
-          # Real releases (tag push) use the proper vX.Y.Z tag from github.ref.
-          tag_name: ${{ needs.setup.outputs.should_draft == 'true' && 'draft' || format('v{0}', needs.setup.outputs.version) }}
-          name: ${{ needs.setup.outputs.product_name }} v${{ needs.setup.outputs.version }}${{ needs.setup.outputs.should_draft == 'true' && ' (Draft)' || '' }}
-          body_path: release_body.md
-          files: artifacts/*
-          draft: ${{ needs.setup.outputs.should_draft == 'true' }}
-          prerelease: false
-          generate_release_notes: false
+        shell: bash
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.setup.outputs.version }}
+          TAG_NAME: ${{ needs.setup.outputs.should_draft == 'true' && format('draft-{0}', github.run_id) || format('v{0}', needs.setup.outputs.version) }}
+          REPO: ${{ github.repository }}
+        run: |
+          bun scripts/ci/generate-manifest.ts \
+            --version "$VERSION" \
+            --tag "$TAG_NAME" \
+            --repo "$REPO" \
+            --artifacts-dir artifacts \
+            --output artifacts/latest.json
+
+      - name: Upload release assets
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-assets
+          path: artifacts/*
+          if-no-files-found: error
+
+      - name: Upload release metadata
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-metadata
+          path: release_body.md
+          if-no-files-found: error
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Publish release without checking out repository code.
+  # ═══════════════════════════════════════════════════════════════════════════
+  publish-release:
+    name: Publish Release
+    needs: [setup, prepare-release]
+    if: needs.setup.outputs.should_release == 'true' || needs.setup.outputs.should_draft == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download release assets
+        uses: actions/download-artifact@v8
+        with:
+          name: release-assets
+          path: release-assets
+
+      - name: Download release metadata
+        uses: actions/download-artifact@v8
+        with:
+          name: release-metadata
+          path: release-metadata
+
+      - name: Publish release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ needs.setup.outputs.should_draft == 'true' && format('draft-{0}', github.run_id) || format('v{0}', needs.setup.outputs.version) }}
+          RELEASE_NAME: ${{ needs.setup.outputs.product_name }} v${{ needs.setup.outputs.version }}${{ needs.setup.outputs.should_draft == 'true' && ' (Draft)' || '' }}
+          IS_DRAFT: ${{ needs.setup.outputs.should_draft }}
+          REPO: ${{ github.repository }}
+        run: |
+          assets=()
+          for asset in release-assets/*; do
+            assets+=("$asset")
+          done
+
+          if [ "${#assets[@]}" -eq 0 ]; then
+            echo "No release assets found." >&2
+            exit 1
+          fi
+
+          release_args=(
+            "$TAG_NAME"
+            --repo "$REPO"
+            --title "$RELEASE_NAME"
+            --notes-file release-metadata/release_body.md
+          )
+
+          if [ "$IS_DRAFT" = "true" ]; then
+            release_args+=(--draft)
+          else
+            release_args+=(--verify-tag)
+          fi
+
+          if gh release view "$TAG_NAME" --repo "$REPO" >/dev/null 2>&1; then
+            gh release edit "$TAG_NAME" \
+              --repo "$REPO" \
+              --title "$RELEASE_NAME" \
+              --notes-file release-metadata/release_body.md
+            gh release upload "$TAG_NAME" --repo "$REPO" --clobber -- "${assets[@]}"
+          else
+            gh release create "${release_args[@]}" -- "${assets[@]}"
+          fi
