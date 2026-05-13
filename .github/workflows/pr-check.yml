@@ -17,6 +17,9 @@ on:
       - '!src/i18n/locales/**.ts'
       - '!src/types/generated/**.ts'
 
+permissions:
+  contents: read
+
 jobs:
   check:
     name: Quality Check

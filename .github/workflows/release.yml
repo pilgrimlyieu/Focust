@@ -37,6 +37,9 @@ on:
 # Centralised in the `setup` job so every downstream job can reference them
 # without duplicating `startsWith(github.ref, ...)` everywhere.
 
+permissions:
+  contents: read
+
 jobs:
   # ═══════════════════════════════════════════════════════════════════════════
   # Setup — compute once, share everywhere
