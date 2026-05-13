@@ -427,6 +427,7 @@ jobs:
           RELEASE_NAME: ${{ needs.setup.outputs.product_name }} v${{ needs.setup.outputs.version }}${{ needs.setup.outputs.should_draft == 'true' && ' (Draft)' || '' }}
           IS_DRAFT: ${{ needs.setup.outputs.should_draft }}
           REPO: ${{ github.repository }}
+          RELEASE_TARGET: ${{ github.sha }}
         run: |
           assets=()
           for asset in release-assets/*; do
@@ -446,7 +447,7 @@ jobs:
           )
 
           if [ "$IS_DRAFT" = "true" ]; then
-            release_args+=(--draft)
+            release_args+=(--draft --target "$RELEASE_TARGET")
           else
             release_args+=(--verify-tag)
           fi
