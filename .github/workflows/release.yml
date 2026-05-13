@@ -59,6 +59,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
+          fetch-depth: 0
           persist-credentials: false
 
       - id: flags
@@ -69,10 +70,33 @@ jobs:
           BUILD_INPUT=${{ github.event.inputs.build_artifacts == 'true' }}
           RELEASE_MODE="${{ github.event.inputs.release_mode }}"
 
+          reject_multiline() {
+            local name="$1"
+            local value="$2"
+
+            if [[ "$value" == *$'\n'* || "$value" == *$'\r'* ]]; then
+              echo "$name must not contain newline characters" >&2
+              exit 1
+            fi
+          }
+
+          validate_version() {
+            local name="$1"
+            local value="$2"
+
+            if [[ ! "$value" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+              echo "Invalid $name: $value" >&2
+              exit 1
+            fi
+          }
+
           # Read project metadata from config files
           PROJECT_NAME=$(jq -r '.name' package.json)
           PRODUCT_NAME=$(jq -r '.productName // empty' src-tauri/tauri.conf.json)
           PRODUCT_NAME=${PRODUCT_NAME:-$PROJECT_NAME}
+
+          reject_multiline PROJECT_NAME "$PROJECT_NAME"
+          reject_multiline PRODUCT_NAME "$PRODUCT_NAME"
 
           SHOULD_BUILD=false
           SHOULD_RELEASE=false
@@ -80,24 +104,47 @@ jobs:
           VERSION="0.0.0"
 
           if [ "$IS_TAG" = "true" ]; then
+            if [[ ! "$GITHUB_REF_NAME" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)(-[0-9A-Za-z.-]+)?$ ]]; then
+              echo "Invalid release tag: $GITHUB_REF_NAME" >&2
+              exit 1
+            fi
+
+            VERSION="${GITHUB_REF_NAME#v}"
+            validate_version VERSION "$VERSION"
+
+            if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+              echo "Release tag must point to a commit reachable from main" >&2
+              exit 1
+            fi
+
             SHOULD_BUILD=true
             SHOULD_RELEASE=true
-            VERSION="${GITHUB_REF_NAME#v}"
           elif [ "$IS_DISPATCH" = "true" ] && [ "$BUILD_INPUT" = "true" ]; then
+            if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+              echo "Manual release builds are only allowed on main" >&2
+              exit 1
+            fi
+
             SHOULD_BUILD=true
             VERSION=$(jq -r '.version // empty' package.json)
+            validate_version VERSION "$VERSION"
+
             if [ "$RELEASE_MODE" = "draft-release" ]; then
               SHOULD_DRAFT=true
             fi
           fi
 
-          echo "project_name=$PROJECT_NAME"     >> $GITHUB_OUTPUT
-          echo "product_name=$PRODUCT_NAME"     >> $GITHUB_OUTPUT
-          echo "is_tag=$IS_TAG"                 >> $GITHUB_OUTPUT
-          echo "should_build=$SHOULD_BUILD"     >> $GITHUB_OUTPUT
-          echo "should_release=$SHOULD_RELEASE" >> $GITHUB_OUTPUT
-          echo "should_draft=$SHOULD_DRAFT"     >> $GITHUB_OUTPUT
-          echo "version=$VERSION"               >> $GITHUB_OUTPUT
+          reject_multiline VERSION "$VERSION"
+
+          {
+            echo "project_name=$PROJECT_NAME"
+            echo "product_name=$PRODUCT_NAME"
+            echo "is_tag=$IS_TAG"
+            echo "should_build=$SHOULD_BUILD"
+            echo "should_release=$SHOULD_RELEASE"
+            echo "should_draft=$SHOULD_DRAFT"
+            echo "version=$VERSION"
+          } >> "$GITHUB_OUTPUT"
 
           echo "### Build Flags" >> $GITHUB_STEP_SUMMARY
           echo "| Flag | Value |" >> $GITHUB_STEP_SUMMARY
