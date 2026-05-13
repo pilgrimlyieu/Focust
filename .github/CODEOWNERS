@@ -1,0 +1,14 @@
+# Build and release pipeline owners
+.github/workflows/** @pilgrimlyieu
+package.json @pilgrimlyieu
+bun.lock @pilgrimlyieu
+scripts/** @pilgrimlyieu
+src-tauri/Cargo.toml @pilgrimlyieu
+src-tauri/Cargo.lock @pilgrimlyieu
+src-tauri/build.rs @pilgrimlyieu
+src-tauri/tauri.conf.json @pilgrimlyieu
+src-tauri/src/** @pilgrimlyieu
+vite.config.* @pilgrimlyieu
+vitest.config.* @pilgrimlyieu
+tsconfig*.json @pilgrimlyieu
+biome.jsonc @pilgrimlyieu
