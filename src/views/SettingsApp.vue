@@ -134,7 +134,7 @@ watch(schedulerStatus, () => {
 const nextBreakInfo = computed(() => {
   const status = schedulerStatus.value;
 
-  if (!status || !status.nextEvent) {
+  if (!status?.nextEvent) {
     return null;
   }
 
