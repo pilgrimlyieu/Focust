@@ -88,7 +88,7 @@ jobs:
       - name: Format Check
         run: |
           echo "🔍 Checking code formatting..."
-          bunx biome check .
+          bunx biome check . --error-on-warnings
           cargo fmt --manifest-path src-tauri/Cargo.toml --all --check
 
       - name: Lint Check
