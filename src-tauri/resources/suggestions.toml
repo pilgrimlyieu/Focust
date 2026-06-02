@@ -1,18 +1,19 @@
 # Default suggestions for break reminders
-# 
+#
 # This file contains built-in suggestions that will be used as defaults
 # when the user hasn't created their own suggestions file yet.
 #
 # Format:
 # [byLanguage.<language-code>]
-# suggestions = ["suggestion 1", "suggestion 2", ...]
+# suggestions = []  # Legacy compatibility placeholder; old configs may contain values here.
+# shortSuggestions = ["short break suggestion", ...]
+# longSuggestions = ["long break suggestion", ...]
 
 [byLanguage.en-US]
-suggestions = [
+suggestions = []
+shortSuggestions = [
     "Look away from your screen and focus on a distant object.",
     "Roll your shoulders back and take a deep breath.",
-    "Drink a glass of water.",
-    "Stand up and stretch your legs.",
     "Relax your jaw and unclench your teeth.",
     "Gently stretch your wrists and fingers.",
     "Let your eyes rest by closing them for a few seconds.",
@@ -29,16 +30,13 @@ suggestions = [
     "Close your eyes and count your breaths.",
     "Close your eyes and name the things you hear.",
     "Place your fingertips on your shoulders. Roll your shoulders forward for 10 seconds, then backward.",
-    "Raise your right arm, stretch it over your head to the left, and hold for 10 seconds. Repeat on the other side.",
     "With your right hand, grab each finger of your left hand in turn and squeeze. Repeat on the other side.",
-    "Stand up and do a lunge. Hold for 10 seconds, then do the other leg.",
     "Close your eyes and simply notice whatever arises in current moment, without judgement.",
     "Focus every 20 minutes for 20 seconds on an object at 20 feet (about 6 meters) distance.",
     "If you need help, ask for it.",
     "Do one thing at a time.",
     "Is your attention spent wisely?",
     "Change your sitting posture.",
-    "Expose your eyes to natural light.",
     "With your eyes closed, slowly and gently raise your eyes to the ceiling and back down to the floor.",
     "With your eyes closed, slowly and gently move your eyes to the left, then slowly to the right.",
     "Shake your hands out to get some relief.",
@@ -46,6 +44,13 @@ suggestions = [
     "Make a fist and then slide your fingers up until they point toward the ceiling, like you're telling someone to stop.",
     "Make a fist and then fan your fingers out and stretch them as far as you can.",
     "Sit tall, arms hanging at your sides, and slowly rotate neck in one direction in a large circle.",
+]
+longSuggestions = [
+    "Drink a glass of water.",
+    "Stand up and stretch your legs.",
+    "Raise your right arm, stretch it over your head to the left, and hold for 10 seconds. Repeat on the other side.",
+    "Stand up and do a lunge. Hold for 10 seconds, then do the other leg.",
+    "Expose your eyes to natural light.",
     "Stand tall and slowly tilt your head toward the shoulder using the same hand until you feel a stretch.",
     "Stand tall with your arms by your side. Squeeze your shoulder blades together and hold.",
     "Sit on the edge of your chair, twist your torso to one side and hold for 10-15 seconds. Repeat on the other side.",
@@ -61,11 +66,10 @@ suggestions = [
 ]
 
 [byLanguage.zh-CN]
-suggestions = [
+suggestions = []
+shortSuggestions = [
     "将目光从屏幕移开，专注于远处的物体。",
     "向后转动肩膀，深呼吸。",
-    "喝一杯水。",
-    "站起来伸展腿部。",
     "放松下巴，松开咬紧的牙齿。",
     "轻轻伸展手腕和手指。",
     "闭上眼睛几秒钟，让眼睛休息。",
@@ -82,16 +86,13 @@ suggestions = [
     "闭上眼睛，数数你的呼吸。",
     "闭上眼睛，说说你听到了什么。",
     "将指尖放在肩膀上。向前转动肩膀 10 秒钟，然后向后转动。",
-    "举起右臂，越过头顶向左伸展，保持 10 秒钟。换另一侧重复。",
     "用右手依次抓住左手的每根手指并挤压。换另一只手重复。",
-    "站起来做一个弓步。保持 10 秒钟，然后换另一条腿。",
     "闭上眼睛，静静地觉察当下发生的一切，不做评判。",
     "每隔 20 分钟，花 20 秒注视 20 英尺（约 6 米）远的物体。",
     "如果你需要帮助，请说出来。",
     "一次只做一件事。",
     "你的注意力用在刀刃上了吗？",
     "换个坐姿。",
-    "让你的眼睛接触自然光。",
     "闭上眼睛，慢慢地、轻柔地将目光移向天花板，然后再移回地板。",
     "闭上眼睛，慢慢地、轻柔地将目光移向左边，然后再移向右边。",
     "甩甩手，放松一下。",
@@ -99,6 +100,13 @@ suggestions = [
     "先握拳，然后将手指向上伸直，直到指向天花板，就像告诉别人「停」一样。",
     "先握拳，然后将手指张开，尽可能地伸展。",
     "坐直，双臂垂于身体两侧，然后慢慢地朝一个方向转动脖子。",
+]
+longSuggestions = [
+    "喝一杯水。",
+    "站起来伸展腿部。",
+    "举起右臂，越过头顶向左伸展，保持 10 秒钟。换另一侧重复。",
+    "站起来做一个弓步。保持 10 秒钟，然后换另一条腿。",
+    "让你的眼睛接触自然光。",
     "站直，用同侧的手慢慢将头倾向肩膀，直到感觉到拉伸。",
     "站直，双臂垂于身体两侧。夹紧肩胛骨并保持。",
     "坐在椅子边缘，将躯干转向一侧，保持 10-15 秒。换另一侧重复。",
@@ -114,11 +122,10 @@ suggestions = [
 ]
 
 [byLanguage.de-DE]
-suggestions = [
+suggestions = []
+shortSuggestions = [
     "Schauen Sie vom Bildschirm weg und konzentrieren Sie sich auf ein entferntes Objekt.",
     "Rollen Sie Ihre Schultern nach hinten und atmen Sie tief ein.",
-    "Trinken Sie ein Glas Wasser.",
-    "Stehen Sie auf und strecken Sie Ihre Beine.",
     "Entspannen Sie Ihren Kiefer und lockern Sie Ihre Zähne.",
     "Strecken Sie sanft Ihre Handgelenke und Finger.",
     "Lassen Sie Ihre Augen ruhen, indem Sie sie für ein paar Sekunden schließen.",
@@ -135,16 +142,13 @@ suggestions = [
     "Schließen Sie die Augen und zählen Sie Ihre Atemzüge.",
     "Schließen Sie die Augen und benennen Sie die Dinge, die Sie hören.",
     "Legen Sie Ihre Fingerspitzen auf Ihre Schultern. Rollen Sie Ihre Schultern 10 Sekunden nach vorne, dann nach hinten.",
-    "Heben Sie Ihren rechten Arm, strecken Sie ihn über Ihren Kopf nach links und halten Sie 10 Sekunden. Wiederholen Sie auf der anderen Seite.",
     "Greifen Sie mit Ihrer rechten Hand jeden Finger Ihrer linken Hand nacheinander und drücken Sie. Wiederholen Sie auf der anderen Seite.",
-    "Stehen Sie auf und machen Sie einen Ausfallschritt. Halten Sie 10 Sekunden, dann das andere Bein.",
     "Schließen Sie die Augen und nehmen Sie einfach wahr, was im gegenwärtigen Moment entsteht, ohne zu urteilen.",
     "Fokussieren Sie alle 20 Minuten für 20 Sekunden auf ein Objekt in 6 Metern Entfernung.",
     "Wenn Sie Hilfe brauchen, fragen Sie danach.",
     "Tun Sie eine Sache nach der anderen.",
     "Wird Ihre Aufmerksamkeit sinnvoll eingesetzt?",
     "Ändern Sie Ihre Sitzposition.",
-    "Setzen Sie Ihre Augen natürlichem Licht aus.",
     "Heben Sie mit geschlossenen Augen langsam und sanft Ihre Augen zur Decke und zurück zum Boden.",
     "Bewegen Sie mit geschlossenen Augen langsam und sanft Ihre Augen nach links, dann langsam nach rechts.",
     "Schütteln Sie Ihre Hände aus, um etwas Erleichterung zu bekommen.",
@@ -152,6 +156,13 @@ suggestions = [
     "Machen Sie eine Faust und schieben Sie dann Ihre Finger nach oben, bis sie zur Decke zeigen, als würden Sie jemandem sagen, er solle aufhören.",
     "Machen Sie eine Faust und spreizen Sie dann Ihre Finger und strecken Sie sie so weit wie möglich.",
     "Sitzen Sie aufrecht, Arme an den Seiten hängend, und drehen Sie Ihren Nacken langsam in eine Richtung in einem großen Kreis.",
+]
+longSuggestions = [
+    "Trinken Sie ein Glas Wasser.",
+    "Stehen Sie auf und strecken Sie Ihre Beine.",
+    "Heben Sie Ihren rechten Arm, strecken Sie ihn über Ihren Kopf nach links und halten Sie 10 Sekunden. Wiederholen Sie auf der anderen Seite.",
+    "Stehen Sie auf und machen Sie einen Ausfallschritt. Halten Sie 10 Sekunden, dann das andere Bein.",
+    "Setzen Sie Ihre Augen natürlichem Licht aus.",
     "Stehen Sie aufrecht und neigen Sie Ihren Kopf langsam mit der gleichen Hand zur Schulter, bis Sie eine Dehnung spüren.",
     "Stehen Sie aufrecht mit Ihren Armen an der Seite. Drücken Sie Ihre Schulterblätter zusammen und halten Sie.",
     "Setzen Sie sich auf die Kante Ihres Stuhls, drehen Sie Ihren Oberkörper zu einer Seite und halten Sie 10-15 Sekunden. Wiederholen Sie auf der anderen Seite.",
@@ -167,11 +178,10 @@ suggestions = [
 ]
 
 [byLanguage.es-ES]
-suggestions = [
+suggestions = []
+shortSuggestions = [
     "Aparta la vista de la pantalla y concéntrate en un objeto lejano.",
     "Echa los hombros hacia atrás y respira profundamente.",
-    "Bebe un vaso de agua.",
-    "Levántate y estira las piernas.",
     "Relaja la mandíbula y afloja los dientes.",
     "Estira suavemente las muñecas y los dedos.",
     "Deja descansar tus ojos cerrándolos durante unos segundos.",
@@ -188,16 +198,13 @@ suggestions = [
     "Cierra los ojos y cuenta tus respiraciones.",
     "Cierra los ojos y nombra las cosas que escuchas.",
     "Coloca las yemas de los dedos en los hombros. Gira los hombros hacia adelante durante 10 segundos, luego hacia atrás.",
-    "Levanta tu brazo derecho, estíralo sobre tu cabeza hacia la izquierda y mantén durante 10 segundos. Repite del otro lado.",
     "Con tu mano derecha, agarra cada dedo de tu mano izquierda por turno y aprieta. Repite del otro lado.",
-    "Levántate y haz una estocada. Mantén durante 10 segundos, luego haz la otra pierna.",
     "Cierra los ojos y simplemente nota lo que surja en el momento presente, sin juzgar.",
     "Enfoca cada 20 minutos durante 20 segundos en un objeto a 6 metros de distancia.",
     "Si necesitas ayuda, pídela.",
     "Haz una cosa a la vez.",
     "¿Tu atención está siendo bien invertida?",
     "Cambia tu postura al sentarte.",
-    "Expón tus ojos a la luz natural.",
     "Con los ojos cerrados, eleva lenta y suavemente tus ojos hacia el techo y de vuelta al suelo.",
     "Con los ojos cerrados, mueve lenta y suavemente tus ojos hacia la izquierda, luego lentamente hacia la derecha.",
     "Sacude tus manos para obtener algo de alivio.",
@@ -205,6 +212,13 @@ suggestions = [
     "Haz un puño y luego desliza tus dedos hacia arriba hasta que apunten hacia el techo, como si le dijeras a alguien que se detenga.",
     "Haz un puño y luego abanica tus dedos y estíralos lo más que puedas.",
     "Siéntate erguido, brazos colgando a los lados, y rota lentamente el cuello en una dirección en un círculo grande.",
+]
+longSuggestions = [
+    "Bebe un vaso de agua.",
+    "Levántate y estira las piernas.",
+    "Levanta tu brazo derecho, estíralo sobre tu cabeza hacia la izquierda y mantén durante 10 segundos. Repite del otro lado.",
+    "Levántate y haz una estocada. Mantén durante 10 segundos, luego haz la otra pierna.",
+    "Expón tus ojos a la luz natural.",
     "Párate erguido e inclina lentamente tu cabeza hacia el hombro usando la misma mano hasta que sientas un estiramiento.",
     "Párate erguido con tus brazos a tu lado. Aprieta tus omóplatos juntos y mantén.",
     "Siéntate en el borde de tu silla, gira tu torso hacia un lado y mantén durante 10-15 segundos. Repite del otro lado.",
@@ -220,11 +234,10 @@ suggestions = [
 ]
 
 [byLanguage.fr-FR]
-suggestions = [
+suggestions = []
+shortSuggestions = [
     "Détournez votre regard de l'écran et concentrez-vous sur un objet distant.",
     "Roulez vos épaules en arrière et prenez une profonde inspiration.",
-    "Buvez un verre d'eau.",
-    "Levez-vous et étirez vos jambes.",
     "Détendez votre mâchoire et desserrez vos dents.",
     "Étirez doucement vos poignets et vos doigts.",
     "Laissez vos yeux se reposer en les fermant pendant quelques secondes.",
@@ -241,16 +254,13 @@ suggestions = [
     "Fermez les yeux et comptez vos respirations.",
     "Fermez les yeux et nommez les choses que vous entendez.",
     "Placez le bout de vos doigts sur vos épaules. Roulez vos épaules vers l'avant pendant 10 secondes, puis vers l'arrière.",
-    "Levez votre bras droit, étirez-le au-dessus de votre tête vers la gauche et maintenez pendant 10 secondes. Répétez de l'autre côté.",
     "Avec votre main droite, saisissez chaque doigt de votre main gauche à tour de rôle et serrez. Répétez de l'autre côté.",
-    "Levez-vous et faites une fente. Maintenez pendant 10 secondes, puis faites l'autre jambe.",
     "Fermez les yeux et remarquez simplement ce qui se présente dans le moment présent, sans jugement.",
     "Concentrez-vous toutes les 20 minutes pendant 20 secondes sur un objet à 6 mètres de distance.",
     "Si vous avez besoin d'aide, demandez-la.",
     "Faites une chose à la fois.",
     "Votre attention est-elle judicieusement dépensée ?",
     "Changez votre posture assise.",
-    "Exposez vos yeux à la lumière naturelle.",
     "Les yeux fermés, levez lentement et doucement vos yeux vers le plafond et redescendez vers le sol.",
     "Les yeux fermés, déplacez lentement et doucement vos yeux vers la gauche, puis lentement vers la droite.",
     "Secouez vos mains pour obtenir un certain soulagement.",
@@ -258,6 +268,13 @@ suggestions = [
     "Faites un poing puis glissez vos doigts vers le haut jusqu'à ce qu'ils pointent vers le plafond, comme si vous disiez à quelqu'un d'arrêter.",
     "Faites un poing puis éventez vos doigts et étirez-les autant que possible.",
     "Asseyez-vous droit, bras pendants sur les côtés, et tournez lentement le cou dans une direction en un grand cercle.",
+]
+longSuggestions = [
+    "Buvez un verre d'eau.",
+    "Levez-vous et étirez vos jambes.",
+    "Levez votre bras droit, étirez-le au-dessus de votre tête vers la gauche et maintenez pendant 10 secondes. Répétez de l'autre côté.",
+    "Levez-vous et faites une fente. Maintenez pendant 10 secondes, puis faites l'autre jambe.",
+    "Exposez vos yeux à la lumière naturelle.",
     "Tenez-vous droit et inclinez lentement votre tête vers l'épaule en utilisant la même main jusqu'à ce que vous sentiez un étirement.",
     "Tenez-vous droit avec vos bras sur le côté. Serrez vos omoplates ensemble et maintenez.",
     "Asseyez-vous sur le bord de votre chaise, tournez votre torse d'un côté et maintenez pendant 10-15 secondes. Répétez de l'autre côté.",
@@ -273,11 +290,10 @@ suggestions = [
 ]
 
 [byLanguage.it-IT]
-suggestions = [
+suggestions = []
+shortSuggestions = [
     "Distogli lo sguardo dallo schermo e concentrati su un oggetto distante.",
     "Ruota le spalle all'indietro e fai un respiro profondo.",
-    "Bevi un bicchiere d'acqua.",
-    "Alzati e allunga le gambe.",
     "Rilassa la mascella e allenta i denti.",
     "Allunga delicatamente i polsi e le dita.",
     "Lascia riposare gli occhi chiudendoli per qualche secondo.",
@@ -294,16 +310,13 @@ suggestions = [
     "Chiudi gli occhi e conta i tuoi respiri.",
     "Chiudi gli occhi e nomina le cose che senti.",
     "Posiziona le punte delle dita sulle spalle. Ruota le spalle in avanti per 10 secondi, poi all'indietro.",
-    "Alza il braccio destro, allungalo sopra la testa verso sinistra e mantieni per 10 secondi. Ripeti dall'altro lato.",
     "Con la mano destra, afferra ogni dito della mano sinistra a turno e stringi. Ripeti dall'altro lato.",
-    "Alzati e fai un affondo. Mantieni per 10 secondi, poi fai l'altra gamba.",
     "Chiudi gli occhi e nota semplicemente ciò che emerge nel momento presente, senza giudizio.",
     "Concentrati ogni 20 minuti per 20 secondi su un oggetto a 6 metri di distanza.",
     "Se hai bisogno di aiuto, chiedilo.",
     "Fai una cosa alla volta.",
     "La tua attenzione è spesa saggiamente?",
     "Cambia la tua postura seduta.",
-    "Esponi i tuoi occhi alla luce naturale.",
     "Con gli occhi chiusi, solleva lentamente e delicatamente gli occhi verso il soffitto e torna al pavimento.",
     "Con gli occhi chiusi, muovi lentamente e delicatamente gli occhi verso sinistra, poi lentamente verso destra.",
     "Scuoti le mani per ottenere un po' di sollievo.",
@@ -311,6 +324,13 @@ suggestions = [
     "Chiudi il pugno e poi fai scorrere le dita verso l'alto fino a quando puntano verso il soffitto, come se stessi dicendo a qualcuno di fermarsi.",
     "Chiudi il pugno e poi apri a ventaglio le dita e allungale il più possibile.",
     "Siediti dritto, braccia pendenti ai lati, e ruota lentamente il collo in una direzione in un grande cerchio.",
+]
+longSuggestions = [
+    "Bevi un bicchiere d'acqua.",
+    "Alzati e allunga le gambe.",
+    "Alza il braccio destro, allungalo sopra la testa verso sinistra e mantieni per 10 secondi. Ripeti dall'altro lato.",
+    "Alzati e fai un affondo. Mantieni per 10 secondi, poi fai l'altra gamba.",
+    "Esponi i tuoi occhi alla luce naturale.",
     "Stai dritto e inclina lentamente la testa verso la spalla usando la stessa mano fino a quando senti un allungamento.",
     "Stai dritto con le braccia al tuo fianco. Stringi le scapole insieme e mantieni.",
     "Siediti sul bordo della sedia, ruota il busto da un lato e mantieni per 10-15 secondi. Ripeti dall'altro lato.",
@@ -326,11 +346,10 @@ suggestions = [
 ]
 
 [byLanguage.ja-JP]
-suggestions = [
+suggestions = []
+shortSuggestions = [
     "画面から目を離して、遠くの物体に焦点を合わせてください。",
     "肩を後ろに回して、深呼吸をしてください。",
-    "コップ一杯の水を飲んでください。",
-    "立ち上がって脚を伸ばしてください。",
     "顎をリラックスさせ、歯の食いしばりを緩めてください。",
     "手首と指を優しくストレッチしてください。",
     "数秒間目を閉じて、目を休ませてください。",
@@ -347,16 +366,13 @@ suggestions = [
     "目を閉じて、呼吸を数えてください。",
     "目を閉じて、聞こえるものを名前を付けてください。",
     "指先を肩に置きます。肩を10秒間前に回し、次に後ろに回します。",
-    "右腕を上げ、頭の上から左に伸ばし、10秒間保持します。反対側でも繰り返してください。",
     "右手で左手の各指を順番に握って絞ります。反対側でも繰り返してください。",
-    "立ち上がってランジをします。10秒間保持し、次にもう一方の脚を行います。",
     "目を閉じて、現在の瞬間に起こることを判断せずに単に気づいてください。",
     "20分ごとに、6メートル離れた物体に20秒間焦点を合わせてください。",
     "助けが必要な場合は、それを求めてください。",
     "一度に一つのことをしてください。",
     "あなたの注意は賢く使われていますか？",
     "座っている姿勢を変えてください。",
-    "目を自然光にさらしてください。",
     "目を閉じて、ゆっくりと優しく目を天井に上げ、床に戻してください。",
     "目を閉じて、ゆっくりと優しく目を左に動かし、次にゆっくりと右に動かしてください。",
     "手を振って、少し楽にしてください。",
@@ -364,6 +380,13 @@ suggestions = [
     "拳を作り、次に指を上にスライドさせて天井を指すようにします。まるで誰かに止まるように言っているかのようにします。",
     "拳を作り、次に指を広げてできるだけ伸ばしてください。",
     "直立して座り、腕を両側に垂らし、首を一方向にゆっくりと大きな円を描くように回転させます。",
+]
+longSuggestions = [
+    "コップ一杯の水を飲んでください。",
+    "立ち上がって脚を伸ばしてください。",
+    "右腕を上げ、頭の上から左に伸ばし、10秒間保持します。反対側でも繰り返してください。",
+    "立ち上がってランジをします。10秒間保持し、次にもう一方の脚を行います。",
+    "目を自然光にさらしてください。",
     "直立して立ち、同じ手を使って頭をゆっくりと肩に向けて傾け、ストレッチを感じるまで続けます。",
     "直立して立ち、腕を横に置きます。肩甲骨を一緒に絞り、保持します。",
     "椅子の端に座り、胴体を一方に回転させ、10〜15秒間保持します。反対側でも繰り返してください。",
@@ -379,11 +402,10 @@ suggestions = [
 ]
 
 [byLanguage.ko-KR]
-suggestions = [
+suggestions = []
+shortSuggestions = [
     "화면에서 시선을 떼고 먼 물체에 집중하세요.",
     "어깨를 뒤로 돌리고 깊게 숨을 쉬세요.",
-    "물 한 잔을 마시세요.",
-    "일어나서 다리를 펴세요.",
     "턱을 이완하고 이를 풀어주세요.",
     "손목과 손가락을 부드럽게 펴세요.",
     "몇 초 동안 눈을 감아 눈을 쉬게 하세요.",
@@ -400,16 +422,13 @@ suggestions = [
     "눈을 감고 호흡을 세어보세요.",
     "눈을 감고 듣는 것들의 이름을 말하세요.",
     "손가락 끝을 어깨에 놓으세요. 10초 동안 어깨를 앞으로 돌리고, 그다음 뒤로 돌리세요.",
-    "오른팔을 들어 머리 위로 왼쪽으로 펴고 10초 동안 유지하세요. 반대편도 반복하세요.",
     "오른손으로 왼손의 각 손가락을 차례로 잡고 쥐어짜세요. 반대편도 반복하세요.",
-    "일어나서 런지를 하세요. 10초 동안 유지하고, 그다음 다른 다리를 하세요.",
     "눈을 감고 현재 순간에 일어나는 것을 판단하지 않고 단순히 알아차리세요.",
     "20분마다 6미터 떨어진 물체에 20초 동안 집중하세요.",
     "도움이 필요하면 요청하세요.",
     "한 번에 한 가지를 하세요.",
     "당신의 주의력이 현명하게 사용되고 있나요?",
     "앉은 자세를 바꾸세요.",
-    "눈을 자연광에 노출시키세요.",
     "눈을 감고 천천히 부드럽게 눈을 천장으로 올리고 바닥으로 다시 내리세요.",
     "눈을 감고 천천히 부드럽게 눈을 왼쪽으로 움직이고, 그다음 천천히 오른쪽으로 움직이세요.",
     "손을 흔들어 약간의 안도감을 얻으세요.",
@@ -417,6 +436,13 @@ suggestions = [
     "주먹을 쥐고 손가락을 위로 밀어 천장을 가리키도록 하세요. 마치 누군가에게 멈추라고 말하는 것처럼요.",
     "주먹을 쥐고 손가락을 펴고 가능한 한 멀리 펴세요.",
     "똑바로 앉아 팔을 양옆에 늘어뜨리고 목을 한 방향으로 천천히 큰 원을 그리며 회전시키세요.",
+]
+longSuggestions = [
+    "물 한 잔을 마시세요.",
+    "일어나서 다리를 펴세요.",
+    "오른팔을 들어 머리 위로 왼쪽으로 펴고 10초 동안 유지하세요. 반대편도 반복하세요.",
+    "일어나서 런지를 하세요. 10초 동안 유지하고, 그다음 다른 다리를 하세요.",
+    "눈을 자연광에 노출시키세요.",
     "똑바로 서서 같은 손을 사용하여 머리를 천천히 어깨 쪽으로 기울여 스트레칭을 느낄 때까지 계속하세요.",
     "똑바로 서서 팔을 옆에 두세요. 견갑골을 함께 쥐어짜고 유지하세요.",
     "의자 가장자리에 앉아 몸통을 한쪽으로 돌리고 10-15초 동안 유지하세요. 반대편도 반복하세요.",
@@ -432,11 +458,10 @@ suggestions = [
 ]
 
 [byLanguage.pt-BR]
-suggestions = [
+suggestions = []
+shortSuggestions = [
     "Desvie o olhar da tela e concentre-se em um objeto distante.",
     "Role os ombros para trás e respire fundo.",
-    "Beba um copo de água.",
-    "Levante-se e estique as pernas.",
     "Relaxe a mandíbula e solte os dentes.",
     "Alongue suavemente os pulsos e dedos.",
     "Deixe seus olhos descansarem fechando-os por alguns segundos.",
@@ -453,16 +478,13 @@ suggestions = [
     "Feche os olhos e conte suas respirações.",
     "Feche os olhos e nomeie as coisas que você ouve.",
     "Coloque as pontas dos dedos nos ombros. Role os ombros para frente por 10 segundos, depois para trás.",
-    "Levante o braço direito, estique-o sobre a cabeça para a esquerda e segure por 10 segundos. Repita do outro lado.",
     "Com a mão direita, segure cada dedo da mão esquerda por vez e aperte. Repita do outro lado.",
-    "Levante-se e faça um avanço. Segure por 10 segundos, depois faça a outra perna.",
     "Feche os olhos e simplesmente note o que surge no momento presente, sem julgamento.",
     "Foque a cada 20 minutos por 20 segundos em um objeto a 6 metros de distância.",
     "Se você precisa de ajuda, peça por ela.",
     "Faça uma coisa de cada vez.",
     "Sua atenção está sendo gasta com sabedoria?",
     "Mude sua postura ao sentar.",
-    "Exponha seus olhos à luz natural.",
     "Com os olhos fechados, levante lenta e suavemente os olhos para o teto e volte ao chão.",
     "Com os olhos fechados, mova lenta e suavemente os olhos para a esquerda, depois lentamente para a direita.",
     "Sacuda as mãos para obter algum alívio.",
@@ -470,6 +492,13 @@ suggestions = [
     "Feche o punho e depois deslize os dedos para cima até que apontem para o teto, como se estivesse dizendo a alguém para parar.",
     "Feche o punho e depois abra os dedos em leque e estique-os o máximo que puder.",
     "Sente-se ereto, braços pendurados ao lado, e gire lentamente o pescoço em uma direção em um grande círculo.",
+]
+longSuggestions = [
+    "Beba um copo de água.",
+    "Levante-se e estique as pernas.",
+    "Levante o braço direito, estique-o sobre a cabeça para a esquerda e segure por 10 segundos. Repita do outro lado.",
+    "Levante-se e faça um avanço. Segure por 10 segundos, depois faça a outra perna.",
+    "Exponha seus olhos à luz natural.",
     "Fique ereto e incline lentamente a cabeça em direção ao ombro usando a mesma mão até sentir um alongamento.",
     "Fique ereto com os braços ao seu lado. Aperte as omoplatas juntas e segure.",
     "Sente-se na borda da cadeira, torça o torso para um lado e segure por 10-15 segundos. Repita do outro lado.",
@@ -485,11 +514,10 @@ suggestions = [
 ]
 
 [byLanguage.ru-RU]
-suggestions = [
+suggestions = []
+shortSuggestions = [
     "Отведите взгляд от экрана и сфокусируйтесь на удаленном объекте.",
     "Отведите плечи назад и сделайте глубокий вдох.",
-    "Выпейте стакан воды.",
-    "Встаньте и потянитесь.",
     "Расслабьте челюсть и разожмите зубы.",
     "Мягко потяните запястья и пальцы.",
     "Дайте глазам отдохнуть, закрыв их на несколько секунд.",
@@ -506,16 +534,13 @@ suggestions = [
     "Закройте глаза и считайте свои вдохи.",
     "Закройте глаза и назовите то, что вы слышите.",
     "Положите кончики пальцев на плечи. Вращайте плечи вперед в течение 10 секунд, затем назад.",
-    "Поднимите правую руку, потянитесь через голову влево и удерживайте 10 секунд. Повторите с другой стороны.",
     "Правой рукой поочередно захватывайте каждый палец левой руки и сжимайте. Повторите с другой стороны.",
-    "Встаньте и сделайте выпад. Удерживайте 10 секунд, затем другую ногу.",
     "Закройте глаза и просто замечайте то, что возникает в настоящем моменте, без суждений.",
     "Каждые 20 минут фокусируйтесь в течение 20 секунд на объекте на расстоянии 6 метров.",
     "Если вам нужна помощь, попросите о ней.",
     "Делайте одно дело за раз.",
     "Ваше внимание тратится разумно?",
     "Измените положение сидя.",
-    "Подвергните глаза воздействию естественного света.",
     "С закрытыми глазами медленно и мягко поднимите взгляд к потолку и опустите к полу.",
     "С закрытыми глазами медленно и мягко переведите взгляд влево, затем медленно вправо.",
     "Встряхните руки, чтобы получить некоторое облегчение.",
@@ -523,6 +548,13 @@ suggestions = [
     "Сожмите кулак, затем сдвиньте пальцы вверх, пока они не будут указывать на потолок, как будто вы говорите кому-то остановиться.",
     "Сожмите кулак, затем разведите пальцы веером и вытяните их как можно дальше.",
     "Сядьте прямо, руки свисают по бокам, и медленно вращайте шею в одном направлении большим кругом.",
+]
+longSuggestions = [
+    "Выпейте стакан воды.",
+    "Встаньте и потянитесь.",
+    "Поднимите правую руку, потянитесь через голову влево и удерживайте 10 секунд. Повторите с другой стороны.",
+    "Встаньте и сделайте выпад. Удерживайте 10 секунд, затем другую ногу.",
+    "Подвергните глаза воздействию естественного света.",
     "Встаньте прямо и медленно наклоните голову к плечу той же рукой, пока не почувствуете растяжение.",
     "Встаньте прямо, руки по бокам. Сожмите лопатки вместе и удерживайте.",
     "Сядьте на край стула, поверните туловище в одну сторону и удерживайте 10-15 секунд. Повторите с другой стороны.",

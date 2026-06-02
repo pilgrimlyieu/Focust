@@ -220,7 +220,11 @@ const longPostponeMinutes = useSecondsToMinutes(
 
             <ThemeDesigner :theme="schedule.miniBreaks.theme" :label="t('schedule.theme')" />
             <AudioPicker :audio="schedule.miniBreaks.audio" :label="t('schedule.audio')" />
-            <SuggestionsToggle :suggestions="schedule.miniBreaks.suggestions" :label="t('schedule.suggestions')" />
+            <SuggestionsToggle
+              :suggestions="schedule.miniBreaks.suggestions"
+              :label="t('schedule.suggestions')"
+              suggestion-pool="short"
+            />
           </div>
 
           <!-- Long Break -->
@@ -271,7 +275,11 @@ const longPostponeMinutes = useSecondsToMinutes(
 
             <ThemeDesigner :theme="schedule.longBreaks.theme" :label="t('schedule.theme')" />
             <AudioPicker :audio="schedule.longBreaks.audio" :label="t('schedule.audio')" />
-            <SuggestionsToggle :suggestions="schedule.longBreaks.suggestions" :label="t('schedule.suggestions')" />
+            <SuggestionsToggle
+              :suggestions="schedule.longBreaks.suggestions"
+              :label="t('schedule.suggestions')"
+              suggestion-pool="long"
+            />
           </div>
         </section>
       </div>

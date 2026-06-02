@@ -9,7 +9,13 @@ import ListIcon from "@/components/icons/ListIcon.vue";
 import PlusIcon from "@/components/icons/PlusIcon.vue";
 import SuggestionBulb from "@/components/icons/SuggestionBulb.vue";
 import { getI18nLocale } from "@/i18n";
-import { useSuggestionsStore } from "@/stores/suggestions";
+import {
+  createLanguageSuggestions,
+  normalizeLanguageSuggestions,
+  SUGGESTION_POOLS,
+  type SuggestionPool,
+  useSuggestionsStore,
+} from "@/stores/suggestions";
 
 const { t } = useI18n();
 const suggestionsStore = useSuggestionsStore();
@@ -21,6 +27,8 @@ onMounted(() => {
 });
 
 const currentLanguage = computed(getI18nLocale);
+
+const activePool = ref<SuggestionPool>("short");
 
 /** UI mode: 'list' or 'bulk' */
 const editMode = ref<"list" | "bulk">("list");
@@ -34,8 +42,40 @@ const suggestionsText = ref("");
 const newSuggestionInput = ref("");
 const isSaving = ref(false);
 
+const poolTranslationKeys = {
+  long: "suggestions.longBreakSuggestions",
+  short: "suggestions.shortBreakSuggestions",
+} as const satisfies Record<SuggestionPool, string>;
+
+const poolCounts = computed(() => {
+  if (!suggestionsStore.config) {
+    return { long: 0, short: 0 } satisfies Record<SuggestionPool, number>;
+  }
+
+  const langSuggestions = normalizeLanguageSuggestions(
+    suggestionsStore.config.byLanguage[currentLanguage.value],
+  );
+
+  return {
+    long: langSuggestions.longSuggestions.length,
+    short: langSuggestions.shortSuggestions.length,
+  } satisfies Record<SuggestionPool, number>;
+});
+
+function getCurrentPoolSuggestions(): string[] {
+  if (!suggestionsStore.config) return [];
+
+  const langSuggestions = normalizeLanguageSuggestions(
+    suggestionsStore.config.byLanguage[currentLanguage.value],
+  );
+
+  return activePool.value === "short"
+    ? langSuggestions.shortSuggestions
+    : langSuggestions.longSuggestions;
+}
+
 watch(
-  [() => suggestionsStore.config, currentLanguage],
+  [() => suggestionsStore.config, currentLanguage, activePool],
   () => {
     if (isSaving.value) return;
 
@@ -44,9 +84,7 @@ watch(
       suggestionsText.value = "";
       return;
     }
-    const langSuggestions =
-      suggestionsStore.config.byLanguage[currentLanguage.value];
-    const suggestions = langSuggestions?.suggestions || [];
+    const suggestions = getCurrentPoolSuggestions();
     suggestionsList.value = [...suggestions];
     suggestionsText.value = suggestions.join("\n");
   },
@@ -59,7 +97,9 @@ async function saveSuggestions() {
 
   let suggestions: string[];
   if (editMode.value === "list") {
-    suggestions = suggestionsList.value.filter((s) => s.trim().length > 0);
+    suggestions = suggestionsList.value
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
   } else {
     suggestions = suggestionsText.value
       .split("\n")
@@ -68,11 +108,41 @@ async function saveSuggestions() {
   }
 
   const newConfig = { ...suggestionsStore.config };
-  newConfig.byLanguage[currentLanguage.value] = { suggestions };
+  const byLanguage = { ...newConfig.byLanguage };
+  const currentLanguageConfig = normalizeLanguageSuggestions(
+    byLanguage[currentLanguage.value],
+  );
+
+  const shortSuggestions =
+    activePool.value === "short"
+      ? suggestions
+      : currentLanguageConfig.shortSuggestions;
+  const longSuggestions =
+    activePool.value === "long"
+      ? suggestions
+      : currentLanguageConfig.longSuggestions;
+
+  byLanguage[currentLanguage.value] = createLanguageSuggestions(
+    shortSuggestions,
+    longSuggestions,
+  );
+  newConfig.byLanguage = byLanguage;
 
   isSaving.value = true;
-  await suggestionsStore.save(newConfig);
-  isSaving.value = false;
+  try {
+    await suggestionsStore.save(newConfig);
+    suggestionsList.value = [...suggestions];
+    suggestionsText.value = suggestions.join("\n");
+  } finally {
+    isSaving.value = false;
+  }
+}
+
+async function selectPool(pool: SuggestionPool) {
+  if (pool === activePool.value) return;
+
+  await saveSuggestions();
+  activePool.value = pool;
 }
 
 /**
@@ -157,9 +227,13 @@ function importFromBulk() {
               <span class="text-xs font-medium">{{ t("suggestions.currentLanguage", { language: currentLanguage })
                 }}</span>
             </div>
-            <div v-if="suggestionsList.length" class="badge badge-ghost gap-1.5 py-3 px-3">
-              <span class="font-semibold">{{ suggestionsList.length }}</span>
-              <span class="text-xs">{{ t("suggestions.totalCount") }}</span>
+            <div class="badge badge-ghost gap-1.5 py-3 px-3">
+              <span class="text-xs">{{ t("suggestions.shortBreakSuggestions") }}</span>
+              <span class="font-semibold">{{ poolCounts.short }}</span>
+            </div>
+            <div class="badge badge-ghost gap-1.5 py-3 px-3">
+              <span class="text-xs">{{ t("suggestions.longBreakSuggestions") }}</span>
+              <span class="font-semibold">{{ poolCounts.long }}</span>
             </div>
           </div>
         </div>
@@ -172,6 +246,18 @@ function importFromBulk() {
     </div>
 
     <div v-else class="space-y-6">
+      <!-- Suggestion Pool Switcher -->
+      <div class="flex flex-wrap gap-2 bg-base-200/50 p-1.5 rounded-xl w-fit">
+        <button v-for="pool in SUGGESTION_POOLS" :key="pool" class="btn btn-sm transition-all font-medium"
+          :class="{ 'btn-primary shadow-md': activePool === pool, 'btn-ghost': activePool !== pool }"
+          @click="selectPool(pool)">
+          {{ t(poolTranslationKeys[pool]) }}
+          <span class="badge badge-sm" :class="{ 'badge-primary-content': activePool === pool }">
+            {{ poolCounts[pool] }}
+          </span>
+        </button>
+      </div>
+
       <!-- Mode Switcher -->
       <div class="flex gap-2 bg-base-200/50 p-1.5 rounded-xl w-fit">
         <button class="btn btn-sm transition-all font-medium"

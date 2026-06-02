@@ -5,6 +5,14 @@
  */
 export type LanguageSuggestions = { 
 /**
- * List of suggestions
+ * Legacy list kept empty in new saves so older versions can still parse the file
  */
-suggestions: Array<string>, };
+suggestions: Array<string>, 
+/**
+ * Suggestions suitable for short breaks
+ */
+shortSuggestions: Array<string>, 
+/**
+ * Suggestions suitable for long breaks
+ */
+longSuggestions: Array<string>, };

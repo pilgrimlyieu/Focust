@@ -49,8 +49,10 @@ pub async fn get_suggestions_for_language(
 pub async fn save_suggestions(
     app: AppHandle,
     state: State<'_, SharedSuggestions>,
-    config: SuggestionsConfig,
+    mut config: SuggestionsConfig,
 ) -> Result<(), String> {
+    config.normalize();
+
     // Save to file
     save_suggestions_internal(&app, &config)
         .await
