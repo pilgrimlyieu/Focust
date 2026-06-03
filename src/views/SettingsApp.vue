@@ -303,8 +303,8 @@ defineExpose({
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col bg-linear-to-br from-base-200 via-base-100 to-base-200">
-    <header class="sticky top-0 z-50 border-b border-base-300/50 bg-base-100/95 backdrop-blur-md shadow-sm">
+  <div class="flex h-screen overflow-hidden flex-col bg-linear-to-br from-base-200 via-base-100 to-base-200">
+    <header class="sticky top-0 z-50 shrink-0 border-b border-base-300/50 bg-base-100/95 backdrop-blur-md shadow-sm">
       <div class="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <!-- App info with icon -->
         <div class="flex items-center gap-3">
@@ -363,7 +363,7 @@ defineExpose({
       </div>
     </header>
 
-    <div class="flex flex-1 flex-col lg:flex-row">
+    <div class="flex min-h-0 flex-1 flex-col lg:flex-row">
       <!-- Sidebar navigation with icons (desktop only) -->
       <aside class="hidden w-64 shrink-0 border-r border-base-300/50 bg-base-100/40 backdrop-blur-sm lg:block">
         <nav class="sticky top-20 p-4">
@@ -398,7 +398,7 @@ defineExpose({
       </div>
 
       <!-- Main content -->
-      <main class="flex-1 overflow-y-auto">
+      <main class="settings-main-scroll min-h-0 flex-1 overflow-y-auto">
         <div class="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           <div v-if="isLoading" class="flex flex-col items-center justify-center gap-4 py-32">
             <span class="loading loading-bars loading-lg text-primary" />
@@ -444,5 +444,9 @@ defineExpose({
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+.settings-main-scroll {
+  scrollbar-gutter: stable both-edges;
 }
 </style>
