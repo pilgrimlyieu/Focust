@@ -5,9 +5,7 @@
 
 use tauri::{AppHandle, State, command};
 
-use crate::core::suggestions::{
-    SharedSuggestions, SuggestionsConfig, save_suggestions_internal,
-};
+use crate::core::suggestions::{SharedSuggestions, SuggestionsConfig, save_suggestions_internal};
 
 /// Retrieves the suggestions configuration.
 ///

@@ -435,7 +435,10 @@ longSuggestions = ["Explicit long"]
             .get("zh-CN")
             .expect("Missing zh-CN suggestions");
 
-        assert_eq!(en_suggestions.short_suggestions, strings(&["Explicit short"]));
+        assert_eq!(
+            en_suggestions.short_suggestions,
+            strings(&["Explicit short"])
+        );
         assert_eq!(en_suggestions.long_suggestions, strings(&["Legacy long"]));
         assert!(en_suggestions.suggestions.is_empty());
 
