@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, TransitionGroup, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import CheckIcon from "@/components/icons/CheckIcon.vue";
 import CloseIcon from "@/components/icons/CloseIcon.vue";
@@ -52,9 +52,9 @@ const poolTranslationKeys = {
   short: "suggestions.shortBreakSuggestions",
 } as const satisfies Record<SuggestionPool, string>;
 
-const poolActiveClasses = {
-  long: "border-secondary/50 bg-secondary/10 shadow-sm",
-  short: "border-primary/50 bg-primary/10 shadow-sm",
+const poolSegmentClasses = {
+  long: "bg-secondary/10 text-secondary ring-1 ring-secondary/30",
+  short: "bg-primary/10 text-primary ring-1 ring-primary/30",
 } as const satisfies Record<SuggestionPool, string>;
 
 const poolBadgeClasses = {
@@ -81,14 +81,19 @@ const poolCounts = computed(() => {
   } satisfies Record<SuggestionPool, number>;
 });
 
-const activePoolCount = computed(() => poolCounts.value[activePool.value]);
-
 const bulkLineCount = computed(
   () => normalizeTextSuggestions(suggestionsText.value).length,
 );
 
+const editorCount = computed(() =>
+  editMode.value === "bulk"
+    ? bulkLineCount.value
+    : poolCounts.value[activePool.value],
+);
+
 const hasDraftChanges = computed(
-  () => serializeConfig(draftConfig.value) !== serializeConfig(savedConfig.value),
+  () =>
+    serializeConfig(draftConfig.value) !== serializeConfig(savedConfig.value),
 );
 
 function cloneLanguageSuggestions(
@@ -378,47 +383,50 @@ function removeSuggestion(index: number) {
         <span>{{ t("toast.saveFailed") }}</span>
       </div>
 
-      <!-- Suggestion Pool Switcher -->
-      <div class="grid gap-3 md:grid-cols-2">
-        <button v-for="pool in SUGGESTION_POOLS" :key="pool" type="button"
-          class="rounded-xl border p-4 text-left transition-all"
-          :class="activePool === pool
-            ? poolActiveClasses[pool]
-            : 'border-base-300 bg-base-100 hover:border-base-content/20 hover:bg-base-200/40'"
-          :aria-pressed="activePool === pool" @click="selectPool(pool)">
-          <div class="flex items-start justify-between gap-4">
-            <div class="min-w-0">
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="badge badge-sm" :class="poolBadgeClasses[pool]">
-                  {{ pool === "short" ? "MINI" : "LONG" }}
-                </span>
-                <span class="text-sm font-semibold">{{ t(poolTranslationKeys[pool]) }}</span>
-              </div>
-            </div>
-            <span class="tabular-nums text-2xl font-semibold leading-none">
-              {{ poolCounts[pool] }}
-            </span>
+      <!-- Editing toolbar -->
+      <div class="rounded-xl border border-base-300 bg-base-200/50 p-2">
+        <div class="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+          <div class="grid grid-cols-2 gap-1 rounded-lg bg-base-100 p-1 sm:inline-grid sm:w-auto">
+            <button v-for="pool in SUGGESTION_POOLS" :key="pool" type="button"
+              class="flex min-h-9 min-w-0 items-center justify-center gap-2 rounded-md px-3 font-sans text-sm font-medium leading-none transition-colors"
+              :class="activePool === pool
+                ? poolSegmentClasses[pool]
+                : 'text-base-content/70 hover:bg-base-200 hover:text-base-content'"
+              :aria-pressed="activePool === pool" @click="selectPool(pool)">
+              <span class="badge badge-xs shrink-0" :class="poolBadgeClasses[pool]">
+                {{ pool === "short" ? "MINI" : "LONG" }}
+              </span>
+              <span class="truncate">{{ t(poolTranslationKeys[pool]) }}</span>
+              <span class="shrink-0 tabular-nums text-base-content/60">{{ poolCounts[pool] }}</span>
+            </button>
           </div>
-        </button>
-      </div>
 
-      <!-- Mode Switcher -->
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div class="tabs tabs-boxed bg-base-200/70 p-1">
-          <button type="button" class="tab tab-sm h-9 gap-2 px-3" :class="{ 'tab-active': editMode === 'list' }"
-            @click="switchMode('list')">
-            <ListIcon class-name="h-4 w-4" />
-            {{ t("suggestions.listMode") }}
-          </button>
-          <button type="button" class="tab tab-sm h-9 gap-2 px-3" :class="{ 'tab-active': editMode === 'bulk' }"
-            @click="switchMode('bulk')">
-            <DocumentIcon class-name="h-4 w-4" />
-            {{ t("suggestions.bulkMode") }}
-          </button>
-        </div>
-        <div class="text-xs text-base-content/50">
-          <span class="font-semibold text-base-content/70">{{ activePoolCount }}</span>
-          {{ t("suggestions.totalCount") }}
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+            <div class="grid grid-cols-2 gap-1 rounded-lg bg-base-100 p-1 sm:w-auto">
+              <button type="button"
+                class="flex min-h-9 min-w-0 items-center justify-center gap-2 rounded-md px-3 font-sans text-sm font-medium leading-none transition-colors"
+                :class="editMode === 'list'
+                  ? 'bg-base-200 text-base-content shadow-sm'
+                  : 'text-base-content/70 hover:bg-base-200 hover:text-base-content'"
+                @click="switchMode('list')">
+                <ListIcon class-name="h-4 w-4 shrink-0" />
+                <span class="truncate">{{ t("suggestions.listMode") }}</span>
+              </button>
+              <button type="button"
+                class="flex min-h-9 min-w-0 items-center justify-center gap-2 rounded-md px-3 font-sans text-sm font-medium leading-none transition-colors"
+                :class="editMode === 'bulk'
+                  ? 'bg-base-200 text-base-content shadow-sm'
+                  : 'text-base-content/70 hover:bg-base-200 hover:text-base-content'"
+                @click="switchMode('bulk')">
+                <DocumentIcon class-name="h-4 w-4 shrink-0" />
+                <span class="truncate">{{ t("suggestions.bulkMode") }}</span>
+              </button>
+            </div>
+            <div class="px-1 text-xs text-base-content/50 sm:min-w-20 sm:text-right">
+              <span class="font-semibold text-base-content/70">{{ editorCount }}</span>
+              {{ editMode === "bulk" ? t("suggestions.linesDetected") : t("suggestions.totalCount") }}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -437,7 +445,7 @@ function removeSuggestion(index: number) {
         </div>
 
         <!-- Suggestions List -->
-        <TransitionGroup name="list" tag="div" class="space-y-2 max-h-[30rem] overflow-y-auto pr-1">
+        <div class="space-y-2 max-h-[30rem] overflow-y-auto pr-1">
           <div v-for="(suggestion, index) in suggestionsList" :key="`suggestion-${index}-${suggestion}`"
             class="flex gap-2 items-center group bg-base-200/50 hover:bg-base-200 rounded-lg p-3 transition-all">
             <span class="text-base-content/40 font-mono text-xs w-8 text-right shrink-0">{{ index + 1 }}</span>
@@ -456,59 +464,34 @@ function removeSuggestion(index: number) {
             <SuggestionBulb class-name="h-20 w-20 mx-auto mb-4 text-base-content/10" />
             <p class="text-base font-medium">{{ t("suggestions.emptyList") }}</p>
           </div>
-        </TransitionGroup>
+        </div>
       </div>
 
       <!-- Bulk Mode -->
-      <div v-if="editMode === 'bulk'" class="space-y-4">
-        <!-- Instructions -->
-        <div class="alert border-base-300 bg-base-200/60 py-3 shadow-none">
+      <div v-if="editMode === 'bulk'" class="space-y-3">
+        <div class="flex items-start gap-2 rounded-lg bg-base-200/50 px-3 py-2 text-xs text-base-content/65">
           <InfoIcon class-name="h-5 w-5" />
           <div>
-            <h3 class="font-bold text-sm">{{ t("suggestions.bulkModeTitle") }}</h3>
-            <div class="text-xs opacity-80 mt-1">
+            <div class="font-medium text-base-content/80">{{ t("suggestions.bulkModeTitle") }}</div>
+            <div class="mt-0.5 leading-relaxed">
               {{ t("suggestions.bulkModeDesc") }}
             </div>
           </div>
         </div>
 
-        <!-- Textarea -->
-        <div class="form-control">
+        <div class="rounded-xl border border-base-300 bg-base-100/80 shadow-inner transition-colors focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/15">
           <textarea v-model="suggestionsText"
-            class="textarea textarea-bordered h-[28rem] font-mono text-sm leading-relaxed resize-none transition-all focus:textarea-primary"
+            class="h-72 w-full resize-none rounded-xl bg-transparent px-4 py-3 font-sans text-sm leading-7 text-base-content outline-none placeholder:text-base-content/35 sm:h-80"
             @input="commitTextEditor"
-            :placeholder="t('suggestions.bulkPlaceholder')" /><br />
-          <label class="label">
-            <span class="label-text-alt">
+            :placeholder="t('suggestions.bulkPlaceholder')" />
+          <div class="flex items-center justify-end border-t border-base-300/60 px-4 py-2 text-xs text-base-content/50">
+            <span>
               <span class="font-semibold">{{ bulkLineCount }}</span>
               {{ t("suggestions.linesDetected") }}
             </span>
-          </label>
+          </div>
         </div>
       </div>
     </div>
   </section>
 </template>
-
-<style scoped>
-.list-move,
-.list-enter-active,
-.list-leave-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.list-enter-from {
-  opacity: 0;
-  transform: translateY(-10px);
-}
-
-.list-leave-to {
-  opacity: 0;
-  transform: translateY(10px);
-}
-
-.list-leave-active {
-  position: absolute;
-  width: calc(100% - 2rem);
-}
-</style>
