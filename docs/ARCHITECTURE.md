@@ -37,15 +37,15 @@
 
 ### Backend (Rust) - `src-tauri/src/`
 
-| Module         | Purpose                              | Key Components                                                   |
-| -------------- | ------------------------------------ | ---------------------------------------------------------------- |
-| **cmd/**       | Tauri command handlers (25 commands) | audio, autostart, config, payload scheduler, suggestions, system, window |
-| **config/**    | TOML config with partial loading     | AppConfig, AdvancedSettings, load/save/merge                     |
-| **scheduler/** | Event-driven scheduling engine       | BreakScheduler, AttentionTimer, SharedState, Command routing     |
-| **monitors/**  | Environment monitoring               | IdleMonitor, DndMonitor, AppWhitelistMonitor, Orchestrator       |
-| **platform/**  | System integration                   | Tray, hotkeys, notifications, i18n, window creation              |
-| **core/**      | Business logic types                 | Audio, Schedule, Suggestions, Theme, Time                        |
-| **utils/**     | Utilities                            | Error handling, logging (tracing)                                |
+| Module         | Purpose                              | Key Components                                                            |
+| -------------- | ------------------------------------ | ------------------------------------------------------------------------- |
+| **cmd/**       | Tauri command handlers (25 commands) | audio, autostart, config, payload, scheduler, suggestions, system, window |
+| **config/**    | TOML config with partial loading     | AppConfig, AdvancedSettings, load/save/merge                              |
+| **scheduler/** | Event-driven scheduling engine       | BreakScheduler, AttentionTimer, SharedState, Command routing              |
+| **monitors/**  | Environment monitoring               | IdleMonitor, DndMonitor, AppWhitelistMonitor, Orchestrator                |
+| **platform/**  | System integration                   | Tray, hotkeys, notifications, i18n, window creation                       |
+| **core/**      | Business logic types                 | Audio, Schedule, Suggestions, Theme, Time                                 |
+| **utils/**     | Utilities                            | Error handling, logging (tracing)                                         |
 
 ### Frontend (Vue 3) - `src/`
 
@@ -94,7 +94,7 @@ Frontend: schedulerStore.handleSchedulerEvent()
   ↓
 Create break windows (one per monitor)
   ↓
-User finishes → invoke("break_finished")
+User finishes → invoke("prompt_finished")
   ↓
 BreakScheduler: Update state, calculate next
 ```
