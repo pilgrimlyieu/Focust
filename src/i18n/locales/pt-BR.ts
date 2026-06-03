@@ -289,7 +289,7 @@ const ptBR: LocaleStrings = {
     longBreakSuggestions: "Sugestões para pausas longas",
     noPreview: "Nenhuma sugestão disponível",
     preview: "Visualizar",
-    shortBreakSuggestions: "Sugestões para pausas curtas",
+    shortBreakSuggestions: "Sugestões para mini pausas",
     title: "Sugestões",
     toggle: "Mostrar sugestões durante as pausas",
     totalCount: "Total",

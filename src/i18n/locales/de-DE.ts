@@ -297,7 +297,7 @@ const deDE: LocaleStrings = {
     longBreakSuggestions: "Lange-Pausen-Vorschläge",
     noPreview: "Keine Vorschläge verfügbar",
     preview: "Vorschau",
-    shortBreakSuggestions: "Kurzpausen-Vorschläge",
+    shortBreakSuggestions: "Mini-Pausen-Vorschläge",
     title: "Vorschläge",
     toggle: "Vorschläge während Pausen anzeigen",
     totalCount: "Gesamt",

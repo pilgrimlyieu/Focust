@@ -286,7 +286,7 @@ const ruRU: LocaleStrings = {
     label: "Предложения",
     linesDetected: "обнаружено действительных строк",
     listMode: "Режим списка",
-    longBreakSuggestions: "Предложения для длинных перерывов",
+    longBreakSuggestions: "Предложения для длительных перерывов",
     noPreview: "Нет доступных предложений",
     preview: "Предпросмотр",
     shortBreakSuggestions: "Предложения для коротких перерывов",

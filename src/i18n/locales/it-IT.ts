@@ -295,7 +295,7 @@ const itIT: LocaleStrings = {
     longBreakSuggestions: "Suggerimenti per pause lunghe",
     noPreview: "Nessun suggerimento disponibile",
     preview: "Anteprima",
-    shortBreakSuggestions: "Suggerimenti per pause brevi",
+    shortBreakSuggestions: "Suggerimenti per mini pause",
     title: "Suggerimenti",
     toggle: "Mostra suggerimenti durante le pause",
     totalCount: "Totale",

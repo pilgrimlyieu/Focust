@@ -678,7 +678,7 @@ longSuggestions = [
 
 You can add your own suggestions under the appropriate language section. Mini breaks use `shortSuggestions`; long breaks use `longSuggestions`.
 
-`suggestions` is retained only so older Focust versions can still parse the file, and new saves keep it empty. When loading an older file that only has `suggestions`, Focust uses that legacy list as the fallback for any missing short or long pool. If `shortSuggestions = []` or `longSuggestions = []` is present explicitly, that pool is intentionally empty and does not fall back to `suggestions`.
+`suggestions` is retained only so older Focust versions can still parse the file, and new saves keep it empty. This is parse-only compatibility: older versions that read only `suggestions` may show no suggestions after a newer version has saved the file. When loading an older file that only has `suggestions`, current Focust uses that legacy list as the fallback for any missing short or long pool. If `shortSuggestions = []` or `longSuggestions = []` is present explicitly, that pool is intentionally empty and does not fall back to `suggestions`.
 
 ---
 

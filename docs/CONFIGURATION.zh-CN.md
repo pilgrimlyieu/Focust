@@ -675,7 +675,7 @@ longSuggestions = [
 
 您可以为不同语言定义建议列表。短休息使用 `shortSuggestions`，长休息使用 `longSuggestions`。
 
-`suggestions` 仅用于旧版 Focust 解析文件，新版本保存时会保持为空。加载只包含 `suggestions` 的旧文件时，Focust 会将该旧列表作为缺失的短休息或长休息池的回退来源。如果文件中显式写了 `shortSuggestions = []` 或 `longSuggestions = []`，表示用户有意清空该池，不会再回退到 `suggestions`。
+`suggestions` 仅用于旧版 Focust 解析文件，新版本保存时会保持为空。这只是解析层面的兼容：如果旧版只读取 `suggestions`，在新版保存过文件后可能不会再显示建议。加载只包含 `suggestions` 的旧文件时，当前版本的 Focust 会将该旧列表作为缺失的短休息或长休息池的回退来源。如果文件中显式写了 `shortSuggestions = []` 或 `longSuggestions = []`，表示用户有意清空该池，不会再回退到 `suggestions`。
 
 ---
 

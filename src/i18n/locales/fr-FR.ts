@@ -297,7 +297,7 @@ const frFR: LocaleStrings = {
     longBreakSuggestions: "Suggestions de pauses longues",
     noPreview: "Aucune suggestion disponible",
     preview: "Aperçu",
-    shortBreakSuggestions: "Suggestions de pauses courtes",
+    shortBreakSuggestions: "Suggestions de mini-pauses",
     title: "Suggestions",
     toggle: "Afficher les suggestions pendant les pauses",
     totalCount: "Total",

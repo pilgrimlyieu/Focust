@@ -290,7 +290,7 @@ const esES: LocaleStrings = {
     longBreakSuggestions: "Sugerencias para descansos largos",
     noPreview: "No hay sugerencias disponibles",
     preview: "Vista previa",
-    shortBreakSuggestions: "Sugerencias para descansos cortos",
+    shortBreakSuggestions: "Sugerencias para descansos mini",
     title: "Sugerencias",
     toggle: "Mostrar sugerencias durante los descansos",
     totalCount: "Total",

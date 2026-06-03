@@ -280,7 +280,7 @@ const enUS = {
     longBreakSuggestions: "Long Break Suggestions",
     noPreview: "No suggestions available",
     preview: "Preview",
-    shortBreakSuggestions: "Short Break Suggestions",
+    shortBreakSuggestions: "Mini Break Suggestions",
     title: "Suggestions",
     toggle: "Show suggestions during breaks",
     totalCount: "Total",
