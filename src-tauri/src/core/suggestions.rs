@@ -134,8 +134,8 @@ impl LanguageSuggestions {
 }
 
 impl SuggestionsConfig {
-    /// Normalize compatibility fields before storing or returning config.
-    pub fn normalize(&mut self) {
+    /// Clear the legacy compatibility lists before returning or writing config.
+    pub fn clear_legacy_suggestions_for_output(&mut self) {
         for language_suggestions in self.by_language.values_mut() {
             language_suggestions.clear_legacy_suggestions_for_output();
         }
@@ -158,8 +158,7 @@ impl Default for SuggestionsConfig {
 /// Load suggestions from suggestions.toml or create default if not exists
 pub async fn load_suggestions(app_handle: &AppHandle) -> SuggestionsConfig {
     match try_load_suggestions(app_handle).await {
-        Ok(mut config) => {
-            config.normalize();
+        Ok(config) => {
             tracing::info!("Suggestions loaded successfully");
             config
         }
@@ -168,11 +167,9 @@ pub async fn load_suggestions(app_handle: &AppHandle) -> SuggestionsConfig {
             let default = SuggestionsConfig::default();
 
             // Try to save default config
-            save_suggestions_internal(app_handle, &default)
-                .await
-                .unwrap_or_else(|e| {
-                    tracing::error!("Failed to save default suggestions: {e}");
-                });
+            if let Err(e) = save_suggestions_internal(app_handle, &default).await {
+                tracing::error!("Failed to save default suggestions: {e}");
+            }
 
             default
         }
@@ -196,11 +193,7 @@ async fn try_load_suggestions(app_handle: &AppHandle) -> Result<SuggestionsConfi
             )
         })?;
 
-    let mut config: SuggestionsConfig =
-        toml::from_str(&content).context("Failed to parse suggestions.toml")?;
-    config.normalize();
-
-    Ok(config)
+    toml::from_str(&content).context("Failed to parse suggestions.toml")
 }
 
 /// Saves suggestions to file.
@@ -215,10 +208,10 @@ async fn try_load_suggestions(app_handle: &AppHandle) -> Result<SuggestionsConfi
 pub async fn save_suggestions_internal(
     app_handle: &AppHandle,
     config: &SuggestionsConfig,
-) -> Result<()> {
+) -> Result<SuggestionsConfig> {
     let suggestions_path = get_suggestions_path(app_handle)?;
     let mut config = config.clone();
-    config.normalize();
+    config.clear_legacy_suggestions_for_output();
 
     // Ensure parent directory exists
     if let Some(parent) = suggestions_path.parent()
@@ -243,7 +236,7 @@ pub async fn save_suggestions_internal(
         "Suggestions saved successfully to {}",
         suggestions_path.display()
     );
-    Ok(())
+    Ok(config)
 }
 
 /// Get the combined compatibility suggestions for a specific language.
@@ -310,10 +303,7 @@ fn load_default_suggestions() -> Result<SuggestionsConfig> {
     // The resource file will be embedded in the binary by Tauri
     // and available at runtime via the resource protocol
     let default_toml = include_str!("../../resources/suggestions.toml");
-    let mut config: SuggestionsConfig =
-        toml::from_str(default_toml).context("Failed to parse default suggestions.toml")?;
-    config.normalize();
-    Ok(config)
+    toml::from_str(default_toml).context("Failed to parse default suggestions.toml")
 }
 
 /// Get the path to suggestions.toml file
@@ -496,6 +486,38 @@ suggestions = ["Legacy 1", "Legacy 2"]
     }
 
     #[test]
+    fn missing_split_pool_falls_back_to_legacy_per_pool() {
+        let toml = r#"
+[byLanguage.en-US]
+suggestions = ["Legacy long"]
+shortSuggestions = ["Explicit short"]
+
+[byLanguage.zh-CN]
+suggestions = ["Legacy short"]
+longSuggestions = ["Explicit long"]
+"#;
+
+        let config: SuggestionsConfig =
+            toml::from_str(toml).expect("Failed to deserialize mixed suggestions");
+        let en_suggestions = config
+            .by_language
+            .get("en-US")
+            .expect("Missing en-US suggestions");
+        let zh_suggestions = config
+            .by_language
+            .get("zh-CN")
+            .expect("Missing zh-CN suggestions");
+
+        assert_eq!(en_suggestions.short_suggestions, strings(&["Explicit short"]));
+        assert_eq!(en_suggestions.long_suggestions, strings(&["Legacy long"]));
+        assert!(en_suggestions.suggestions.is_empty());
+
+        assert_eq!(zh_suggestions.short_suggestions, strings(&["Legacy short"]));
+        assert_eq!(zh_suggestions.long_suggestions, strings(&["Explicit long"]));
+        assert!(zh_suggestions.suggestions.is_empty());
+    }
+
+    #[test]
     fn split_suggestions_can_provide_legacy_union_without_serializing_it() {
         let toml = r#"
 [byLanguage.en-US]
@@ -560,15 +582,17 @@ longSuggestions = ["Walk"]
             suggestions: Vec<String>,
         }
 
-        let mut config: SuggestionsConfig = toml::from_str(
-            r#"
-[byLanguage.en-US]
-shortSuggestions = ["Blink"]
-longSuggestions = ["Walk"]
-"#,
-        )
-        .expect("Failed to deserialize split suggestions");
-        config.normalize();
+        let mut config = SuggestionsConfig {
+            by_language: HashMap::from([(
+                "en-US".to_owned(),
+                LanguageSuggestions {
+                    suggestions: strings(&["Legacy"]),
+                    short_suggestions: strings(&["Blink"]),
+                    long_suggestions: strings(&["Walk"]),
+                },
+            )]),
+        };
+        config.clear_legacy_suggestions_for_output();
 
         let saved_toml = toml::to_string_pretty(&config).expect("Failed to serialize suggestions");
         let legacy_config: LegacyConfig =

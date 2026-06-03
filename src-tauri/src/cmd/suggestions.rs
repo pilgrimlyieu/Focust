@@ -49,19 +49,15 @@ pub async fn get_suggestions_for_language(
 pub async fn save_suggestions(
     app: AppHandle,
     state: State<'_, SharedSuggestions>,
-    mut config: SuggestionsConfig,
+    config: SuggestionsConfig,
 ) -> Result<(), String> {
-    config.normalize();
-
-    // Save to file
-    save_suggestions_internal(&app, &config)
+    let saved_config = save_suggestions_internal(&app, &config)
         .await
         .map_err(|e| e.to_string())?;
 
-    // Update state
     {
         let mut suggestions = state.write().await;
-        *suggestions = config;
+        *suggestions = saved_config;
     }
 
     tracing::info!("Suggestions updated successfully");
