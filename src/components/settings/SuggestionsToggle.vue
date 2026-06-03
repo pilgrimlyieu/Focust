@@ -25,7 +25,7 @@ const preview = computed(() => {
   if (!props.suggestions.show) {
     return [];
   }
-  return suggestionsStore.sampleMany(getI18nLocale(), 3, props.suggestionPool);
+  return suggestionsStore.sampleMany(getI18nLocale(), props.suggestionPool, 3);
 });
 
 // Use composable for toggle

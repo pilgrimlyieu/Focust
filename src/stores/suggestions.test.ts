@@ -136,203 +136,8 @@ describe("useSuggestionsStore", () => {
     });
   });
 
-  describe("getSuggestionsSync", () => {
-    it("should return suggestions for given language", () => {
-      const store = useSuggestionsStore();
-      store.config = {
-        byLanguage: {
-          "en-US": createLanguageSuggestions(["English 1"], ["English 2"]),
-          "zh-CN": createLanguageSuggestions(["中文 1"], ["中文 2"]),
-        },
-      };
-
-      const enSuggestions = store.getSuggestionsSync("en-US");
-      expect(enSuggestions).toEqual(["English 1", "English 2"]);
-
-      const zhSuggestions = store.getSuggestionsSync("zh-CN");
-      expect(zhSuggestions).toEqual(["中文 1", "中文 2"]);
-    });
-
-    it("should return break-specific suggestion pools", () => {
-      const store = useSuggestionsStore();
-      store.config = {
-        byLanguage: {
-          "en-US": createLanguageSuggestions(["Short 1"], ["Long 1"]),
-        },
-      };
-
-      expect(store.getSuggestionsSync("en-US", "short")).toEqual(["Short 1"]);
-      expect(store.getSuggestionsSync("en-US", "long")).toEqual(["Long 1"]);
-    });
-
-    it("should fallback to en-US for unknown language", () => {
-      const store = useSuggestionsStore();
-      store.config = {
-        byLanguage: {
-          "en-US": createLanguageSuggestions(["English 1"], ["English 2"]),
-        },
-      };
-
-      const suggestions = store.getSuggestionsSync("fr-FR");
-      expect(suggestions).toEqual(["English 1", "English 2"]);
-    });
-
-    it("should return empty array if config is null", () => {
-      const store = useSuggestionsStore();
-      store.config = null;
-
-      const suggestions = store.getSuggestionsSync("en-US");
-      expect(suggestions).toEqual([]);
-    });
-
-    it("should not warn when config is null", () => {
-      const store = useSuggestionsStore();
-      store.config = null;
-
-      const suggestions = store.getSuggestionsSync("en-US");
-      expect(suggestions).toEqual([]);
-      expect(console.warn).not.toHaveBeenCalled();
-    });
-
-    it("should warn when language is missing and fallback is used", () => {
-      const store = useSuggestionsStore();
-      store.config = {
-        byLanguage: {
-          "en-US": createLanguageSuggestions(["English 1"], ["English 2"]),
-        },
-      };
-
-      const suggestions = store.getSuggestionsSync("fr-FR");
-      expect(suggestions).toEqual(["English 1", "English 2"]);
-      expect(console.warn).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe("sample", () => {
-    it("should return random suggestion from given language", () => {
-      const store = useSuggestionsStore();
-      store.config = {
-        byLanguage: {
-          "en-US": createLanguageSuggestions(["Test 1", "Test 2"], ["Test 3"]),
-        },
-      };
-
-      const sample1 = store.sample("en-US");
-      expect(["Test 1", "Test 2", "Test 3"]).toContain(sample1);
-    });
-
-    it("should return empty string for language with no suggestions", () => {
-      const store = useSuggestionsStore();
-      store.config = {
-        byLanguage: {
-          "en-US": createLanguageSuggestions([], []),
-        },
-      };
-
-      const sample = store.sample("en-US");
-      expect(sample).toBe("");
-    });
-
-    it("should return empty string if config is null", () => {
-      const store = useSuggestionsStore();
-      store.config = null;
-
-      const sample = store.sample("en-US");
-      expect(sample).toBe("");
-    });
-
-    it("should sample only from the requested break-specific pool", () => {
-      const store = useSuggestionsStore();
-      store.config = {
-        byLanguage: {
-          "en-US": createLanguageSuggestions(["Short only"], ["Long only"]),
-        },
-      };
-
-      expect(store.sample("en-US", "short")).toBe("Short only");
-      expect(store.sample("en-US", "long")).toBe("Long only");
-    });
-  });
-
   describe("sampleMany", () => {
-    it("should return multiple random suggestions from given language", () => {
-      const store = useSuggestionsStore();
-      store.config = {
-        byLanguage: {
-          "en-US": createLanguageSuggestions(
-            ["Test 1", "Test 2"],
-            ["Test 3", "Test 4"],
-          ),
-        },
-      };
-
-      const samples = store.sampleMany("en-US", 3);
-      expect(samples.length).toBe(3);
-      samples.forEach((sample) => {
-        expect(["Test 1", "Test 2", "Test 3", "Test 4"]).toContain(sample);
-      });
-
-      // All should be unique
-      expect(new Set(samples).size).toBe(3);
-    });
-
-    it("should return all suggestions if count exceeds pool size", () => {
-      const store = useSuggestionsStore();
-      store.config = {
-        byLanguage: {
-          "en-US": createLanguageSuggestions(["Test 1"], ["Test 2"]),
-        },
-      };
-
-      const samples = store.sampleMany("en-US", 5);
-      expect(samples.length).toBe(2);
-    });
-
-    it("should return empty array for language with no suggestions", () => {
-      const store = useSuggestionsStore();
-      store.config = {
-        byLanguage: {
-          "en-US": createLanguageSuggestions([], []),
-        },
-      };
-
-      const samples = store.sampleMany("en-US", 3);
-      expect(samples).toEqual([]);
-    });
-
-    it("should return empty array if config is null", () => {
-      const store = useSuggestionsStore();
-      store.config = null;
-
-      const samples = store.sampleMany("en-US", 3);
-      expect(samples).toEqual([]);
-    });
-
-    it("should return empty array when count is negative", () => {
-      const store = useSuggestionsStore();
-      store.config = {
-        byLanguage: {
-          "en-US": createLanguageSuggestions(["Test 1", "Test 2"], ["Test 3"]),
-        },
-      };
-
-      const samples = store.sampleMany("en-US", -1);
-      expect(samples).toEqual([]);
-    });
-
-    it("should return empty array when count is not finite", () => {
-      const store = useSuggestionsStore();
-      store.config = {
-        byLanguage: {
-          "en-US": createLanguageSuggestions(["Test 1", "Test 2"], ["Test 3"]),
-        },
-      };
-
-      const samples = store.sampleMany("en-US", Number.NaN);
-      expect(samples).toEqual([]);
-    });
-
-    it("should sample many only from the requested break-specific pool", () => {
+    it("should sample only from the requested break-specific pool", () => {
       const store = useSuggestionsStore();
       store.config = {
         byLanguage: {
@@ -343,14 +148,71 @@ describe("useSuggestionsStore", () => {
         },
       };
 
-      expect(store.sampleMany("en-US", 2, "short").sort()).toEqual([
+      expect(store.sampleMany("en-US", "short", 2).sort()).toEqual([
         "Short 1",
         "Short 2",
       ]);
-      expect(store.sampleMany("en-US", 2, "long").sort()).toEqual([
+      expect(store.sampleMany("en-US", "long", 2).sort()).toEqual([
         "Long 1",
         "Long 2",
       ]);
+    });
+
+    it("should fallback to en-US for unknown language", () => {
+      const store = useSuggestionsStore();
+      store.config = {
+        byLanguage: {
+          "en-US": createLanguageSuggestions(
+            ["English short"],
+            ["English long"],
+          ),
+        },
+      };
+
+      expect(store.sampleMany("fr-FR", "long", 3)).toEqual(["English long"]);
+      expect(console.warn).toHaveBeenCalledTimes(1);
+    });
+
+    it("should return all suggestions if count exceeds the pool size", () => {
+      const store = useSuggestionsStore();
+      store.config = {
+        byLanguage: {
+          "en-US": createLanguageSuggestions(["Short 1", "Short 2"], ["Long"]),
+        },
+      };
+
+      expect(store.sampleMany("en-US", "short", 5).sort()).toEqual([
+        "Short 1",
+        "Short 2",
+      ]);
+    });
+
+    it("should return empty array if config or the pool is empty", () => {
+      const store = useSuggestionsStore();
+      store.config = null;
+
+      expect(store.sampleMany("en-US", "short", 3)).toEqual([]);
+      expect(console.warn).not.toHaveBeenCalled();
+
+      store.config = {
+        byLanguage: {
+          "en-US": createLanguageSuggestions([], ["Long"]),
+        },
+      };
+
+      expect(store.sampleMany("en-US", "short", 3)).toEqual([]);
+    });
+
+    it("should return empty array for invalid counts", () => {
+      const store = useSuggestionsStore();
+      store.config = {
+        byLanguage: {
+          "en-US": createLanguageSuggestions(["Short"], ["Long"]),
+        },
+      };
+
+      expect(store.sampleMany("en-US", "short", -1)).toEqual([]);
+      expect(store.sampleMany("en-US", "short", Number.NaN)).toEqual([]);
     });
   });
 });

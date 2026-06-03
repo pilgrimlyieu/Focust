@@ -16,28 +16,6 @@ const SUGGESTION_POOL_KEYS = {
   short: "shortSuggestions",
 } as const satisfies Record<SuggestionPool, keyof LanguageSuggestions>;
 
-function uniqueSuggestions(...pools: string[][]): string[] {
-  const seen = new Set<string>();
-  const suggestions: string[] = [];
-
-  for (const pool of pools) {
-    for (const suggestion of pool) {
-      if (seen.has(suggestion)) continue;
-      seen.add(suggestion);
-      suggestions.push(suggestion);
-    }
-  }
-
-  return suggestions;
-}
-
-function allSuggestions(languageConfig: LanguageSuggestions): string[] {
-  return uniqueSuggestions(
-    languageConfig.shortSuggestions,
-    languageConfig.longSuggestions,
-  );
-}
-
 export function createLanguageSuggestions(
   shortSuggestions: string[],
   longSuggestions: string[],
@@ -73,7 +51,7 @@ function normalizeSuggestionsConfig(
   };
 }
 
-function getSuggestionPool(
+function getSuggestionPoolForLanguageConfig(
   languageConfig: LanguageSuggestions,
   pool: SuggestionPool,
 ): string[] {
@@ -122,82 +100,47 @@ export const useSuggestionsStore = defineStore("suggestions", () => {
   }
 
   /**
-   * Get suggestions for a specific language from backend
+   * Get a break-specific suggestion pool for a language.
    * @param {string} language Language code
-   * @returns {Promise<string[]>} Promise resolving to array of suggestions
-   */
-  async function getSuggestionsForLanguage(
-    language: string,
-  ): Promise<string[]> {
-    try {
-      return await invoke<string[]>("get_suggestions_for_language", {
-        language,
-      });
-    } catch (err) {
-      console.error("Failed to get suggestions for language:", err);
-      return [];
-    }
-  }
-
-  /**
-   * Get suggestions synchronously for a specific language
-   * @param {string} language Language code
-   * @param {SuggestionPool} pool Optional break-specific suggestion pool
+   * @param {SuggestionPool} pool Break-specific suggestion pool
    * @returns {string[]} Array of suggestions
    */
-  function getSuggestionsSync(
+  function getSuggestionPoolForLanguage(
     language: string,
-    pool?: SuggestionPool,
+    pool: SuggestionPool,
   ): string[] {
     if (!config.value) return [];
 
     const languageConfig = config.value.byLanguage[language];
     if (languageConfig) {
-      const normalizedLanguageConfig =
-        normalizeLanguageSuggestions(languageConfig);
-      return pool
-        ? getSuggestionPool(normalizedLanguageConfig, pool)
-        : allSuggestions(normalizedLanguageConfig);
+      return getSuggestionPoolForLanguageConfig(languageConfig, pool);
     }
 
     console.warn(
       `No suggestions found for language: ${language}, falling back to ${LANGUAGE_FALLBACK}`,
     );
 
-    const fallbackLanguageConfig = normalizeLanguageSuggestions(
-      config.value.byLanguage[LANGUAGE_FALLBACK],
-    );
-    return pool
-      ? getSuggestionPool(fallbackLanguageConfig, pool)
-      : allSuggestions(fallbackLanguageConfig);
+    const fallbackLanguageConfig = config.value.byLanguage[LANGUAGE_FALLBACK];
+    if (!fallbackLanguageConfig) {
+      return [];
+    }
+
+    return getSuggestionPoolForLanguageConfig(fallbackLanguageConfig, pool);
   }
 
   /**
-   * Sample a random suggestion for a specific language
+   * Sample multiple random suggestions for a specific language and break kind.
    * @param {string} language Language code
-   * @param {SuggestionPool} pool Optional break-specific suggestion pool
-   * @returns {string} A random suggestion
-   */
-  function sample(language: string, pool?: SuggestionPool): string {
-    const suggestionPool = getSuggestionsSync(language, pool);
-    if (!suggestionPool.length) return "";
-
-    return suggestionPool[Math.floor(Math.random() * suggestionPool.length)];
-  }
-
-  /**
-   * Sample multiple random suggestions for a specific language
-   * @param {string} language Language code
+   * @param {SuggestionPool} pool Break-specific suggestion pool
    * @param {number} count Number of suggestions to sample
-   * @param {SuggestionPool} pool Optional break-specific suggestion pool
    * @returns {string[]} Array of random suggestions
    */
   function sampleMany(
     language: string,
+    pool: SuggestionPool,
     count: number = 3,
-    pool?: SuggestionPool,
   ): string[] {
-    const suggestionPool = getSuggestionsSync(language, pool);
+    const suggestionPool = getSuggestionPoolForLanguage(language, pool);
     if (!suggestionPool.length) return [];
 
     const safeCount = Number.isFinite(count)
@@ -205,7 +148,6 @@ export const useSuggestionsStore = defineStore("suggestions", () => {
       : 0;
     if (safeCount === 0) return [];
 
-    // Fisher-Yates shuffle
     const indices = Array.from({ length: suggestionPool.length }, (_, i) => i);
     for (let i = indices.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -219,12 +161,9 @@ export const useSuggestionsStore = defineStore("suggestions", () => {
 
   return {
     config,
-    getSuggestionsForLanguage,
-    getSuggestionsSync,
     hasLoaded,
     load,
     loading,
-    sample,
     sampleMany,
     save,
   };
