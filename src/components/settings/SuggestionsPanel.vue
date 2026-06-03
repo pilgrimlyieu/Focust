@@ -446,7 +446,7 @@ function removeSuggestion(index: number) {
 
         <!-- Suggestions List -->
         <div class="space-y-2 max-h-[30rem] overflow-y-auto pr-1">
-          <div v-for="(suggestion, index) in suggestionsList" :key="`suggestion-${index}-${suggestion}`"
+          <div v-for="(_, index) in suggestionsList" :key="`suggestion-${index}`"
             class="flex gap-2 items-center group bg-base-200/50 hover:bg-base-200 rounded-lg p-3 transition-all">
             <span class="text-base-content/40 font-mono text-xs w-8 text-right shrink-0">{{ index + 1 }}</span>
             <input v-model="suggestionsList[index]" type="text"
