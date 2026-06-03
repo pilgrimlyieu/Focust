@@ -107,27 +107,6 @@ impl LanguageSuggestions {
         }
     }
 
-    #[must_use]
-    pub fn all_suggestions(&self) -> Vec<String> {
-        let mut combined = Vec::with_capacity(
-            self.short_suggestions
-                .len()
-                .saturating_add(self.long_suggestions.len()),
-        );
-
-        for suggestion in self
-            .short_suggestions
-            .iter()
-            .chain(self.long_suggestions.iter())
-        {
-            if !combined.contains(suggestion) {
-                combined.push(suggestion.clone());
-            }
-        }
-
-        combined
-    }
-
     fn clear_legacy_suggestions_for_output(&mut self) {
         self.suggestions.clear();
     }
@@ -237,29 +216,6 @@ pub async fn save_suggestions_internal(
         suggestions_path.display()
     );
     Ok(config)
-}
-
-/// Get the combined compatibility suggestions for a specific language.
-///
-/// This is only used by the legacy language-level command. Runtime break
-/// prompts should use [`get_suggestions_for_break_internal`] so short and long
-/// breaks stay separated.
-#[must_use]
-pub fn get_suggestions_for_language_internal(
-    config: &SuggestionsConfig,
-    language: &str,
-) -> Vec<String> {
-    if let Some(lang_suggestions) = config.by_language.get(language) {
-        return lang_suggestions.all_suggestions();
-    }
-
-    // Fallback to en-US
-    if let Some(en_suggestions) = config.by_language.get(LANGUAGE_FALLBACK) {
-        return en_suggestions.all_suggestions();
-    }
-
-    // Last resort: empty vec
-    vec![]
 }
 
 /// Get suggestions for a specific language and break duration.
@@ -393,11 +349,6 @@ mod tests {
                 config.by_language.contains_key(lang),
                 "Missing language: {lang}"
             );
-            let suggestions = get_suggestions_for_language_internal(&config, lang);
-            assert!(
-                !suggestions.is_empty(),
-                "No suggestions for language: {lang}"
-            );
             assert!(
                 config.by_language[lang].suggestions.is_empty(),
                 "Legacy suggestions should be empty for language: {lang}"
@@ -413,30 +364,6 @@ mod tests {
                 "No long suggestions for language: {lang}"
             );
         }
-    }
-
-    #[test]
-    fn get_suggestions_for_language_works() {
-        let config = SuggestionsConfig::default();
-
-        // Test all supported languages
-        let test_languages = [
-            "en-US", "zh-CN", "de-DE", "es-ES", "fr-FR", "it-IT", "ja-JP", "ko-KR", "pt-BR",
-            "ru-RU",
-        ];
-
-        for lang in test_languages {
-            let suggestions = get_suggestions_for_language_internal(&config, lang);
-            assert!(
-                !suggestions.is_empty(),
-                "Expected non-empty suggestions for {lang}"
-            );
-        }
-
-        // Test fallback to en-US for unknown language
-        let en_suggestions = get_suggestions_for_language_internal(&config, "en-US");
-        let unknown_suggestions = get_suggestions_for_language_internal(&config, "unknown");
-        assert_eq!(unknown_suggestions, en_suggestions);
     }
 
     #[test]
@@ -518,7 +445,7 @@ longSuggestions = ["Explicit long"]
     }
 
     #[test]
-    fn split_suggestions_can_provide_legacy_union_without_serializing_it() {
+    fn split_suggestions_keep_separate_pools_without_serializing_legacy_values() {
         let toml = r#"
 [byLanguage.en-US]
 shortSuggestions = ["Blink", "Breathe"]
@@ -539,10 +466,6 @@ longSuggestions = ["Stand up", "Drink water", "Breathe"]
         assert_eq!(
             en_suggestions.long_suggestions,
             strings(&["Stand up", "Drink water", "Breathe"])
-        );
-        assert_eq!(
-            en_suggestions.all_suggestions(),
-            strings(&["Blink", "Breathe", "Stand up", "Drink water"])
         );
         assert!(en_suggestions.suggestions.is_empty());
     }
