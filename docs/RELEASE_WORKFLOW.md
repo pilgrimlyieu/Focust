@@ -193,17 +193,31 @@ If you prefer manual control:
    ↓
 2. Setup environment (Bun, Rust, dependencies)
    ↓
-3. Load updater signing key for tag releases and main-branch draft releases
+3. Require updater signing key for tag releases and main-branch draft releases
    ↓
-4. Build application (tauri build)
+4. Disable updater artifacts for manual artifact builds
    ↓
-5. Generate signature files (.sig)
+5. Build application (tauri build)
    ↓
-6. Package artifacts
+6. Generate updater signatures for tag releases and main-branch draft releases
    ↓
-7. Generate latest.json manifest
+7. Package and upload GitHub Actions artifacts
    ↓
-8. Create GitHub Release
+8. Stop here for manual artifact builds
+```
+
+### Release Publishing Process
+
+```
+1. Continue for tag releases and main-branch draft releases
+   ↓
+2. Download build artifacts
+   ↓
+3. Generate release notes
+   ↓
+4. Generate latest.json manifest from signed artifacts
+   ↓
+5. Create or update GitHub Release
 ```
 
 ### Auto-Update Flow

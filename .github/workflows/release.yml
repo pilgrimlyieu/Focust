@@ -271,8 +271,9 @@ jobs:
           if [ "$HAS_SIGNING_KEY" = "true" ]; then
             echo "✅ Updater signing key detected"
           elif [ "$SHOULD_SIGN" = "true" ]; then
-            echo "⚠️ No updater signing key found. Release build will proceed without signing."
-            echo "   To enable code signing, add TAURI_SIGNING_PRIVATE_KEY to GitHub Secrets"
+            echo "❌ Updater signing key is required for tag releases and draft releases."
+            echo "   Add TAURI_SIGNING_PRIVATE_KEY to GitHub Secrets before publishing."
+            exit 1
           else
             echo "Updater signing is disabled for artifact-only builds."
           fi
@@ -304,12 +305,13 @@ jobs:
         env:
           BUILD_TARGET: ${{ matrix.build_target || matrix.target }}
           SHOULD_SIGN: ${{ needs.setup.outputs.should_release == 'true' || needs.setup.outputs.should_draft == 'true' }}
+          HAS_SIGNING_KEY: ${{ (needs.setup.outputs.should_release == 'true' || needs.setup.outputs.should_draft == 'true') && secrets.TAURI_SIGNING_PRIVATE_KEY != '' }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ (needs.setup.outputs.should_release == 'true' || needs.setup.outputs.should_draft == 'true') && secrets.TAURI_SIGNING_PRIVATE_KEY || '' }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ (needs.setup.outputs.should_release == 'true' || needs.setup.outputs.should_draft == 'true') && secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD || '' }}
         run: |
           build_args=(--target "$BUILD_TARGET")
 
-          if [ "$SHOULD_SIGN" != "true" ]; then
+          if [ "$HAS_SIGNING_KEY" != "true" ]; then
             build_args+=(--config '{"bundle":{"createUpdaterArtifacts":false}}')
           fi
 
