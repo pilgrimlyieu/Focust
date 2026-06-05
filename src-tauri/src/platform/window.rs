@@ -16,7 +16,7 @@ use tokio::time;
 
 use crate::core::{
     payload::store_payload_internal,
-    suggestions::{SharedSuggestions, sample_suggestion},
+    suggestions::{SharedSuggestions, SuggestionBreakKind, sample_suggestion_for_break},
     theme::BackgroundType,
 };
 use crate::core::{
@@ -263,7 +263,7 @@ fn build_prompt_payload(
     event: SchedulerEvent,
     postpone_count: u8,
 ) -> Result<PromptPayload, String> {
-    let (break_settings, schedule_name, kind) = match event {
+    let (break_settings, schedule_name, kind, suggestion_break_kind) = match event {
         SchedulerEvent::MiniBreak(id) => {
             let schedule = config
                 .schedules
@@ -274,6 +274,7 @@ fn build_prompt_payload(
                 &schedule.mini_breaks.base,
                 schedule.name.clone(),
                 EventKind::Mini,
+                SuggestionBreakKind::Short,
             )
         }
         SchedulerEvent::LongBreak(id) => {
@@ -286,6 +287,7 @@ fn build_prompt_payload(
                 &schedule.long_breaks.base,
                 schedule.name.clone(),
                 EventKind::Long,
+                SuggestionBreakKind::Long,
             )
         }
         SchedulerEvent::Attention(id) => {
@@ -325,7 +327,7 @@ fn build_prompt_payload(
     let suggestion = break_settings
         .suggestions
         .show
-        .then(|| sample_suggestion(suggestions, &config.language))
+        .then(|| sample_suggestion_for_break(suggestions, &config.language, suggestion_break_kind))
         .flatten();
     let background = resolve_background(&break_settings.theme.background);
 

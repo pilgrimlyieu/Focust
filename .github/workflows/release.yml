@@ -120,18 +120,25 @@ jobs:
             SHOULD_BUILD=true
             SHOULD_RELEASE=true
           elif [ "$IS_DISPATCH" = "true" ] && [ "$BUILD_INPUT" = "true" ]; then
-            if [ "$GITHUB_REF" != "refs/heads/main" ]; then
-              echo "Manual release builds are only allowed on main" >&2
-              exit 1
-            fi
-
             SHOULD_BUILD=true
             VERSION=$(jq -r '.version // empty' package.json)
             validate_version VERSION "$VERSION"
 
-            if [ "$RELEASE_MODE" = "draft-release" ]; then
-              SHOULD_DRAFT=true
-            fi
+            case "$RELEASE_MODE" in
+              artifact)
+                ;;
+              draft-release)
+                if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+                  echo "Manual draft releases are only allowed on main" >&2
+                  exit 1
+                fi
+                SHOULD_DRAFT=true
+                ;;
+              *)
+                echo "Invalid release mode: $RELEASE_MODE" >&2
+                exit 1
+                ;;
+            esac
           fi
 
           reject_multiline VERSION "$VERSION"
@@ -258,16 +265,17 @@ jobs:
         if: steps.filter.outputs.skip != 'true'
         shell: bash
         env:
-          HAS_SIGNING_KEY: ${{ needs.setup.outputs.should_release == 'true' && secrets.TAURI_SIGNING_PRIVATE_KEY != '' }}
-          SHOULD_RELEASE: ${{ needs.setup.outputs.should_release }}
+          HAS_SIGNING_KEY: ${{ (needs.setup.outputs.should_release == 'true' || needs.setup.outputs.should_draft == 'true') && secrets.TAURI_SIGNING_PRIVATE_KEY != '' }}
+          SHOULD_SIGN: ${{ needs.setup.outputs.should_release == 'true' || needs.setup.outputs.should_draft == 'true' }}
         run: |
           if [ "$HAS_SIGNING_KEY" = "true" ]; then
-            echo "✅ Code signing key detected"
-          elif [ "$SHOULD_RELEASE" = "true" ]; then
-            echo "⚠️ No code signing key found. Release build will proceed without signing."
-            echo "   To enable code signing, add TAURI_SIGNING_PRIVATE_KEY to GitHub Secrets"
+            echo "✅ Updater signing key detected"
+          elif [ "$SHOULD_SIGN" = "true" ]; then
+            echo "❌ Updater signing key is required for tag releases and draft releases."
+            echo "   Add TAURI_SIGNING_PRIVATE_KEY to GitHub Secrets before publishing."
+            exit 1
           else
-            echo "Code signing is disabled for non-release builds."
+            echo "Updater signing is disabled for artifact-only builds."
           fi
 
       # ── Cache warm (non-build push to main) ──
@@ -296,9 +304,18 @@ jobs:
         shell: bash
         env:
           BUILD_TARGET: ${{ matrix.build_target || matrix.target }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ needs.setup.outputs.should_release == 'true' && secrets.TAURI_SIGNING_PRIVATE_KEY || '' }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ needs.setup.outputs.should_release == 'true' && secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD || '' }}
-        run: bun run tauri build --target "$BUILD_TARGET"
+          SHOULD_SIGN: ${{ needs.setup.outputs.should_release == 'true' || needs.setup.outputs.should_draft == 'true' }}
+          HAS_SIGNING_KEY: ${{ (needs.setup.outputs.should_release == 'true' || needs.setup.outputs.should_draft == 'true') && secrets.TAURI_SIGNING_PRIVATE_KEY != '' }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ (needs.setup.outputs.should_release == 'true' || needs.setup.outputs.should_draft == 'true') && secrets.TAURI_SIGNING_PRIVATE_KEY || '' }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ (needs.setup.outputs.should_release == 'true' || needs.setup.outputs.should_draft == 'true') && secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD || '' }}
+        run: |
+          build_args=(--target "$BUILD_TARGET")
+
+          if [ "$HAS_SIGNING_KEY" != "true" ]; then
+            build_args+=(--config '{"bundle":{"createUpdaterArtifacts":false}}')
+          fi
+
+          bun run tauri build "${build_args[@]}"
 
       # ── Prepare & upload artifacts via script ──
       - name: Prepare artifacts
@@ -358,12 +375,12 @@ jobs:
         shell: bash
         env:
           VERSION: ${{ needs.setup.outputs.version }}
-          TAG_NAME: ${{ needs.setup.outputs.should_draft == 'true' && format('draft-{0}', github.run_id) || format('v{0}', needs.setup.outputs.version) }}
+          CHANGELOG_REF: ${{ needs.setup.outputs.should_draft == 'true' && github.sha || format('v{0}', needs.setup.outputs.version) }}
           REPO: ${{ github.repository }}
         run: |
           bun scripts/ci/generate-release-notes.ts \
             --version "$VERSION" \
-            --tag "$TAG_NAME" \
+            --tag "$CHANGELOG_REF" \
             --repo "$REPO" \
             --output release_body.md
 
@@ -371,7 +388,7 @@ jobs:
         shell: bash
         env:
           VERSION: ${{ needs.setup.outputs.version }}
-          TAG_NAME: ${{ needs.setup.outputs.should_draft == 'true' && format('draft-{0}', github.run_id) || format('v{0}', needs.setup.outputs.version) }}
+          TAG_NAME: ${{ needs.setup.outputs.should_draft == 'true' && 'draft' || format('v{0}', needs.setup.outputs.version) }}
           REPO: ${{ github.repository }}
         run: |
           bun scripts/ci/generate-manifest.ts \
@@ -423,7 +440,7 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG_NAME: ${{ needs.setup.outputs.should_draft == 'true' && format('draft-{0}', github.run_id) || format('v{0}', needs.setup.outputs.version) }}
+          TAG_NAME: ${{ needs.setup.outputs.should_draft == 'true' && 'draft' || format('v{0}', needs.setup.outputs.version) }}
           RELEASE_NAME: ${{ needs.setup.outputs.product_name }} v${{ needs.setup.outputs.version }}${{ needs.setup.outputs.should_draft == 'true' && ' (Draft)' || '' }}
           IS_DRAFT: ${{ needs.setup.outputs.should_draft }}
           REPO: ${{ github.repository }}
@@ -441,6 +458,24 @@ jobs:
             exit 1
           fi
 
+          if [ "$IS_DRAFT" = "true" ]; then
+            if gh api "repos/$REPO/git/ref/tags/$TAG_NAME" >/dev/null 2>&1; then
+              gh api \
+                --method PATCH \
+                "repos/$REPO/git/refs/tags/$TAG_NAME" \
+                -f sha="$RELEASE_TARGET" \
+                -F force=true \
+                >/dev/null
+            else
+              gh api \
+                --method POST \
+                "repos/$REPO/git/refs" \
+                -f ref="refs/tags/$TAG_NAME" \
+                -f sha="$RELEASE_TARGET" \
+                >/dev/null
+            fi
+          fi
+
           release_args=(
             "$TAG_NAME"
             --repo "$REPO"
@@ -455,10 +490,27 @@ jobs:
           fi
 
           if gh release view "$TAG_NAME" --repo "$REPO" >/dev/null 2>&1; then
-            gh release edit "$TAG_NAME" \
-              --repo "$REPO" \
-              --title "$RELEASE_NAME" \
+            edit_args=(
+              "$TAG_NAME"
+              --repo "$REPO"
+              --title "$RELEASE_NAME"
               --notes-file release-metadata/release_body.md
+            )
+
+            if [ "$IS_DRAFT" = "true" ]; then
+              edit_args+=(--draft --target "$RELEASE_TARGET")
+            fi
+
+            gh release edit "${edit_args[@]}"
+
+            if [ "$IS_DRAFT" = "true" ]; then
+              while IFS= read -r asset; do
+                if [ -n "$asset" ]; then
+                  gh release delete-asset "$TAG_NAME" "$asset" --repo "$REPO" --yes
+                fi
+              done < <(gh release view "$TAG_NAME" --repo "$REPO" --json assets --jq '.assets[].name')
+            fi
+
             gh release upload "$TAG_NAME" --repo "$REPO" --clobber -- "${assets[@]}"
           else
             gh release create "${release_args[@]}" -- "${assets[@]}"

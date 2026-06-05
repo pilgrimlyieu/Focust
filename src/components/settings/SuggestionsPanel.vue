@@ -1,15 +1,23 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, TransitionGroup, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
+import CheckIcon from "@/components/icons/CheckIcon.vue";
 import CloseIcon from "@/components/icons/CloseIcon.vue";
 import DocumentIcon from "@/components/icons/DocumentIcon.vue";
-import ImportIcon from "@/components/icons/ImportIcon.vue";
 import InfoIcon from "@/components/icons/InfoIcon.vue";
 import ListIcon from "@/components/icons/ListIcon.vue";
 import PlusIcon from "@/components/icons/PlusIcon.vue";
+import RefreshIcon from "@/components/icons/RefreshIcon.vue";
 import SuggestionBulb from "@/components/icons/SuggestionBulb.vue";
 import { getI18nLocale } from "@/i18n";
-import { useSuggestionsStore } from "@/stores/suggestions";
+import {
+  createLanguageSuggestions,
+  normalizeLanguageSuggestions,
+  SUGGESTION_POOLS,
+  type SuggestionPool,
+  useSuggestionsStore,
+} from "@/stores/suggestions";
+import type { LanguageSuggestions, SuggestionsConfig } from "@/types";
 
 const { t } = useI18n();
 const suggestionsStore = useSuggestionsStore();
@@ -22,6 +30,8 @@ onMounted(() => {
 
 const currentLanguage = computed(getI18nLocale);
 
+const activePool = ref<SuggestionPool>("short");
+
 /** UI mode: 'list' or 'bulk' */
 const editMode = ref<"list" | "bulk">("list");
 
@@ -32,47 +42,264 @@ const suggestionsList = ref<string[]>([]);
 const suggestionsText = ref("");
 
 const newSuggestionInput = ref("");
-const isSaving = ref(false);
+const isPersisting = ref(false);
+const saveError = ref(false);
+const savedConfig = ref<SuggestionsConfig | null>(null);
+const draftConfig = ref<SuggestionsConfig | null>(null);
+
+const poolTranslationKeys = {
+  long: "suggestions.longBreakSuggestions",
+  short: "suggestions.shortBreakSuggestions",
+} as const satisfies Record<SuggestionPool, string>;
+
+const poolSegmentClasses = {
+  long: "bg-secondary/10 text-secondary ring-1 ring-secondary/30",
+  short: "bg-primary/10 text-primary ring-1 ring-primary/30",
+} as const satisfies Record<SuggestionPool, string>;
+
+const poolBadgeClasses = {
+  long: "badge-secondary",
+  short: "badge-primary",
+} as const satisfies Record<SuggestionPool, string>;
+
+const isInitialLoading = computed(
+  () => suggestionsStore.loading && !draftConfig.value,
+);
+
+const poolCounts = computed(() => {
+  if (!draftConfig.value) {
+    return { long: 0, short: 0 } satisfies Record<SuggestionPool, number>;
+  }
+
+  const langSuggestions = normalizeLanguageSuggestions(
+    draftConfig.value.byLanguage[currentLanguage.value],
+  );
+
+  return {
+    long: langSuggestions.longSuggestions.length,
+    short: langSuggestions.shortSuggestions.length,
+  } satisfies Record<SuggestionPool, number>;
+});
+
+const bulkLineCount = computed(
+  () => normalizeTextSuggestions(suggestionsText.value).length,
+);
+
+const editorCount = computed(() =>
+  editMode.value === "bulk"
+    ? bulkLineCount.value
+    : poolCounts.value[activePool.value],
+);
+
+const hasDraftChanges = computed(
+  () =>
+    serializeConfig(draftConfig.value) !== serializeConfig(savedConfig.value),
+);
+
+function cloneLanguageSuggestions(
+  languageConfig: Partial<LanguageSuggestions> | null | undefined,
+): LanguageSuggestions {
+  const normalized = normalizeLanguageSuggestions(languageConfig);
+  return createLanguageSuggestions(
+    normalized.shortSuggestions,
+    normalized.longSuggestions,
+  );
+}
+
+function cloneSuggestionsConfig(
+  config: SuggestionsConfig | null | undefined,
+): SuggestionsConfig | null {
+  if (!config) return null;
+
+  return {
+    byLanguage: Object.fromEntries(
+      Object.entries(config.byLanguage).map(([language, languageConfig]) => [
+        language,
+        cloneLanguageSuggestions(languageConfig),
+      ]),
+    ),
+  };
+}
+
+function serializeConfig(config: SuggestionsConfig | null): string {
+  return JSON.stringify(config);
+}
+
+function normalizeListSuggestions(values: string[]): string[] {
+  return values.map((value) => value.trim()).filter(Boolean);
+}
+
+function normalizeTextSuggestions(value: string): string[] {
+  return normalizeListSuggestions(value.split("\n"));
+}
+
+function ensureDraftConfig() {
+  if (draftConfig.value) return;
+
+  draftConfig.value = cloneSuggestionsConfig(suggestionsStore.config) ?? {
+    byLanguage: {},
+  };
+  savedConfig.value ??= cloneSuggestionsConfig(suggestionsStore.config) ?? {
+    byLanguage: {},
+  };
+}
+
+function getDraftLanguageSuggestions(): LanguageSuggestions {
+  return cloneLanguageSuggestions(
+    draftConfig.value?.byLanguage[currentLanguage.value],
+  );
+}
+
+function getPoolSuggestions(
+  languageSuggestions: LanguageSuggestions,
+  pool: SuggestionPool,
+): string[] {
+  return pool === "short"
+    ? languageSuggestions.shortSuggestions
+    : languageSuggestions.longSuggestions;
+}
+
+function getActivePoolSuggestions(): string[] {
+  return getPoolSuggestions(getDraftLanguageSuggestions(), activePool.value);
+}
+
+function setDraftLanguageSuggestions(languageSuggestions: LanguageSuggestions) {
+  ensureDraftConfig();
+  if (!draftConfig.value) return;
+
+  draftConfig.value = {
+    byLanguage: {
+      ...draftConfig.value.byLanguage,
+      [currentLanguage.value]: cloneLanguageSuggestions(languageSuggestions),
+    },
+  };
+  saveError.value = false;
+}
+
+function setActivePoolSuggestions(suggestions: string[]) {
+  const languageSuggestions = getDraftLanguageSuggestions();
+  const shortSuggestions =
+    activePool.value === "short"
+      ? suggestions
+      : languageSuggestions.shortSuggestions;
+  const longSuggestions =
+    activePool.value === "long"
+      ? suggestions
+      : languageSuggestions.longSuggestions;
+
+  setDraftLanguageSuggestions(
+    createLanguageSuggestions(shortSuggestions, longSuggestions),
+  );
+}
+
+function refreshEditorFromDraft() {
+  const suggestions = getActivePoolSuggestions();
+  suggestionsList.value = [...suggestions];
+  suggestionsText.value = suggestions.join("\n");
+  newSuggestionInput.value = "";
+}
+
+function commitActiveEditorToDraft() {
+  const suggestions =
+    editMode.value === "list"
+      ? normalizeListSuggestions(suggestionsList.value)
+      : normalizeTextSuggestions(suggestionsText.value);
+
+  setActivePoolSuggestions(suggestions);
+  return suggestions;
+}
 
 watch(
-  [() => suggestionsStore.config, currentLanguage],
-  () => {
-    if (isSaving.value) return;
-
-    if (!suggestionsStore.config) {
-      suggestionsList.value = [];
-      suggestionsText.value = "";
+  () => suggestionsStore.config,
+  (config) => {
+    if (!config) {
+      if (!hasDraftChanges.value) {
+        savedConfig.value = null;
+        draftConfig.value = null;
+        refreshEditorFromDraft();
+      }
       return;
     }
-    const langSuggestions =
-      suggestionsStore.config.byLanguage[currentLanguage.value];
-    const suggestions = langSuggestions?.suggestions || [];
-    suggestionsList.value = [...suggestions];
-    suggestionsText.value = suggestions.join("\n");
+
+    if (isPersisting.value || hasDraftChanges.value) return;
+
+    savedConfig.value = cloneSuggestionsConfig(config);
+    draftConfig.value = cloneSuggestionsConfig(config);
+    refreshEditorFromDraft();
   },
   { immediate: true },
 );
 
-/** Save suggestions to the store */
-async function saveSuggestions() {
-  if (!suggestionsStore.config) return;
+watch(currentLanguage, () => {
+  refreshEditorFromDraft();
+});
 
-  let suggestions: string[];
-  if (editMode.value === "list") {
-    suggestions = suggestionsList.value.filter((s) => s.trim().length > 0);
-  } else {
-    suggestions = suggestionsText.value
-      .split("\n")
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
+async function saveDraft() {
+  if (isPersisting.value || !draftConfig.value) return;
+
+  commitActiveEditorToDraft();
+
+  const configToSave = cloneSuggestionsConfig(draftConfig.value);
+  if (!configToSave) return;
+
+  isPersisting.value = true;
+  saveError.value = false;
+  try {
+    await suggestionsStore.save(configToSave);
+    const persistedConfig =
+      cloneSuggestionsConfig(suggestionsStore.config) ?? configToSave;
+    savedConfig.value = cloneSuggestionsConfig(persistedConfig);
+    draftConfig.value = cloneSuggestionsConfig(persistedConfig);
+    refreshEditorFromDraft();
+  } catch (err) {
+    console.error("Failed to save suggestions:", err);
+    saveError.value = true;
+  } finally {
+    isPersisting.value = false;
   }
+}
 
-  const newConfig = { ...suggestionsStore.config };
-  newConfig.byLanguage[currentLanguage.value] = { suggestions };
+function resetDraft() {
+  if (!savedConfig.value || isPersisting.value) return;
 
-  isSaving.value = true;
-  await suggestionsStore.save(newConfig);
-  isSaving.value = false;
+  draftConfig.value = cloneSuggestionsConfig(savedConfig.value);
+  saveError.value = false;
+  refreshEditorFromDraft();
+}
+
+function selectPool(pool: SuggestionPool) {
+  if (pool === activePool.value) return;
+
+  commitActiveEditorToDraft();
+  activePool.value = pool;
+  refreshEditorFromDraft();
+}
+
+function switchMode(mode: "list" | "bulk") {
+  if (mode === editMode.value) return;
+
+  commitActiveEditorToDraft();
+  editMode.value = mode;
+  refreshEditorFromDraft();
+}
+
+function commitListEditor() {
+  if (editMode.value !== "list") return;
+  setActivePoolSuggestions(normalizeListSuggestions(suggestionsList.value));
+}
+
+function normalizeListEditor() {
+  if (editMode.value !== "list") return;
+
+  const suggestions = normalizeListSuggestions(suggestionsList.value);
+  suggestionsList.value = [...suggestions];
+  suggestionsText.value = suggestions.join("\n");
+  setActivePoolSuggestions(suggestions);
+}
+
+function commitTextEditor() {
+  if (editMode.value !== "bulk") return;
+  setActivePoolSuggestions(normalizeTextSuggestions(suggestionsText.value));
 }
 
 /**
@@ -84,7 +311,7 @@ function addSuggestion() {
 
   suggestionsList.value.push(text);
   newSuggestionInput.value = "";
-  saveSuggestions();
+  commitListEditor();
 }
 
 /**
@@ -93,44 +320,7 @@ function addSuggestion() {
  */
 function removeSuggestion(index: number) {
   suggestionsList.value.splice(index, 1);
-  saveSuggestions();
-}
-
-/**
- * Update suggestion at index
- * @param {number} index Index to update
- * @param {string} text New text
- */
-function updateSuggestion(index: number, text: string) {
-  suggestionsList.value[index] = text;
-}
-
-/**
- * Switch editing mode
- * @param {"list" | "bulk"} mode Mode to switch to
- */
-function switchMode(mode: "list" | "bulk") {
-  if (mode === "bulk" && editMode.value === "list") {
-    suggestionsText.value = suggestionsList.value.join("\n");
-  } else if (mode === "list" && editMode.value === "bulk") {
-    suggestionsList.value = suggestionsText.value
-      .split("\n")
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-  }
-  editMode.value = mode;
-}
-
-/**
- * Import suggestions from bulk textarea
- */
-function importFromBulk() {
-  suggestionsList.value = suggestionsText.value
-    .split("\n")
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
-  editMode.value = "list";
-  saveSuggestions();
+  commitListEditor();
 }
 </script>
 
@@ -157,44 +347,97 @@ function importFromBulk() {
               <span class="text-xs font-medium">{{ t("suggestions.currentLanguage", { language: currentLanguage })
                 }}</span>
             </div>
-            <div v-if="suggestionsList.length" class="badge badge-ghost gap-1.5 py-3 px-3">
-              <span class="font-semibold">{{ suggestionsList.length }}</span>
-              <span class="text-xs">{{ t("suggestions.totalCount") }}</span>
-            </div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Loading State -->
-    <div v-if="suggestionsStore.loading" class="flex justify-center py-12">
+    <div v-if="isInitialLoading" class="flex justify-center py-12">
       <span class="loading loading-spinner loading-lg text-primary"></span>
     </div>
 
-    <div v-else class="space-y-6">
-      <!-- Mode Switcher -->
-      <div class="flex gap-2 bg-base-200/50 p-1.5 rounded-xl w-fit">
-        <button class="btn btn-sm transition-all font-medium"
-          :class="{ 'btn-primary shadow-md': editMode === 'list', 'btn-ghost': editMode !== 'list' }"
-          @click="switchMode('list')">
-          <ListIcon class-name="h-4 w-4" />
-          {{ t("suggestions.listMode") }}
-        </button>
-        <button class="btn btn-sm transition-all font-medium"
-          :class="{ 'btn-primary shadow-md': editMode === 'bulk', 'btn-ghost': editMode !== 'bulk' }"
-          @click="switchMode('bulk')">
-          <DocumentIcon class-name="h-4 w-4" />
-          {{ t("suggestions.bulkMode") }}
-        </button>
+    <div v-else class="rounded-2xl border border-base-300 bg-base-100/70 p-5 shadow-md space-y-5">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div class="min-w-0">
+          <h3 class="text-lg font-bold">{{ t("suggestions.customTitle") }}</h3>
+          <p class="mt-1 text-sm text-base-content/60">
+            {{ t("suggestions.description") }}
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button class="btn btn-sm btn-ghost gap-2" :disabled="!hasDraftChanges || isPersisting" @click="resetDraft">
+            <RefreshIcon class-name="h-4 w-4" />
+            {{ t("actions.reset") }}
+          </button>
+          <button class="btn btn-sm btn-primary gap-2" :disabled="!hasDraftChanges || isPersisting" @click="saveDraft">
+            <span v-if="isPersisting" class="loading loading-spinner loading-xs" />
+            <CheckIcon v-else class-name="h-4 w-4" />
+            {{ t("actions.save") }}
+          </button>
+        </div>
+      </div>
+
+      <div v-if="saveError" class="alert alert-error py-3 text-sm">
+        <InfoIcon class-name="h-5 w-5" />
+        <span>{{ t("toast.saveFailed") }}</span>
+      </div>
+
+      <!-- Editing toolbar -->
+      <div class="rounded-xl border border-base-300 bg-base-200/50 p-2">
+        <div class="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+          <div class="grid grid-cols-2 gap-1 rounded-lg bg-base-100 p-1 sm:inline-grid sm:w-auto">
+            <button v-for="pool in SUGGESTION_POOLS" :key="pool" type="button"
+              class="flex min-h-9 min-w-0 items-center justify-center gap-2 rounded-md px-3 font-sans text-sm font-medium leading-none transition-colors"
+              :class="activePool === pool
+                ? poolSegmentClasses[pool]
+                : 'text-base-content/70 hover:bg-base-200 hover:text-base-content'"
+              :aria-pressed="activePool === pool" @click="selectPool(pool)">
+              <span class="badge badge-xs shrink-0" :class="poolBadgeClasses[pool]">
+                {{ pool === "short" ? "MINI" : "LONG" }}
+              </span>
+              <span class="truncate">{{ t(poolTranslationKeys[pool]) }}</span>
+              <span class="shrink-0 tabular-nums text-base-content/60">{{ poolCounts[pool] }}</span>
+            </button>
+          </div>
+
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+            <div class="grid grid-cols-2 gap-1 rounded-lg bg-base-100 p-1 sm:w-auto">
+              <button type="button"
+                class="flex min-h-9 min-w-0 items-center justify-center gap-2 rounded-md px-3 font-sans text-sm font-medium leading-none transition-colors"
+                :class="editMode === 'list'
+                  ? 'bg-base-200 text-base-content shadow-sm'
+                  : 'text-base-content/70 hover:bg-base-200 hover:text-base-content'"
+                @click="switchMode('list')">
+                <ListIcon class-name="h-4 w-4 shrink-0" />
+                <span class="truncate">{{ t("suggestions.listMode") }}</span>
+              </button>
+              <button type="button"
+                class="flex min-h-9 min-w-0 items-center justify-center gap-2 rounded-md px-3 font-sans text-sm font-medium leading-none transition-colors"
+                :class="editMode === 'bulk'
+                  ? 'bg-base-200 text-base-content shadow-sm'
+                  : 'text-base-content/70 hover:bg-base-200 hover:text-base-content'"
+                @click="switchMode('bulk')">
+                <DocumentIcon class-name="h-4 w-4 shrink-0" />
+                <span class="truncate">{{ t("suggestions.bulkMode") }}</span>
+              </button>
+            </div>
+            <div class="px-1 text-xs text-base-content/50 sm:min-w-20 sm:text-right">
+              <span class="font-semibold text-base-content/70">{{ editorCount }}</span>
+              {{ editMode === "bulk" ? t("suggestions.linesDetected") : t("suggestions.totalCount") }}
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- List Mode -->
       <div v-if="editMode === 'list'" class="space-y-4">
         <!-- Add New Suggestion -->
-        <div class="flex gap-2">
+        <div class="flex flex-col gap-2 sm:flex-row">
           <input v-model="newSuggestionInput" type="text" :placeholder="t('suggestions.addPlaceholder')"
-            class="input input-bordered flex-1 transition-all focus:input-primary" @keyup.enter="addSuggestion" />
-          <button class="btn btn-primary gap-2 font-medium shadow-md hover:shadow-lg transition-all"
+            class="input input-bordered w-full min-w-0 transition-all focus:input-primary sm:flex-1"
+            @keyup.enter="addSuggestion" />
+          <button class="btn btn-primary w-full gap-2 font-medium shadow-md hover:shadow-lg transition-all sm:w-auto"
             :disabled="!newSuggestionInput.trim()" @click="addSuggestion">
             <PlusIcon class-name="h-5 w-5" />
             {{ t("suggestions.add") }}
@@ -202,17 +445,16 @@ function importFromBulk() {
         </div>
 
         <!-- Suggestions List -->
-        <TransitionGroup name="list" tag="div" class="space-y-2 max-h-96 overflow-y-auto pr-2">
-          <div v-for="(suggestion, index) in suggestionsList" :key="`suggestion-${index}`"
+        <div class="space-y-2 max-h-[30rem] overflow-y-auto pr-1">
+          <div v-for="(_, index) in suggestionsList" :key="`suggestion-${index}`"
             class="flex gap-2 items-center group bg-base-200/50 hover:bg-base-200 rounded-lg p-3 transition-all">
             <span class="text-base-content/40 font-mono text-xs w-8 text-right shrink-0">{{ index + 1 }}</span>
-            <input :value="suggestion" type="text"
-              class="input input-sm input-bordered flex-1 bg-base-100 transition-all focus:input-primary" @blur="
-                updateSuggestion(index, ($event.target as HTMLInputElement).value);
-              saveSuggestions();
-              " @keyup.enter="($event.target as HTMLInputElement).blur()" />
+            <input v-model="suggestionsList[index]" type="text"
+              class="input input-sm input-bordered min-w-0 flex-1 bg-base-100 transition-all focus:input-primary"
+              @input="commitListEditor" @blur="normalizeListEditor"
+              @keyup.enter="($event.target as HTMLInputElement).blur()" />
             <button
-              class="btn btn-sm btn-ghost btn-circle text-error opacity-0 group-hover:opacity-100 transition-opacity"
+              class="btn btn-sm btn-ghost btn-circle text-error opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
               :title="t('actions.delete')" @click="removeSuggestion(index)">
               <CloseIcon class-name="h-5 w-5" />
             </button>
@@ -222,73 +464,34 @@ function importFromBulk() {
             <SuggestionBulb class-name="h-20 w-20 mx-auto mb-4 text-base-content/10" />
             <p class="text-base font-medium">{{ t("suggestions.emptyList") }}</p>
           </div>
-        </TransitionGroup>
+        </div>
       </div>
 
       <!-- Bulk Mode -->
-      <div v-if="editMode === 'bulk'" class="space-y-4">
-        <!-- Instructions -->
-        <div class="alert alert-warning shadow-lg">
-          <InfoIcon class-name="h-6 w-6" />
+      <div v-if="editMode === 'bulk'" class="space-y-3">
+        <div class="flex items-start gap-2 rounded-lg bg-base-200/50 px-3 py-2 text-xs text-base-content/65">
+          <InfoIcon class-name="h-5 w-5" />
           <div>
-            <h3 class="font-bold text-sm">{{ t("suggestions.bulkModeTitle") }}</h3>
-            <div class="text-xs opacity-80 mt-1">
+            <div class="font-medium text-base-content/80">{{ t("suggestions.bulkModeTitle") }}</div>
+            <div class="mt-0.5 leading-relaxed">
               {{ t("suggestions.bulkModeDesc") }}
             </div>
           </div>
         </div>
 
-        <!-- Textarea -->
-        <div class="form-control">
+        <div class="rounded-xl border border-base-300 bg-base-100/80 shadow-inner transition-colors focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/15">
           <textarea v-model="suggestionsText"
-            class="textarea textarea-bordered h-80 font-mono text-sm leading-relaxed resize-none transition-all focus:textarea-primary"
-            :placeholder="t('suggestions.bulkPlaceholder')" /><br />
-          <label class="label">
-            <span class="label-text-alt">
-              <span class="font-semibold">{{
-                suggestionsText.split("\n").filter((s) => s.trim()).length
-                }}</span>
+            class="h-72 w-full resize-none rounded-xl bg-transparent px-4 py-3 font-sans text-sm leading-7 text-base-content outline-none placeholder:text-base-content/35 sm:h-80"
+            @input="commitTextEditor"
+            :placeholder="t('suggestions.bulkPlaceholder')" />
+          <div class="flex items-center justify-end border-t border-base-300/60 px-4 py-2 text-xs text-base-content/50">
+            <span>
+              <span class="font-semibold">{{ bulkLineCount }}</span>
               {{ t("suggestions.linesDetected") }}
             </span>
-          </label>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="flex gap-2 justify-end">
-          <button class="btn btn-ghost gap-2 font-medium" @click="switchMode('list')">
-            <CloseIcon class-name="h-5 w-5" />
-            {{ t("suggestions.cancel") }}
-          </button>
-          <button class="btn btn-primary gap-2 shadow-md hover:shadow-lg transition-all font-medium"
-            @click="importFromBulk">
-            <ImportIcon class-name="h-5 w-5" />
-            {{ t("suggestions.importAndSave") }}
-          </button>
+          </div>
         </div>
       </div>
     </div>
   </section>
 </template>
-
-<style scoped>
-.list-move,
-.list-enter-active,
-.list-leave-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.list-enter-from {
-  opacity: 0;
-  transform: translateY(-10px);
-}
-
-.list-leave-to {
-  opacity: 0;
-  transform: translateY(10px);
-}
-
-.list-leave-active {
-  position: absolute;
-  width: calc(100% - 2rem);
-}
-</style>

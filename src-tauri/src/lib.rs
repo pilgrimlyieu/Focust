@@ -221,7 +221,6 @@ pub fn run() {
             cmd::scheduler::skip_break,
             cmd::scheduler::trigger_event,
             cmd::suggestions::get_suggestions,
-            cmd::suggestions::get_suggestions_for_language,
             cmd::suggestions::save_suggestions,
             cmd::system::exit_application,
             cmd::system::open_config_directory,

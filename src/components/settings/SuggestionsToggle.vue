@@ -3,12 +3,13 @@ import { computed, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { useComputedProp } from "@/composables/useComputed";
 import { getI18nLocale } from "@/i18n";
-import { useSuggestionsStore } from "@/stores/suggestions";
+import { type SuggestionPool, useSuggestionsStore } from "@/stores/suggestions";
 import type { SuggestionsSettings } from "@/types";
 
 const props = defineProps<{
   suggestions: SuggestionsSettings;
   label: string;
+  suggestionPool: SuggestionPool;
 }>();
 
 const { t } = useI18n();
@@ -24,7 +25,7 @@ const preview = computed(() => {
   if (!props.suggestions.show) {
     return [];
   }
-  return suggestionsStore.sampleMany(getI18nLocale(), 3);
+  return suggestionsStore.sampleMany(getI18nLocale(), props.suggestionPool, 3);
 });
 
 // Use composable for toggle

@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use rand::prelude::IndexedRandom;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use tauri::AppHandle;
 use tokio::fs as tokio_fs;
 use tokio::sync::RwLock;
@@ -45,13 +45,80 @@ pub struct SuggestionsConfig {
 /// Global shared suggestions state
 pub type SharedSuggestions = RwLock<SuggestionsConfig>;
 
+/// Suggestion pool used for a specific break duration.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SuggestionBreakKind {
+    Short,
+    Long,
+}
+
 /// Suggestions for a specific language
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, rename_all = "camelCase")]
 pub struct LanguageSuggestions {
-    /// List of suggestions
+    /// Legacy list kept empty in new saves so older versions can still parse the file
     pub suggestions: Vec<String>,
+    /// Suggestions suitable for short breaks
+    pub short_suggestions: Vec<String>,
+    /// Suggestions suitable for long breaks
+    pub long_suggestions: Vec<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RawLanguageSuggestions {
+    suggestions: Option<Vec<String>>,
+    short_suggestions: Option<Vec<String>>,
+    long_suggestions: Option<Vec<String>>,
+}
+
+impl<'de> Deserialize<'de> for LanguageSuggestions {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let raw = RawLanguageSuggestions::deserialize(deserializer)?;
+        let legacy_suggestions = raw.suggestions.unwrap_or_default();
+        let short_suggestions = raw
+            .short_suggestions
+            .unwrap_or_else(|| legacy_suggestions.clone());
+        let long_suggestions = raw
+            .long_suggestions
+            .unwrap_or_else(|| legacy_suggestions.clone());
+
+        let mut suggestions = LanguageSuggestions {
+            suggestions: legacy_suggestions,
+            short_suggestions,
+            long_suggestions,
+        };
+        suggestions.clear_legacy_suggestions_for_output();
+        Ok(suggestions)
+    }
+}
+
+impl LanguageSuggestions {
+    /// Return the list for a specific break duration.
+    #[must_use]
+    pub fn for_break(&self, break_kind: SuggestionBreakKind) -> &[String] {
+        match break_kind {
+            SuggestionBreakKind::Short => &self.short_suggestions,
+            SuggestionBreakKind::Long => &self.long_suggestions,
+        }
+    }
+
+    fn clear_legacy_suggestions_for_output(&mut self) {
+        self.suggestions.clear();
+    }
+}
+
+impl SuggestionsConfig {
+    /// Clear the legacy compatibility lists before returning or writing config.
+    pub fn clear_legacy_suggestions_for_output(&mut self) {
+        for language_suggestions in self.by_language.values_mut() {
+            language_suggestions.clear_legacy_suggestions_for_output();
+        }
+    }
 }
 
 impl Default for SuggestionsConfig {
@@ -79,11 +146,9 @@ pub async fn load_suggestions(app_handle: &AppHandle) -> SuggestionsConfig {
             let default = SuggestionsConfig::default();
 
             // Try to save default config
-            save_suggestions_internal(app_handle, &default)
-                .await
-                .unwrap_or_else(|e| {
-                    tracing::error!("Failed to save default suggestions: {e}");
-                });
+            if let Err(e) = save_suggestions_internal(app_handle, &default).await {
+                tracing::error!("Failed to save default suggestions: {e}");
+            }
 
             default
         }
@@ -107,10 +172,7 @@ async fn try_load_suggestions(app_handle: &AppHandle) -> Result<SuggestionsConfi
             )
         })?;
 
-    let config: SuggestionsConfig =
-        toml::from_str(&content).context("Failed to parse suggestions.toml")?;
-
-    Ok(config)
+    toml::from_str(&content).context("Failed to parse suggestions.toml")
 }
 
 /// Saves suggestions to file.
@@ -125,8 +187,10 @@ async fn try_load_suggestions(app_handle: &AppHandle) -> Result<SuggestionsConfi
 pub async fn save_suggestions_internal(
     app_handle: &AppHandle,
     config: &SuggestionsConfig,
-) -> Result<()> {
+) -> Result<SuggestionsConfig> {
     let suggestions_path = get_suggestions_path(app_handle)?;
+    let mut config = config.clone();
+    config.clear_legacy_suggestions_for_output();
 
     // Ensure parent directory exists
     if let Some(parent) = suggestions_path.parent()
@@ -136,7 +200,7 @@ pub async fn save_suggestions_internal(
     }
 
     let toml_string =
-        toml::to_string_pretty(config).context("Failed to serialize suggestions to TOML")?;
+        toml::to_string_pretty(&config).context("Failed to serialize suggestions to TOML")?;
 
     tokio_fs::write(&suggestions_path, toml_string)
         .await
@@ -151,34 +215,37 @@ pub async fn save_suggestions_internal(
         "Suggestions saved successfully to {}",
         suggestions_path.display()
     );
-    Ok(())
+    Ok(config)
 }
 
-/// Get suggestions for a specific language
-/// Falls back to en-US if language not found
+/// Get suggestions for a specific language and break duration.
+/// Falls back to en-US if language not found.
 #[must_use]
-pub fn get_suggestions_for_language_internal(
+pub fn get_suggestions_for_break_internal(
     config: &SuggestionsConfig,
     language: &str,
+    break_kind: SuggestionBreakKind,
 ) -> Vec<String> {
     if let Some(lang_suggestions) = config.by_language.get(language) {
-        return lang_suggestions.suggestions.clone();
+        return lang_suggestions.for_break(break_kind).to_vec();
     }
 
-    // Fallback to en-US
     if let Some(en_suggestions) = config.by_language.get(LANGUAGE_FALLBACK) {
-        return en_suggestions.suggestions.clone();
+        return en_suggestions.for_break(break_kind).to_vec();
     }
 
-    // Last resort: empty vec
     vec![]
 }
 
-/// Sample a random suggestion for a specific language
-/// Returns None if no suggestions available
+/// Sample a random suggestion for a specific break duration.
+/// Returns None if no suggestions are available.
 #[must_use]
-pub fn sample_suggestion(config: &SuggestionsConfig, language: &str) -> Option<String> {
-    let suggestions = get_suggestions_for_language_internal(config, language);
+pub fn sample_suggestion_for_break(
+    config: &SuggestionsConfig,
+    language: &str,
+    break_kind: SuggestionBreakKind,
+) -> Option<String> {
+    let suggestions = get_suggestions_for_break_internal(config, language, break_kind);
     if suggestions.is_empty() {
         return None;
     }
@@ -192,9 +259,7 @@ fn load_default_suggestions() -> Result<SuggestionsConfig> {
     // The resource file will be embedded in the binary by Tauri
     // and available at runtime via the resource protocol
     let default_toml = include_str!("../../resources/suggestions.toml");
-    let config: SuggestionsConfig =
-        toml::from_str(default_toml).context("Failed to parse default suggestions.toml")?;
-    Ok(config)
+    toml::from_str(default_toml).context("Failed to parse default suggestions.toml")
 }
 
 /// Get the path to suggestions.toml file
@@ -207,6 +272,10 @@ fn get_suggestions_path(app_handle: &AppHandle) -> Result<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn strings(values: &[&str]) -> Vec<String> {
+        values.iter().map(|value| (*value).to_owned()).collect()
+    }
 
     #[test]
     fn suggestions_settings_default() {
@@ -280,36 +349,21 @@ mod tests {
                 config.by_language.contains_key(lang),
                 "Missing language: {lang}"
             );
-            let suggestions = &config.by_language[lang].suggestions;
             assert!(
-                !suggestions.is_empty(),
-                "No suggestions for language: {lang}"
+                config.by_language[lang].suggestions.is_empty(),
+                "Legacy suggestions should be empty for language: {lang}"
+            );
+            let short_suggestions = &config.by_language[lang].short_suggestions;
+            assert!(
+                !short_suggestions.is_empty(),
+                "No short suggestions for language: {lang}"
+            );
+            let long_suggestions = &config.by_language[lang].long_suggestions;
+            assert!(
+                !long_suggestions.is_empty(),
+                "No long suggestions for language: {lang}"
             );
         }
-    }
-
-    #[test]
-    fn get_suggestions_for_language_works() {
-        let config = SuggestionsConfig::default();
-
-        // Test all supported languages
-        let test_languages = [
-            "en-US", "zh-CN", "de-DE", "es-ES", "fr-FR", "it-IT", "ja-JP", "ko-KR", "pt-BR",
-            "ru-RU",
-        ];
-
-        for lang in test_languages {
-            let suggestions = get_suggestions_for_language_internal(&config, lang);
-            assert!(
-                !suggestions.is_empty(),
-                "Expected non-empty suggestions for {lang}"
-            );
-        }
-
-        // Test fallback to en-US for unknown language
-        let en_suggestions = get_suggestions_for_language_internal(&config, "en-US");
-        let unknown_suggestions = get_suggestions_for_language_internal(&config, "unknown");
-        assert_eq!(unknown_suggestions, en_suggestions);
     }
 
     #[test]
@@ -320,11 +374,197 @@ mod tests {
 
         // Check for actual structure (camelCase)
         assert!(toml_string.contains("byLanguage"));
-        assert!(toml_string.contains("suggestions"));
+        assert!(toml_string.contains("suggestions = []"));
+        assert!(toml_string.contains("shortSuggestions"));
+        assert!(toml_string.contains("longSuggestions"));
 
         let deserialized: SuggestionsConfig =
             toml::from_str(&toml_string).expect("Failed to deserialize");
 
         assert_eq!(config.by_language.len(), deserialized.by_language.len());
+    }
+
+    #[test]
+    fn legacy_suggestions_are_used_for_both_break_types() {
+        let toml = r#"
+[byLanguage.en-US]
+suggestions = ["Legacy 1", "Legacy 2"]
+"#;
+
+        let config: SuggestionsConfig =
+            toml::from_str(toml).expect("Failed to deserialize legacy suggestions");
+        let en_suggestions = config
+            .by_language
+            .get("en-US")
+            .expect("Missing en-US suggestions");
+
+        assert_eq!(
+            en_suggestions.short_suggestions,
+            strings(&["Legacy 1", "Legacy 2"])
+        );
+        assert_eq!(
+            en_suggestions.long_suggestions,
+            strings(&["Legacy 1", "Legacy 2"])
+        );
+        assert!(
+            en_suggestions.suggestions.is_empty(),
+            "New saves should keep legacy suggestions empty"
+        );
+    }
+
+    #[test]
+    fn missing_split_pool_falls_back_to_legacy_per_pool() {
+        let toml = r#"
+[byLanguage.en-US]
+suggestions = ["Legacy long"]
+shortSuggestions = ["Explicit short"]
+
+[byLanguage.zh-CN]
+suggestions = ["Legacy short"]
+longSuggestions = ["Explicit long"]
+"#;
+
+        let config: SuggestionsConfig =
+            toml::from_str(toml).expect("Failed to deserialize mixed suggestions");
+        let en_suggestions = config
+            .by_language
+            .get("en-US")
+            .expect("Missing en-US suggestions");
+        let zh_suggestions = config
+            .by_language
+            .get("zh-CN")
+            .expect("Missing zh-CN suggestions");
+
+        assert_eq!(
+            en_suggestions.short_suggestions,
+            strings(&["Explicit short"])
+        );
+        assert_eq!(en_suggestions.long_suggestions, strings(&["Legacy long"]));
+        assert!(en_suggestions.suggestions.is_empty());
+
+        assert_eq!(zh_suggestions.short_suggestions, strings(&["Legacy short"]));
+        assert_eq!(zh_suggestions.long_suggestions, strings(&["Explicit long"]));
+        assert!(zh_suggestions.suggestions.is_empty());
+    }
+
+    #[test]
+    fn split_suggestions_keep_separate_pools_without_serializing_legacy_values() {
+        let toml = r#"
+[byLanguage.en-US]
+shortSuggestions = ["Blink", "Breathe"]
+longSuggestions = ["Stand up", "Drink water", "Breathe"]
+"#;
+
+        let config: SuggestionsConfig =
+            toml::from_str(toml).expect("Failed to deserialize split suggestions");
+        let en_suggestions = config
+            .by_language
+            .get("en-US")
+            .expect("Missing en-US suggestions");
+
+        assert_eq!(
+            en_suggestions.short_suggestions,
+            strings(&["Blink", "Breathe"])
+        );
+        assert_eq!(
+            en_suggestions.long_suggestions,
+            strings(&["Stand up", "Drink water", "Breathe"])
+        );
+        assert!(en_suggestions.suggestions.is_empty());
+    }
+
+    #[test]
+    fn explicit_empty_pool_does_not_fall_back_to_legacy() {
+        let toml = r#"
+[byLanguage.en-US]
+suggestions = ["Legacy"]
+shortSuggestions = []
+longSuggestions = ["Walk"]
+"#;
+
+        let config: SuggestionsConfig =
+            toml::from_str(toml).expect("Failed to deserialize mixed suggestions");
+        let en_suggestions = config
+            .by_language
+            .get("en-US")
+            .expect("Missing en-US suggestions");
+
+        assert!(en_suggestions.short_suggestions.is_empty());
+        assert_eq!(en_suggestions.long_suggestions, strings(&["Walk"]));
+        assert!(en_suggestions.suggestions.is_empty());
+    }
+
+    #[test]
+    fn split_suggestions_keep_empty_legacy_shape_after_save() {
+        #[derive(Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        struct LegacyConfig {
+            by_language: HashMap<String, LegacyLanguageSuggestions>,
+        }
+
+        #[derive(Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        struct LegacyLanguageSuggestions {
+            suggestions: Vec<String>,
+        }
+
+        let mut config = SuggestionsConfig {
+            by_language: HashMap::from([(
+                "en-US".to_owned(),
+                LanguageSuggestions {
+                    suggestions: strings(&["Legacy"]),
+                    short_suggestions: strings(&["Blink"]),
+                    long_suggestions: strings(&["Walk"]),
+                },
+            )]),
+        };
+        config.clear_legacy_suggestions_for_output();
+
+        let saved_toml = toml::to_string_pretty(&config).expect("Failed to serialize suggestions");
+        let legacy_config: LegacyConfig =
+            toml::from_str(&saved_toml).expect("Legacy config failed to parse");
+        let legacy_suggestions = legacy_config
+            .by_language
+            .get("en-US")
+            .expect("Missing legacy en-US suggestions");
+
+        assert!(legacy_suggestions.suggestions.is_empty());
+    }
+
+    #[test]
+    fn break_specific_lookup_uses_requested_pool() {
+        let config: SuggestionsConfig = toml::from_str(
+            r#"
+[byLanguage.en-US]
+shortSuggestions = ["Short only"]
+longSuggestions = ["Long only"]
+"#,
+        )
+        .expect("Failed to deserialize split suggestions");
+
+        let short_suggestions =
+            get_suggestions_for_break_internal(&config, "en-US", SuggestionBreakKind::Short);
+        let long_suggestions =
+            get_suggestions_for_break_internal(&config, "en-US", SuggestionBreakKind::Long);
+
+        assert_eq!(short_suggestions, strings(&["Short only"]));
+        assert_eq!(long_suggestions, strings(&["Long only"]));
+    }
+
+    #[test]
+    fn break_specific_lookup_falls_back_to_default_language() {
+        let config: SuggestionsConfig = toml::from_str(
+            r#"
+[byLanguage.en-US]
+shortSuggestions = ["Default short"]
+longSuggestions = ["Default long"]
+"#,
+        )
+        .expect("Failed to deserialize split suggestions");
+
+        let suggestions =
+            get_suggestions_for_break_internal(&config, "missing", SuggestionBreakKind::Long);
+
+        assert_eq!(suggestions, strings(&["Default long"]));
     }
 }

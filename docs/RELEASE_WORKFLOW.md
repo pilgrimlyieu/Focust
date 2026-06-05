@@ -140,6 +140,27 @@ Use the release scripts for streamlined version management:
      - Update manifest (`latest.json`)
      - Release notes from CHANGELOG.md
 
+#### Manual Test Builds
+
+Use `workflow_dispatch` on `.github/workflows/release.yml` when a tester needs a build before the change is merged:
+
+1. Select the target feature branch.
+2. Set `build_artifacts` to `true`.
+3. Set `release_mode` to `artifact`.
+4. Select the required platform, or `all`.
+
+This mode uploads GitHub Actions artifacts only. It is allowed on non-`main` branches and does not receive the updater signing key, so it is for manual installation and smoke testing only.
+
+#### Draft Release
+
+Use `workflow_dispatch` with `release_mode=draft-release` when maintainers need a reusable draft release:
+
+1. Run it from the `main` branch only.
+2. Set `build_artifacts` to `true`.
+3. Select the required platform, or `all`.
+
+Draft releases use the fixed `draft` tag. Existing draft assets are removed before new assets are uploaded, so the draft release always represents the latest manual draft build. GitHub Actions artifacts expire according to the repository retention policy, but GitHub Release assets and tags do not expire automatically.
+
 #### Manual Release (Legacy)
 
 If you prefer manual control:
@@ -168,21 +189,35 @@ If you prefer manual control:
 ### Build Process
 
 ```
-1. GitHub Actions triggered by tag push
+1. GitHub Actions triggered by tag push, manual artifact build, or manual draft release
    ↓
 2. Setup environment (Bun, Rust, dependencies)
    ↓
-3. Load signing key from secrets
+3. Require updater signing key for tag releases and main-branch draft releases
    ↓
-4. Build application (tauri build)
+4. Disable updater artifacts for manual artifact builds
    ↓
-5. Generate signature files (.sig)
+5. Build application (tauri build)
    ↓
-6. Package artifacts
+6. Generate updater signatures for tag releases and main-branch draft releases
    ↓
-7. Generate latest.json manifest
+7. Package and upload GitHub Actions artifacts
    ↓
-8. Create GitHub Release
+8. Stop here for manual artifact builds
+```
+
+### Release Publishing Process
+
+```
+1. Continue for tag releases and main-branch draft releases
+   ↓
+2. Download build artifacts
+   ↓
+3. Generate release notes
+   ↓
+4. Generate latest.json manifest from signed artifacts
+   ↓
+5. Create or update GitHub Release
 ```
 
 ### Auto-Update Flow

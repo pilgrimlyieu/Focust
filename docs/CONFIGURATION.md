@@ -648,23 +648,37 @@ Suggestions themselves are stored in separate TOML files located in the same dir
 
 ```toml
 [byLanguage.en-US]
-suggestions = [
+suggestions = [] # Legacy compatibility placeholder; not used as a shared pool.
+shortSuggestions = [
     "Look away from your screen and focus on a distant object.",
     "Roll your shoulders back and take a deep breath.",
+    "Blink slowly and relax your eyes.",
+    ...
+]
+longSuggestions = [
     "Drink a glass of water.",
+    "Stand up and stretch your legs.",
     ...
 ]
 
 [byLanguage.zh-CN]
-suggestions = [
+suggestions = [] # Legacy compatibility placeholder; not used as a shared pool.
+shortSuggestions = [
     "将目光从屏幕移开，专注于远处的物体。",
     "向后转动肩膀，深呼吸。",
+    "慢慢眨眼，放松眼睛。",
+    ...
+]
+longSuggestions = [
     "喝一杯水。",
+    "站起来伸展腿部。",
     ...
 ]
 ```
 
-You can add your own suggestions under the appropriate language section. The app randomly selects one suggestion to display during each break.
+You can add your own suggestions under the appropriate language section. Mini breaks use `shortSuggestions`; long breaks use `longSuggestions`.
+
+`suggestions` is retained only so older Focust versions can still parse the file, and new saves keep it empty. This is parse-only compatibility: older versions that read only `suggestions` may show no suggestions after a newer version has saved the file. When loading an older file that only has `suggestions`, current Focust uses that legacy list as the fallback for any missing short or long pool. If `shortSuggestions = []` or `longSuggestions = []` is present explicitly, that pool is intentionally empty and does not fall back to `suggestions`.
 
 ---
 

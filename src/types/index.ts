@@ -19,6 +19,7 @@ export type { EventKind } from "./generated/EventKind";
 export type { ExclusionRule } from "./generated/ExclusionRule";
 export type { FontFamily } from "./generated/FontFamily";
 export type { HexColor } from "./generated/HexColor";
+export type { LanguageSuggestions } from "./generated/LanguageSuggestions";
 export type { LongBreakSettings } from "./generated/LongBreakSettings";
 export type { MiniBreakSettings } from "./generated/MiniBreakSettings";
 export type { PauseReason } from "./generated/PauseReason";

@@ -28,7 +28,7 @@ pub use payload::{get_prompt_payload, remove_prompt_payload, store_prompt_payloa
 pub use scheduler::{
     SchedulerCmd, ShutdownTx, pause_scheduler, postpone_break, prompt_finished, resume_scheduler,
 };
-pub use suggestions::{get_suggestions, get_suggestions_for_language, save_suggestions};
+pub use suggestions::{get_suggestions, save_suggestions};
 pub use system::{
     exit_application, open_config_directory, open_log_directory, restart_application,
 };
