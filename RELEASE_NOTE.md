@@ -9,16 +9,20 @@
 
 ## 🎉 Features
 
-- Separate break suggestions for short breaks and long breaks. (#84)
+- List new features here
 
 ## 🐛 Bug Fixes
 
-- Avoid the scroll bar shaking when switching panel in settings.
+- List bug fixes here
 
 ## 🚀 Improvements
 
-- Improve the user experience of the break suggestions panel. (#85)
+- List improvements here
 
 ## 📝 Documentation
 
-- Update configuration documentation about break suggestions. (#85)
+- List documentation changes here
+
+## ⚠️ Breaking Changes
+
+- List breaking changes here (if any)
