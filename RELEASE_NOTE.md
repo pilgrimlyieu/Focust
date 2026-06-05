@@ -7,6 +7,18 @@
 
 <!-- Release notes content starts here -->
 
+## 🎉 Features
+
+- Separate break suggestions for short breaks and long breaks. (#84)
+
 ## 🐛 Bug Fixes
 
-- Fixed an issue where only the tab navigation bar was displayed with a white background in smaller settings windows, while the actual settings content was not visible. (#65)
+- Avoid the scroll bar shaking when switching panel in settings.
+
+## 🚀 Improvements
+
+- Improve the user experience of the break suggestions panel. (#85)
+
+## 📝 Documentation
+
+- Update configuration documentation about break suggestions. (#85)

@@ -8,6 +8,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 <!-- CHANGELOG_INSERT -->
 
+## 0.4.0 (2026.6.5)
+
+### 🎉 Features
+
+- Separate break suggestions for short breaks and long breaks. (#84)
+
+### 🐛 Bug Fixes
+
+- Avoid the scroll bar shaking when switching panel in settings.
+
+### 🚀 Improvements
+
+- Improve the user experience of the break suggestions panel. (#85)
+
+### 📝 Documentation
+
+- Update configuration documentation about break suggestions. (#85)
+
 ## 0.3.6 (2026.4.1)
 
 ### 🐛 Bug Fixes
