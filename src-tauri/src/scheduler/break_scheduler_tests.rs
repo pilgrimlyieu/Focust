@@ -555,6 +555,91 @@ async fn manual_trigger_now_falls_back_to_first_enabled_schedule() {
     task.await.unwrap();
 }
 
+/// **T2.8: Idle Pause Does Not Reset Counter By Default**
+#[tokio::test(start_paused = true)]
+async fn user_idle_pause_keeps_mini_break_counter_by_default() {
+    let config = TestConfigBuilder::new().notification_before_s(0).build();
+
+    let (mut scheduler, emitter, shutdown_tx, _app) = create_test_break_scheduler(config);
+    let (cmd_tx, cmd_rx) = mpsc::channel(32);
+
+    let task = tokio::spawn(async move {
+        scheduler.run(cmd_rx).await;
+    });
+
+    advance_time_and_yield(duration_ms(200)).await;
+    emitter.clear();
+
+    cmd_tx
+        .send(Command::TriggerBreakNow(BreakKind::Mini))
+        .await
+        .unwrap();
+    advance_time_and_yield(duration_s(1)).await;
+
+    let events = emitter.get_events_by_name("scheduler-event");
+    let event: SchedulerEvent = serde_json::from_value(events[0].clone()).expect("Should parse");
+    cmd_tx.send(Command::PromptFinished(event)).await.unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+
+    cmd_tx
+        .send(Command::Pause(PauseReason::UserIdle))
+        .await
+        .unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+
+    cmd_tx.send(Command::RequestBreakStatus).await.unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+    let status = get_latest_status(&emitter);
+    assert_eq!(status.mini_break_counter, 1);
+
+    drop(cmd_tx);
+    drop(shutdown_tx);
+    task.await.unwrap();
+}
+
+/// **T2.9: Configured Idle Pause Resets Counter**
+#[tokio::test(start_paused = true)]
+async fn configured_user_idle_pause_resets_mini_break_counter() {
+    let mut config = TestConfigBuilder::new().notification_before_s(0).build();
+    config.advanced.reset_mini_break_counter_on_pause_reasons = vec![PauseReason::UserIdle];
+
+    let (mut scheduler, emitter, shutdown_tx, _app) = create_test_break_scheduler(config);
+    let (cmd_tx, cmd_rx) = mpsc::channel(32);
+
+    let task = tokio::spawn(async move {
+        scheduler.run(cmd_rx).await;
+    });
+
+    advance_time_and_yield(duration_ms(200)).await;
+    emitter.clear();
+
+    cmd_tx
+        .send(Command::TriggerBreakNow(BreakKind::Mini))
+        .await
+        .unwrap();
+    advance_time_and_yield(duration_s(1)).await;
+
+    let events = emitter.get_events_by_name("scheduler-event");
+    let event: SchedulerEvent = serde_json::from_value(events[0].clone()).expect("Should parse");
+    cmd_tx.send(Command::PromptFinished(event)).await.unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+
+    cmd_tx
+        .send(Command::Pause(PauseReason::UserIdle))
+        .await
+        .unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+
+    cmd_tx.send(Command::RequestBreakStatus).await.unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+    let status = get_latest_status(&emitter);
+    assert_eq!(status.mini_break_counter, 0);
+
+    drop(cmd_tx);
+    drop(shutdown_tx);
+    task.await.unwrap();
+}
+
 // ============================================================================
 // Section 3: Configuration Updates
 // ============================================================================

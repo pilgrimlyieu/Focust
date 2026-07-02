@@ -6,6 +6,7 @@ use super::app_exclusion::AppExclusion;
 use crate::{
     core::schedule::{AttentionSettings, ScheduleSettings},
     platform::i18n::LANGUAGE_FALLBACK,
+    scheduler::PauseReason,
     utils::LogLevel,
 };
 
@@ -20,6 +21,9 @@ pub struct AdvancedConfig {
     /// Overrides the default log level (info in release, trace in debug)
     #[serde(default = "LogLevel::default_for_build")]
     pub log_level: LogLevel,
+    /// Pause reasons that reset the mini-break counter used for long-break cadence.
+    #[serde(default)]
+    pub reset_mini_break_counter_on_pause_reasons: Vec<PauseReason>,
 }
 
 /// Application configuration structure

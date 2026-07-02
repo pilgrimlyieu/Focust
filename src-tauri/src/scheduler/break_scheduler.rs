@@ -238,7 +238,7 @@ where
                 self.mini_break_counter += 1;
             }
             SchedulerEvent::LongBreak(_) => {
-                self.mini_break_counter = 0;
+                self.reset_mini_break_counter();
             }
             SchedulerEvent::Attention(_) => {
                 tracing::error!(
@@ -421,7 +421,7 @@ where
         tracing::debug!("BreakScheduler handling command: {cmd}");
         match cmd {
             Command::Pause(reason) => {
-                self.handle_pause_command(reason);
+                self.handle_pause_command(reason).await;
             }
             Command::Resume(_reason) => {
                 self.handle_resume_command().await;
@@ -585,6 +585,11 @@ where
         self.last_break_time = None;
     }
 
+    /// Reset long-break cadence progress
+    fn reset_mini_break_counter(&mut self) {
+        self.mini_break_counter = 0;
+    }
+
     /// Update break timers after a break completes
     fn update_last_break_time(&mut self) {
         self.last_break_time = Some(Utc::now());
@@ -679,7 +684,7 @@ where
     }
 
     /// Handle `Pause` command
-    fn handle_pause_command(&mut self, reason: PauseReason) {
+    async fn handle_pause_command(&mut self, reason: PauseReason) {
         tracing::info!("Pausing BreakScheduler: {reason}");
 
         // Reset timers for certain pause reasons
@@ -689,6 +694,20 @@ where
             }
             PauseReason::Manual => {}
         }
+
+        let should_reset_counter = {
+            let config = self.app_handle.state::<SharedConfig>();
+            config
+                .read()
+                .await
+                .advanced
+                .reset_mini_break_counter_on_pause_reasons
+                .contains(&reason)
+        };
+        if should_reset_counter {
+            self.reset_mini_break_counter();
+        }
+
         self.close_break_windows();
         self.set_state(BreakSchedulerState::Paused(reason));
     }
