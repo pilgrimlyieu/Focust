@@ -10,6 +10,7 @@ use tokio::fs as tokio_fs;
 use tokio::sync::RwLock;
 use ts_rs::TS;
 
+use crate::core::break_kind::BreakKind;
 use crate::platform::i18n::LANGUAGE_FALLBACK;
 use crate::utils;
 
@@ -44,13 +45,6 @@ pub struct SuggestionsConfig {
 
 /// Global shared suggestions state
 pub type SharedSuggestions = RwLock<SuggestionsConfig>;
-
-/// Suggestion pool used for a specific break duration.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SuggestionBreakKind {
-    Short,
-    Long,
-}
 
 /// Suggestions for a specific language
 #[derive(Debug, Clone, Serialize, TS)]
@@ -100,10 +94,10 @@ impl<'de> Deserialize<'de> for LanguageSuggestions {
 impl LanguageSuggestions {
     /// Return the list for a specific break duration.
     #[must_use]
-    pub fn for_break(&self, break_kind: SuggestionBreakKind) -> &[String] {
+    pub fn for_break(&self, break_kind: BreakKind) -> &[String] {
         match break_kind {
-            SuggestionBreakKind::Short => &self.short_suggestions,
-            SuggestionBreakKind::Long => &self.long_suggestions,
+            BreakKind::Mini => &self.short_suggestions,
+            BreakKind::Long => &self.long_suggestions,
         }
     }
 
@@ -224,7 +218,7 @@ pub async fn save_suggestions_internal(
 pub fn get_suggestions_for_break_internal(
     config: &SuggestionsConfig,
     language: &str,
-    break_kind: SuggestionBreakKind,
+    break_kind: BreakKind,
 ) -> Vec<String> {
     if let Some(lang_suggestions) = config.by_language.get(language) {
         return lang_suggestions.for_break(break_kind).to_vec();
@@ -243,7 +237,7 @@ pub fn get_suggestions_for_break_internal(
 pub fn sample_suggestion_for_break(
     config: &SuggestionsConfig,
     language: &str,
-    break_kind: SuggestionBreakKind,
+    break_kind: BreakKind,
 ) -> Option<String> {
     let suggestions = get_suggestions_for_break_internal(config, language, break_kind);
     if suggestions.is_empty() {
@@ -543,9 +537,9 @@ longSuggestions = ["Long only"]
         .expect("Failed to deserialize split suggestions");
 
         let short_suggestions =
-            get_suggestions_for_break_internal(&config, "en-US", SuggestionBreakKind::Short);
+            get_suggestions_for_break_internal(&config, "en-US", BreakKind::Mini);
         let long_suggestions =
-            get_suggestions_for_break_internal(&config, "en-US", SuggestionBreakKind::Long);
+            get_suggestions_for_break_internal(&config, "en-US", BreakKind::Long);
 
         assert_eq!(short_suggestions, strings(&["Short only"]));
         assert_eq!(long_suggestions, strings(&["Long only"]));
@@ -563,7 +557,7 @@ longSuggestions = ["Default long"]
         .expect("Failed to deserialize split suggestions");
 
         let suggestions =
-            get_suggestions_for_break_internal(&config, "missing", SuggestionBreakKind::Long);
+            get_suggestions_for_break_internal(&config, "missing", BreakKind::Long);
 
         assert_eq!(suggestions, strings(&["Default long"]));
     }

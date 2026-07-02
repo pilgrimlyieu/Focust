@@ -17,6 +17,7 @@ use super::models::{
 };
 use super::shared_state::SharedState;
 use crate::config::{AppConfig, SharedConfig};
+use crate::core::break_kind::BreakKind;
 use crate::core::schedule::ScheduleSettings;
 #[cfg(not(test))]
 use crate::platform::create_prompt_windows;
@@ -437,6 +438,9 @@ where
             Command::TriggerEvent(event) => {
                 self.handle_trigger_event_command(event).await;
             }
+            Command::TriggerBreakNow(kind) => {
+                self.handle_trigger_break_now_command(kind).await;
+            }
             Command::UpdateConfig(new_config) => {
                 self.handle_update_config_command(new_config).await;
             }
@@ -806,6 +810,38 @@ where
         }
     }
 
+    /// Handle user-facing manual break triggers.
+    async fn handle_trigger_break_now_command(&mut self, kind: BreakKind) {
+        if self.shared_state.read().is_paused()
+            || matches!(self.state, BreakSchedulerState::Paused(_))
+        {
+            tracing::warn!("Cannot trigger {kind} break while scheduler is paused");
+            return;
+        }
+
+        if self.shared_state.read().in_break_session()
+            || matches!(self.state, BreakSchedulerState::InBreak(_))
+        {
+            tracing::warn!("Cannot trigger {kind} break while another break is active");
+            return;
+        }
+
+        let event = {
+            let config = self.app_handle.state::<SharedConfig>();
+            let config_guard = config.read().await;
+            resolve_manual_break_event(&config_guard, kind)
+        };
+
+        let Some(event) = event else {
+            tracing::warn!("Cannot trigger {kind} break because no schedule exists");
+            return;
+        };
+
+        self.handle_trigger_event_command(event).await;
+    }
+
+    
+
     /// Handle `UpdateConfig` command
     async fn handle_update_config_command(&mut self, new_config: AppConfig) {
         tracing::debug!("Updating config");
@@ -888,6 +924,18 @@ pub(crate) fn calculate_next_break_pure(
         postpone_count: 0,
     })
 }
+
+fn resolve_manual_break_event(config: &AppConfig, kind: BreakKind) -> Option<SchedulerEvent> {
+        let now_local = Utc::now().with_timezone(&Local);
+        let schedule = get_active_schedule(config, now_local.time(), now_local.weekday())
+            .or_else(|| config.schedules.iter().find(|schedule| schedule.enabled))
+            .or_else(|| config.schedules.first())?;
+
+        Some(match kind {
+            BreakKind::Mini => SchedulerEvent::MiniBreak(schedule.mini_breaks.base.id),
+            BreakKind::Long => SchedulerEvent::LongBreak(schedule.long_breaks.base.id),
+        })
+    }
 
 #[cfg(test)]
 mod tests {

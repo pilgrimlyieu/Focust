@@ -5,6 +5,7 @@ use std::fmt::{self, Display};
 use strum_macros::{Display as StrumDisplay, EnumIter, EnumString};
 use ts_rs::TS;
 
+use crate::core::break_kind::BreakKind;
 use crate::config::AppConfig;
 use crate::core::schedule::{AttentionId, BreakId};
 
@@ -95,6 +96,8 @@ pub enum Command {
     SkipBreak,
     /// Manually trigger a break for testing/debugging
     TriggerEvent(SchedulerEvent),
+    /// Manually trigger a user-facing break using scheduler schedule selection
+    TriggerBreakNow(BreakKind),
     /// Request the break scheduler to emit its current status
     RequestBreakStatus,
     /// Notify that a break or an attention (i.e., a prompt) has finished normally
@@ -109,6 +112,7 @@ impl Display for Command {
             Command::Resume(reason) => write!(f, "Resume({reason})"),
             Command::PostponeBreak => write!(f, "PostponeBreak"),
             Command::TriggerEvent(event) => write!(f, "TriggerBreak({event})"),
+            Command::TriggerBreakNow(kind) => write!(f, "TriggerBreakNow({kind})"),
             Command::SkipBreak => write!(f, "SkipBreak"),
             Command::RequestBreakStatus => write!(f, "RequestBreakStatus"),
             Command::PromptFinished(event) => write!(f, "PromptFinished({event})"),

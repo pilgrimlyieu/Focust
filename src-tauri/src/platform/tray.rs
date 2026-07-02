@@ -11,14 +11,15 @@ use std::sync::{
 use tauri::async_runtime::spawn as tauri_spawn;
 use tauri::{
     AppHandle, Listener, Manager, Runtime,
-    menu::{Menu, MenuBuilder, MenuItemBuilder},
+    menu::{Menu, MenuBuilder, MenuItemBuilder, SubmenuBuilder},
     tray::{MouseButton, MouseButtonState, TrayIcon, TrayIconBuilder, TrayIconEvent},
 };
 use tokio::sync::mpsc;
 
+use crate::core::break_kind::BreakKind;
 use crate::platform::{
     create_settings_window, get_strings,
-    i18n::{LanguageStrings, TrayStrings},
+    i18n::LanguageStrings,
 };
 use crate::scheduler::models::{Command, SchedulerStatus};
 use crate::{cmd::SchedulerCmd, scheduler::PauseReason};
@@ -70,7 +71,7 @@ pub async fn setup_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
     let strings = get_localized_strings(app).await;
     let tray_text = &strings.tray;
 
-    let initial_menu = build_tray_menu(app, tray_text, false)?;
+    let initial_menu = build_tray_menu(app, &strings, false)?;
 
     let icon = app
         .default_window_icon()
@@ -132,9 +133,10 @@ async fn get_localized_strings<R: Runtime>(app: &AppHandle<R>) -> LanguageString
 /// Build tray menu with localized text and current pause state
 fn build_tray_menu<R: Runtime>(
     app: &AppHandle<R>,
-    tray_text: &TrayStrings,
+    strings: &LanguageStrings,
     paused: bool,
 ) -> tauri::Result<Menu<R>> {
+    let tray_text = &strings.tray;
     let pause_resume_text = if paused {
         &tray_text.resume
     } else {
@@ -143,11 +145,23 @@ fn build_tray_menu<R: Runtime>(
 
     let show_item = MenuItemBuilder::with_id("show", &tray_text.show).build(app)?;
     let pause_item = MenuItemBuilder::with_id("pause_or_resume", pause_resume_text).build(app)?;
+    let mini_break_item =
+        MenuItemBuilder::with_id("start_mini_break_now", &strings.notification.mini_break)
+            .build(app)?;
+    let long_break_item =
+        MenuItemBuilder::with_id("start_long_break_now", &strings.notification.long_break)
+            .build(app)?;
+    let start_break_now_menu =
+        SubmenuBuilder::with_id(app, "start_break_now", &tray_text.start_break_now)
+            .enabled(!paused)
+            .items(&[&mini_break_item, &long_break_item])
+            .build()?;
     let restart_item = MenuItemBuilder::with_id("restart", &tray_text.restart).build(app)?;
     let quit_item = MenuItemBuilder::with_id("quit", &tray_text.quit).build(app)?;
 
     MenuBuilder::new(app)
         .items(&[&show_item, &pause_item])
+        .item(&start_break_now_menu)
         .separator()
         .items(&[&restart_item, &quit_item])
         .build()
@@ -165,7 +179,7 @@ fn spawn_tray_update_task<R: Runtime>(
         while let Some(update) = tray_rx.recv().await {
             match update {
                 TrayUpdate::UpdateMenu(paused) => {
-                    if let Ok(menu) = build_tray_menu(&app_handle, &strings.tray, paused) {
+                    if let Ok(menu) = build_tray_menu(&app_handle, &strings, paused) {
                         let _ = tray_clone.set_menu(Some(menu));
                     } else {
                         tracing::error!("Failed to build tray menu for update.");
@@ -210,6 +224,16 @@ fn handle_tray_menu_event<R: Runtime>(app: &AppHandle<R>, event_id: &str) {
         "pause_or_resume" => {
             toggle_pause(app).unwrap_or_else(|e| {
                 tracing::error!("Failed to toggle pause: {e}");
+            });
+        }
+        "start_mini_break_now" => {
+            start_break_now(app, BreakKind::Mini).unwrap_or_else(|e| {
+                tracing::error!("Failed to start mini break from tray menu: {e}");
+            });
+        }
+        "start_long_break_now" => {
+            start_break_now(app, BreakKind::Long).unwrap_or_else(|e| {
+                tracing::error!("Failed to start long break from tray menu: {e}");
             });
         }
         "restart" => {
@@ -261,5 +285,15 @@ fn toggle_pause<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {
         tracing::info!("Pause sent from tray menu");
     }
 
+    Ok(())
+}
+
+/// Starts a break immediately from the tray menu.
+fn start_break_now<R: Runtime>(app: &AppHandle<R>, kind: BreakKind) -> Result<(), String> {
+    let scheduler_cmd = app.state::<SchedulerCmd>();
+    scheduler_cmd
+        .try_send(Command::TriggerBreakNow(kind))
+        .map_err(|e| format!("Failed to send start break command: {e}"))?;
+    tracing::info!("Start {kind} break sent from tray menu");
     Ok(())
 }
