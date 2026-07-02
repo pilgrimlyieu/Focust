@@ -17,10 +17,7 @@ use tauri::{
 use tokio::sync::mpsc;
 
 use crate::core::break_kind::BreakKind;
-use crate::platform::{
-    create_settings_window, get_strings,
-    i18n::LanguageStrings,
-};
+use crate::platform::{create_settings_window, get_strings, i18n::LanguageStrings};
 use crate::scheduler::models::{Command, SchedulerStatus};
 use crate::{cmd::SchedulerCmd, scheduler::PauseReason};
 use crate::{config::SharedConfig, platform::i18n::LANGUAGE_FALLBACK};

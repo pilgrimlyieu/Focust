@@ -859,8 +859,6 @@ where
         self.handle_trigger_event_command(event).await;
     }
 
-    
-
     /// Handle `UpdateConfig` command
     async fn handle_update_config_command(&mut self, new_config: AppConfig) {
         tracing::debug!("Updating config");
@@ -945,16 +943,16 @@ pub(crate) fn calculate_next_break_pure(
 }
 
 fn resolve_manual_break_event(config: &AppConfig, kind: BreakKind) -> Option<SchedulerEvent> {
-        let now_local = Utc::now().with_timezone(&Local);
-        let schedule = get_active_schedule(config, now_local.time(), now_local.weekday())
-            .or_else(|| config.schedules.iter().find(|schedule| schedule.enabled))
-            .or_else(|| config.schedules.first())?;
+    let now_local = Utc::now().with_timezone(&Local);
+    let schedule = get_active_schedule(config, now_local.time(), now_local.weekday())
+        .or_else(|| config.schedules.iter().find(|schedule| schedule.enabled))
+        .or_else(|| config.schedules.first())?;
 
-        Some(match kind {
-            BreakKind::Mini => SchedulerEvent::MiniBreak(schedule.mini_breaks.base.id),
-            BreakKind::Long => SchedulerEvent::LongBreak(schedule.long_breaks.base.id),
-        })
-    }
+    Some(match kind {
+        BreakKind::Mini => SchedulerEvent::MiniBreak(schedule.mini_breaks.base.id),
+        BreakKind::Long => SchedulerEvent::LongBreak(schedule.long_breaks.base.id),
+    })
+}
 
 #[cfg(test)]
 mod tests {

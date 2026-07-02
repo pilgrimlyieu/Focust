@@ -5,8 +5,8 @@ use std::fmt::{self, Display};
 use strum_macros::{Display as StrumDisplay, EnumIter, EnumString};
 use ts_rs::TS;
 
-use crate::core::break_kind::BreakKind;
 use crate::config::AppConfig;
+use crate::core::break_kind::BreakKind;
 use crate::core::schedule::{AttentionId, BreakId};
 
 // ============================================================================

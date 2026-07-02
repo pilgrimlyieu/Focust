@@ -556,8 +556,7 @@ longSuggestions = ["Default long"]
         )
         .expect("Failed to deserialize split suggestions");
 
-        let suggestions =
-            get_suggestions_for_break_internal(&config, "missing", BreakKind::Long);
+        let suggestions = get_suggestions_for_break_internal(&config, "missing", BreakKind::Long);
 
         assert_eq!(suggestions, strings(&["Default long"]));
     }
