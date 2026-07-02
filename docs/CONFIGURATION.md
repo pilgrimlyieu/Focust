@@ -813,8 +813,7 @@ windowSize = 0.8
 
 Advanced settings are intended for users who want to fine-tune the application's behavior beyond standard options. These settings are not exposed in the user interface and must be edited directly in the configuration file. All advanced settings are grouped under the `[advanced]` table.
 
-Advanced settings have a weaker compatibility guarantee than normal settings. Future incompatible changes would be surfaced in the settings interface to notice having an update, but these options are still intended for manual configuration rather than regular UI workflows.
-
+Advanced settings have a weaker compatibility guarantee than normal settings. Future incompatible changes will be surfaced in the settings interface to notify you of an update, but these options remain intended for manual configuration rather than regular UI workflows.
 ### `logLevel`
 - **Type**: String enum
 - **Default**: `"info"`
