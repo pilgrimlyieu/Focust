@@ -555,7 +555,38 @@ async fn manual_trigger_now_falls_back_to_first_enabled_schedule() {
     task.await.unwrap();
 }
 
-/// **T2.8: Idle Pause Does Not Reset Counter By Default**
+/// **T2.8: Manual Trigger Will Be Rejected While Paused**
+#[tokio::test(start_paused = true)]
+async fn manual_trigger_now_rejected_while_paused() {
+    let config = TestConfigBuilder::new().build();
+    let (mut scheduler, emitter, shutdown_tx, _app) = create_test_break_scheduler(config);
+    let (cmd_tx, cmd_rx) = mpsc::channel(32);
+    let task = tokio::spawn(async move {
+        scheduler.run(cmd_rx).await;
+    });
+
+    advance_time_and_yield(duration_ms(200)).await;
+    cmd_tx
+        .send(Command::Pause(PauseReason::Manual))
+        .await
+        .unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+    emitter.clear();
+
+    cmd_tx
+        .send(Command::TriggerBreakNow(BreakKind::Mini))
+        .await
+        .unwrap();
+    advance_time_and_yield(duration_s(1)).await;
+
+    assert!(emitter.get_events_by_name("scheduler-event").is_empty());
+
+    drop(cmd_tx);
+    drop(shutdown_tx);
+    task.await.unwrap();
+}
+
+/// **T2.9: Idle Pause Does Not Reset Counter By Default**
 #[tokio::test(start_paused = true)]
 async fn user_idle_pause_keeps_mini_break_counter_by_default() {
     let config = TestConfigBuilder::new().notification_before_s(0).build();
