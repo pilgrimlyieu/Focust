@@ -21,7 +21,7 @@ export const useSchedulerStore = defineStore("scheduler", () => {
   const schedulerStatus = ref<SchedulerStatus | null>(null); // Scheduler status
 
   // Check if paused by a user action that can be cleared from the UI.
-  const hasManualPause = computed(() =>
+  const hasUserPause = computed(() =>
     pauseReasons.value.some(isUserClearablePauseReason),
   );
 
@@ -58,7 +58,7 @@ export const useSchedulerStore = defineStore("scheduler", () => {
   }
 
   return {
-    hasManualPause,
+    hasUserPause,
     init,
     pauseReasons,
     schedulerPaused,

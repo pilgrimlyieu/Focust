@@ -86,7 +86,7 @@ const isLoading = computed(() => configStore.loading);
 
 const schedulerPaused = computed(() => schedulerStore.schedulerPaused);
 const pauseReasons = computed(() => schedulerStore.pauseReasons);
-const hasManualPause = computed(() => schedulerStore.hasManualPause);
+const hasUserPause = computed(() => schedulerStore.hasUserPause);
 const schedulerStatus = computed(() => schedulerStore.schedulerStatus);
 
 // Format pause reasons for display
@@ -240,7 +240,7 @@ async function togglePause() {
       // State will be updated via scheduler-status event
 
       // If there are non-manual pause reasons, inform the user
-      if (pauseReasons.value.length > 0 && !hasManualPause.value) {
+      if (pauseReasons.value.length > 0 && !hasUserPause.value) {
         show("info", t("general.pausedResumeHint"), 4000);
       } else if (pauseReasons.value.length > 1) {
         // Removed manual pause but others remain
@@ -313,7 +313,7 @@ defineExpose({
   handlePostpone,
   handleReset,
   handleSave,
-  hasManualPause,
+  hasUserPause,
   isDirty,
   isLoading,
   isSaving,
@@ -365,7 +365,7 @@ defineExpose({
 
         <!-- Actions -->
         <div class="flex flex-wrap items-center gap-2">
-          <div class="tooltip" :data-tip="schedulerPaused && !hasManualPause ? t('general.pausedResumeHint') : ''">
+          <div class="tooltip" :data-tip="schedulerPaused && !hasUserPause ? t('general.pausedResumeHint') : ''">
             <button class="btn btn-sm gap-2 btn-ghost hover:btn-primary" :class="{ 'btn-active': schedulerPaused }"
               @click="togglePause">
               <PlayIcon v-if="schedulerPaused" class-name="h-4 w-4" />
