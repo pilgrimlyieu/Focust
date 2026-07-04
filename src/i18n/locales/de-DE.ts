@@ -201,7 +201,7 @@ const deDE: LocaleStrings = {
     notification: "Benachrichtigung",
     paused: "Planer pausiert",
     pausedDueTo: "Pausiert aufgrund von: {reasons}",
-    pausedResumeHint: "Fortsetzen-Schaltfläche entfernt nur die manuelle Pause",
+    pausedResumeHint: "Fortsetzen entfernt nur vom Benutzer gestartete Pausen",
     postponeHint:
       "Verschieben schiebt die nächste Pause um die konfigurierte Dauer hinaus",
     postponeShortcut: "Verschieben-Tastenkombination",
@@ -220,6 +220,7 @@ const deDE: LocaleStrings = {
     themeModeDark: "Dunkel",
     themeModeLight: "Hell",
     themeModeSystem: "System",
+    timedPauseRemaining: "Fortsetzung in {time}",
     timerSettings: "Timer und Erkennung",
     title: "Allgemeine Einstellungen",
     uiSettings: "Benutzeroberfläche und Anzeige",
@@ -238,6 +239,7 @@ const deDE: LocaleStrings = {
     appExclusion: "Anwendungsausschluss",
     dnd: "Nicht stören",
     manual: "Manuell",
+    timedManual: "Zeitgesteuert manuell",
     userIdle: "Benutzer inaktiv",
   },
   schedule: {

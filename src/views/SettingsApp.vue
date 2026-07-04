@@ -51,7 +51,10 @@ import SlidersIcon from "@/components/icons/SlidersIcon.vue";
 import type { ToastKind } from "@/composables/useToast";
 import { useToast } from "@/composables/useToast";
 import { useConfigStore } from "@/stores/config";
-import { useSchedulerStore } from "@/stores/scheduler";
+import {
+  isUserClearablePauseReason,
+  useSchedulerStore,
+} from "@/stores/scheduler";
 import type { PauseReason } from "@/types";
 import {
   isSchedulerAttention,
@@ -93,6 +96,23 @@ const pauseReasonsText = computed(() => {
     .map((reason: PauseReason) => t(`pauseReason.${reason}`))
     .join(", ");
 });
+
+function formatRemainingSeconds(seconds: number) {
+  const clampedSeconds = Math.max(0, seconds);
+  const hours = Math.floor(clampedSeconds / 3600);
+  const minutes = Math.floor((clampedSeconds % 3600) / 60);
+
+  if (hours > 0) {
+    return t("general.hoursMinutes", { hours, minutes });
+  }
+  if (minutes >= 2) {
+    return t("general.minutesRemaining", { minutes });
+  }
+  if (clampedSeconds > 0) {
+    return t("general.secondsRemaining", { seconds: clampedSeconds });
+  }
+  return t("general.imminent");
+}
 
 // Track the base time when status was received
 const statusReceivedTime = ref<number>(Date.now());
@@ -158,27 +178,31 @@ const nextBreakInfo = computed(() => {
     kindStr = t("break.attention");
   }
 
-  // Format time remaining in a human-readable way
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-
-  let timeStr = "";
-  if (hours > 0) {
-    timeStr = t("general.hoursMinutes", { hours, minutes });
-  } else if (minutes >= 2) {
-    // Show minutes for 2+ minutes
-    timeStr = t("general.minutesRemaining", { minutes });
-  } else if (seconds > 0) {
-    // Show seconds for less than 2 minutes
-    timeStr = t("general.secondsRemaining", { seconds });
-  } else {
-    timeStr = t("general.imminent");
-  }
-
   return {
     kind: kindStr,
-    timeRemaining: timeStr,
+    timeRemaining: formatRemainingSeconds(seconds),
   };
+});
+
+const timedPauseRemainingText = computed(() => {
+  const until = schedulerStatus.value?.timedPauseUntil;
+  if (!until) {
+    return "";
+  }
+
+  const untilMs = Date.parse(until);
+  if (!Number.isFinite(untilMs)) {
+    return "";
+  }
+
+  const seconds = Math.max(0, Math.ceil((untilMs - currentTime.value) / 1000));
+  if (seconds <= 0) {
+    return "";
+  }
+
+  return t("general.timedPauseRemaining", {
+    time: formatRemainingSeconds(seconds),
+  });
 });
 
 /**
@@ -221,7 +245,7 @@ async function togglePause() {
       } else if (pauseReasons.value.length > 1) {
         // Removed manual pause but others remain
         const remaining = pauseReasons.value
-          .filter((r: PauseReason) => r !== "manual")
+          .filter((r: PauseReason) => !isUserClearablePauseReason(r))
           .map((r: PauseReason) => t(`pauseReason.${r}`))
           .join(", ");
         show("info", t("general.pausedDueTo", { reasons: remaining }), 4000);
@@ -297,6 +321,7 @@ defineExpose({
   pauseReasonsText,
   schedulerPaused,
   tabs,
+  timedPauseRemainingText,
   toasts,
   togglePause,
 });
@@ -320,6 +345,9 @@ defineExpose({
                   {{ t("general.paused") }}
                   <span v-if="pauseReasonsText" class="text-xs opacity-80">
                     {{ t("general.pausedDueTo", { reasons: pauseReasonsText }) }}
+                  </span>
+                  <span v-if="timedPauseRemainingText" class="text-xs opacity-80">
+                    {{ timedPauseRemainingText }}
                   </span>
                 </span>
               </span>

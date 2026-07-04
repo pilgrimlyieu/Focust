@@ -252,7 +252,7 @@ mod tests {
 
         for _ in 0..10 {
             cmd_tx
-                .send(Command::UpdateConfig(new_config.clone()))
+                .send(Command::UpdateConfig(Box::new(new_config.clone())))
                 .await
                 .unwrap();
             advance_time_and_yield(Duration::milliseconds(50)).await;
@@ -344,7 +344,7 @@ mod tests {
     /// Test all pause reasons with random resume order
     ///
     /// This tests that the system correctly handles the case where
-    /// all four pause reasons are active, and then resumed in a
+    /// all pause reasons are active, and then resumed in a
     /// random order.
     ///
     /// Expected behavior:
@@ -361,11 +361,12 @@ mod tests {
         spawn_test_manager(&env, cmd_rx).await;
         advance_time_and_yield(Duration::seconds(1)).await;
 
-        // Activate all four pause reasons
+        // Activate all pause reasons
         let all_reasons = vec![
             PauseReason::Manual,
             PauseReason::UserIdle,
             PauseReason::Dnd,
+            PauseReason::TimedManual,
             PauseReason::AppExclusion,
         ];
 
@@ -374,14 +375,14 @@ mod tests {
             advance_time_and_yield(Duration::milliseconds(20)).await;
         }
 
-        // Verify all four are active
+        // Verify all are active
         {
             let state = env.shared_state.read();
             assert!(state.is_paused(), "Should be paused");
             assert_eq!(
                 state.pause_reasons().len(),
-                4,
-                "Should have all four pause reasons"
+                all_reasons.len(),
+                "Should have all pause reasons"
             );
         }
 
@@ -389,6 +390,7 @@ mod tests {
         let resume_order = [
             PauseReason::AppExclusion,
             PauseReason::Manual,
+            PauseReason::TimedManual,
             PauseReason::Dnd,
             PauseReason::UserIdle,
         ];
@@ -398,7 +400,7 @@ mod tests {
             advance_time_and_yield(Duration::milliseconds(20)).await;
 
             let state = env.shared_state.read();
-            let remaining = 3 - i;
+            let remaining = resume_order.len() - i - 1;
 
             if remaining > 0 {
                 assert!(

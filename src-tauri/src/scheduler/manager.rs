@@ -1,5 +1,8 @@
+use chrono::{Duration, Utc};
+use std::{future, pin::Pin, time::Duration as StdDuration};
 use tauri::{AppHandle, Emitter, Runtime};
 use tokio::sync::{mpsc, watch};
+use tokio::time::sleep;
 
 use super::attention_timer::AttentionTimer;
 use super::break_scheduler::BreakScheduler;
@@ -7,6 +10,8 @@ use super::event_emitter::TauriEventEmitter;
 use super::models::{Command, PauseReason, SchedulerStatus};
 use super::shared_state::{SharedState, create_shared_state};
 use crate::scheduler::SchedulerEvent;
+
+type Timer = Pin<Box<dyn future::Future<Output = ()> + Send>>;
 
 /// Top-level scheduler manager that coordinates break scheduling and attention timers
 pub struct SchedulerManager;
@@ -92,6 +97,7 @@ impl SchedulerManager {
 /// These commands affect global state and all schedulers:
 /// - **Pause(reason)**: Updates [`SharedState`], forwards to all schedulers
 /// - **Resume(reason)**: Updates [`SharedState`], forwards only if all reasons cleared
+/// - **`PauseForMinutes(minutes)`**: Sets a timed manual pause and schedules expiration
 ///
 /// Flow: Command → Update [`SharedState`] → Forward to schedulers → Emit events
 ///
@@ -125,6 +131,8 @@ pub(crate) async fn broadcast_commands<R: Runtime>(
     shared_state: SharedState,
     app_handle: AppHandle<R>,
 ) {
+    let mut timed_pause_timer = inactive_timer();
+
     loop {
         tokio::select! {
             biased;
@@ -132,7 +140,23 @@ pub(crate) async fn broadcast_commands<R: Runtime>(
                 tracing::info!("Command broadcaster shutting down");
                 break;
             }
-            Some(cmd) = cmd_rx.recv() => {
+            () = &mut timed_pause_timer => {
+                timed_pause_timer = inactive_timer();
+                shared_state.write().clear_timed_pause_until();
+                handle_resume_command(
+                    PauseReason::TimedManual,
+                    &shared_state,
+                    &break_cmd_tx,
+                    &attention_cmd_tx,
+                    &app_handle,
+                ).await;
+            }
+            cmd = cmd_rx.recv() => {
+                let Some(cmd) = cmd else {
+                    tracing::info!("Command channel closed, broadcaster shutting down");
+                    break;
+                };
+
                 tracing::debug!("Routing command: {cmd}");
 
                 match cmd {
@@ -149,8 +173,31 @@ pub(crate) async fn broadcast_commands<R: Runtime>(
                     }
 
                     Command::Resume(reason) => {
+                        if reason == PauseReason::TimedManual {
+                            timed_pause_timer = inactive_timer();
+                            shared_state.write().clear_timed_pause_until();
+                        }
                         handle_resume_command(
                             reason,
+                            &shared_state,
+                            &break_cmd_tx,
+                            &attention_cmd_tx,
+                            &app_handle,
+                        ).await;
+                    }
+
+                    Command::PauseForMinutes(minutes) => {
+                        if minutes == 0 {
+                            tracing::warn!("Ignoring timed pause with zero duration");
+                            continue;
+                        }
+
+                        let until = Utc::now() + Duration::minutes(i64::from(minutes));
+                        shared_state.write().set_timed_pause_until(until);
+                        timed_pause_timer = sleep_minutes(minutes);
+
+                        handle_pause_command(
+                            PauseReason::TimedManual,
                             &shared_state,
                             &break_cmd_tx,
                             &attention_cmd_tx,
@@ -183,12 +230,16 @@ pub(crate) async fn broadcast_commands<R: Runtime>(
                     }
                 }
             }
-            else => {
-                tracing::info!("Command channel closed, broadcaster shutting down");
-                break;
-            }
         }
     }
+}
+
+fn inactive_timer() -> Timer {
+    Box::pin(future::pending())
+}
+
+fn sleep_minutes(minutes: u32) -> Timer {
+    Box::pin(sleep(StdDuration::from_secs(u64::from(minutes) * 60)))
 }
 
 /// Handle Pause command: Update `SharedState` and forward if needed
@@ -210,11 +261,15 @@ async fn handle_pause_command<R: Runtime>(
         tracing::info!("Scheduler paused (first reason: {reason})");
 
         // Emit events for frontend
-        let status = SchedulerStatus {
-            paused: true,
-            pause_reasons: shared_state.read().pause_reasons(),
-            next_event: None,
-            mini_break_counter: 0, // Counter is not relevant when paused
+        let status = {
+            let state = shared_state.read();
+            SchedulerStatus {
+                paused: true,
+                pause_reasons: state.pause_reasons(),
+                timed_pause_until: state.timed_pause_until().map(|until| until.to_rfc3339()),
+                next_event: None,
+                mini_break_counter: 0, // Counter is not relevant when paused
+            }
         };
         let _ = app_handle.emit("scheduler-status", &status);
         let _ = app_handle.emit("scheduler-paused", ());
@@ -225,6 +280,7 @@ async fn handle_pause_command<R: Runtime>(
     } else {
         // Already paused, just added another reason
         tracing::debug!("Added pause reason {reason} (already paused)");
+        emit_paused_status(app_handle, shared_state);
     }
 }
 
@@ -255,7 +311,22 @@ async fn handle_resume_command<R: Runtime>(
     } else {
         // Still paused (other reasons remain)
         tracing::debug!("Removed pause reason {reason} (still paused)");
+        emit_paused_status(app_handle, shared_state);
     }
+}
+
+fn emit_paused_status<R: Runtime>(app_handle: &AppHandle<R>, shared_state: &SharedState) {
+    let status = {
+        let state = shared_state.read();
+        SchedulerStatus {
+            paused: state.is_paused(),
+            pause_reasons: state.pause_reasons(),
+            timed_pause_until: state.timed_pause_until().map(|until| until.to_rfc3339()),
+            next_event: None,
+            mini_break_counter: 0,
+        }
+    };
+    let _ = app_handle.emit("scheduler-status", &status);
 }
 
 /// Route event-based commands to appropriate scheduler

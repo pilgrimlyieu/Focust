@@ -83,6 +83,9 @@ pub async fn pause_scheduler(state: State<'_, SchedulerCmd>) -> Result<(), Strin
 
 /// Resumes the scheduler from manual pause.
 ///
+/// Clears both ordinary manual pause and timed manual pause. Environment-driven
+/// pause reasons such as DND, idle, and app exclusion remain active.
+///
 /// # Errors
 ///
 /// Returns an error if sending the command to the scheduler fails.
@@ -90,6 +93,10 @@ pub async fn pause_scheduler(state: State<'_, SchedulerCmd>) -> Result<(), Strin
 pub async fn resume_scheduler(state: State<'_, SchedulerCmd>) -> Result<(), String> {
     state
         .send(Command::Resume(PauseReason::Manual))
+        .await
+        .map_err(|e| e.to_string())?;
+    state
+        .send(Command::Resume(PauseReason::TimedManual))
         .await
         .map_err(|e| e.to_string())
 }

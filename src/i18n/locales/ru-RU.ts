@@ -195,7 +195,8 @@ const ruRU: LocaleStrings = {
     notification: "Уведомление",
     paused: "Планировщик приостановлен",
     pausedDueTo: "Приостановлено из-за: {reasons}",
-    pausedResumeHint: "Кнопка Возобновить удаляет только ручную паузу",
+    pausedResumeHint:
+      "Возобновление снимает только паузы, запущенные пользователем",
     postponeHint:
       "Отсрочка сдвигает следующий перерыв на настроенную продолжительность",
     postponeShortcut: "Горячая клавиша отсрочки",
@@ -213,6 +214,7 @@ const ruRU: LocaleStrings = {
     themeModeDark: "Темная",
     themeModeLight: "Светлая",
     themeModeSystem: "Системная",
+    timedPauseRemaining: "возобновится через {time}",
     timerSettings: "Таймер и обнаружение",
     title: "Общие настройки",
     uiSettings: "Интерфейс и отображение",
@@ -231,6 +233,7 @@ const ruRU: LocaleStrings = {
     appExclusion: "Исключение приложения",
     dnd: "Не беспокоить",
     manual: "Вручную",
+    timedManual: "По таймеру вручную",
     userIdle: "Пользователь неактивен",
   },
   schedule: {

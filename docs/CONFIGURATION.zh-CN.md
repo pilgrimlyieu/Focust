@@ -742,7 +742,7 @@ logLevel = "debug" # 启用详细调试日志记录
 ### `resetMiniBreakCounterOnPauseReasons`
 - **类型**：暂停原因字符串数组
 - **默认值**：`[]`
-- **选项**：`"userIdle"`、`"dnd"`、`"manual"`、`"appExclusion"`
+- **选项**：`"userIdle"`、`"dnd"`、`"manual"`、`"timedManual"`、`"appExclusion"`
 - **说明**：当调度器因为列出的原因暂停时，重置用于判断长休息节奏的短休息计数器。例如加入 `"userIdle"` 后，用户离开前累计的短休息次数不会在回来后继续推动长休息。
 
 示例：
@@ -750,6 +750,18 @@ logLevel = "debug" # 启用详细调试日志记录
 ```toml
 [advanced]
 resetMiniBreakCounterOnPauseReasons = ["userIdle"]
+```
+
+### `trayPauseDurationsMinutes`
+- **类型**：正整数数组
+- **默认值**：`[15, 30, 60]`
+- **说明**：控制系统托盘菜单中显示的定时暂停时长，单位为分钟。选择某个时长后，休息提醒和定时提醒都会暂停，直到该时长结束。设置为空数组（`[]`）可以隐藏定时暂停子菜单。编辑后需要重启应用才会更新托盘菜单。
+
+示例：
+
+```toml
+[advanced]
+trayPauseDurationsMinutes = [15, 30, 60]
 ```
 
 ---

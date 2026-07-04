@@ -14,7 +14,7 @@ use crate::{
 ///
 /// These settings are for advanced users and debugging.
 /// They are stored in a separate `[advanced]` section in the TOML config file.
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[serde(default, rename_all = "camelCase")]
 pub struct AdvancedConfig {
     /// Log level for the application
@@ -24,6 +24,23 @@ pub struct AdvancedConfig {
     /// Pause reasons that reset the mini-break counter used for long-break cadence.
     #[serde(default)]
     pub reset_mini_break_counter_on_pause_reasons: Vec<PauseReason>,
+    /// Pause durations shown in the tray menu, in minutes.
+    #[serde(default = "default_tray_pause_durations_minutes")]
+    pub tray_pause_durations_minutes: Vec<u32>,
+}
+
+fn default_tray_pause_durations_minutes() -> Vec<u32> {
+    vec![15, 30, 60]
+}
+
+impl Default for AdvancedConfig {
+    fn default() -> Self {
+        Self {
+            log_level: LogLevel::default_for_build(),
+            reset_mini_break_counter_on_pause_reasons: Vec::new(),
+            tray_pause_durations_minutes: default_tray_pause_durations_minutes(),
+        }
+    }
 }
 
 /// Application configuration structure
@@ -142,6 +159,10 @@ mod tests {
         assert_eq!(config.postpone_shortcut, "");
         assert_eq!(config.schedules.len(), 1);
         assert_eq!(config.attentions.len(), 0);
+        assert_eq!(
+            config.advanced.tray_pause_durations_minutes,
+            vec![15, 30, 60]
+        );
     }
 
     #[test]
@@ -151,5 +172,30 @@ mod tests {
 
         assert_eq!(config.language, cloned.language);
         assert_eq!(config.schedules.len(), cloned.schedules.len());
+    }
+
+    #[test]
+    fn advanced_config_default_values() {
+        let config = AdvancedConfig::default();
+
+        assert_eq!(config.log_level, LogLevel::default_for_build());
+        assert_eq!(config.reset_mini_break_counter_on_pause_reasons, vec![]);
+        assert_eq!(config.tray_pause_durations_minutes, vec![15, 30, 60]);
+    }
+
+    #[test]
+    fn advanced_config_missing_tray_pause_durations_uses_default() {
+        let config: AdvancedConfig =
+            toml::from_str("logLevel = \"info\"").expect("Failed to deserialize advanced config");
+
+        assert_eq!(config.tray_pause_durations_minutes, vec![15, 30, 60]);
+    }
+
+    #[test]
+    fn advanced_config_allows_empty_tray_pause_durations() {
+        let config: AdvancedConfig = toml::from_str("trayPauseDurationsMinutes = []")
+            .expect("Failed to deserialize advanced config");
+
+        assert!(config.tray_pause_durations_minutes.is_empty());
     }
 }

@@ -202,7 +202,8 @@ const frFR: LocaleStrings = {
     notification: "Notification",
     paused: "Planificateur suspendu",
     pausedDueTo: "Suspendu en raison de : {reasons}",
-    pausedResumeHint: "Le bouton Reprendre ne supprime que la pause manuelle",
+    pausedResumeHint:
+      "Reprendre ne supprime que les pauses lancées par l'utilisateur",
     postponeHint: "Reporter repousse la prochaine pause de la durée configurée",
     postponeShortcut: "Raccourci de report",
     postponeShortcutHint:
@@ -221,6 +222,7 @@ const frFR: LocaleStrings = {
     themeModeDark: "Sombre",
     themeModeLight: "Clair",
     themeModeSystem: "Système",
+    timedPauseRemaining: "reprend dans {time}",
     timerSettings: "Minuteur et détection",
     title: "Paramètres généraux",
     uiSettings: "Interface et affichage",
@@ -239,6 +241,7 @@ const frFR: LocaleStrings = {
     appExclusion: "Exclusion d'application",
     dnd: "Ne pas déranger",
     manual: "Manuelle",
+    timedManual: "Manuelle temporisée",
     userIdle: "Utilisateur inactif",
   },
   schedule: {

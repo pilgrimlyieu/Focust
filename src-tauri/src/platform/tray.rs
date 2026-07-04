@@ -7,26 +7,36 @@ use std::sync::{
     Arc, Mutex,
     atomic::{AtomicBool, Ordering},
 };
+use std::time::Duration as StdDuration;
 
+use chrono::{DateTime, Duration, Utc};
 use tauri::async_runtime::spawn as tauri_spawn;
 use tauri::{
     AppHandle, Listener, Manager, Runtime,
-    menu::{Menu, MenuBuilder, MenuItemBuilder, SubmenuBuilder},
+    menu::{IsMenuItem, Menu, MenuBuilder, MenuItemBuilder, SubmenuBuilder},
     tray::{MouseButton, MouseButtonState, TrayIcon, TrayIconBuilder, TrayIconEvent},
 };
 use tokio::sync::mpsc;
+use tokio::time::sleep;
 
+use crate::config::SharedConfig;
 use crate::core::break_kind::BreakKind;
-use crate::platform::{create_settings_window, get_strings, i18n::LanguageStrings};
+use crate::platform::{
+    create_settings_window, get_strings,
+    i18n::{LANGUAGE_FALLBACK, LanguageStrings, TrayStrings},
+};
 use crate::scheduler::models::{Command, SchedulerStatus};
 use crate::{cmd::SchedulerCmd, scheduler::PauseReason};
-use crate::{config::SharedConfig, platform::i18n::LANGUAGE_FALLBACK};
 
 /// Global state to track scheduler pause status and tray reference for menu updates.
 #[derive(Clone)]
 pub struct TrayState {
     /// Atomic flag indicating whether the scheduler is paused.
     pub scheduler_paused: Arc<AtomicBool>,
+    /// Expiration time for a timed manual pause.
+    pub timed_pause_until: Arc<Mutex<Option<DateTime<Utc>>>>,
+    /// Configured timed pause durations shown in the tray menu.
+    pub pause_durations_minutes: Vec<u32>,
     /// Sender for tray menu update messages.
     pub tray_sender: Arc<Mutex<Option<mpsc::UnboundedSender<TrayUpdate>>>>,
 }
@@ -50,25 +60,35 @@ pub enum TrayUpdate {
 /// - Creating the tray icon fails
 pub async fn setup_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
     // Check if tray icon should be shown
-    let show_tray = if let Some(config_state) = app.try_state::<SharedConfig>() {
-        let config = config_state.read().await;
-        config.show_tray_icon
-    } else {
-        tracing::warn!("Config not yet loaded, defaulting to show tray icon");
-        true
-    };
+    let (show_tray, pause_durations_minutes) =
+        if let Some(config_state) = app.try_state::<SharedConfig>() {
+            let config = config_state.read().await;
+            (
+                config.show_tray_icon,
+                sanitize_pause_durations(&config.advanced.tray_pause_durations_minutes),
+            )
+        } else {
+            tracing::warn!("Config not yet loaded, defaulting to show tray icon");
+            (true, vec![15, 30, 60])
+        };
 
     if !show_tray {
         tracing::info!("Tray icon disabled in config, skipping tray setup");
         return Ok(());
     }
 
-    let (tray_state, tray_rx) = initialize_tray_state(app);
+    let (tray_state, tray_rx) = initialize_tray_state(app, pause_durations_minutes);
 
     let strings = get_localized_strings(app).await;
     let tray_text = &strings.tray;
 
-    let initial_menu = build_tray_menu(app, &strings, false)?;
+    let initial_menu = build_tray_menu(
+        app,
+        &strings,
+        false,
+        None,
+        tray_state.pause_durations_minutes.as_slice(),
+    )?;
 
     let icon = app
         .default_window_icon()
@@ -94,7 +114,13 @@ pub async fn setup_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
         })
         .build(app)?;
 
-    spawn_tray_update_task(app.clone(), tray.clone(), tray_rx, strings);
+    spawn_tray_update_task(
+        app.clone(),
+        tray.clone(),
+        tray_rx,
+        strings,
+        tray_state.clone(),
+    );
 
     listen_for_scheduler_status(app, tray_state);
 
@@ -105,10 +131,13 @@ pub async fn setup_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
 /// Initialize tray state and return receiver for updates
 fn initialize_tray_state<R: Runtime>(
     app: &AppHandle<R>,
+    pause_durations_minutes: Vec<u32>,
 ) -> (TrayState, mpsc::UnboundedReceiver<TrayUpdate>) {
     let (tray_tx, tray_rx) = mpsc::unbounded_channel::<TrayUpdate>();
     let tray_state = TrayState {
         scheduler_paused: Arc::new(AtomicBool::new(false)),
+        timed_pause_until: Arc::new(Mutex::new(None)),
+        pause_durations_minutes,
         tray_sender: Arc::new(Mutex::new(Some(tray_tx))),
     };
     app.manage(tray_state.clone());
@@ -132,12 +161,24 @@ fn build_tray_menu<R: Runtime>(
     app: &AppHandle<R>,
     strings: &LanguageStrings,
     paused: bool,
+    timed_pause_until: Option<DateTime<Utc>>,
+    pause_durations_minutes: &[u32],
 ) -> tauri::Result<Menu<R>> {
     let tray_text = &strings.tray;
+    let has_timed_pause = timed_pause_until.is_some();
     let pause_resume_text = if paused {
-        &tray_text.resume
+        timed_pause_until.map_or_else(
+            || tray_text.resume.clone(),
+            |until| {
+                format!(
+                    "{} ({})",
+                    tray_text.resume,
+                    format_timed_pause_remaining(&strings.tray, until)
+                )
+            },
+        )
     } else {
-        &tray_text.pause
+        tray_text.pause.clone()
     };
 
     let show_item = MenuItemBuilder::with_id("show", &tray_text.show).build(app)?;
@@ -156,8 +197,37 @@ fn build_tray_menu<R: Runtime>(
     let restart_item = MenuItemBuilder::with_id("restart", &tray_text.restart).build(app)?;
     let quit_item = MenuItemBuilder::with_id("quit", &tray_text.quit).build(app)?;
 
+    if pause_durations_minutes.is_empty() {
+        return MenuBuilder::new(app)
+            .items(&[&show_item, &pause_item])
+            .item(&start_break_now_menu)
+            .separator()
+            .items(&[&restart_item, &quit_item])
+            .build();
+    }
+
+    let pause_for_items = pause_durations_minutes
+        .iter()
+        .map(|minutes| {
+            MenuItemBuilder::with_id(
+                format!("pause_for_{minutes}"),
+                format_pause_duration(&strings.tray, *minutes),
+            )
+            .build(app)
+        })
+        .collect::<tauri::Result<Vec<_>>>()?;
+    let pause_for_refs = pause_for_items
+        .iter()
+        .map(|item| item as &dyn IsMenuItem<R>)
+        .collect::<Vec<_>>();
+    let pause_for_menu = SubmenuBuilder::with_id(app, "pause_for", &tray_text.pause_for)
+        .enabled(!paused || has_timed_pause)
+        .items(&pause_for_refs)
+        .build()?;
+
     MenuBuilder::new(app)
         .items(&[&show_item, &pause_item])
+        .item(&pause_for_menu)
         .item(&start_break_now_menu)
         .separator()
         .items(&[&restart_item, &quit_item])
@@ -170,18 +240,54 @@ fn spawn_tray_update_task<R: Runtime>(
     tray: TrayIcon<R>,
     mut tray_rx: mpsc::UnboundedReceiver<TrayUpdate>,
     strings: LanguageStrings,
+    tray_state: TrayState,
 ) {
+    spawn_tray_refresh_task(tray_state.clone());
+
     tokio::spawn(async move {
         let tray_clone = tray.clone();
         while let Some(update) = tray_rx.recv().await {
             match update {
                 TrayUpdate::UpdateMenu(paused) => {
-                    if let Ok(menu) = build_tray_menu(&app_handle, &strings, paused) {
+                    let timed_pause_until = tray_state
+                        .timed_pause_until
+                        .lock()
+                        .ok()
+                        .and_then(|guard| *guard);
+                    if let Ok(menu) = build_tray_menu(
+                        &app_handle,
+                        &strings,
+                        paused,
+                        timed_pause_until,
+                        tray_state.pause_durations_minutes.as_slice(),
+                    ) {
                         let _ = tray_clone.set_menu(Some(menu));
                     } else {
                         tracing::error!("Failed to build tray menu for update.");
                     }
                 }
+            }
+        }
+    });
+}
+
+fn spawn_tray_refresh_task(tray_state: TrayState) {
+    tokio::spawn(async move {
+        loop {
+            sleep(StdDuration::from_mins(1)).await;
+            if !tray_state.scheduler_paused.load(Ordering::Relaxed)
+                || tray_state
+                    .timed_pause_until
+                    .lock()
+                    .map_or(true, |until| until.is_none())
+            {
+                continue;
+            }
+            if let Ok(sender_option) = tray_state.tray_sender.lock()
+                && let Some(sender) = sender_option.as_ref()
+                && sender.send(TrayUpdate::UpdateMenu(true)).is_err()
+            {
+                break;
             }
         }
     });
@@ -195,6 +301,13 @@ fn listen_for_scheduler_status<R: Runtime>(app: &AppHandle<R>, tray_state: TrayS
             tray_state
                 .scheduler_paused
                 .store(status.paused, Ordering::Relaxed);
+            if let Ok(mut timed_pause_until) = tray_state.timed_pause_until.lock() {
+                *timed_pause_until = status
+                    .timed_pause_until
+                    .as_deref()
+                    .and_then(|value| DateTime::parse_from_rfc3339(value).ok())
+                    .map(|value| value.with_timezone(&Utc));
+            }
 
             // Send update message to tray update task
             if let Ok(sender_option) = tray_state.tray_sender.lock()
@@ -214,6 +327,16 @@ fn listen_for_scheduler_status<R: Runtime>(app: &AppHandle<R>, tray_state: TrayS
 
 /// Handle tray menu item clicks
 fn handle_tray_menu_event<R: Runtime>(app: &AppHandle<R>, event_id: &str) {
+    if let Some(minutes) = event_id
+        .strip_prefix("pause_for_")
+        .and_then(|value| value.parse::<u32>().ok())
+    {
+        pause_for_minutes(app, minutes).unwrap_or_else(|e| {
+            tracing::error!("Failed to start timed pause from tray menu: {e}");
+        });
+        return;
+    }
+
     match event_id {
         "show" => {
             show_settings_window(app);
@@ -273,6 +396,9 @@ fn toggle_pause<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {
         scheduler_cmd
             .try_send(Command::Resume(PauseReason::Manual))
             .map_err(|e| format!("Failed to send resume command: {e}"))?;
+        scheduler_cmd
+            .try_send(Command::Resume(PauseReason::TimedManual))
+            .map_err(|e| format!("Failed to send timed resume command: {e}"))?;
         tracing::info!("Resume sent from tray menu");
     } else {
         // Currently running, send pause command
@@ -285,6 +411,15 @@ fn toggle_pause<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {
     Ok(())
 }
 
+fn pause_for_minutes<R: Runtime>(app: &AppHandle<R>, minutes: u32) -> Result<(), String> {
+    let scheduler_cmd = app.state::<SchedulerCmd>();
+    scheduler_cmd
+        .try_send(Command::PauseForMinutes(minutes))
+        .map_err(|e| format!("Failed to send timed pause command: {e}"))?;
+    tracing::info!("Timed pause for {minutes} minutes sent from tray menu");
+    Ok(())
+}
+
 /// Starts a break immediately from the tray menu.
 fn start_break_now<R: Runtime>(app: &AppHandle<R>, kind: BreakKind) -> Result<(), String> {
     let scheduler_cmd = app.state::<SchedulerCmd>();
@@ -293,4 +428,29 @@ fn start_break_now<R: Runtime>(app: &AppHandle<R>, kind: BreakKind) -> Result<()
         .map_err(|e| format!("Failed to send start break command: {e}"))?;
     tracing::info!("Start {kind} break sent from tray menu");
     Ok(())
+}
+
+fn sanitize_pause_durations(durations: &[u32]) -> Vec<u32> {
+    let mut sanitized = durations
+        .iter()
+        .copied()
+        .filter(|minutes| *minutes > 0)
+        .collect::<Vec<_>>();
+    sanitized.sort_unstable();
+    sanitized.dedup();
+    sanitized
+}
+
+fn format_pause_duration(tray_text: &TrayStrings, minutes: u32) -> String {
+    format!("{} {}", minutes, tray_text.minute_short)
+}
+
+fn format_timed_pause_remaining(tray_text: &TrayStrings, until: DateTime<Utc>) -> String {
+    let remaining_seconds = (until - Utc::now()).num_seconds().max(1);
+    let minutes = Duration::seconds(remaining_seconds + 59)
+        .num_minutes()
+        .max(1);
+    tray_text
+        .remaining_minutes
+        .replace("{minutes}", &minutes.to_string())
 }

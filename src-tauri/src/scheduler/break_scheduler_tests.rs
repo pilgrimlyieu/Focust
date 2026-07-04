@@ -704,7 +704,7 @@ async fn config_update() {
     let new_config = TestConfigBuilder::new().mini_break_interval_s(120).build();
 
     cmd_tx
-        .send(Command::UpdateConfig(new_config))
+        .send(Command::UpdateConfig(Box::new(new_config)))
         .await
         .unwrap();
     advance_time_and_yield(duration_ms(200)).await;
@@ -1127,7 +1127,7 @@ async fn config_update_while_paused() {
     // Update config while paused
     let new_config = TestConfigBuilder::new().mini_break_interval_s(120).build();
     cmd_tx
-        .send(Command::UpdateConfig(new_config))
+        .send(Command::UpdateConfig(Box::new(new_config)))
         .await
         .unwrap();
     advance_time_and_yield(duration_ms(200)).await;

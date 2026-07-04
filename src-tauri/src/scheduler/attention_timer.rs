@@ -201,7 +201,7 @@ where
                 self.handle_resume_command().await;
             }
             Command::UpdateConfig(new_config) => {
-                self.handle_update_config_command(new_config).await;
+                self.handle_update_config_command(*new_config).await;
             }
             Command::TriggerEvent(SchedulerEvent::Attention(attention_id)) => {
                 self.handle_trigger_event_command(attention_id).await;

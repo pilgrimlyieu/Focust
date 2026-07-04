@@ -85,11 +85,13 @@ pub(crate) struct BreakInfo {
 #[non_exhaustive]
 pub enum Command {
     /// Update the scheduler configuration
-    UpdateConfig(AppConfig),
+    UpdateConfig(Box<AppConfig>),
     /// Pause the break scheduler
     Pause(PauseReason),
     /// Resume the break scheduler
     Resume(PauseReason),
+    /// Pause reminders for a bounded number of minutes
+    PauseForMinutes(u32),
     /// Postpone the current break
     PostponeBreak,
     /// Skip the current break immediately
@@ -110,6 +112,7 @@ impl Display for Command {
             Command::UpdateConfig(_) => write!(f, "UpdateConfig"),
             Command::Pause(reason) => write!(f, "Pause({reason})"),
             Command::Resume(reason) => write!(f, "Resume({reason})"),
+            Command::PauseForMinutes(minutes) => write!(f, "PauseForMinutes({minutes})"),
             Command::PostponeBreak => write!(f, "PostponeBreak"),
             Command::TriggerEvent(event) => write!(f, "TriggerBreak({event})"),
             Command::TriggerBreakNow(kind) => write!(f, "TriggerBreakNow({kind})"),
@@ -147,6 +150,7 @@ pub enum PauseReason {
     UserIdle,
     Dnd,
     Manual,
+    TimedManual,
     AppExclusion,
 }
 
@@ -157,7 +161,8 @@ bitflags! {
         const USER_IDLE     = 1 << 0; // 0b0001
         const DND           = 1 << 1; // 0b0010
         const MANUAL        = 1 << 2; // 0b0100
-        const APP_EXCLUSION = 1 << 3; // 0b1000
+        const TIMED_MANUAL  = 1 << 3; // 0b1000
+        const APP_EXCLUSION = 1 << 4; // 0b1_0000
     }
 }
 
@@ -167,6 +172,7 @@ impl From<PauseReason> for PauseReasons {
             PauseReason::UserIdle => PauseReasons::USER_IDLE,
             PauseReason::Dnd => PauseReasons::DND,
             PauseReason::Manual => PauseReasons::MANUAL,
+            PauseReason::TimedManual => PauseReasons::TIMED_MANUAL,
             PauseReason::AppExclusion => PauseReasons::APP_EXCLUSION,
         }
     }
@@ -178,6 +184,7 @@ impl From<PauseReasons> for PauseReason {
             PauseReasons::USER_IDLE => PauseReason::UserIdle,
             PauseReasons::DND => PauseReason::Dnd,
             PauseReasons::MANUAL => PauseReason::Manual,
+            PauseReasons::TIMED_MANUAL => PauseReason::TimedManual,
             PauseReasons::APP_EXCLUSION => PauseReason::AppExclusion,
             _ => unreachable!("Attempted to convert an invalid or combined flag: Got {reasons:?}"),
         }
@@ -212,6 +219,8 @@ pub struct SchedulerStatus {
     pub paused: bool,
     /// The active pause reasons (empty if not paused)
     pub pause_reasons: Vec<PauseReason>,
+    /// When a timed manual pause expires (ISO 8601 timestamp), if active
+    pub timed_pause_until: Option<String>,
     /// The next scheduled break event (if any)
     pub next_event: Option<SchedulerEventInfo>,
     /// The current mini break counter (for tracking long break triggers)
@@ -289,6 +298,7 @@ mod tests {
         assert_eq!(PauseReason::UserIdle.to_string(), "UserIdle");
         assert_eq!(PauseReason::Dnd.to_string(), "Dnd");
         assert_eq!(PauseReason::Manual.to_string(), "Manual");
+        assert_eq!(PauseReason::TimedManual.to_string(), "TimedManual");
         assert_eq!(PauseReason::AppExclusion.to_string(), "AppExclusion");
     }
 
@@ -298,7 +308,7 @@ mod tests {
         assert_eq!(PauseReasons::empty().len(), 0);
         assert_eq!(PauseReasons::USER_IDLE.len(), 1);
         assert_eq!((PauseReasons::USER_IDLE | PauseReasons::DND).len(), 2);
-        assert_eq!(PauseReasons::all().len(), 4);
+        assert_eq!(PauseReasons::all().len(), 5);
     }
 
     #[test]
@@ -313,6 +323,6 @@ mod tests {
     #[test]
     fn all_pause_reasons_to_vec() {
         let reasons = PauseReasons::all().to_vec();
-        assert_eq!(reasons.len(), 4);
+        assert_eq!(reasons.len(), 5);
     }
 }

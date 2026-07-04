@@ -200,7 +200,7 @@ const itIT: LocaleStrings = {
     notification: "Notifica",
     paused: "Scheduler in pausa",
     pausedDueTo: "In pausa a causa di: {reasons}",
-    pausedResumeHint: "Il pulsante Riprendi rimuove solo la pausa manuale",
+    pausedResumeHint: "Riprendi rimuove solo le pause avviate dall'utente",
     postponeHint:
       "Posticipare sposta la prossima pausa della durata configurata",
     postponeShortcut: "Scorciatoia posticipa",
@@ -219,6 +219,7 @@ const itIT: LocaleStrings = {
     themeModeDark: "Scuro",
     themeModeLight: "Chiaro",
     themeModeSystem: "Sistema",
+    timedPauseRemaining: "riprende tra {time}",
     timerSettings: "Timer e rilevamento",
     title: "Impostazioni generali",
     uiSettings: "Interfaccia e visualizzazione",
@@ -237,6 +238,7 @@ const itIT: LocaleStrings = {
     appExclusion: "Esclusione applicazione",
     dnd: "Non disturbare",
     manual: "Manuale",
+    timedManual: "Manuale temporizzata",
     userIdle: "Utente inattivo",
   },
   schedule: {

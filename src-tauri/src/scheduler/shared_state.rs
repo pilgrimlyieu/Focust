@@ -12,6 +12,7 @@
 //!                     │  SharedState    │
 //!                     │                 │
 //!                     │ pause_reasons   │ ◄─── Manager (add/remove)
+//!                     │ timed_pause     │ ◄─── Manager (set/clear)
 //!                     │ in_break_...    │ ◄─── BreakScheduler (start/end)
 //!                     │ in_attention_.. │ ◄─── AttentionTimer (start/end)
 //!                     └────────┬────────┘
@@ -43,6 +44,7 @@
 //! pause_reasons = {UserIdle}            → Scheduler: Paused
 //! pause_reasons = {UserIdle, Dnd}       → Scheduler: Paused
 //! pause_reasons = {Dnd}                 → Scheduler: Paused
+//! pause_reasons = {TimedManual}         → Scheduler: Paused until timestamp
 //! pause_reasons = {}                    → Scheduler: Running
 //! ```
 //!
@@ -127,6 +129,7 @@
 //! - `scheduler::manager`] - Command routing and state management
 //! - `monitors::dnd` - Example of session-aware monitoring
 
+use chrono::{DateTime, Utc};
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -145,6 +148,9 @@ pub struct SharedSchedulerState {
     /// When this set is non-empty, the scheduler is paused.
     /// Multiple reasons can be active simultaneously.
     pause_reasons: PauseReasons,
+
+    /// Expiration time for a timed manual pause.
+    timed_pause_until: Option<DateTime<Utc>>,
 
     /// Whether currently in a break session (mini or long)
     ///
@@ -171,6 +177,7 @@ impl SharedSchedulerState {
     pub fn new() -> Self {
         Self {
             pause_reasons: PauseReasons::empty(),
+            timed_pause_until: None,
             in_break_session: false,
             in_attention_session: false,
             break_session_start: None,
@@ -224,6 +231,9 @@ impl SharedSchedulerState {
     pub fn remove_pause_reason(&mut self, reason: PauseReason) -> bool {
         let was_set = self.pause_reasons.contains(reason.into());
         self.pause_reasons.remove(reason.into());
+        if reason == PauseReason::TimedManual {
+            self.timed_pause_until = None;
+        }
         let is_now_running = self.pause_reasons.is_empty();
 
         if is_now_running {
@@ -257,6 +267,22 @@ impl SharedSchedulerState {
     #[must_use]
     pub fn pause_reasons(&self) -> Vec<PauseReason> {
         self.pause_reasons.to_vec()
+    }
+
+    /// Set the expiration time for the active timed manual pause.
+    pub fn set_timed_pause_until(&mut self, until: DateTime<Utc>) {
+        self.timed_pause_until = Some(until);
+    }
+
+    /// Clear any active timed manual pause expiration time.
+    pub fn clear_timed_pause_until(&mut self) {
+        self.timed_pause_until = None;
+    }
+
+    /// Get the expiration time for the active timed manual pause.
+    #[must_use]
+    pub fn timed_pause_until(&self) -> Option<DateTime<Utc>> {
+        self.timed_pause_until
     }
 
     /// Check if in any session (break or attention)
@@ -672,6 +698,7 @@ mod tests {
             PauseReason::Manual,
             PauseReason::UserIdle,
             PauseReason::Dnd,
+            PauseReason::TimedManual,
             PauseReason::AppExclusion,
         ];
 
