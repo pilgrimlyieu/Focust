@@ -15,8 +15,9 @@ use tokio::sync::oneshot;
 use tokio::time;
 
 use crate::core::{
+    break_kind::BreakKind,
     payload::store_payload_internal,
-    suggestions::{SharedSuggestions, SuggestionBreakKind, sample_suggestion_for_break},
+    suggestions::{SharedSuggestions, sample_suggestion_for_break},
     theme::BackgroundType,
 };
 use crate::core::{
@@ -274,7 +275,7 @@ fn build_prompt_payload(
                 &schedule.mini_breaks.base,
                 schedule.name.clone(),
                 EventKind::Mini,
-                SuggestionBreakKind::Short,
+                BreakKind::Mini,
             )
         }
         SchedulerEvent::LongBreak(id) => {
@@ -287,7 +288,7 @@ fn build_prompt_payload(
                 &schedule.long_breaks.base,
                 schedule.name.clone(),
                 EventKind::Long,
-                SuggestionBreakKind::Long,
+                BreakKind::Long,
             )
         }
         SchedulerEvent::Attention(id) => {

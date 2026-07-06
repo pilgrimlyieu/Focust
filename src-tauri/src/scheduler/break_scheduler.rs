@@ -17,6 +17,7 @@ use super::models::{
 };
 use super::shared_state::SharedState;
 use crate::config::{AppConfig, SharedConfig};
+use crate::core::break_kind::BreakKind;
 use crate::core::schedule::ScheduleSettings;
 #[cfg(not(test))]
 use crate::platform::create_prompt_windows;
@@ -237,7 +238,7 @@ where
                 self.mini_break_counter += 1;
             }
             SchedulerEvent::LongBreak(_) => {
-                self.mini_break_counter = 0;
+                self.reset_mini_break_counter();
             }
             SchedulerEvent::Attention(_) => {
                 tracing::error!(
@@ -420,7 +421,7 @@ where
         tracing::debug!("BreakScheduler handling command: {cmd}");
         match cmd {
             Command::Pause(reason) => {
-                self.handle_pause_command(reason);
+                self.handle_pause_command(reason).await;
             }
             Command::Resume(_reason) => {
                 self.handle_resume_command().await;
@@ -436,6 +437,9 @@ where
             }
             Command::TriggerEvent(event) => {
                 self.handle_trigger_event_command(event).await;
+            }
+            Command::TriggerBreakNow(kind) => {
+                self.handle_trigger_break_now_command(kind).await;
             }
             Command::UpdateConfig(new_config) => {
                 self.handle_update_config_command(new_config).await;
@@ -581,6 +585,11 @@ where
         self.last_break_time = None;
     }
 
+    /// Reset long-break cadence progress
+    fn reset_mini_break_counter(&mut self) {
+        self.mini_break_counter = 0;
+    }
+
     /// Update break timers after a break completes
     fn update_last_break_time(&mut self) {
         self.last_break_time = Some(Utc::now());
@@ -675,7 +684,7 @@ where
     }
 
     /// Handle `Pause` command
-    fn handle_pause_command(&mut self, reason: PauseReason) {
+    async fn handle_pause_command(&mut self, reason: PauseReason) {
         tracing::info!("Pausing BreakScheduler: {reason}");
 
         // Reset timers for certain pause reasons
@@ -685,6 +694,20 @@ where
             }
             PauseReason::Manual => {}
         }
+
+        let should_reset_counter = {
+            let config = self.app_handle.state::<SharedConfig>();
+            config
+                .read()
+                .await
+                .advanced
+                .reset_mini_break_counter_on_pause_reasons
+                .contains(&reason)
+        };
+        if should_reset_counter {
+            self.reset_mini_break_counter();
+        }
+
         self.close_break_windows();
         self.set_state(BreakSchedulerState::Paused(reason));
     }
@@ -806,6 +829,36 @@ where
         }
     }
 
+    /// Handle user-facing manual break triggers.
+    async fn handle_trigger_break_now_command(&mut self, kind: BreakKind) {
+        if self.shared_state.read().is_paused()
+            || matches!(self.state, BreakSchedulerState::Paused(_))
+        {
+            tracing::warn!("Cannot trigger {kind} break while scheduler is paused");
+            return;
+        }
+
+        if self.shared_state.read().in_break_session()
+            || matches!(self.state, BreakSchedulerState::InBreak(_))
+        {
+            tracing::warn!("Cannot trigger {kind} break while another break is active");
+            return;
+        }
+
+        let event = {
+            let config = self.app_handle.state::<SharedConfig>();
+            let config_guard = config.read().await;
+            resolve_manual_break_event(&config_guard, kind)
+        };
+
+        let Some(event) = event else {
+            tracing::warn!("Cannot trigger {kind} break because no schedule exists");
+            return;
+        };
+
+        self.handle_trigger_event_command(event).await;
+    }
+
     /// Handle `UpdateConfig` command
     async fn handle_update_config_command(&mut self, new_config: AppConfig) {
         tracing::debug!("Updating config");
@@ -886,6 +939,18 @@ pub(crate) fn calculate_next_break_pure(
         notification_time,
         event,
         postpone_count: 0,
+    })
+}
+
+fn resolve_manual_break_event(config: &AppConfig, kind: BreakKind) -> Option<SchedulerEvent> {
+    let now_local = Utc::now().with_timezone(&Local);
+    let schedule = get_active_schedule(config, now_local.time(), now_local.weekday())
+        .or_else(|| config.schedules.iter().find(|schedule| schedule.enabled))
+        .or_else(|| config.schedules.first())?;
+
+    Some(match kind {
+        BreakKind::Mini => SchedulerEvent::MiniBreak(schedule.mini_breaks.base.id),
+        BreakKind::Long => SchedulerEvent::LongBreak(schedule.long_breaks.base.id),
     })
 }
 

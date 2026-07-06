@@ -813,6 +813,7 @@ windowSize = 0.8
 
 Advanced settings are intended for users who want to fine-tune the application's behavior beyond standard options. These settings are not exposed in the user interface and must be edited directly in the configuration file. All advanced settings are grouped under the `[advanced]` table.
 
+Advanced settings have a weaker compatibility guarantee than normal settings. Future incompatible changes will be surfaced in the settings interface to notify you of an update, but these options remain intended for manual configuration rather than regular UI workflows.
 ### `logLevel`
 - **Type**: String enum
 - **Default**: `"info"`
@@ -824,6 +825,19 @@ Example:
 ```toml
 [advanced]
 logLevel = "debug" # Enable detailed debug logging
+```
+
+### `resetMiniBreakCounterOnPauseReasons`
+- **Type**: Array of pause reason strings
+- **Default**: `[]`
+- **Options**: `"userIdle"`, `"dnd"`, `"manual"`, `"appExclusion"`
+- **Description**: Resets the mini-break counter for long-break cadence when the scheduler pauses for any listed reason. For example, adding `"userIdle"` prevents a long break from being triggered by mini breaks counted before you were away.
+
+Example:
+
+```toml
+[advanced]
+resetMiniBreakCounterOnPauseReasons = ["userIdle"]
 ```
 
 ---

@@ -106,6 +106,7 @@ impl SchedulerManager {
 ///
 /// These commands are routed based on event type or functionality:
 /// - **TriggerEvent(event)**: Routed by event type (Break → [`BreakScheduler`], Attention → [`AttentionTimer`])
+/// - **TriggerBreakNow(kind)**: Routed to [`BreakScheduler`] for schedule selection and execution
 /// - **PromptFinished(event)**: Routed by event type
 /// - **PostponeBreak/SkipBreak/RequestBreakStatus**: Only to [`BreakScheduler`]
 ///
@@ -173,7 +174,10 @@ pub(crate) async fn broadcast_commands<R: Runtime>(
 
                     // === BREAK-SPECIFIC COMMANDS ===
 
-                    Command::RequestBreakStatus | Command::PostponeBreak | Command::SkipBreak => {
+                    Command::RequestBreakStatus
+                    | Command::PostponeBreak
+                    | Command::SkipBreak
+                    | Command::TriggerBreakNow(_) => {
                         tracing::debug!("Forwarding break-specific command to BreakScheduler");
                         let _ = break_cmd_tx.send(cmd).await;
                     }

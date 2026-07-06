@@ -14,6 +14,8 @@
 
 use tokio::sync::mpsc;
 
+use crate::core::break_kind::BreakKind;
+use crate::core::schedule::DaysOfWeek;
 use crate::scheduler::models::{Command, PauseReason, SchedulerEvent};
 use crate::scheduler::test_helpers::state_machine::*;
 use crate::scheduler::test_helpers::*;
@@ -460,6 +462,210 @@ async fn manual_trigger() {
     assert!(matches!(break_event, SchedulerEvent::MiniBreak(_)));
 
     // Cleanup
+    drop(cmd_tx);
+    drop(shutdown_tx);
+    task.await.unwrap();
+}
+
+/// **T2.6: Manual Trigger Now Uses Active Schedule**
+///
+/// User-facing manual triggers resolve the active schedule before executing.
+#[tokio::test(start_paused = true)]
+async fn manual_trigger_now_uses_active_schedule() {
+    let mut first_schedule = TestConfigBuilder::new().build().schedules.remove(0);
+    first_schedule.name = "First Enabled But Inactive".to_owned();
+    first_schedule.days_of_week = DaysOfWeek::empty();
+
+    let mut active_schedule = TestConfigBuilder::new().build().schedules.remove(0);
+    active_schedule.name = "Active Schedule".to_owned();
+    active_schedule.days_of_week = DaysOfWeek::all();
+    active_schedule.time_range = full_time_range();
+    active_schedule.mini_breaks.base.enabled = false;
+    let expected_id = active_schedule.mini_breaks.base.id;
+
+    let mut config = TestConfigBuilder::new().build();
+    config.schedules = vec![first_schedule, active_schedule];
+
+    let (mut scheduler, emitter, shutdown_tx, _app) = create_test_break_scheduler(config);
+    let (cmd_tx, cmd_rx) = mpsc::channel(32);
+
+    let task = tokio::spawn(async move {
+        scheduler.run(cmd_rx).await;
+    });
+
+    advance_time_and_yield(duration_ms(200)).await;
+    emitter.clear();
+
+    cmd_tx
+        .send(Command::TriggerBreakNow(BreakKind::Mini))
+        .await
+        .unwrap();
+    advance_time_and_yield(duration_s(1)).await;
+
+    let events = emitter.get_events_by_name("scheduler-event");
+    let event: SchedulerEvent = serde_json::from_value(events[0].clone()).expect("Should parse");
+    assert_eq!(event, SchedulerEvent::MiniBreak(expected_id));
+
+    drop(cmd_tx);
+    drop(shutdown_tx);
+    task.await.unwrap();
+}
+
+/// **T2.7: Manual Trigger Now Falls Back To First Enabled Schedule**
+///
+/// If no schedule is active, user-facing manual triggers use the first enabled schedule.
+#[tokio::test(start_paused = true)]
+async fn manual_trigger_now_falls_back_to_first_enabled_schedule() {
+    let mut first_enabled = TestConfigBuilder::new().build().schedules.remove(0);
+    first_enabled.name = "First Enabled".to_owned();
+    first_enabled.days_of_week = DaysOfWeek::empty();
+    let expected_id = first_enabled.long_breaks.base.id;
+
+    let mut disabled_active = TestConfigBuilder::new().build().schedules.remove(0);
+    disabled_active.name = "Disabled Active".to_owned();
+    disabled_active.enabled = false;
+    disabled_active.days_of_week = DaysOfWeek::all();
+    disabled_active.time_range = full_time_range();
+
+    let mut config = TestConfigBuilder::new().build();
+    config.schedules = vec![first_enabled, disabled_active];
+
+    let (mut scheduler, emitter, shutdown_tx, _app) = create_test_break_scheduler(config);
+    let (cmd_tx, cmd_rx) = mpsc::channel(32);
+
+    let task = tokio::spawn(async move {
+        scheduler.run(cmd_rx).await;
+    });
+
+    advance_time_and_yield(duration_ms(200)).await;
+    emitter.clear();
+
+    cmd_tx
+        .send(Command::TriggerBreakNow(BreakKind::Long))
+        .await
+        .unwrap();
+    advance_time_and_yield(duration_s(1)).await;
+
+    let events = emitter.get_events_by_name("scheduler-event");
+    let event: SchedulerEvent = serde_json::from_value(events[0].clone()).expect("Should parse");
+    assert_eq!(event, SchedulerEvent::LongBreak(expected_id));
+
+    drop(cmd_tx);
+    drop(shutdown_tx);
+    task.await.unwrap();
+}
+
+/// **T2.8: Manual Trigger Will Be Rejected While Paused**
+#[tokio::test(start_paused = true)]
+async fn manual_trigger_now_rejected_while_paused() {
+    let config = TestConfigBuilder::new().build();
+    let (mut scheduler, emitter, shutdown_tx, _app) = create_test_break_scheduler(config);
+    let (cmd_tx, cmd_rx) = mpsc::channel(32);
+    let task = tokio::spawn(async move {
+        scheduler.run(cmd_rx).await;
+    });
+
+    advance_time_and_yield(duration_ms(200)).await;
+    cmd_tx
+        .send(Command::Pause(PauseReason::Manual))
+        .await
+        .unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+    emitter.clear();
+
+    cmd_tx
+        .send(Command::TriggerBreakNow(BreakKind::Mini))
+        .await
+        .unwrap();
+    advance_time_and_yield(duration_s(1)).await;
+
+    assert!(emitter.get_events_by_name("scheduler-event").is_empty());
+
+    drop(cmd_tx);
+    drop(shutdown_tx);
+    task.await.unwrap();
+}
+
+/// **T2.9: Idle Pause Does Not Reset Counter By Default**
+#[tokio::test(start_paused = true)]
+async fn user_idle_pause_keeps_mini_break_counter_by_default() {
+    let config = TestConfigBuilder::new().notification_before_s(0).build();
+
+    let (mut scheduler, emitter, shutdown_tx, _app) = create_test_break_scheduler(config);
+    let (cmd_tx, cmd_rx) = mpsc::channel(32);
+
+    let task = tokio::spawn(async move {
+        scheduler.run(cmd_rx).await;
+    });
+
+    advance_time_and_yield(duration_ms(200)).await;
+    emitter.clear();
+
+    cmd_tx
+        .send(Command::TriggerBreakNow(BreakKind::Mini))
+        .await
+        .unwrap();
+    advance_time_and_yield(duration_s(1)).await;
+
+    let events = emitter.get_events_by_name("scheduler-event");
+    let event: SchedulerEvent = serde_json::from_value(events[0].clone()).expect("Should parse");
+    cmd_tx.send(Command::PromptFinished(event)).await.unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+
+    cmd_tx
+        .send(Command::Pause(PauseReason::UserIdle))
+        .await
+        .unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+
+    cmd_tx.send(Command::RequestBreakStatus).await.unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+    let status = get_latest_status(&emitter);
+    assert_eq!(status.mini_break_counter, 1);
+
+    drop(cmd_tx);
+    drop(shutdown_tx);
+    task.await.unwrap();
+}
+
+/// **T2.9: Configured Idle Pause Resets Counter**
+#[tokio::test(start_paused = true)]
+async fn configured_user_idle_pause_resets_mini_break_counter() {
+    let mut config = TestConfigBuilder::new().notification_before_s(0).build();
+    config.advanced.reset_mini_break_counter_on_pause_reasons = vec![PauseReason::UserIdle];
+
+    let (mut scheduler, emitter, shutdown_tx, _app) = create_test_break_scheduler(config);
+    let (cmd_tx, cmd_rx) = mpsc::channel(32);
+
+    let task = tokio::spawn(async move {
+        scheduler.run(cmd_rx).await;
+    });
+
+    advance_time_and_yield(duration_ms(200)).await;
+    emitter.clear();
+
+    cmd_tx
+        .send(Command::TriggerBreakNow(BreakKind::Mini))
+        .await
+        .unwrap();
+    advance_time_and_yield(duration_s(1)).await;
+
+    let events = emitter.get_events_by_name("scheduler-event");
+    let event: SchedulerEvent = serde_json::from_value(events[0].clone()).expect("Should parse");
+    cmd_tx.send(Command::PromptFinished(event)).await.unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+
+    cmd_tx
+        .send(Command::Pause(PauseReason::UserIdle))
+        .await
+        .unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+
+    cmd_tx.send(Command::RequestBreakStatus).await.unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+    let status = get_latest_status(&emitter);
+    assert_eq!(status.mini_break_counter, 0);
+
     drop(cmd_tx);
     drop(shutdown_tx);
     task.await.unwrap();

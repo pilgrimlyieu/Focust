@@ -724,6 +724,8 @@ patterns = ["chrome.exe", "firefox"]
 
 高级设置允许用户自定义应用程序的行为，这部分配置无法在设置界面中修改，必须手动编辑配置文件。所有相关设置都在 `[advanced]` 表下。
 
+高级设置的向后兼容性保证弱于普通设置。未来如果需要进行不兼容变更，会先在设置界面向用户提示更新；但这些选项仍主要面向手动配置，而不是常规界面工作流。
+
 ### `logLevel`
 - **类型**：字符串枚举
 - **默认值**：`"info"`
@@ -735,6 +737,19 @@ patterns = ["chrome.exe", "firefox"]
 ```toml
 [advanced]
 logLevel = "debug" # 启用详细调试日志记录
+```
+
+### `resetMiniBreakCounterOnPauseReasons`
+- **类型**：暂停原因字符串数组
+- **默认值**：`[]`
+- **选项**：`"userIdle"`、`"dnd"`、`"manual"`、`"appExclusion"`
+- **说明**：当调度器因为列出的原因暂停时，重置用于判断长休息节奏的短休息计数器。例如加入 `"userIdle"` 后，用户离开前累计的短休息次数不会在回来后继续推动长休息。
+
+示例：
+
+```toml
+[advanced]
+resetMiniBreakCounterOnPauseReasons = ["userIdle"]
 ```
 
 ---

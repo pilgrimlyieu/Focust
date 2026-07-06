@@ -95,6 +95,7 @@ Focust lives in your system tray (notification area):
 - **Right click**: Menu with options:
   - Show Settings
   - Pause/Resume
+  - Start Break Now → Mini Break / Long Break
   - Quit
 
 ### Pausing Breaks
@@ -136,8 +137,8 @@ Try different background images that relax you. Nature scenes, minimalist patter
 
 ### "How do I test break reminders without waiting?"
 - You can use the **Preview** feature in the **Break Schedules** tab to see how your breaks will look and feel without waiting for the actual reminders
-- If you want to see the real break/reminder window, or if you have selected "Image Folder" for backgrounds and want to see the random effect:
-- Go to the **Advanced Settings** tab and click the icon to show the Debug area, where you can manually enable short breaks, long breaks, reminder windows, or skip the current break (v0.2.3+)
+- To start a real mini or long break immediately, right-click the tray icon and choose **Start Break Now**
+- Or go to the **Advanced Settings** tab and click the icon to show the Debug area, where you can manually enable short breaks, long breaks, reminder windows, or skip the current break (v0.2.3+)
 
 ### "Cannot resume scheduler from paused state via settings/tray icon"
 - This is because the scheduler is paused by some monitor (e.g., DND monitor), not manually by the user
