@@ -9,20 +9,6 @@
 
 ## 🎉 Features
 
-- List new features here
-
-## 🐛 Bug Fixes
-
-- List bug fixes here
-
-## 🚀 Improvements
-
-- List improvements here
-
-## 📝 Documentation
-
-- List documentation changes here
-
-## ⚠️ Breaking Changes
-
-- List breaking changes here (if any)
+- Add manual break triggers in tray (#86)
+- Add `advanced.resetMiniBreakCounterOnPauseReasons` option to allow reset mini break counter after specific pause reasons (#94)
+- Support pause break for some minutes from tray (#96)
