@@ -12,9 +12,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### 🎉 Features
 
-- Add manual break triggers in tray (#86)
-- Add `advanced.resetMiniBreakCounterOnPauseReasons` option to allow reset mini break counter after specific pause reasons (#94)
-- Support pause break for some minutes from tray (#96)
+- Add manual break triggers in tray. (#86)
+- Add `advanced.resetMiniBreakCounterOnPauseReasons` option to allow reset mini break counter after specific pause reasons. (#94)
+- Support pause break for some minutes from tray. (#95)
 
 ## 0.4.0 (2026.6.5)
 
