@@ -9,17 +9,17 @@ use std::sync::{
 };
 use std::time::Duration as StdDuration;
 
-use chrono::{DateTime, Duration, Utc};
+use chrono::{DateTime, Utc};
 use tauri::async_runtime::spawn as tauri_spawn;
 use tauri::{
     AppHandle, Listener, Manager, Runtime,
-    menu::{IsMenuItem, Menu, MenuBuilder, MenuItemBuilder, SubmenuBuilder},
+    menu::{IsMenuItem, Menu, MenuBuilder, MenuItemBuilder, Submenu, SubmenuBuilder},
     tray::{MouseButton, MouseButtonState, TrayIcon, TrayIconBuilder, TrayIconEvent},
 };
 use tokio::sync::mpsc;
 use tokio::time::sleep;
 
-use crate::config::SharedConfig;
+use crate::config::{AdvancedConfig, SharedConfig};
 use crate::core::break_kind::BreakKind;
 use crate::platform::{
     create_settings_window, get_strings,
@@ -28,13 +28,17 @@ use crate::platform::{
 use crate::scheduler::models::{Command, SchedulerStatus};
 use crate::{cmd::SchedulerCmd, scheduler::PauseReason};
 
+/// Menu id prefix for timed pause items; the suffix carries the duration in minutes.
+const PAUSE_FOR_MENU_ID_PREFIX: &str = "pause_for_";
+
+/// Interval between tray menu refreshes while a timed pause countdown is shown.
+const COUNTDOWN_REFRESH_INTERVAL: StdDuration = StdDuration::from_mins(1);
+
 /// Global state to track scheduler pause status and tray reference for menu updates.
 #[derive(Clone)]
 pub struct TrayState {
     /// Atomic flag indicating whether the scheduler is paused.
     pub scheduler_paused: Arc<AtomicBool>,
-    /// Expiration time for a timed manual pause.
-    pub timed_pause_until: Arc<Mutex<Option<DateTime<Utc>>>>,
     /// Configured timed pause durations shown in the tray menu.
     pub pause_durations_minutes: Vec<u32>,
     /// Sender for tray menu update messages.
@@ -44,8 +48,13 @@ pub struct TrayState {
 /// Messages for updating the tray menu.
 #[non_exhaustive]
 pub enum TrayUpdate {
-    /// Updates the menu with the specified pause state.
-    UpdateMenu(bool), // bool: paused state
+    /// Rebuilds the menu to reflect the given scheduler state.
+    UpdateMenu {
+        /// Whether the scheduler is paused.
+        paused: bool,
+        /// Expiration time of the active timed pause, if any.
+        timed_pause_until: Option<DateTime<Utc>>,
+    },
 }
 
 /// Sets up the system tray icon with menu.
@@ -69,7 +78,7 @@ pub async fn setup_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
             )
         } else {
             tracing::warn!("Config not yet loaded, defaulting to show tray icon");
-            (true, vec![15, 30, 60])
+            (true, AdvancedConfig::default().tray_pause_durations_minutes)
         };
 
     if !show_tray {
@@ -119,7 +128,7 @@ pub async fn setup_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
         tray.clone(),
         tray_rx,
         strings,
-        tray_state.clone(),
+        tray_state.pause_durations_minutes.clone(),
     );
 
     listen_for_scheduler_status(app, tray_state);
@@ -136,7 +145,6 @@ fn initialize_tray_state<R: Runtime>(
     let (tray_tx, tray_rx) = mpsc::unbounded_channel::<TrayUpdate>();
     let tray_state = TrayState {
         scheduler_paused: Arc::new(AtomicBool::new(false)),
-        timed_pause_until: Arc::new(Mutex::new(None)),
         pause_durations_minutes,
         tray_sender: Arc::new(Mutex::new(Some(tray_tx))),
     };
@@ -197,97 +205,106 @@ fn build_tray_menu<R: Runtime>(
     let restart_item = MenuItemBuilder::with_id("restart", &tray_text.restart).build(app)?;
     let quit_item = MenuItemBuilder::with_id("quit", &tray_text.quit).build(app)?;
 
-    if pause_durations_minutes.is_empty() {
-        return MenuBuilder::new(app)
-            .items(&[&show_item, &pause_item])
-            .item(&start_break_now_menu)
-            .separator()
-            .items(&[&restart_item, &quit_item])
-            .build();
+    let pause_for_menu = build_pause_for_submenu(
+        app,
+        tray_text,
+        pause_durations_minutes,
+        !paused || has_timed_pause,
+    )?;
+
+    let mut builder = MenuBuilder::new(app).items(&[&show_item, &pause_item]);
+    if let Some(menu) = &pause_for_menu {
+        builder = builder.item(menu);
     }
-
-    let pause_for_items = pause_durations_minutes
-        .iter()
-        .map(|minutes| {
-            MenuItemBuilder::with_id(
-                format!("pause_for_{minutes}"),
-                format_pause_duration(&strings.tray, *minutes),
-            )
-            .build(app)
-        })
-        .collect::<tauri::Result<Vec<_>>>()?;
-    let pause_for_refs = pause_for_items
-        .iter()
-        .map(|item| item as &dyn IsMenuItem<R>)
-        .collect::<Vec<_>>();
-    let pause_for_menu = SubmenuBuilder::with_id(app, "pause_for", &tray_text.pause_for)
-        .enabled(!paused || has_timed_pause)
-        .items(&pause_for_refs)
-        .build()?;
-
-    MenuBuilder::new(app)
-        .items(&[&show_item, &pause_item])
-        .item(&pause_for_menu)
+    builder
         .item(&start_break_now_menu)
         .separator()
         .items(&[&restart_item, &quit_item])
         .build()
 }
 
+/// Build the timed pause submenu, or `None` when no durations are configured
+fn build_pause_for_submenu<R: Runtime>(
+    app: &AppHandle<R>,
+    tray_text: &TrayStrings,
+    pause_durations_minutes: &[u32],
+    enabled: bool,
+) -> tauri::Result<Option<Submenu<R>>> {
+    if pause_durations_minutes.is_empty() {
+        return Ok(None);
+    }
+
+    let items = pause_durations_minutes
+        .iter()
+        .map(|minutes| {
+            MenuItemBuilder::with_id(
+                format!("{PAUSE_FOR_MENU_ID_PREFIX}{minutes}"),
+                format_pause_duration(tray_text, *minutes),
+            )
+            .build(app)
+        })
+        .collect::<tauri::Result<Vec<_>>>()?;
+    let item_refs = items
+        .iter()
+        .map(|item| item as &dyn IsMenuItem<R>)
+        .collect::<Vec<_>>();
+    SubmenuBuilder::with_id(app, "pause_for", &tray_text.pause_for)
+        .enabled(enabled)
+        .items(&item_refs)
+        .build()
+        .map(Some)
+}
+
 /// Spawn a task to handle tray menu updates
+///
+/// While a timed pause countdown is displayed, the menu is additionally
+/// rebuilt once a minute so the remaining time stays fresh; otherwise the
+/// task sleeps until the next status-driven update arrives.
 fn spawn_tray_update_task<R: Runtime>(
     app_handle: AppHandle<R>,
     tray: TrayIcon<R>,
     mut tray_rx: mpsc::UnboundedReceiver<TrayUpdate>,
     strings: LanguageStrings,
-    tray_state: TrayState,
+    pause_durations_minutes: Vec<u32>,
 ) {
-    spawn_tray_refresh_task(tray_state.clone());
-
     tokio::spawn(async move {
-        let tray_clone = tray.clone();
-        while let Some(update) = tray_rx.recv().await {
+        let mut paused = false;
+        let mut timed_pause_until = None;
+        loop {
+            let update = if paused && timed_pause_until.is_some() {
+                tokio::select! {
+                    update = tray_rx.recv() => update,
+                    () = sleep(COUNTDOWN_REFRESH_INTERVAL) => Some(TrayUpdate::UpdateMenu {
+                        paused,
+                        timed_pause_until,
+                    }),
+                }
+            } else {
+                tray_rx.recv().await
+            };
+            let Some(update) = update else {
+                break;
+            };
+
             match update {
-                TrayUpdate::UpdateMenu(paused) => {
-                    let timed_pause_until = tray_state
-                        .timed_pause_until
-                        .lock()
-                        .ok()
-                        .and_then(|guard| *guard);
+                TrayUpdate::UpdateMenu {
+                    paused: new_paused,
+                    timed_pause_until: new_timed_pause_until,
+                } => {
+                    paused = new_paused;
+                    timed_pause_until = new_timed_pause_until;
                     if let Ok(menu) = build_tray_menu(
                         &app_handle,
                         &strings,
                         paused,
                         timed_pause_until,
-                        tray_state.pause_durations_minutes.as_slice(),
+                        pause_durations_minutes.as_slice(),
                     ) {
-                        let _ = tray_clone.set_menu(Some(menu));
+                        let _ = tray.set_menu(Some(menu));
                     } else {
                         tracing::error!("Failed to build tray menu for update.");
                     }
                 }
-            }
-        }
-    });
-}
-
-fn spawn_tray_refresh_task(tray_state: TrayState) {
-    tokio::spawn(async move {
-        loop {
-            sleep(StdDuration::from_mins(1)).await;
-            if !tray_state.scheduler_paused.load(Ordering::Relaxed)
-                || tray_state
-                    .timed_pause_until
-                    .lock()
-                    .map_or(true, |until| until.is_none())
-            {
-                continue;
-            }
-            if let Ok(sender_option) = tray_state.tray_sender.lock()
-                && let Some(sender) = sender_option.as_ref()
-                && sender.send(TrayUpdate::UpdateMenu(true)).is_err()
-            {
-                break;
             }
         }
     });
@@ -301,20 +318,21 @@ fn listen_for_scheduler_status<R: Runtime>(app: &AppHandle<R>, tray_state: TrayS
             tray_state
                 .scheduler_paused
                 .store(status.paused, Ordering::Relaxed);
-            if let Ok(mut timed_pause_until) = tray_state.timed_pause_until.lock() {
-                *timed_pause_until = status
-                    .timed_pause_until
-                    .as_deref()
-                    .and_then(|value| DateTime::parse_from_rfc3339(value).ok())
-                    .map(|value| value.with_timezone(&Utc));
-            }
+            let timed_pause_until = status
+                .timed_pause_until
+                .as_deref()
+                .and_then(|value| DateTime::parse_from_rfc3339(value).ok())
+                .map(|value| value.with_timezone(&Utc));
 
             // Send update message to tray update task
             if let Ok(sender_option) = tray_state.tray_sender.lock()
                 && let Some(sender) = sender_option.as_ref()
             {
                 sender
-                    .send(TrayUpdate::UpdateMenu(status.paused))
+                    .send(TrayUpdate::UpdateMenu {
+                        paused: status.paused,
+                        timed_pause_until,
+                    })
                     .unwrap_or_else(|e| {
                         tracing::warn!("Failed to send tray update: {e}");
                     });
@@ -328,7 +346,7 @@ fn listen_for_scheduler_status<R: Runtime>(app: &AppHandle<R>, tray_state: TrayS
 /// Handle tray menu item clicks
 fn handle_tray_menu_event<R: Runtime>(app: &AppHandle<R>, event_id: &str) {
     if let Some(minutes) = event_id
-        .strip_prefix("pause_for_")
+        .strip_prefix(PAUSE_FOR_MENU_ID_PREFIX)
         .and_then(|value| value.parse::<u32>().ok())
     {
         pause_for_minutes(app, minutes).unwrap_or_else(|e| {
@@ -427,6 +445,7 @@ fn start_break_now<R: Runtime>(app: &AppHandle<R>, kind: BreakKind) -> Result<()
     Ok(())
 }
 
+/// Drop non-positive values, sort ascending, and remove duplicates
 fn sanitize_pause_durations(durations: &[u32]) -> Vec<u32> {
     let mut sanitized = durations
         .iter()
@@ -438,16 +457,64 @@ fn sanitize_pause_durations(durations: &[u32]) -> Vec<u32> {
     sanitized
 }
 
+/// Format a timed pause menu entry, e.g. "15 min"
 fn format_pause_duration(tray_text: &TrayStrings, minutes: u32) -> String {
     format!("{} {}", minutes, tray_text.minute_short)
 }
 
+/// Format the remaining time of a timed pause, rounded up to whole minutes
 fn format_timed_pause_remaining(tray_text: &TrayStrings, until: DateTime<Utc>) -> String {
-    let remaining_seconds = (until - Utc::now()).num_seconds().max(1);
-    let minutes = Duration::seconds(remaining_seconds + 59)
-        .num_minutes()
-        .max(1);
+    // max(1) keeps expired pauses at "1 min"; unsigned_abs is then a lossless
+    // i64 -> u64 conversion (signed div_ceil is unstable, `int_roundings`)
+    let remaining_seconds = (until - Utc::now()).num_seconds().max(1).unsigned_abs();
+    let minutes = remaining_seconds.div_ceil(60);
     tray_text
         .remaining_minutes
         .replace("{minutes}", &minutes.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use chrono::Duration;
+
+    use super::*;
+
+    #[test]
+    fn sanitize_pause_durations_sorts_dedups_and_drops_zero() {
+        assert_eq!(
+            sanitize_pause_durations(&[60, 15, 0, 30, 15]),
+            vec![15, 30, 60]
+        );
+        assert_eq!(sanitize_pause_durations(&[]), Vec::<u32>::new());
+        assert_eq!(sanitize_pause_durations(&[0]), Vec::<u32>::new());
+    }
+
+    #[test]
+    fn format_timed_pause_remaining_rounds_up_to_minutes() {
+        let tray_text = TrayStrings::default();
+
+        // 30 seconds left rounds up to 1 minute
+        let until = Utc::now() + Duration::seconds(30);
+        assert_eq!(
+            format_timed_pause_remaining(&tray_text, until),
+            "1 min left"
+        );
+
+        // A hair over 14 minutes rounds up to 15
+        let until = Utc::now() + Duration::seconds(14 * 60 + 5);
+        assert_eq!(
+            format_timed_pause_remaining(&tray_text, until),
+            "15 min left"
+        );
+    }
+
+    #[test]
+    fn format_timed_pause_remaining_clamps_expired_to_one_minute() {
+        let tray_text = TrayStrings::default();
+        let until = Utc::now() - Duration::minutes(5);
+        assert_eq!(
+            format_timed_pause_remaining(&tray_text, until),
+            "1 min left"
+        );
+    }
 }
