@@ -843,7 +843,7 @@ resetMiniBreakCounterOnPauseReasons = ["userIdle"]
 ### `trayPauseDurationsMinutes`
 - **Type**: Array of positive integers
 - **Default**: `[15, 30, 60]`
-- **Description**: Controls the timed pause durations shown in the system tray menu, in minutes. Selecting one pauses both break and attention reminders until the duration expires. Set this to an empty array (`[]`) to hide the timed pause submenu. Requires application restart to update the tray menu after editing.
+- **Description**: Controls the timed pause durations shown in the system tray menu, in minutes. Selecting one pauses both break and attention reminders until the duration expires. Entries are sorted ascending and deduplicated, and non-positive values are ignored. Set this to an empty array (`[]`) to hide the timed pause submenu. Requires application restart to update the tray menu after editing.
 
 Example:
 
