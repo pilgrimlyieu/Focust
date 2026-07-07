@@ -31,9 +31,6 @@ use crate::{cmd::SchedulerCmd, scheduler::PauseReason};
 /// Menu id prefix for timed pause items; the suffix carries the duration in minutes.
 const PAUSE_FOR_MENU_ID_PREFIX: &str = "pause_for_";
 
-/// Interval between tray menu refreshes while a timed pause countdown is shown.
-const COUNTDOWN_REFRESH_INTERVAL: StdDuration = StdDuration::from_mins(1);
-
 /// Global state to track scheduler pause status and tray reference for menu updates.
 #[derive(Clone)]
 pub struct TrayState {
@@ -258,8 +255,9 @@ fn build_pause_for_submenu<R: Runtime>(
 /// Spawn a task to handle tray menu updates
 ///
 /// While a timed pause countdown is displayed, the menu is additionally
-/// rebuilt once a minute so the remaining time stays fresh; otherwise the
-/// task sleeps until the next status-driven update arrives.
+/// rebuilt whenever the displayed minute is about to change, so the label
+/// always matches the wall-clock remaining time; otherwise the task sleeps
+/// until the next status-driven update arrives.
 fn spawn_tray_update_task<R: Runtime>(
     app_handle: AppHandle<R>,
     tray: TrayIcon<R>,
@@ -271,10 +269,13 @@ fn spawn_tray_update_task<R: Runtime>(
         let mut paused = false;
         let mut timed_pause_until = None;
         loop {
-            let update = if paused && timed_pause_until.is_some() {
+            let countdown_refresh = timed_pause_until
+                .filter(|_| paused)
+                .and_then(duration_until_next_minute_flip);
+            let update = if let Some(refresh_in) = countdown_refresh {
                 tokio::select! {
                     update = tray_rx.recv() => update,
-                    () = sleep(COUNTDOWN_REFRESH_INTERVAL) => Some(TrayUpdate::UpdateMenu {
+                    () = sleep(refresh_in) => Some(TrayUpdate::UpdateMenu {
                         paused,
                         timed_pause_until,
                     }),
@@ -475,6 +476,22 @@ fn format_timed_pause_remaining(tray_text: &TrayStrings, until: DateTime<Utc>) -
         .replace("{minutes}", &minutes.to_string())
 }
 
+/// Time until the countdown label rendered by [`format_timed_pause_remaining`]
+/// changes, or `None` once the pause has expired (no further refresh needed)
+///
+/// The label shows `ceil(remaining / 60)` minutes, so it flips exactly when
+/// the remaining time crosses a whole-minute boundary.
+fn duration_until_next_minute_flip(until: DateTime<Utc>) -> Option<StdDuration> {
+    let remaining_seconds = (until - Utc::now()).num_seconds();
+    if remaining_seconds <= 0 {
+        return None;
+    }
+    // At an exact boundary the label just flipped; sleep a full minute
+    let to_boundary = remaining_seconds.unsigned_abs() % 60;
+    let seconds = if to_boundary == 0 { 60 } else { to_boundary };
+    Some(StdDuration::from_secs(seconds))
+}
+
 #[cfg(test)]
 mod tests {
     use chrono::Duration;
@@ -518,5 +535,24 @@ mod tests {
             format_timed_pause_remaining(&tray_text, until),
             "1 min left"
         );
+    }
+
+    #[test]
+    fn next_minute_flip_matches_label_boundaries() {
+        // Mid-minute: sleep to the next whole-minute boundary
+        let until = Utc::now() + Duration::seconds(14 * 60 + 30);
+        let refresh_in = duration_until_next_minute_flip(until).unwrap();
+        assert!((29..=30).contains(&refresh_in.as_secs()), "{refresh_in:?}");
+
+        // Just after arming a whole-minute pause: close to a full minute
+        let until = Utc::now() + Duration::seconds(15 * 60);
+        let refresh_in = duration_until_next_minute_flip(until).unwrap();
+        assert!((59..=60).contains(&refresh_in.as_secs()), "{refresh_in:?}");
+    }
+
+    #[test]
+    fn next_minute_flip_stops_after_expiration() {
+        let until = Utc::now() - Duration::seconds(5);
+        assert_eq!(duration_until_next_minute_flip(until), None);
     }
 }
