@@ -1,8 +1,8 @@
-use chrono::{Duration, Utc};
+use chrono::{DateTime, Duration, Utc};
 use std::{future, pin::Pin, time::Duration as StdDuration};
 use tauri::{AppHandle, Emitter, Runtime};
 use tokio::sync::{mpsc, watch};
-use tokio::time::sleep;
+use tokio::time::{Instant, sleep_until};
 
 use super::attention_timer::AttentionTimer;
 use super::break_scheduler::BreakScheduler;
@@ -12,6 +12,79 @@ use super::shared_state::{SharedState, create_shared_state};
 use crate::scheduler::SchedulerEvent;
 
 type Timer = Pin<Box<dyn future::Future<Output = ()> + Send>>;
+
+/// Interval between re-checks of the timed pause deadline.
+///
+/// The monotonic clock backing tokio timers may stop during a system sleep,
+/// while the wall-clock deadline shown to the user keeps advancing. Re-checking
+/// both clocks at this interval bounds how long a timed pause can overshoot its
+/// wall-clock expiration after the system wakes up.
+const TIMED_PAUSE_RECHECK_INTERVAL: StdDuration = StdDuration::from_mins(1);
+
+/// Timer driving the expiration of a timed manual pause.
+///
+/// The pause expires when *either* clock reaches its deadline:
+/// - the monotonic deadline honors the requested runtime duration;
+/// - the wall-clock deadline (`timed_pause_until` in the shared state, checked
+///   on every tick) catches up after a system sleep, during which the
+///   monotonic clock may not advance.
+struct TimedPauseTimer {
+    /// Future awaited by the command broadcaster; pending forever when no
+    /// timed pause is armed.
+    sleep: Timer,
+    /// Monotonic deadline of the armed timed pause.
+    deadline: Option<Instant>,
+}
+
+impl TimedPauseTimer {
+    /// Create a timer with no armed timed pause.
+    fn inactive() -> Self {
+        Self {
+            sleep: Box::pin(future::pending()),
+            deadline: None,
+        }
+    }
+
+    /// Arm the timer to expire once `minutes` of runtime have elapsed.
+    fn arm(&mut self, minutes: u32) {
+        let deadline = Instant::now() + StdDuration::from_secs(u64::from(minutes) * 60);
+        self.deadline = Some(deadline);
+        self.sleep = Self::sleep_until_next_check(deadline);
+    }
+
+    /// Disarm the timer, e.g. when the timed pause is cleared by the user.
+    fn disarm(&mut self) {
+        *self = Self::inactive();
+    }
+
+    /// Handle a fired tick, returning `true` if the timed pause expired.
+    ///
+    /// If neither the monotonic nor the wall-clock deadline has been reached
+    /// yet, the timer re-arms itself for the next re-check.
+    fn on_tick(&mut self, wall_deadline: Option<DateTime<Utc>>) -> bool {
+        let Some(deadline) = self.deadline else {
+            // Tick fired without an armed deadline; treat as spurious.
+            self.disarm();
+            return false;
+        };
+
+        let monotonic_expired = Instant::now() >= deadline;
+        let wall_expired = wall_deadline.is_some_and(|until| Utc::now() >= until);
+        if monotonic_expired || wall_expired {
+            self.disarm();
+            return true;
+        }
+
+        self.sleep = Self::sleep_until_next_check(deadline);
+        false
+    }
+
+    /// Sleep until the deadline or the next re-check, whichever comes first.
+    fn sleep_until_next_check(deadline: Instant) -> Timer {
+        let next_check = deadline.min(Instant::now() + TIMED_PAUSE_RECHECK_INTERVAL);
+        Box::pin(sleep_until(next_check))
+    }
+}
 
 /// Top-level scheduler manager that coordinates break scheduling and attention timers
 pub struct SchedulerManager;
@@ -131,7 +204,7 @@ pub(crate) async fn broadcast_commands<R: Runtime>(
     shared_state: SharedState,
     app_handle: AppHandle<R>,
 ) {
-    let mut timed_pause_timer = inactive_timer();
+    let mut timed_pause_timer = TimedPauseTimer::inactive();
 
     loop {
         tokio::select! {
@@ -140,16 +213,17 @@ pub(crate) async fn broadcast_commands<R: Runtime>(
                 tracing::info!("Command broadcaster shutting down");
                 break;
             }
-            () = &mut timed_pause_timer => {
-                timed_pause_timer = inactive_timer();
-                shared_state.write().clear_timed_pause_until();
-                handle_resume_command(
-                    PauseReason::TimedManual,
-                    &shared_state,
-                    &break_cmd_tx,
-                    &attention_cmd_tx,
-                    &app_handle,
-                ).await;
+            () = &mut timed_pause_timer.sleep => {
+                let wall_deadline = shared_state.read().timed_pause_until();
+                if timed_pause_timer.on_tick(wall_deadline) {
+                    handle_resume_command(
+                        PauseReason::TimedManual,
+                        &shared_state,
+                        &break_cmd_tx,
+                        &attention_cmd_tx,
+                        &app_handle,
+                    ).await;
+                }
             }
             cmd = cmd_rx.recv() => {
                 let Some(cmd) = cmd else {
@@ -174,8 +248,7 @@ pub(crate) async fn broadcast_commands<R: Runtime>(
 
                     Command::Resume(reason) => {
                         if reason == PauseReason::TimedManual {
-                            timed_pause_timer = inactive_timer();
-                            shared_state.write().clear_timed_pause_until();
+                            timed_pause_timer.disarm();
                         }
                         handle_resume_command(
                             reason,
@@ -194,7 +267,7 @@ pub(crate) async fn broadcast_commands<R: Runtime>(
 
                         let until = Utc::now() + Duration::minutes(i64::from(minutes));
                         shared_state.write().set_timed_pause_until(until);
-                        timed_pause_timer = sleep_minutes(minutes);
+                        timed_pause_timer.arm(minutes);
 
                         handle_pause_command(
                             PauseReason::TimedManual,
@@ -234,14 +307,6 @@ pub(crate) async fn broadcast_commands<R: Runtime>(
     }
 }
 
-fn inactive_timer() -> Timer {
-    Box::pin(future::pending())
-}
-
-fn sleep_minutes(minutes: u32) -> Timer {
-    Box::pin(sleep(StdDuration::from_secs(u64::from(minutes) * 60)))
-}
-
 /// Handle Pause command: Update `SharedState` and forward if needed
 ///
 /// This implements the "add pause reason" logic:
@@ -266,7 +331,7 @@ async fn handle_pause_command<R: Runtime>(
             SchedulerStatus {
                 paused: true,
                 pause_reasons: state.pause_reasons(),
-                timed_pause_until: state.timed_pause_until().map(|until| until.to_rfc3339()),
+                timed_pause_until: state.timed_pause_until_rfc3339(),
                 next_event: None,
                 mini_break_counter: 0, // Counter is not relevant when paused
             }
@@ -321,7 +386,7 @@ fn emit_paused_status<R: Runtime>(app_handle: &AppHandle<R>, shared_state: &Shar
         SchedulerStatus {
             paused: state.is_paused(),
             pause_reasons: state.pause_reasons(),
-            timed_pause_until: state.timed_pause_until().map(|until| until.to_rfc3339()),
+            timed_pause_until: state.timed_pause_until_rfc3339(),
             next_event: None,
             mini_break_counter: 0,
         }

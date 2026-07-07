@@ -270,19 +270,24 @@ impl SharedSchedulerState {
     }
 
     /// Set the expiration time for the active timed manual pause.
+    ///
+    /// Cleared automatically when the [`PauseReason::TimedManual`] reason is
+    /// removed via [`Self::remove_pause_reason`].
     pub fn set_timed_pause_until(&mut self, until: DateTime<Utc>) {
         self.timed_pause_until = Some(until);
-    }
-
-    /// Clear any active timed manual pause expiration time.
-    pub fn clear_timed_pause_until(&mut self) {
-        self.timed_pause_until = None;
     }
 
     /// Get the expiration time for the active timed manual pause.
     #[must_use]
     pub fn timed_pause_until(&self) -> Option<DateTime<Utc>> {
         self.timed_pause_until
+    }
+
+    /// RFC 3339 form of the timed pause expiration, as carried by
+    /// [`SchedulerStatus`](super::models::SchedulerStatus).
+    #[must_use]
+    pub fn timed_pause_until_rfc3339(&self) -> Option<String> {
+        self.timed_pause_until.map(|until| until.to_rfc3339())
     }
 
     /// Check if in any session (break or attention)
@@ -451,6 +456,32 @@ mod tests {
         // Remove a reason that wasn't added
         assert!(!state.remove_pause_reason(PauseReason::Dnd));
         assert!(state.is_paused()); // Still paused by UserIdle
+    }
+
+    #[test]
+    fn timed_pause_until_cleared_with_reason() {
+        let mut state = SharedSchedulerState::new();
+
+        state.add_pause_reason(PauseReason::TimedManual);
+        state.set_timed_pause_until(Utc::now() + chrono::Duration::minutes(15));
+        assert!(state.timed_pause_until().is_some());
+
+        // Removing the TimedManual reason must clear the expiration time
+        state.remove_pause_reason(PauseReason::TimedManual);
+        assert!(state.timed_pause_until().is_none());
+    }
+
+    #[test]
+    fn timed_pause_until_survives_other_reason_removal() {
+        let mut state = SharedSchedulerState::new();
+
+        state.add_pause_reason(PauseReason::TimedManual);
+        state.add_pause_reason(PauseReason::Dnd);
+        state.set_timed_pause_until(Utc::now() + chrono::Duration::minutes(15));
+
+        // Removing an unrelated reason must not touch the expiration time
+        state.remove_pause_reason(PauseReason::Dnd);
+        assert!(state.timed_pause_until().is_some());
     }
 
     #[test]

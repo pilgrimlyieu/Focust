@@ -603,7 +603,7 @@ where
         let status = SchedulerStatus {
             paused: false,
             pause_reasons: state.pause_reasons(),
-            timed_pause_until: state.timed_pause_until().map(|until| until.to_rfc3339()),
+            timed_pause_until: state.timed_pause_until_rfc3339(),
             next_event: Some(SchedulerEventInfo {
                 kind: break_info.event,
                 time: break_info.break_time.to_rfc3339(),
@@ -626,7 +626,7 @@ where
         let status = SchedulerStatus {
             paused,
             pause_reasons: state.pause_reasons(),
-            timed_pause_until: state.timed_pause_until().map(|until| until.to_rfc3339()),
+            timed_pause_until: state.timed_pause_until_rfc3339(),
             next_event: None,
             mini_break_counter: self.mini_break_counter,
         };
