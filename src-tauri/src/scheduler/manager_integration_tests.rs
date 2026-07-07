@@ -403,6 +403,71 @@ async fn timed_pause_status_includes_expiration() {
     drop(env.shutdown_tx);
 }
 
+/// **M1.10: Resume User Pauses Clears Manual and Timed Manual**
+///
+/// A single `ResumeUserPauses` command should clear both user-started pause
+/// reasons at once while leaving environment-driven reasons active.
+#[tokio::test(start_paused = true)]
+async fn resume_user_pauses_clears_manual_and_timed() {
+    let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
+
+    let env = create_manager_test_env(config);
+    let (cmd_tx, cmd_rx) = mpsc::channel(32);
+
+    spawn_test_manager(&env, cmd_rx).await;
+    advance_time_and_yield(duration_ms(200)).await;
+
+    cmd_tx
+        .send(Command::Pause(PauseReason::Manual))
+        .await
+        .unwrap();
+    cmd_tx.send(Command::PauseForMinutes(30)).await.unwrap();
+    cmd_tx.send(Command::Pause(PauseReason::Dnd)).await.unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+
+    cmd_tx.send(Command::ResumeUserPauses).await.unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+
+    // Only the environment-driven reason remains
+    {
+        let state = env.shared_state.read();
+        assert!(state.is_paused());
+        assert_eq!(state.pause_reasons(), vec![PauseReason::Dnd]);
+        assert!(state.timed_pause_until().is_none());
+    }
+
+    cmd_tx
+        .send(Command::Resume(PauseReason::Dnd))
+        .await
+        .unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+
+    assert!(!env.shared_state.read().is_paused());
+
+    drop(cmd_tx);
+    drop(env.shutdown_tx);
+}
+
+/// **M1.11: Resume User Pauses Without Any Pause - No-Op**
+#[tokio::test(start_paused = true)]
+async fn resume_user_pauses_when_running_is_noop() {
+    let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
+
+    let env = create_manager_test_env(config);
+    let (cmd_tx, cmd_rx) = mpsc::channel(32);
+
+    spawn_test_manager(&env, cmd_rx).await;
+    advance_time_and_yield(duration_ms(200)).await;
+
+    cmd_tx.send(Command::ResumeUserPauses).await.unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+
+    assert!(!env.shared_state.read().is_paused());
+
+    drop(cmd_tx);
+    drop(env.shutdown_tx);
+}
+
 // ============================================================================
 // Pause Reason Priority Tests
 // ============================================================================

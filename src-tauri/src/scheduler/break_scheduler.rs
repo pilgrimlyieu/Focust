@@ -447,7 +447,8 @@ where
             Command::RequestBreakStatus => {
                 self.handle_request_break_status_command();
             }
-            Command::PauseForMinutes(_) => {}
+            // Translated into Pause/Resume by the manager, never forwarded here
+            Command::PauseForMinutes(_) | Command::ResumeUserPauses => {}
         }
     }
 

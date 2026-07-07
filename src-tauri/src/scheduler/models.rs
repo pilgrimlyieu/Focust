@@ -90,6 +90,8 @@ pub enum Command {
     Pause(PauseReason),
     /// Resume the break scheduler
     Resume(PauseReason),
+    /// Resume by clearing all user-started pauses (manual and timed manual)
+    ResumeUserPauses,
     /// Pause reminders for a bounded number of minutes
     PauseForMinutes(u32),
     /// Postpone the current break
@@ -112,6 +114,7 @@ impl Display for Command {
             Command::UpdateConfig(_) => write!(f, "UpdateConfig"),
             Command::Pause(reason) => write!(f, "Pause({reason})"),
             Command::Resume(reason) => write!(f, "Resume({reason})"),
+            Command::ResumeUserPauses => write!(f, "ResumeUserPauses"),
             Command::PauseForMinutes(minutes) => write!(f, "PauseForMinutes({minutes})"),
             Command::PostponeBreak => write!(f, "PostponeBreak"),
             Command::TriggerEvent(event) => write!(f, "TriggerBreak({event})"),
@@ -152,6 +155,16 @@ pub enum PauseReason {
     Manual,
     TimedManual,
     AppExclusion,
+}
+
+impl PauseReason {
+    /// Pause reasons started by an explicit user action.
+    ///
+    /// A user-facing "Resume" clears all of them at once (see
+    /// [`Command::ResumeUserPauses`]), while environment-driven reasons such
+    /// as DND or idle stay active until their monitor clears them. Mirrored by
+    /// `USER_CLEARABLE_PAUSE_REASONS` in the frontend scheduler store.
+    pub const USER_CLEARABLE: [PauseReason; 2] = [PauseReason::Manual, PauseReason::TimedManual];
 }
 
 bitflags! {

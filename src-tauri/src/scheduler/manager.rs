@@ -170,6 +170,7 @@ impl SchedulerManager {
 /// These commands affect global state and all schedulers:
 /// - **Pause(reason)**: Updates [`SharedState`], forwards to all schedulers
 /// - **Resume(reason)**: Updates [`SharedState`], forwards only if all reasons cleared
+/// - **`ResumeUserPauses`**: Clears all user-started pause reasons in one step
 /// - **`PauseForMinutes(minutes)`**: Sets a timed manual pause and schedules expiration
 ///
 /// Flow: Command → Update [`SharedState`] → Forward to schedulers → Emit events
@@ -259,6 +260,16 @@ pub(crate) async fn broadcast_commands<R: Runtime>(
                         ).await;
                     }
 
+                    Command::ResumeUserPauses => {
+                        timed_pause_timer.disarm();
+                        handle_resume_user_pauses(
+                            &shared_state,
+                            &break_cmd_tx,
+                            &attention_cmd_tx,
+                            &app_handle,
+                        ).await;
+                    }
+
                     Command::PauseForMinutes(minutes) => {
                         if minutes == 0 {
                             tracing::warn!("Ignoring timed pause with zero duration");
@@ -326,17 +337,7 @@ async fn handle_pause_command<R: Runtime>(
         tracing::info!("Scheduler paused (first reason: {reason})");
 
         // Emit events for frontend
-        let status = {
-            let state = shared_state.read();
-            SchedulerStatus {
-                paused: true,
-                pause_reasons: state.pause_reasons(),
-                timed_pause_until: state.timed_pause_until_rfc3339(),
-                next_event: None,
-                mini_break_counter: 0, // Counter is not relevant when paused
-            }
-        };
-        let _ = app_handle.emit("scheduler-status", &status);
+        emit_paused_status(app_handle, shared_state);
         let _ = app_handle.emit("scheduler-paused", ());
 
         // Forward to all schedulers to update their internal state
@@ -364,15 +365,7 @@ async fn handle_resume_command<R: Runtime>(
     let should_resume = shared_state.write().remove_pause_reason(reason);
 
     if should_resume {
-        // State transition: Paused → Running
-        tracing::info!("Scheduler resumed (all pause reasons cleared)");
-
-        // Emit resume event (schedulers will emit detailed status)
-        let _ = app_handle.emit("scheduler-resumed", ());
-
-        // Forward to all schedulers to recalculate next events
-        let _ = break_cmd_tx.send(Command::Resume(reason)).await;
-        let _ = attention_cmd_tx.send(Command::Resume(reason)).await;
+        resume_schedulers(reason, break_cmd_tx, attention_cmd_tx, app_handle).await;
     } else {
         // Still paused (other reasons remain)
         tracing::debug!("Removed pause reason {reason} (still paused)");
@@ -380,6 +373,66 @@ async fn handle_resume_command<R: Runtime>(
     }
 }
 
+/// Handle `ResumeUserPauses` command: clear all user-started pause reasons
+///
+/// Removes every reason in [`PauseReason::USER_CLEARABLE`] in one step, so a
+/// single user-facing "Resume" click cannot leave a stale manual or timed
+/// manual pause behind. Environment-driven reasons (DND, idle, app exclusion)
+/// are untouched and keep the scheduler paused if active.
+async fn handle_resume_user_pauses<R: Runtime>(
+    shared_state: &SharedState,
+    break_cmd_tx: &mpsc::Sender<Command>,
+    attention_cmd_tx: &mpsc::Sender<Command>,
+    app_handle: &AppHandle<R>,
+) {
+    let should_resume = {
+        let mut state = shared_state.write();
+        let was_paused = state.is_paused();
+        for reason in PauseReason::USER_CLEARABLE {
+            state.remove_pause_reason(reason);
+        }
+        was_paused && !state.is_paused()
+    };
+
+    if should_resume {
+        // Schedulers resume unconditionally, the forwarded reason is informational
+        resume_schedulers(
+            PauseReason::Manual,
+            break_cmd_tx,
+            attention_cmd_tx,
+            app_handle,
+        )
+        .await;
+    } else {
+        // Still paused (environment-driven reasons remain)
+        tracing::debug!("Cleared user pauses (still paused)");
+        emit_paused_status(app_handle, shared_state);
+    }
+}
+
+/// Complete the Paused → Running transition: emit events and forward Resume
+async fn resume_schedulers<R: Runtime>(
+    reason: PauseReason,
+    break_cmd_tx: &mpsc::Sender<Command>,
+    attention_cmd_tx: &mpsc::Sender<Command>,
+    app_handle: &AppHandle<R>,
+) {
+    tracing::info!("Scheduler resumed (all pause reasons cleared)");
+
+    // Emit resume event (schedulers will emit detailed status)
+    let _ = app_handle.emit("scheduler-resumed", ());
+
+    // Forward to all schedulers to recalculate next events
+    let _ = break_cmd_tx.send(Command::Resume(reason)).await;
+    let _ = attention_cmd_tx.send(Command::Resume(reason)).await;
+}
+
+/// Emit a `scheduler-status` snapshot of the current pause state
+///
+/// Used whenever the pause reason set changes without a Running/Paused
+/// transition, and for the paused half of the transition itself. The
+/// mini-break counter is not tracked here; `BreakScheduler` emits statuses
+/// with the real counter while running.
 fn emit_paused_status<R: Runtime>(app_handle: &AppHandle<R>, shared_state: &SharedState) {
     let status = {
         let state = shared_state.read();

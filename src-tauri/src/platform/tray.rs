@@ -392,13 +392,10 @@ fn toggle_pause<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {
     };
 
     if is_paused {
-        // Currently paused, send resume command
+        // Currently paused, clear all user-started pauses
         scheduler_cmd
-            .try_send(Command::Resume(PauseReason::Manual))
+            .try_send(Command::ResumeUserPauses)
             .map_err(|e| format!("Failed to send resume command: {e}"))?;
-        scheduler_cmd
-            .try_send(Command::Resume(PauseReason::TimedManual))
-            .map_err(|e| format!("Failed to send timed resume command: {e}"))?;
         tracing::info!("Resume sent from tray menu");
     } else {
         // Currently running, send pause command
