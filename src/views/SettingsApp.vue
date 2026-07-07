@@ -51,7 +51,10 @@ import SlidersIcon from "@/components/icons/SlidersIcon.vue";
 import type { ToastKind } from "@/composables/useToast";
 import { useToast } from "@/composables/useToast";
 import { useConfigStore } from "@/stores/config";
-import { useSchedulerStore } from "@/stores/scheduler";
+import {
+  isUserClearablePauseReason,
+  useSchedulerStore,
+} from "@/stores/scheduler";
 import type { PauseReason } from "@/types";
 import {
   isSchedulerAttention,
@@ -83,7 +86,7 @@ const isLoading = computed(() => configStore.loading);
 
 const schedulerPaused = computed(() => schedulerStore.schedulerPaused);
 const pauseReasons = computed(() => schedulerStore.pauseReasons);
-const hasManualPause = computed(() => schedulerStore.hasManualPause);
+const hasUserPause = computed(() => schedulerStore.hasUserPause);
 const schedulerStatus = computed(() => schedulerStore.schedulerStatus);
 
 // Format pause reasons for display
@@ -93,6 +96,23 @@ const pauseReasonsText = computed(() => {
     .map((reason: PauseReason) => t(`pauseReason.${reason}`))
     .join(", ");
 });
+
+function formatRemainingSeconds(seconds: number) {
+  const clampedSeconds = Math.max(0, seconds);
+  const hours = Math.floor(clampedSeconds / 3600);
+  const minutes = Math.floor((clampedSeconds % 3600) / 60);
+
+  if (hours > 0) {
+    return t("general.hoursMinutes", { hours, minutes });
+  }
+  if (minutes >= 2) {
+    return t("general.minutesRemaining", { minutes });
+  }
+  if (clampedSeconds > 0) {
+    return t("general.secondsRemaining", { seconds: clampedSeconds });
+  }
+  return t("general.imminent");
+}
 
 // Track the base time when status was received
 const statusReceivedTime = ref<number>(Date.now());
@@ -158,27 +178,31 @@ const nextBreakInfo = computed(() => {
     kindStr = t("break.attention");
   }
 
-  // Format time remaining in a human-readable way
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-
-  let timeStr = "";
-  if (hours > 0) {
-    timeStr = t("general.hoursMinutes", { hours, minutes });
-  } else if (minutes >= 2) {
-    // Show minutes for 2+ minutes
-    timeStr = t("general.minutesRemaining", { minutes });
-  } else if (seconds > 0) {
-    // Show seconds for less than 2 minutes
-    timeStr = t("general.secondsRemaining", { seconds });
-  } else {
-    timeStr = t("general.imminent");
-  }
-
   return {
     kind: kindStr,
-    timeRemaining: timeStr,
+    timeRemaining: formatRemainingSeconds(seconds),
   };
+});
+
+const timedPauseRemainingText = computed(() => {
+  const until = schedulerStatus.value?.timedPauseUntil;
+  if (!until) {
+    return "";
+  }
+
+  const untilMs = Date.parse(until);
+  if (!Number.isFinite(untilMs)) {
+    return "";
+  }
+
+  const seconds = Math.max(0, Math.ceil((untilMs - currentTime.value) / 1000));
+  if (seconds <= 0) {
+    return "";
+  }
+
+  return t("general.timedPauseRemaining", {
+    time: formatRemainingSeconds(seconds),
+  });
 });
 
 /**
@@ -216,12 +240,12 @@ async function togglePause() {
       // State will be updated via scheduler-status event
 
       // If there are non-manual pause reasons, inform the user
-      if (pauseReasons.value.length > 0 && !hasManualPause.value) {
+      if (pauseReasons.value.length > 0 && !hasUserPause.value) {
         show("info", t("general.pausedResumeHint"), 4000);
       } else if (pauseReasons.value.length > 1) {
         // Removed manual pause but others remain
         const remaining = pauseReasons.value
-          .filter((r: PauseReason) => r !== "manual")
+          .filter((r: PauseReason) => !isUserClearablePauseReason(r))
           .map((r: PauseReason) => t(`pauseReason.${r}`))
           .join(", ");
         show("info", t("general.pausedDueTo", { reasons: remaining }), 4000);
@@ -289,7 +313,7 @@ defineExpose({
   handlePostpone,
   handleReset,
   handleSave,
-  hasManualPause,
+  hasUserPause,
   isDirty,
   isLoading,
   isSaving,
@@ -297,6 +321,7 @@ defineExpose({
   pauseReasonsText,
   schedulerPaused,
   tabs,
+  timedPauseRemainingText,
   toasts,
   togglePause,
 });
@@ -321,6 +346,9 @@ defineExpose({
                   <span v-if="pauseReasonsText" class="text-xs opacity-80">
                     {{ t("general.pausedDueTo", { reasons: pauseReasonsText }) }}
                   </span>
+                  <span v-if="timedPauseRemainingText" class="text-xs opacity-80">
+                    {{ timedPauseRemainingText }}
+                  </span>
                 </span>
               </span>
               <span v-else-if="nextBreakInfo" class="flex items-center gap-1">
@@ -337,7 +365,7 @@ defineExpose({
 
         <!-- Actions -->
         <div class="flex flex-wrap items-center gap-2">
-          <div class="tooltip" :data-tip="schedulerPaused && !hasManualPause ? t('general.pausedResumeHint') : ''">
+          <div class="tooltip" :data-tip="schedulerPaused && !hasUserPause ? t('general.pausedResumeHint') : ''">
             <button class="btn btn-sm gap-2 btn-ghost hover:btn-primary" :class="{ 'btn-active': schedulerPaused }"
               @click="togglePause">
               <PlayIcon v-if="schedulerPaused" class-name="h-4 w-4" />

@@ -4,10 +4,13 @@
       "show": "Einstellungen anzeigen",
       "pause": "Pausen pausieren",
       "resume": "Pausen fortsetzen",
+      "pauseFor": "Pausieren für",
       "startBreakNow": "Pause jetzt starten",
       "restart": "Neu starten",
       "quit": "Beenden",
-      "tooltip": "Focust - Pausenerinnerung"
+      "tooltip": "Focust - Pausenerinnerung",
+      "durationMinutes": "{minutes} min",
+      "remainingMinutes": "{minutes} min übrig"
     },
     "notification": {
       "miniBreak": "Mini-Pause",
@@ -22,10 +25,13 @@
       "show": "Show Settings",
       "pause": "Pause Breaks",
       "resume": "Resume Breaks",
+      "pauseFor": "Pause for",
       "startBreakNow": "Start Break Now",
       "restart": "Restart",
       "quit": "Quit",
-      "tooltip": "Focust - Break Reminder"
+      "tooltip": "Focust - Break Reminder",
+      "durationMinutes": "{minutes} min",
+      "remainingMinutes": "{minutes} min left"
     },
     "notification": {
       "miniBreak": "Mini Break",
@@ -40,10 +46,13 @@
       "show": "Mostrar configuración",
       "pause": "Pausar descansos",
       "resume": "Reanudar descansos",
+      "pauseFor": "Pausar por",
       "startBreakNow": "Iniciar descanso ahora",
       "restart": "Reiniciar",
       "quit": "Salir",
-      "tooltip": "Focust - Recordatorio de descanso"
+      "tooltip": "Focust - Recordatorio de descanso",
+      "durationMinutes": "{minutes} min",
+      "remainingMinutes": "quedan {minutes} min"
     },
     "notification": {
       "miniBreak": "Descanso mini",
@@ -58,10 +67,13 @@
       "show": "Afficher les paramètres",
       "pause": "Suspendre les pauses",
       "resume": "Reprendre les pauses",
+      "pauseFor": "Suspendre pendant",
       "startBreakNow": "Commencer une pause maintenant",
       "restart": "Redémarrer",
       "quit": "Quitter",
-      "tooltip": "Focust - Rappel de pause"
+      "tooltip": "Focust - Rappel de pause",
+      "durationMinutes": "{minutes} min",
+      "remainingMinutes": "{minutes} min restantes"
     },
     "notification": {
       "miniBreak": "Mini-pause",
@@ -76,10 +88,13 @@
       "show": "Mostra impostazioni",
       "pause": "Pausa pause",
       "resume": "Riprendi pause",
+      "pauseFor": "Pausa per",
       "startBreakNow": "Avvia pausa ora",
       "restart": "Riavvia",
       "quit": "Esci",
-      "tooltip": "Focust - Promemoria pausa"
+      "tooltip": "Focust - Promemoria pausa",
+      "durationMinutes": "{minutes} min",
+      "remainingMinutes": "{minutes} min rimanenti"
     },
     "notification": {
       "miniBreak": "Mini pausa",
@@ -94,10 +109,13 @@
       "show": "設定を表示",
       "pause": "休憩を一時停止",
       "resume": "休憩を再開",
+      "pauseFor": "一時停止",
       "startBreakNow": "今すぐ休憩を開始",
       "restart": "再起動",
       "quit": "終了",
-      "tooltip": "Focust - 休憩リマインダー"
+      "tooltip": "Focust - 休憩リマインダー",
+      "durationMinutes": "{minutes}分",
+      "remainingMinutes": "残り{minutes}分"
     },
     "notification": {
       "miniBreak": "ミニ休憩",
@@ -112,10 +130,13 @@
       "show": "설정 표시",
       "pause": "휴식 일시 정지",
       "resume": "휴식 재개",
+      "pauseFor": "일시 정지",
       "startBreakNow": "지금 휴식 시작",
       "restart": "다시 시작",
       "quit": "종료",
-      "tooltip": "Focust - 휴식 알림"
+      "tooltip": "Focust - 휴식 알림",
+      "durationMinutes": "{minutes}분",
+      "remainingMinutes": "{minutes}분 남음"
     },
     "notification": {
       "miniBreak": "미니 휴식",
@@ -130,10 +151,13 @@
       "show": "Mostrar configurações",
       "pause": "Pausar pausas",
       "resume": "Retomar pausas",
+      "pauseFor": "Pausar por",
       "startBreakNow": "Iniciar pausa agora",
       "restart": "Reiniciar",
       "quit": "Sair",
-      "tooltip": "Focust - Lembrete de pausa"
+      "tooltip": "Focust - Lembrete de pausa",
+      "durationMinutes": "{minutes} min",
+      "remainingMinutes": "{minutes} min restantes"
     },
     "notification": {
       "miniBreak": "Mini pausa",
@@ -148,10 +172,13 @@
       "show": "Показать настройки",
       "pause": "Приостановить перерывы",
       "resume": "Возобновить перерывы",
+      "pauseFor": "Приостановить на",
       "startBreakNow": "Начать перерыв сейчас",
       "restart": "Перезапустить",
       "quit": "Выход",
-      "tooltip": "Focust - Напоминание о перерыве"
+      "tooltip": "Focust - Напоминание о перерыве",
+      "durationMinutes": "{minutes} мин",
+      "remainingMinutes": "осталось {minutes} мин"
     },
     "notification": {
       "miniBreak": "Мини-перерыв",
@@ -166,10 +193,13 @@
       "show": "显示设置",
       "pause": "暂停休息",
       "resume": "恢复休息",
+      "pauseFor": "暂停",
       "startBreakNow": "立即开始休息",
       "restart": "重启",
       "quit": "退出",
-      "tooltip": "Focust - 休息提醒"
+      "tooltip": "Focust - 休息提醒",
+      "durationMinutes": "{minutes} 分钟",
+      "remainingMinutes": "剩余 {minutes} 分钟"
     },
     "notification": {
       "miniBreak": "短休息",

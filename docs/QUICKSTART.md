@@ -95,6 +95,7 @@ Focust lives in your system tray (notification area):
 - **Right click**: Menu with options:
   - Show Settings
   - Pause/Resume
+  - Pause for → 15 min / 30 min / 60 min (configurable, auto-resumes when time is up)
   - Start Break Now → Mini Break / Long Break
   - Quit
 

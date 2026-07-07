@@ -163,7 +163,8 @@ bitflags! {
         const USER_IDLE     = 1 << 0;
         const DND           = 1 << 1;
         const MANUAL        = 1 << 2;
-        const APP_EXCLUSION = 1 << 3;
+        const TIMED_MANUAL  = 1 << 3;
+        const APP_EXCLUSION = 1 << 4;
     }
 }
 ```

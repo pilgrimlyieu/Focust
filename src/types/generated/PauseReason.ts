@@ -3,4 +3,4 @@
 /**
  * Reason for pausing the scheduler
  */
-export type PauseReason = "userIdle" | "dnd" | "manual" | "appExclusion";
+export type PauseReason = "userIdle" | "dnd" | "manual" | "timedManual" | "appExclusion";

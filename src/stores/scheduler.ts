@@ -4,6 +4,15 @@ import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 import type { PauseReason, SchedulerStatus } from "@/types";
 
+const USER_CLEARABLE_PAUSE_REASONS = new Set<PauseReason>([
+  "manual",
+  "timedManual",
+]);
+
+export function isUserClearablePauseReason(reason: PauseReason) {
+  return USER_CLEARABLE_PAUSE_REASONS.has(reason);
+}
+
 /** Scheduler store to handle status updates */
 export const useSchedulerStore = defineStore("scheduler", () => {
   const initialized = ref(false); // Initialization flag
@@ -11,8 +20,10 @@ export const useSchedulerStore = defineStore("scheduler", () => {
   const pauseReasons = ref<PauseReason[]>([]); // Active pause reasons
   const schedulerStatus = ref<SchedulerStatus | null>(null); // Scheduler status
 
-  // Check if paused due to manual reason
-  const hasManualPause = computed(() => pauseReasons.value.includes("manual"));
+  // Check if paused by a user action that can be cleared from the UI.
+  const hasUserPause = computed(() =>
+    pauseReasons.value.some(isUserClearablePauseReason),
+  );
 
   /** Initialize scheduler store and set up event listeners */
   async function init() {
@@ -47,7 +58,7 @@ export const useSchedulerStore = defineStore("scheduler", () => {
   }
 
   return {
-    hasManualPause,
+    hasUserPause,
     init,
     pauseReasons,
     schedulerPaused,

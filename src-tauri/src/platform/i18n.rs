@@ -16,15 +16,18 @@ pub struct LanguageStrings {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 pub struct TrayStrings {
     pub show: String,
     pub pause: String,
     pub resume: String,
+    pub pause_for: String,
     pub start_break_now: String,
     pub restart: String,
     pub quit: String,
     pub tooltip: String,
+    pub duration_minutes: String,
+    pub remaining_minutes: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -43,10 +46,13 @@ impl Default for TrayStrings {
             show: "Show Settings".to_owned(),
             pause: "Pause Breaks".to_owned(),
             resume: "Resume Breaks".to_owned(),
+            pause_for: "Pause for".to_owned(),
             start_break_now: "Start Break Now".to_owned(),
             restart: "Restart".to_owned(),
             quit: "Quit".to_owned(),
             tooltip: "Focust - Break Reminder".to_owned(),
+            duration_minutes: "{minutes} min".to_owned(),
+            remaining_minutes: "{minutes} min left".to_owned(),
         }
     }
 }

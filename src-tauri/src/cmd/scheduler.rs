@@ -81,7 +81,10 @@ pub async fn pause_scheduler(state: State<'_, SchedulerCmd>) -> Result<(), Strin
         .map_err(|e| e.to_string())
 }
 
-/// Resumes the scheduler from manual pause.
+/// Resumes the scheduler from user-started pauses.
+///
+/// Clears both ordinary manual pause and timed manual pause. Environment-driven
+/// pause reasons such as DND, idle, and app exclusion remain active.
 ///
 /// # Errors
 ///
@@ -89,7 +92,7 @@ pub async fn pause_scheduler(state: State<'_, SchedulerCmd>) -> Result<(), Strin
 #[tauri::command]
 pub async fn resume_scheduler(state: State<'_, SchedulerCmd>) -> Result<(), String> {
     state
-        .send(Command::Resume(PauseReason::Manual))
+        .send(Command::ResumeUserPauses)
         .await
         .map_err(|e| e.to_string())
 }

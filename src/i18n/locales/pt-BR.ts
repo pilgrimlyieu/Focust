@@ -195,7 +195,7 @@ const ptBR: LocaleStrings = {
     notification: "Notificação",
     paused: "Agendador pausado",
     pausedDueTo: "Pausado devido a: {reasons}",
-    pausedResumeHint: "O botão Retomar remove apenas a pausa manual",
+    pausedResumeHint: "Retomar remove apenas pausas iniciadas pelo usuário",
     postponeHint: "Adiar empurra a próxima pausa pela duração configurada",
     postponeShortcut: "Atalho de adiamento",
     postponeShortcutHint:
@@ -213,6 +213,7 @@ const ptBR: LocaleStrings = {
     themeModeDark: "Escuro",
     themeModeLight: "Claro",
     themeModeSystem: "Sistema",
+    timedPauseRemaining: "retoma em {time}",
     timerSettings: "Temporizador e detecção",
     title: "Configurações gerais",
     uiSettings: "Interface e exibição",
@@ -231,6 +232,7 @@ const ptBR: LocaleStrings = {
     appExclusion: "Exclusão de aplicativo",
     dnd: "Não perturbe",
     manual: "Manual",
+    timedManual: "Manual temporizado",
     userIdle: "Usuário inativo",
   },
   schedule: {

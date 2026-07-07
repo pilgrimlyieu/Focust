@@ -257,7 +257,7 @@ async fn update_attention_config() {
     // Update config with different attention time
     let new_config = config_with_attention(14, 0, true, all_weekdays());
     cmd_tx
-        .send(Command::UpdateConfig(new_config))
+        .send(Command::UpdateConfig(Box::new(new_config)))
         .await
         .unwrap();
     advance_time_and_yield(duration_ms(200)).await;
@@ -298,7 +298,7 @@ async fn add_new_attention() {
     });
 
     cmd_tx
-        .send(Command::UpdateConfig(new_config))
+        .send(Command::UpdateConfig(Box::new(new_config)))
         .await
         .unwrap();
     advance_time_and_yield(duration_ms(200)).await;
@@ -329,7 +329,7 @@ async fn remove_all_attentions() {
     new_config.attentions = vec![];
 
     cmd_tx
-        .send(Command::UpdateConfig(new_config))
+        .send(Command::UpdateConfig(Box::new(new_config)))
         .await
         .unwrap();
     advance_time_and_yield(duration_ms(200)).await;

@@ -196,7 +196,7 @@ const esES: LocaleStrings = {
     notification: "Notificación",
     paused: "Programador pausado",
     pausedDueTo: "Pausado debido a: {reasons}",
-    pausedResumeHint: "El botón Reanudar solo elimina la pausa manual",
+    pausedResumeHint: "Reanudar solo elimina pausas iniciadas por el usuario",
     postponeHint:
       "Posponer retrasa el siguiente descanso por la duración configurada",
     postponeShortcut: "Atajo de posponer",
@@ -214,6 +214,7 @@ const esES: LocaleStrings = {
     themeModeDark: "Oscuro",
     themeModeLight: "Claro",
     themeModeSystem: "Sistema",
+    timedPauseRemaining: "se reanuda en {time}",
     timerSettings: "Temporizador y detección",
     title: "Configuración general",
     uiSettings: "Interfaz y visualización",
@@ -232,6 +233,7 @@ const esES: LocaleStrings = {
     appExclusion: "Exclusión de aplicación",
     dnd: "No molestar",
     manual: "Manual",
+    timedManual: "Manual temporizado",
     userIdle: "Usuario inactivo",
   },
   schedule: {

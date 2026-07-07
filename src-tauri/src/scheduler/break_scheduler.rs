@@ -442,11 +442,13 @@ where
                 self.handle_trigger_break_now_command(kind).await;
             }
             Command::UpdateConfig(new_config) => {
-                self.handle_update_config_command(new_config).await;
+                self.handle_update_config_command(*new_config).await;
             }
             Command::RequestBreakStatus => {
                 self.handle_request_break_status_command();
             }
+            // Translated into Pause/Resume by the manager, never forwarded here
+            Command::PauseForMinutes(_) | Command::ResumeUserPauses => {}
         }
     }
 
@@ -598,9 +600,11 @@ where
     /// Emit current break status to frontend
     fn emit_break_status(&self, break_info: &BreakInfo) {
         let duration_to_wait = break_info.break_time - Utc::now();
+        let state = self.shared_state.read();
         let status = SchedulerStatus {
             paused: false,
-            pause_reasons: self.shared_state.read().pause_reasons(),
+            pause_reasons: state.pause_reasons(),
+            timed_pause_until: state.timed_pause_until_rfc3339(),
             next_event: Some(SchedulerEventInfo {
                 kind: break_info.event,
                 time: break_info.break_time.to_rfc3339(),
@@ -608,6 +612,7 @@ where
             }),
             mini_break_counter: self.mini_break_counter,
         };
+        drop(state);
 
         self.event_emitter
             .emit("scheduler-status", &status)
@@ -618,12 +623,15 @@ where
 
     /// Emit paused status to frontend
     fn emit_paused_status(&self, paused: bool) {
+        let state = self.shared_state.read();
         let status = SchedulerStatus {
             paused,
-            pause_reasons: self.shared_state.read().pause_reasons(),
+            pause_reasons: state.pause_reasons(),
+            timed_pause_until: state.timed_pause_until_rfc3339(),
             next_event: None,
             mini_break_counter: self.mini_break_counter,
         };
+        drop(state);
 
         self.event_emitter
             .emit("scheduler-status", &status)
@@ -692,7 +700,7 @@ where
             PauseReason::UserIdle | PauseReason::Dnd | PauseReason::AppExclusion => {
                 self.reset_last_break_time();
             }
-            PauseReason::Manual => {}
+            PauseReason::Manual | PauseReason::TimedManual => {}
         }
 
         let should_reset_counter = {

@@ -15,6 +15,10 @@ paused: boolean,
  */
 pauseReasons: Array<PauseReason>, 
 /**
+ * When a timed manual pause expires (ISO 8601 timestamp), if active
+ */
+timedPauseUntil: string | null, 
+/**
  * The next scheduled break event (if any)
  */
 nextEvent: SchedulerEventInfo | null, 

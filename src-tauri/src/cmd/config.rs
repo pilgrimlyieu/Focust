@@ -74,7 +74,7 @@ pub async fn save_config(
 
     // Update the scheduler with the new config
     scheduler_cmd
-        .send(Command::UpdateConfig(config.clone()))
+        .send(Command::UpdateConfig(Box::new(config.clone())))
         .await
         .map_err(|e| {
             tracing::error!("Failed to send update_config command to scheduler: {e}");

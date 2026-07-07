@@ -24,7 +24,7 @@ use tokio::sync::mpsc;
 
 use crate::scheduler::models::{Command, PauseReason};
 use crate::scheduler::test_helpers::manager::*;
-use crate::scheduler::test_helpers::state_machine::advance_time_and_yield;
+use crate::scheduler::test_helpers::state_machine::{advance_time_and_yield, get_latest_status};
 use crate::scheduler::test_helpers::*;
 
 // ============================================================================
@@ -295,13 +295,186 @@ async fn resume_non_existent_reason() {
     drop(env.shutdown_tx);
 }
 
+/// **M1.7: Timed Pause Expires Only Timed Reason**
+///
+/// A timed manual pause should clear itself when its timer expires while leaving
+/// independent pause reasons active.
+#[tokio::test(start_paused = true)]
+async fn timed_pause_expiration_preserves_other_reasons() {
+    let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
+
+    let env = create_manager_test_env(config);
+    let (cmd_tx, cmd_rx) = mpsc::channel(32);
+
+    spawn_test_manager(&env, cmd_rx).await;
+    advance_time_and_yield(duration_ms(200)).await;
+
+    cmd_tx.send(Command::Pause(PauseReason::Dnd)).await.unwrap();
+    cmd_tx.send(Command::PauseForMinutes(1)).await.unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+
+    {
+        let state = env.shared_state.read();
+        assert!(state.pause_reasons().contains(&PauseReason::Dnd));
+        assert!(state.pause_reasons().contains(&PauseReason::TimedManual));
+        assert!(state.timed_pause_until().is_some());
+    }
+
+    advance_time_and_yield(duration_s(61)).await;
+
+    {
+        let state = env.shared_state.read();
+        assert!(state.is_paused());
+        assert!(state.pause_reasons().contains(&PauseReason::Dnd));
+        assert!(!state.pause_reasons().contains(&PauseReason::TimedManual));
+        assert!(state.timed_pause_until().is_none());
+    }
+
+    drop(cmd_tx);
+    drop(env.shutdown_tx);
+}
+
+/// **M1.8: Timed Pause Override Ignores Stale Timer**
+///
+/// Selecting another timed pause duration should replace the previous timer.
+#[tokio::test(start_paused = true)]
+async fn timed_pause_override_ignores_stale_timer() {
+    let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
+
+    let env = create_manager_test_env(config);
+    let (cmd_tx, cmd_rx) = mpsc::channel(32);
+
+    spawn_test_manager(&env, cmd_rx).await;
+    advance_time_and_yield(duration_ms(200)).await;
+
+    cmd_tx.send(Command::PauseForMinutes(1)).await.unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+    let first_until = env.shared_state.read().timed_pause_until().unwrap();
+
+    cmd_tx.send(Command::PauseForMinutes(2)).await.unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+    let second_until = env.shared_state.read().timed_pause_until().unwrap();
+    assert!(second_until > first_until);
+
+    advance_time_and_yield(duration_s(61)).await;
+
+    {
+        let state = env.shared_state.read();
+        assert!(state.is_paused());
+        assert!(state.pause_reasons().contains(&PauseReason::TimedManual));
+        assert_eq!(state.timed_pause_until(), Some(second_until));
+    }
+
+    advance_time_and_yield(duration_s(61)).await;
+
+    {
+        let state = env.shared_state.read();
+        assert!(!state.is_paused());
+        assert!(state.timed_pause_until().is_none());
+    }
+
+    drop(cmd_tx);
+    drop(env.shutdown_tx);
+}
+
+/// **M1.9: Timed Pause Status Includes Expiration**
+#[tokio::test(start_paused = true)]
+async fn timed_pause_status_includes_expiration() {
+    let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
+
+    let env = create_manager_test_env(config);
+    let (cmd_tx, cmd_rx) = mpsc::channel(32);
+
+    spawn_test_manager(&env, cmd_rx).await;
+    advance_time_and_yield(duration_ms(200)).await;
+
+    cmd_tx.send(Command::PauseForMinutes(1)).await.unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+
+    cmd_tx.send(Command::RequestBreakStatus).await.unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+
+    let status = get_latest_status(&env.event_emitter);
+    assert!(status.paused);
+    assert!(status.pause_reasons.contains(&PauseReason::TimedManual));
+    assert!(status.timed_pause_until.is_some());
+
+    drop(cmd_tx);
+    drop(env.shutdown_tx);
+}
+
+/// **M1.10: Resume User Pauses Clears Manual and Timed Manual**
+///
+/// A single `ResumeUserPauses` command should clear both user-started pause
+/// reasons at once while leaving environment-driven reasons active.
+#[tokio::test(start_paused = true)]
+async fn resume_user_pauses_clears_manual_and_timed() {
+    let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
+
+    let env = create_manager_test_env(config);
+    let (cmd_tx, cmd_rx) = mpsc::channel(32);
+
+    spawn_test_manager(&env, cmd_rx).await;
+    advance_time_and_yield(duration_ms(200)).await;
+
+    cmd_tx
+        .send(Command::Pause(PauseReason::Manual))
+        .await
+        .unwrap();
+    cmd_tx.send(Command::PauseForMinutes(30)).await.unwrap();
+    cmd_tx.send(Command::Pause(PauseReason::Dnd)).await.unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+
+    cmd_tx.send(Command::ResumeUserPauses).await.unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+
+    // Only the environment-driven reason remains
+    {
+        let state = env.shared_state.read();
+        assert!(state.is_paused());
+        assert_eq!(state.pause_reasons(), vec![PauseReason::Dnd]);
+        assert!(state.timed_pause_until().is_none());
+    }
+
+    cmd_tx
+        .send(Command::Resume(PauseReason::Dnd))
+        .await
+        .unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+
+    assert!(!env.shared_state.read().is_paused());
+
+    drop(cmd_tx);
+    drop(env.shutdown_tx);
+}
+
+/// **M1.11: Resume User Pauses Without Any Pause - No-Op**
+#[tokio::test(start_paused = true)]
+async fn resume_user_pauses_when_running_is_noop() {
+    let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
+
+    let env = create_manager_test_env(config);
+    let (cmd_tx, cmd_rx) = mpsc::channel(32);
+
+    spawn_test_manager(&env, cmd_rx).await;
+    advance_time_and_yield(duration_ms(200)).await;
+
+    cmd_tx.send(Command::ResumeUserPauses).await.unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+
+    assert!(!env.shared_state.read().is_paused());
+
+    drop(cmd_tx);
+    drop(env.shutdown_tx);
+}
+
 // ============================================================================
 // Pause Reason Priority Tests
 // ============================================================================
 
 /// **M2.1: All Pause Reasons Coexist**
 ///
-/// Test all four pause reasons can coexist.
+/// Test all pause reasons can coexist.
 #[tokio::test(start_paused = true)]
 async fn all_pause_reasons_coexist() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
@@ -326,16 +499,21 @@ async fn all_pause_reasons_coexist() {
         .send(Command::Pause(PauseReason::AppExclusion))
         .await
         .unwrap();
+    cmd_tx
+        .send(Command::Pause(PauseReason::TimedManual))
+        .await
+        .unwrap();
     advance_time_and_yield(duration_ms(200)).await;
 
     // Verify all tracked
     {
         let state = env.shared_state.read();
-        assert_eq!(state.pause_reasons().len(), 4);
+        assert_eq!(state.pause_reasons().len(), 5);
         assert!(state.pause_reasons().contains(&PauseReason::Manual));
         assert!(state.pause_reasons().contains(&PauseReason::UserIdle));
         assert!(state.pause_reasons().contains(&PauseReason::Dnd));
         assert!(state.pause_reasons().contains(&PauseReason::AppExclusion));
+        assert!(state.pause_reasons().contains(&PauseReason::TimedManual));
     }
 
     // Cleanup
@@ -416,7 +594,7 @@ async fn update_config_broadcasts() {
     let new_config = TestConfigBuilder::new().mini_break_interval_s(120).build();
 
     cmd_tx
-        .send(Command::UpdateConfig(new_config))
+        .send(Command::UpdateConfig(Box::new(new_config)))
         .await
         .unwrap();
     advance_time_and_yield(duration_ms(200)).await;
@@ -617,13 +795,17 @@ async fn many_reasons_then_clear_all() {
             .send(Command::Pause(PauseReason::AppExclusion))
             .await
             .unwrap();
+        cmd_tx
+            .send(Command::Pause(PauseReason::TimedManual))
+            .await
+            .unwrap();
     }
     advance_time_and_yield(duration_ms(200)).await;
 
-    // Should have 4 distinct reasons (idempotent)
+    // Should have 5 distinct reasons (idempotent)
     {
         let state = env.shared_state.read();
-        assert_eq!(state.pause_reasons().len(), 4);
+        assert_eq!(state.pause_reasons().len(), 5);
     }
 
     // Clear all
@@ -641,6 +823,10 @@ async fn many_reasons_then_clear_all() {
         .unwrap();
     cmd_tx
         .send(Command::Resume(PauseReason::AppExclusion))
+        .await
+        .unwrap();
+    cmd_tx
+        .send(Command::Resume(PauseReason::TimedManual))
         .await
         .unwrap();
     advance_time_and_yield(duration_ms(200)).await;

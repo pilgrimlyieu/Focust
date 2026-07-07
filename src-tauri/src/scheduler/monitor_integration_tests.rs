@@ -736,7 +736,7 @@ async fn monitor_redundant_commands() {
 ///
 /// Stress test: all possible pause reasons active at once.
 #[tokio::test(start_paused = true)]
-async fn all_four_pause_reasons() {
+async fn all_pause_reasons() {
     let config = TestConfigBuilder::new().mini_break_interval_s(60).build();
 
     let env = create_manager_test_env(config);
@@ -745,7 +745,7 @@ async fn all_four_pause_reasons() {
     spawn_test_manager(&env, cmd_rx).await;
     advance_time_and_yield(duration_ms(200)).await;
 
-    // All four reasons trigger
+    // All reasons trigger
     cmd_tx
         .send(Command::Pause(PauseReason::Manual))
         .await
@@ -759,15 +759,19 @@ async fn all_four_pause_reasons() {
         .send(Command::Pause(PauseReason::AppExclusion))
         .await
         .unwrap();
+    cmd_tx
+        .send(Command::Pause(PauseReason::TimedManual))
+        .await
+        .unwrap();
     advance_time_and_yield(duration_ms(200)).await;
 
-    // Verify all four tracked
+    // Verify all tracked
     {
         let state = env.shared_state.read();
-        assert_eq!(state.pause_reasons().len(), 4);
+        assert_eq!(state.pause_reasons().len(), 5);
     }
 
-    // Clear all four
+    // Clear all
     cmd_tx
         .send(Command::Resume(PauseReason::Manual))
         .await
@@ -782,6 +786,10 @@ async fn all_four_pause_reasons() {
         .unwrap();
     cmd_tx
         .send(Command::Resume(PauseReason::AppExclusion))
+        .await
+        .unwrap();
+    cmd_tx
+        .send(Command::Resume(PauseReason::TimedManual))
         .await
         .unwrap();
     advance_time_and_yield(duration_ms(200)).await;
