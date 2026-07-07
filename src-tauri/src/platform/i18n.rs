@@ -26,7 +26,7 @@ pub struct TrayStrings {
     pub restart: String,
     pub quit: String,
     pub tooltip: String,
-    pub minute_short: String,
+    pub duration_minutes: String,
     pub remaining_minutes: String,
 }
 
@@ -51,7 +51,7 @@ impl Default for TrayStrings {
             restart: "Restart".to_owned(),
             quit: "Quit".to_owned(),
             tooltip: "Focust - Break Reminder".to_owned(),
-            minute_short: "min".to_owned(),
+            duration_minutes: "{minutes} min".to_owned(),
             remaining_minutes: "{minutes} min left".to_owned(),
         }
     }

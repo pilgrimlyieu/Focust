@@ -9,7 +9,7 @@
       "restart": "Neu starten",
       "quit": "Beenden",
       "tooltip": "Focust - Pausenerinnerung",
-      "minuteShort": "min",
+      "durationMinutes": "{minutes} min",
       "remainingMinutes": "{minutes} min übrig"
     },
     "notification": {
@@ -30,7 +30,7 @@
       "restart": "Restart",
       "quit": "Quit",
       "tooltip": "Focust - Break Reminder",
-      "minuteShort": "min",
+      "durationMinutes": "{minutes} min",
       "remainingMinutes": "{minutes} min left"
     },
     "notification": {
@@ -51,7 +51,7 @@
       "restart": "Reiniciar",
       "quit": "Salir",
       "tooltip": "Focust - Recordatorio de descanso",
-      "minuteShort": "min",
+      "durationMinutes": "{minutes} min",
       "remainingMinutes": "quedan {minutes} min"
     },
     "notification": {
@@ -72,7 +72,7 @@
       "restart": "Redémarrer",
       "quit": "Quitter",
       "tooltip": "Focust - Rappel de pause",
-      "minuteShort": "min",
+      "durationMinutes": "{minutes} min",
       "remainingMinutes": "{minutes} min restantes"
     },
     "notification": {
@@ -93,7 +93,7 @@
       "restart": "Riavvia",
       "quit": "Esci",
       "tooltip": "Focust - Promemoria pausa",
-      "minuteShort": "min",
+      "durationMinutes": "{minutes} min",
       "remainingMinutes": "{minutes} min rimanenti"
     },
     "notification": {
@@ -114,7 +114,7 @@
       "restart": "再起動",
       "quit": "終了",
       "tooltip": "Focust - 休憩リマインダー",
-      "minuteShort": "分",
+      "durationMinutes": "{minutes}分",
       "remainingMinutes": "残り{minutes}分"
     },
     "notification": {
@@ -135,7 +135,7 @@
       "restart": "다시 시작",
       "quit": "종료",
       "tooltip": "Focust - 휴식 알림",
-      "minuteShort": "분",
+      "durationMinutes": "{minutes}분",
       "remainingMinutes": "{minutes}분 남음"
     },
     "notification": {
@@ -156,7 +156,7 @@
       "restart": "Reiniciar",
       "quit": "Sair",
       "tooltip": "Focust - Lembrete de pausa",
-      "minuteShort": "min",
+      "durationMinutes": "{minutes} min",
       "remainingMinutes": "{minutes} min restantes"
     },
     "notification": {
@@ -177,7 +177,7 @@
       "restart": "Перезапустить",
       "quit": "Выход",
       "tooltip": "Focust - Напоминание о перерыве",
-      "minuteShort": "мин",
+      "durationMinutes": "{minutes} мин",
       "remainingMinutes": "осталось {minutes} мин"
     },
     "notification": {
@@ -198,7 +198,7 @@
       "restart": "重启",
       "quit": "退出",
       "tooltip": "Focust - 休息提醒",
-      "minuteShort": "分钟",
+      "durationMinutes": "{minutes} 分钟",
       "remainingMinutes": "剩余 {minutes} 分钟"
     },
     "notification": {

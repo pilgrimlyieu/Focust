@@ -457,9 +457,11 @@ fn sanitize_pause_durations(durations: &[u32]) -> Vec<u32> {
     sanitized
 }
 
-/// Format a timed pause menu entry, e.g. "15 min"
+/// Format a timed pause menu entry from the localized template, e.g. "15 min"
 fn format_pause_duration(tray_text: &TrayStrings, minutes: u32) -> String {
-    format!("{} {}", minutes, tray_text.minute_short)
+    tray_text
+        .duration_minutes
+        .replace("{minutes}", &minutes.to_string())
 }
 
 /// Format the remaining time of a timed pause, rounded up to whole minutes
