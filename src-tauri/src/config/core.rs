@@ -18,6 +18,10 @@ use tokio::fs as tokio_fs;
 use crate::config::{AdvancedConfig, AppConfig};
 use crate::utils;
 
+const CONFIG_SCHEMA_BASE_URL: &str = "https://raw.githubusercontent.com/pilgrimlyieu/Focust";
+const CONFIG_SCHEMA_PATH: &str = "src-tauri/resources/config.schema.json";
+const CONFIG_SCHEMA_VERSION: &str = env!("FOCUST_APP_VERSION");
+
 /// Loads the application configuration.
 ///
 /// Attempts to load from disk, falling back to default configuration if loading fails.
@@ -59,9 +63,7 @@ pub async fn save_config(app_handle: &AppHandle, config: &AppConfig) -> Result<(
         advanced: &config.advanced,
     };
 
-    // Serialize config to TOML string
-    let toml_string =
-        toml::to_string_pretty(&config_file).context("Failed to serialize config to TOML")?;
+    let toml_string = serialize_config_file(&config_file)?;
 
     // Write to file
     tokio_fs::write(&config_path, toml_string)
@@ -70,6 +72,17 @@ pub async fn save_config(app_handle: &AppHandle, config: &AppConfig) -> Result<(
 
     tracing::info!("Config saved successfully to {}", config_path.display());
     Ok(())
+}
+
+fn serialize_config_file<T: Serialize>(config_file: &T) -> Result<String> {
+    let toml_string =
+        toml::to_string_pretty(config_file).context("Failed to serialize config to TOML")?;
+
+    Ok(format!("{}{toml_string}", config_schema_directive()))
+}
+
+fn config_schema_directive() -> String {
+    format!("#:schema {CONFIG_SCHEMA_BASE_URL}/v{CONFIG_SCHEMA_VERSION}/{CONFIG_SCHEMA_PATH}\n\n")
 }
 
 /// Gets the path to the config file, creating the config directory if it doesn't exist.
@@ -176,6 +189,40 @@ mod tests {
         assert!(!config.autostart); // default is false
         assert_eq!(config.inactive_s, 300); // default value
         assert_eq!(config.schedules.len(), 1); // default schedule
+    }
+
+    #[test]
+    fn serialized_config_includes_schema_directive() {
+        #[derive(Serialize)]
+        struct ConfigFile<'a> {
+            #[serde(flatten)]
+            config: &'a AppConfig,
+            advanced: &'a AdvancedConfig,
+        }
+
+        let config = AppConfig::default();
+        let config_file = ConfigFile {
+            config: &config,
+            advanced: &config.advanced,
+        };
+
+        let toml_string =
+            serialize_config_file(&config_file).expect("Failed to serialize config file");
+
+        assert!(toml_string.starts_with(&config_schema_directive()));
+        assert!(toml_string.contains(&format!(
+            "/v{CONFIG_SCHEMA_VERSION}/src-tauri/resources/config.schema.json"
+        )));
+        toml::from_str::<toml::Value>(&toml_string)
+            .expect("Config with schema directive should still parse as TOML");
+    }
+
+    #[test]
+    fn config_schema_json_is_valid() {
+        serde_json::from_str::<serde_json::Value>(include_str!(
+            "../../resources/config.schema.json"
+        ))
+        .expect("Config schema JSON should be valid");
     }
 
     #[test]

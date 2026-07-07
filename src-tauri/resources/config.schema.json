@@ -1,0 +1,438 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Focust config.toml",
+  "description": "Schema for the Focust user configuration file.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "autostart": {
+      "type": "boolean",
+      "default": false,
+      "description": "Automatically start Focust when the system boots."
+    },
+    "monitorDnd": {
+      "type": "boolean",
+      "default": true,
+      "description": "Pause reminders while system Do Not Disturb mode is active."
+    },
+    "inactiveS": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 300,
+      "description": "Inactive time in seconds before reminders are paused."
+    },
+    "allScreens": {
+      "type": "boolean",
+      "default": false,
+      "description": "Show break windows on all screens."
+    },
+    "showTrayIcon": {
+      "type": "boolean",
+      "default": true,
+      "description": "Show the system tray icon. Requires restart."
+    },
+    "language": {
+      "type": "string",
+      "enum": [
+        "de-DE",
+        "en-US",
+        "es-ES",
+        "fr-FR",
+        "it-IT",
+        "ja-JP",
+        "ko-KR",
+        "pt-BR",
+        "ru-RU",
+        "zh-CN"
+      ],
+      "default": "en-US",
+      "description": "Interface language."
+    },
+    "themeMode": {
+      "type": "string",
+      "enum": ["light", "dark", "system"],
+      "default": "system",
+      "description": "Settings UI theme mode."
+    },
+    "postponeShortcut": {
+      "type": "string",
+      "default": "",
+      "description": "Global shortcut used to postpone breaks, for example Ctrl+Shift+P. Leave empty to disable."
+    },
+    "windowSize": {
+      "type": "number",
+      "minimum": 0.5,
+      "maximum": 1.0,
+      "default": 0.8,
+      "description": "Break window size as a fraction of the screen."
+    },
+    "schedules": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/schedule"
+      },
+      "default": []
+    },
+    "attentions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/attention"
+      },
+      "default": []
+    },
+    "appExclusions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/appExclusion"
+      },
+      "default": []
+    },
+    "advanced": {
+      "$ref": "#/$defs/advanced"
+    }
+  },
+  "$defs": {
+    "advanced": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "logLevel": {
+          "type": "string",
+          "enum": ["trace", "debug", "info", "warn", "error"],
+          "default": "info",
+          "description": "Application log verbosity."
+        },
+        "resetMiniBreakCounterOnPauseReasons": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/pauseReason"
+          },
+          "default": [],
+          "description": "Pause reasons that reset the mini-break counter used for long-break cadence."
+        },
+        "trayPauseDurationsMinutes": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "default": [15, 30, 60],
+          "description": "Timed pause durations shown in the tray menu, in minutes."
+        }
+      }
+    },
+    "appExclusion": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rule": {
+          "type": "string",
+          "enum": ["pause", "resume"],
+          "default": "pause",
+          "description": "Whether matching processes pause reminders or allow reminders."
+        },
+        "active": {
+          "type": "boolean",
+          "default": false
+        },
+        "processes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Process names or paths to match."
+        }
+      }
+    },
+    "attention": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "name": {
+          "type": "string",
+          "default": "Default Attention"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "theme": {
+          "$ref": "#/$defs/theme"
+        },
+        "times": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/time"
+          },
+          "default": []
+        },
+        "daysOfWeek": {
+          "$ref": "#/$defs/daysOfWeek"
+        },
+        "title": {
+          "type": "string",
+          "default": "Attention Reminder"
+        },
+        "message": {
+          "type": "string",
+          "default": "This is an attention reminder."
+        },
+        "durationS": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 5
+        }
+      }
+    },
+    "audio": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "current": {
+          "type": "string",
+          "enum": ["none", "builtin", "filePath"],
+          "default": "none"
+        },
+        "builtinName": {
+          "type": "string",
+          "enum": [
+            "bright-notification",
+            "gentle-bell",
+            "notification",
+            "soft-gong"
+          ],
+          "description": "Built-in sound name used when current is builtin."
+        },
+        "filePath": {
+          "type": "string",
+          "description": "Custom audio file path used when current is filePath."
+        },
+        "volume": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 0.6
+        }
+      }
+    },
+    "background": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "current": {
+          "type": "string",
+          "enum": ["solid", "imagePath", "imageFolder"],
+          "default": "solid"
+        },
+        "solid": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "imagePath": {
+          "type": "string",
+          "description": "Image file path used when current is imagePath."
+        },
+        "imageFolder": {
+          "type": "string",
+          "description": "Image folder path used when current is imageFolder."
+        }
+      }
+    },
+    "breakBase": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "theme": {
+          "$ref": "#/$defs/theme"
+        },
+        "audio": {
+          "$ref": "#/$defs/audio"
+        },
+        "suggestions": {
+          "$ref": "#/$defs/suggestions"
+        },
+        "durationS": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 20
+        },
+        "postponedS": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 300
+        },
+        "maxPostponeCount": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255,
+          "default": 2
+        },
+        "strictMode": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "daysOfWeek": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+      },
+      "uniqueItems": true,
+      "default": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    },
+    "hexColor": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$"
+    },
+    "longBreak": {
+      "unevaluatedProperties": false,
+      "allOf": [
+        {
+          "$ref": "#/$defs/breakBase"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "durationS": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 300
+            },
+            "afterMiniBreaks": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 255,
+              "default": 4
+            }
+          }
+        }
+      ]
+    },
+    "miniBreak": {
+      "unevaluatedProperties": false,
+      "allOf": [
+        {
+          "$ref": "#/$defs/breakBase"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "intervalS": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1200
+            }
+          }
+        }
+      ]
+    },
+    "pauseReason": {
+      "type": "string",
+      "enum": ["userIdle", "dnd", "manual", "timedManual", "appExclusion"]
+    },
+    "schedule": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "default": "Default Schedule"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "timeRange": {
+          "$ref": "#/$defs/timeRange"
+        },
+        "daysOfWeek": {
+          "$ref": "#/$defs/daysOfWeek"
+        },
+        "notificationBeforeS": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 10
+        },
+        "miniBreaks": {
+          "$ref": "#/$defs/miniBreak"
+        },
+        "longBreaks": {
+          "$ref": "#/$defs/longBreak"
+        }
+      }
+    },
+    "suggestions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "show": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "theme": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "background": {
+          "$ref": "#/$defs/background"
+        },
+        "textColor": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "blurRadius": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255,
+          "default": 8
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 0.9
+        },
+        "fontSize": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 255,
+          "default": 24
+        },
+        "fontFamily": {
+          "type": "string",
+          "default": "Arial"
+        }
+      }
+    },
+    "time": {
+      "type": "string",
+      "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$"
+    },
+    "timeRange": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "start": {
+          "$ref": "#/$defs/time"
+        },
+        "end": {
+          "$ref": "#/$defs/time"
+        }
+      }
+    }
+  }
+}
