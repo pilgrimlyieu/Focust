@@ -125,8 +125,7 @@ export const jjDriver: VcsDriver = {
   },
 
   pushTag(tag) {
-    // JJ cannot push tags via `jj git push` so fall back to git in colocated mode
-    git("push", "origin", "tag", tag);
+    jj("git", "push", "--tag", tag);
   },
 
   showDiff(files) {
