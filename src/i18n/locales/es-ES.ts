@@ -258,6 +258,9 @@ const esES: LocaleStrings = {
     minutesUnit: "min",
     name: "Nombre del horario",
     notifyBefore: "Notificar antes",
+    portableNotificationGuide: "guía de inicio rápido",
+    portableNotificationHint:
+      "Las notificaciones no están disponibles en la versión portátil de Windows porque no tiene una identidad de aplicación registrada. Usa el instalador o consulta la {guide} para una solución manual.",
     postponeMinutes: "Posponer",
     secondsUnit: "seg",
     start: "Inicio",

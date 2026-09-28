@@ -257,6 +257,9 @@ const ptBR: LocaleStrings = {
     minutesUnit: "min",
     name: "Nome do agendamento",
     notifyBefore: "Notificar antes",
+    portableNotificationGuide: "guia de início rápido",
+    portableNotificationHint:
+      "As notificações não estão disponíveis na versão portátil do Windows, pois ela não possui uma identidade de aplicativo registrada. Use o instalador ou consulte o {guide} para uma solução manual.",
     postponeMinutes: "Adiar",
     secondsUnit: "seg",
     start: "Início",

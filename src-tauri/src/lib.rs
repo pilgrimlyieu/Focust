@@ -223,6 +223,7 @@ pub fn run() {
             cmd::suggestions::get_suggestions,
             cmd::suggestions::save_suggestions,
             cmd::system::exit_application,
+            cmd::system::is_windows_portable,
             cmd::system::open_config_directory,
             cmd::system::open_log_directory,
             cmd::system::restart_application,

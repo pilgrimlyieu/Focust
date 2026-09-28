@@ -249,6 +249,9 @@ const enUS = {
     minutesUnit: "min",
     name: "Schedule name",
     notifyBefore: "Notify before",
+    portableNotificationGuide: "Quick Start guide",
+    portableNotificationHint:
+      "Notifications are unavailable in the Windows portable build because it lacks a registered app identity. Use the installer, or see the {guide} for a manual workaround.",
     postponeMinutes: "Postpone",
     secondsUnit: "sec",
     start: "Start",

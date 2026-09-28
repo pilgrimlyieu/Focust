@@ -238,6 +238,9 @@ const zhCN: LocaleStrings = {
     minutesUnit: "分钟",
     name: "计划名称",
     notifyBefore: "提前提醒",
+    portableNotificationGuide: "快速开始指南",
+    portableNotificationHint:
+      "Windows 便携版缺少应用通知标识，休息前的系统通知无法显示。如需通知，请使用安装版，或参阅{guide}手动配置。",
     postponeMinutes: "延后",
     secondsUnit: "秒",
     start: "开始",

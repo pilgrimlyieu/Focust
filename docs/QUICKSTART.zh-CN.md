@@ -178,6 +178,48 @@ Focust 位于您的系统托盘（通知区域）中：
 - 可以 `Win` + `I` 打开设置，导航到「系统」→「通知」，自行配置「请勿打扰」的自动规则
 - 或者在 Focust 中禁用该检测选项
 
+### 「Windows 便携版收不到通知」
+- Windows 只显示已注册应用标识（AppUserModelID）的通知，该标识由安装版注册，便携版没有
+- 可改用安装版，或运行以下 PowerShell 脚本，在开始菜单创建带有该标识的快捷方式：
+
+```powershell
+$exe = "C:\path\to\focust.exe"   # 解压后的可执行文件路径
+$lnk = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Focust.lnk"
+$wsh = New-Object -ComObject WScript.Shell
+$s = $wsh.CreateShortcut($lnk); $s.TargetPath = $exe; $s.WorkingDirectory = Split-Path $exe; $s.Save()
+Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
+public static class FocustShortcut {
+    [ComImport, Guid("00021401-0000-0000-C000-000000000046")] class ShellLink { }
+    [StructLayout(LayoutKind.Sequential)] struct PropertyKey { public Guid FormatId; public uint PropertyId; }
+    [StructLayout(LayoutKind.Sequential)] struct PropVariant { public ushort Type, R1, R2, R3; public IntPtr Str; public int Pad; }
+    [ComImport, Guid("886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IPropertyStore {
+        [PreserveSig] int GetCount(out uint c); [PreserveSig] int GetAt(uint i, out PropertyKey k);
+        [PreserveSig] int GetValue(ref PropertyKey k, out PropVariant v); [PreserveSig] int SetValue(ref PropertyKey k, ref PropVariant v);
+        [PreserveSig] int Commit();
+    }
+    public static void SetAppId(string path, string id) {
+        object link = new ShellLink();
+        var file = (IPersistFile)link; file.Load(path, 2);
+        var store = (IPropertyStore)link;
+        // PKEY_AppUserModel_ID (VT_LPWSTR)
+        var key = new PropertyKey { FormatId = new Guid("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3"), PropertyId = 5 };
+        var val = new PropVariant { Type = 31, Str = Marshal.StringToCoTaskMemUni(id) };
+        Marshal.ThrowExceptionForHR(store.SetValue(ref key, ref val));
+        Marshal.ThrowExceptionForHR(store.Commit());
+        file.Save(path, true);
+        Marshal.FreeCoTaskMem(val.Str);
+    }
+}
+'@
+[FocustShortcut]::SetAppId($lnk, "com.fesmoph.focust")
+```
+
+- 移动 `focust.exe` 后需重新执行；删除该快捷方式即可撤销
+
 ## 下一步
 
 一旦您熟悉了基础知识：

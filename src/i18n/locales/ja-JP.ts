@@ -252,6 +252,9 @@ const jaJP: LocaleStrings = {
     minutesUnit: "分",
     name: "スケジュール名",
     notifyBefore: "事前通知",
+    portableNotificationGuide: "クイックスタートガイド",
+    portableNotificationHint:
+      "Windows ポータブル版はアプリ ID が登録されていないため、通知を表示できません。通知が必要な場合はインストーラー版を使用するか、{guide}の手動設定を参照してください。",
     postponeMinutes: "延期",
     secondsUnit: "秒",
     start: "開始",

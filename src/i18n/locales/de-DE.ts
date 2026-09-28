@@ -264,6 +264,9 @@ const deDE: LocaleStrings = {
     minutesUnit: "Min",
     name: "Planname",
     notifyBefore: "Vorher benachrichtigen",
+    portableNotificationGuide: "Schnellstartanleitung",
+    portableNotificationHint:
+      "In der portablen Windows-Version sind Benachrichtigungen nicht verfügbar, da keine App-Identität registriert ist. Verwenden Sie den Installer oder lesen Sie die {guide} für eine manuelle Lösung.",
     postponeMinutes: "Verschieben",
     secondsUnit: "Sek",
     start: "Start",

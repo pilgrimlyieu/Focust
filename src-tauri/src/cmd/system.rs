@@ -3,6 +3,8 @@
 //! This module provides commands to open application directories in the
 //! system file explorer.
 
+#[cfg(target_os = "windows")]
+use std::env;
 use std::path::Path;
 use std::process::Command;
 
@@ -104,4 +106,31 @@ pub fn restart_application(app: AppHandle) {
 pub fn exit_application(app: AppHandle) {
     tracing::info!("Application exit requested from settings");
     app.exit(0);
+}
+
+/// File name of the uninstaller placed next to the executable by the NSIS installer.
+#[cfg(target_os = "windows")]
+const NSIS_UNINSTALLER: &str = "uninstall.exe";
+
+/// Returns whether the app runs as the Windows portable build.
+///
+/// The NSIS installer places its uninstaller next to the executable, while
+/// the portable ZIP does not. Portable builds lack a registered
+/// `AppUserModelID`, so Windows silently drops their toast notifications.
+/// Debug builds also report `true` so the hint can be previewed for check purposes.
+#[must_use]
+#[tauri::command]
+pub fn is_windows_portable() -> bool {
+    #[cfg(target_os = "windows")]
+    {
+        env::current_exe()
+            .ok()
+            .and_then(|exe| exe.parent().map(|dir| !dir.join(NSIS_UNINSTALLER).exists()))
+            .unwrap_or(false)
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        false
+    }
 }

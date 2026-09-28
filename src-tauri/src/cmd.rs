@@ -30,6 +30,7 @@ pub use scheduler::{
 };
 pub use suggestions::{get_suggestions, save_suggestions};
 pub use system::{
-    exit_application, open_config_directory, open_log_directory, restart_application,
+    exit_application, is_windows_portable, open_config_directory, open_log_directory,
+    restart_application,
 };
 pub use window::close_all_prompt_windows;

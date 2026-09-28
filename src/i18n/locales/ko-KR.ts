@@ -250,6 +250,9 @@ const koKR: LocaleStrings = {
     minutesUnit: "분",
     name: "일정 이름",
     notifyBefore: "사전 알림",
+    portableNotificationGuide: "빠른 시작 가이드",
+    portableNotificationHint:
+      "Windows 포터블 버전은 등록된 앱 ID가 없어 알림을 표시할 수 없습니다. 알림이 필요하면 설치 버전을 사용하거나 {guide}의 수동 설정을 참고하세요.",
     postponeMinutes: "연기",
     secondsUnit: "초",
     start: "시작",

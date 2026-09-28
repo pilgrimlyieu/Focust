@@ -266,6 +266,9 @@ const frFR: LocaleStrings = {
     minutesUnit: "min",
     name: "Nom de l'horaire",
     notifyBefore: "Notifier avant",
+    portableNotificationGuide: "guide de démarrage rapide",
+    portableNotificationHint:
+      "Les notifications ne sont pas disponibles dans la version portable Windows, faute d'identité d'application enregistrée. Utilisez l'installateur ou consultez le {guide} pour une solution manuelle.",
     postponeMinutes: "Reporter",
     secondsUnit: "sec",
     start: "Début",

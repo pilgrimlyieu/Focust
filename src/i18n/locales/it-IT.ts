@@ -263,6 +263,9 @@ const itIT: LocaleStrings = {
     minutesUnit: "min",
     name: "Nome programma",
     notifyBefore: "Notifica prima",
+    portableNotificationGuide: "guida rapida",
+    portableNotificationHint:
+      "Le notifiche non sono disponibili nella versione portatile per Windows perché manca un'identità dell'app registrata. Usa il programma di installazione o consulta la {guide} per una soluzione manuale.",
     postponeMinutes: "Posticipa",
     secondsUnit: "sec",
     start: "Inizio",

@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, TransitionGroup } from "vue";
+import { invoke } from "@tauri-apps/api/core";
+import { openUrl } from "@tauri-apps/plugin-opener";
+import { computed, onMounted, ref, TransitionGroup } from "vue";
 import { useI18n } from "vue-i18n";
 import CleanCalendar from "@/components/icons/CleanCalendar.vue";
 import InfoIcon from "@/components/icons/InfoIcon.vue";
@@ -9,11 +11,37 @@ import { type AppConfig, useConfigStore } from "@/stores/config";
 
 const props = defineProps<{ config: AppConfig }>();
 
-const { t } = useI18n();
+/** Quick start FAQ entries explaining the portable notification workaround, by locale. */
+const PORTABLE_NOTIFICATION_GUIDE_URLS: Record<string, string> = {
+  "zh-CN":
+    "https://github.com/pilgrimlyieu/Focust/blob/main/docs/QUICKSTART.zh-CN.md#windows-便携版收不到通知",
+};
+const PORTABLE_NOTIFICATION_GUIDE_FALLBACK_URL =
+  "https://github.com/pilgrimlyieu/Focust/blob/main/docs/QUICKSTART.md#no-notifications-with-the-windows-portable-build";
+
+const { t, locale } = useI18n();
 const configStore = useConfigStore();
 
 const schedules = computed(() => props.config.schedules);
 const expandedIds = ref<Set<number>>(new Set());
+/** Whether running as the Windows portable build, where notifications cannot be shown. */
+const isWindowsPortable = ref(false);
+
+onMounted(async () => {
+  isWindowsPortable.value = await invoke<boolean>("is_windows_portable");
+});
+
+/** Open the quick start guide section for the current locale. */
+async function openPortableNotificationGuide() {
+  const url =
+    PORTABLE_NOTIFICATION_GUIDE_URLS[locale.value] ??
+    PORTABLE_NOTIFICATION_GUIDE_FALLBACK_URL;
+  try {
+    await openUrl(url);
+  } catch (error) {
+    console.error(`Failed to open ${url}:`, error);
+  }
+}
 
 /**
  * Toggle the expanded state of a schedule item.
@@ -84,6 +112,18 @@ function removeSchedule(id: number) {
           {{ t("schedule.create") }}
         </button>
       </div>
+    </div>
+
+    <!-- Windows portable build: notifications unavailable -->
+    <div v-if="isWindowsPortable" class="alert alert-warning py-3 text-sm">
+      <InfoIcon class-name="h-5 w-5 shrink-0" />
+      <i18n-t keypath="schedule.portableNotificationHint" tag="span">
+        <template #guide>
+          <a class="link font-medium" @click="openPortableNotificationGuide">
+            {{ t("schedule.portableNotificationGuide") }}
+          </a>
+        </template>
+      </i18n-t>
     </div>
 
     <!-- Empty State -->

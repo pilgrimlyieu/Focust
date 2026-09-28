@@ -178,6 +178,48 @@ Try different background images that relax you. Nature scenes, minimalist patter
 - You can open settings with `Win` + `I`, navigate to "System" → "Notifications", and configure the automatic rules for "Do Not Disturb" yourself
 - Or disable this detection option in Focust
 
+### "No notifications with the Windows portable build"
+- Windows only shows notifications from apps with a registered identity (AppUserModelID), which the installer sets up and the portable build lacks
+- Use the installer, or run the following PowerShell script to create a Start Menu shortcut carrying the identity:
+
+```powershell
+$exe = "C:\path\to\focust.exe"   # path to the extracted executable
+$lnk = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Focust.lnk"
+$wsh = New-Object -ComObject WScript.Shell
+$s = $wsh.CreateShortcut($lnk); $s.TargetPath = $exe; $s.WorkingDirectory = Split-Path $exe; $s.Save()
+Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
+public static class FocustShortcut {
+    [ComImport, Guid("00021401-0000-0000-C000-000000000046")] class ShellLink { }
+    [StructLayout(LayoutKind.Sequential)] struct PropertyKey { public Guid FormatId; public uint PropertyId; }
+    [StructLayout(LayoutKind.Sequential)] struct PropVariant { public ushort Type, R1, R2, R3; public IntPtr Str; public int Pad; }
+    [ComImport, Guid("886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IPropertyStore {
+        [PreserveSig] int GetCount(out uint c); [PreserveSig] int GetAt(uint i, out PropertyKey k);
+        [PreserveSig] int GetValue(ref PropertyKey k, out PropVariant v); [PreserveSig] int SetValue(ref PropertyKey k, ref PropVariant v);
+        [PreserveSig] int Commit();
+    }
+    public static void SetAppId(string path, string id) {
+        object link = new ShellLink();
+        var file = (IPersistFile)link; file.Load(path, 2);
+        var store = (IPropertyStore)link;
+        // PKEY_AppUserModel_ID (VT_LPWSTR)
+        var key = new PropertyKey { FormatId = new Guid("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3"), PropertyId = 5 };
+        var val = new PropVariant { Type = 31, Str = Marshal.StringToCoTaskMemUni(id) };
+        Marshal.ThrowExceptionForHR(store.SetValue(ref key, ref val));
+        Marshal.ThrowExceptionForHR(store.Commit());
+        file.Save(path, true);
+        Marshal.FreeCoTaskMem(val.Str);
+    }
+}
+'@
+[FocustShortcut]::SetAppId($lnk, "com.fesmoph.focust")
+```
+
+- Re-run the script after moving `focust.exe`; delete the shortcut to undo
+
 ## Next Steps
 
 Once you're comfortable with the basics:

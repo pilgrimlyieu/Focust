@@ -258,6 +258,9 @@ const ruRU: LocaleStrings = {
     minutesUnit: "мин",
     name: "Название расписания",
     notifyBefore: "Уведомить за",
+    portableNotificationGuide: "руководство по быстрому старту",
+    portableNotificationHint:
+      "В портативной версии для Windows уведомления недоступны, так как у неё нет зарегистрированного идентификатора приложения. Используйте установщик или см. {guide} для ручной настройки.",
     postponeMinutes: "Отсрочка",
     secondsUnit: "сек",
     start: "Начало",
