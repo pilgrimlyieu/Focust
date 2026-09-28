@@ -28,6 +28,7 @@
 //! - WNF API usage: <https://stackoverflow.com/questions/53407374/is-there-a-way-to-detect-changes-in-focus-assist-formerly-quiet-hours-in-windo>
 //! - Official API Documentation: <https://learn.microsoft.com/en-us/uwp/api/windows.ui.shell.focussessionmanager>
 
+use std::future;
 use std::mem;
 use std::panic::{self, AssertUnwindSafe};
 use std::ptr;
@@ -154,9 +155,8 @@ impl WindowsDndMonitor {
     /// # Errors
     ///
     /// This function does not return errors in normal operation.
-    #[expect(clippy::unused_async, reason = "for consistency with other platforms")]
-    pub async fn is_enabled(&self) -> Result<bool> {
-        Ok(query_focus_assist_state())
+    pub fn is_enabled(&self) -> impl Future<Output = Result<bool>> {
+        future::ready(Ok(query_focus_assist_state()))
     }
 }
 
