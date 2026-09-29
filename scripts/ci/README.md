@@ -44,6 +44,19 @@ bun scripts/ci/generate-manifest.ts --version 0.3.4 --tag v0.3.4 --repo owner/re
 | `--artifacts-dir` | No | `artifacts` | Directory containing build artifacts |
 | `--output` | No | `artifacts/latest.json` | Output file path |
 
+### `prepare-debug-artifacts.ts`
+
+Archives release binaries, symbols, frontend maps and final packages. CI sets `CARGO_PROFILE_RELEASE_DEBUG=1`, `CARGO_PROFILE_RELEASE_SPLIT_DEBUGINFO=packed`, and `CARGO_PROFILE_RELEASE_STRIP=none` for builds and cache warming; local Cargo profiles are unchanged.
+
+Run its stages in this order:
+
+1. Build the frontend with `FOCUST_DEBUG_ARTIFACTS=true`, then run `--stage frontend`. This saves assets and hidden source maps in `.debug-build/frontend`, then removes maps from `dist` before Tauri embeds it. Start without an existing `.debug-build` directory.
+2. Run `tauri build --no-bundle` with `build.beforeBuildCommand` set to an empty string, then run `--stage native --platform <platform> --target <target>`. This saves binaries and symbols before bundling can modify them. Missing or empty symbols fail the build.
+3. On Linux, run `strip --strip-debug` on the distribution ELF after staging: split DWARF still leaves debug sections in the executable.
+4. Run `tauri bundle` and `prepare-artifacts.ts`, then `--stage archive --platform <platform> --target <target> --version <version>` to include final packages and write build metadata and SHA-256 checksums.
+
+Output: `debug-artifacts/*_debug.tar.gz`, preserving Unix permissions and dSYM contents. See [Downloading Release Debugging Artifacts](../../docs/RELEASE_WORKFLOW.md#downloading-release-debugging-artifacts) for contents and usage.
+
 ### `generate-release-notes.ts`
 
 Assembles a GitHub Release body from `RELEASE_NOTE.md` + git commit log.

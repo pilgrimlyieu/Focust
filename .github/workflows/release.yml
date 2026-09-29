@@ -189,6 +189,13 @@ jobs:
 
     runs-on: ${{ matrix.platform }}
 
+    # Keep local Cargo profiles unchanged. Cache warming uses the same profile
+    # as the release build so its dependencies remain reusable.
+    env:
+      CARGO_PROFILE_RELEASE_DEBUG: "1"
+      CARGO_PROFILE_RELEASE_SPLIT_DEBUGINFO: packed
+      CARGO_PROFILE_RELEASE_STRIP: none
+
     steps:
       # ── Platform filter (workflow_dispatch only) ──
       - name: Check platform filter
@@ -233,6 +240,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
+            binutils \
             libwebkit2gtk-4.1-dev \
             libsoup-3.0-dev \
             libappindicator3-dev \
@@ -299,23 +307,45 @@ jobs:
           echo "✅ Rust cache pre-warmed."
 
       # ── Full Tauri build (tag release or manual build) ──
+      - name: Build and archive frontend source maps
+        if: steps.filter.outputs.skip != 'true' && needs.setup.outputs.should_build == 'true'
+        shell: bash
+        env:
+          FOCUST_DEBUG_ARTIFACTS: 'true'
+        run: |
+          bun run build
+          bun scripts/ci/prepare-debug-artifacts.ts --stage frontend
+
       - name: Build application
         if: steps.filter.outputs.skip != 'true' && needs.setup.outputs.should_build == 'true'
         shell: bash
         env:
           BUILD_TARGET: ${{ matrix.build_target || matrix.target }}
+          PLATFORM: ${{ matrix.os_name }}
+          PROJECT_NAME: ${{ needs.setup.outputs.project_name }}
           SHOULD_SIGN: ${{ needs.setup.outputs.should_release == 'true' || needs.setup.outputs.should_draft == 'true' }}
           HAS_SIGNING_KEY: ${{ (needs.setup.outputs.should_release == 'true' || needs.setup.outputs.should_draft == 'true') && secrets.TAURI_SIGNING_PRIVATE_KEY != '' }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ (needs.setup.outputs.should_release == 'true' || needs.setup.outputs.should_draft == 'true') && secrets.TAURI_SIGNING_PRIVATE_KEY || '' }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ (needs.setup.outputs.should_release == 'true' || needs.setup.outputs.should_draft == 'true') && secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD || '' }}
         run: |
-          build_args=(--target "$BUILD_TARGET")
+          # The frontend was built above; its maps have already been moved out
+          # of dist so Tauri cannot embed them in the application.
+          build_args=(--target "$BUILD_TARGET" --config '{"build":{"beforeBuildCommand":""}}')
 
           if [ "$HAS_SIGNING_KEY" != "true" ]; then
             build_args+=(--config '{"bundle":{"createUpdaterArtifacts":false}}')
           fi
 
-          bun run tauri build "${build_args[@]}"
+          bun run tauri build "${build_args[@]}" --no-bundle
+          bun scripts/ci/prepare-debug-artifacts.ts \
+            --stage native --platform "$PLATFORM" --target "$BUILD_TARGET"
+          if [ "$PLATFORM" = "linux" ]; then
+            # Split DWARF still leaves substantial debug sections in the ELF.
+            # The archived original retains everything needed by its DWP;
+            # strip only the distribution binary before packaging/signing.
+            strip --strip-debug "src-tauri/target/$BUILD_TARGET/release/$PROJECT_NAME"
+          fi
+          bun run tauri bundle "${build_args[@]}"
 
       # ── Prepare & upload artifacts via script ──
       - name: Prepare artifacts
@@ -335,9 +365,30 @@ jobs:
         if: steps.filter.outputs.skip != 'true' && needs.setup.outputs.should_build == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: ${{ needs.setup.outputs.project_name }}-${{ matrix.os_name }}
+          name: packages-${{ needs.setup.outputs.project_name }}-${{ matrix.os_name }}
           path: artifacts/*
           if-no-files-found: error
+
+      - name: Archive release debugging files
+        if: steps.filter.outputs.skip != 'true' && needs.setup.outputs.should_build == 'true'
+        shell: bash
+        env:
+          PLATFORM: ${{ matrix.os_name }}
+          VERSION: ${{ needs.setup.outputs.version }}
+          TARGET: ${{ matrix.build_target || matrix.target }}
+        run: |
+          bun scripts/ci/prepare-debug-artifacts.ts \
+            --stage archive --platform "$PLATFORM" --version "$VERSION" --target "$TARGET"
+
+      - name: Upload release debugging files
+        if: steps.filter.outputs.skip != 'true' && needs.setup.outputs.should_build == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: debug-${{ needs.setup.outputs.project_name }}-${{ needs.setup.outputs.version }}-${{ matrix.build_target || matrix.target }}-${{ github.sha }}-${{ github.run_attempt }}
+          path: debug-artifacts/*.tar.gz
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
 
   # ═══════════════════════════════════════════════════════════════════════════
   # Prepare release metadata with read-only permissions.
@@ -362,9 +413,10 @@ jobs:
         with:
           bun-version: 1.4.0
 
-      - name: Download all artifacts
+      - name: Download distribution packages
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
+          pattern: packages-${{ needs.setup.outputs.project_name }}-*
           path: artifacts
           merge-multiple: true
 

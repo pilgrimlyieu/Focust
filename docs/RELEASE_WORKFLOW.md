@@ -161,6 +161,31 @@ Use `workflow_dispatch` with `release_mode=draft-release` when maintainers need 
 
 Draft releases use the fixed `draft` tag. Existing draft assets are removed before new assets are uploaded, so the draft release always represents the latest manual draft build. GitHub Actions artifacts expire according to the repository retention policy, but GitHub Release assets and tags do not expire automatically.
 
+#### Downloading Release Debugging Artifacts
+
+Every successful tag build or manual build with `build_artifacts=true` uploads a separate debug archive for each selected platform. PR quality checks and dependency-cache warming do not upload these archives.
+
+1. Open **Actions → Release Build → the matching workflow run**.
+2. Under **Artifacts**, download `debug-focust-<version>-<target>-<commit>-<attempt>` for the affected platform.
+3. Extract the downloaded artifact and its inner `*_debug.tar.gz` archive.
+
+The archive contains:
+
+- `native/`: original optimized release executables with matching Windows PDB, Linux DWP, or macOS dSYM files. macOS includes both architectures and the universal executable.
+- `frontend/`: built frontend assets and hidden source maps, including source content.
+- `packages/`: the final installers, portable packages and updater signatures from that same build.
+- `build-info.json`: version, commit SHA, target, run URL, toolchain versions, profile overrides and file checksums.
+
+The workflow requests **90 days** of retention for debug archives, subject to the repository/organization retention limits. Download and keep a copy before expiry if you need to debug older versions. You can also download all debug artifacts from a run with GitHub CLI:
+
+```bash
+gh run download <run-id> --repo pilgrimlyieu/Focust --pattern 'debug-*'
+```
+
+Distribution packages use a separate `packages-focust-<platform>` artifact name. Release publishing downloads only those artifacts; debug archives are not attached to GitHub Releases or referenced by the updater.
+
+CI retains release optimization and uses debug level 1, which does not provide full local-variable inspection. Source maps and separate symbol files are excluded from installers. For Linux source/line lookup, use the archived ELF with its adjacent DWP. See the [CI scripts README](../scripts/ci/README.md#prepare-debug-artifactsts) for build details.
+
 #### Manual Release (Legacy)
 
 If you prefer manual control:
@@ -197,11 +222,11 @@ If you prefer manual control:
    ↓
 4. Disable updater artifacts for manual artifact builds
    ↓
-5. Build application (tauri build)
+5. Build frontend, archive source maps, then compile application (tauri build --no-bundle)
    ↓
-6. Generate updater signatures for tag releases and main-branch draft releases
+6. Preserve release binaries/symbols, then bundle and generate updater signatures
    ↓
-7. Package and upload GitHub Actions artifacts
+7. Upload distribution packages and a separate 90-day debugging archive
    ↓
 8. Stop here for manual artifact builds
 ```

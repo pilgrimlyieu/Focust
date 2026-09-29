@@ -16,6 +16,8 @@ export default defineConfig(async () => ({
         settings: resolve(import.meta.dirname, "settings.html"),
       },
     },
+    // CI archives these maps before Tauri embeds dist in the application.
+    sourcemap: process.env.FOCUST_DEBUG_ARTIFACTS === "true" ? "hidden" : false,
   },
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
