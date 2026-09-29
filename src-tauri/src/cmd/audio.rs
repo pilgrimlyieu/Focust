@@ -5,6 +5,7 @@
 
 use anyhow::{Context, anyhow};
 use tauri::State;
+use tauri::async_runtime::spawn_blocking;
 use tauri::path::BaseDirectory;
 use tauri::{AppHandle, Manager};
 
@@ -27,7 +28,11 @@ pub async fn play_audio(
 ) -> Result<(), String> {
     tracing::debug!("play_audio command called: path={path}, volume={volume}");
 
-    audio::play_audio(&player, &path, volume)
+    // File I/O, decoding and the player mutex must not block async workers.
+    let player = player.inner().clone();
+    spawn_blocking(move || audio::play_audio(&player, &path, volume))
+        .await
+        .map_err(|e| format!("Audio task failed: {e}"))?
         .map_err(|e| {
             let error_msg = format!("Failed to play audio: {e}");
             tracing::error!("Audio playback error: {error_msg}");
@@ -61,17 +66,21 @@ pub async fn play_builtin_audio(
         "play_builtin_audio command called: resource_name={resource_name}, volume={volume}"
     );
 
-    let resource_path = resolve_builtin_audio_path(&app, &resource_name)?;
-
-    audio::play_audio(&player, &resource_path, volume)
-        .map_err(|e| {
-            let error_msg = format!("Failed to play builtin audio: {e}");
-            tracing::error!("Audio playback error: {error_msg}");
-            error_msg
-        })
-        .inspect(|_result| {
-            tracing::debug!("play_builtin_audio command completed successfully");
-        })
+    let player = player.inner().clone();
+    spawn_blocking(move || {
+        let resource_path = resolve_builtin_audio_path(&app, &resource_name)?;
+        audio::play_audio(&player, &resource_path, volume).map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| format!("Audio task failed: {e}"))?
+    .map_err(|e| {
+        let error_msg = format!("Failed to play builtin audio: {e}");
+        tracing::error!("Audio playback error: {error_msg}");
+        error_msg
+    })
+    .inspect(|_result| {
+        tracing::debug!("play_builtin_audio command completed successfully");
+    })
 }
 
 /// Stops the currently playing audio.
@@ -82,7 +91,10 @@ pub async fn play_builtin_audio(
 #[tauri::command]
 pub async fn stop_audio(player: State<'_, AudioPlayerState>) -> Result<(), String> {
     tracing::debug!("stop_audio command called");
-    audio::stop_audio(&player)
+    let player = player.inner().clone();
+    spawn_blocking(move || audio::stop_audio(&player))
+        .await
+        .map_err(|e| format!("Audio task failed: {e}"))?
         .map_err(|e| {
             let error_msg = format!("Failed to stop audio: {e}");
             tracing::error!("Audio stop error: {error_msg}");
@@ -133,4 +145,54 @@ fn resolve_builtin_audio_path(app: &AppHandle, resource_name: &str) -> Result<St
         .to_str()
         .ok_or_else(|| anyhow!("Invalid path encoding for resource '{resource_name}'").to_string())
         .map(str::to_owned)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{play_audio, stop_audio};
+    use crate::core::audio::AudioPlayerState;
+    use parking_lot::Mutex;
+    use std::sync::{Arc, mpsc};
+    use std::thread;
+    use std::time::Duration;
+    use tauri::Manager;
+    use tauri::test::mock_app;
+    use tokio::runtime::Builder;
+
+    #[test]
+    fn audio_commands_leave_runtime_responsive_while_waiting_for_lock() {
+        for stop in [false, true] {
+            let state: AudioPlayerState = Arc::new(Mutex::new(None));
+            let guard = state.lock();
+            let cloned = Arc::clone(&state);
+            let (tx, rx) = mpsc::channel();
+            let worker = thread::spawn(move || {
+                let app = mock_app();
+                app.manage(cloned);
+                let runtime = Builder::new_current_thread().build().unwrap();
+                runtime.block_on(async {
+                    // Poll the command first. With an inline blocking lock, even
+                    // the sibling future cannot run until the audio lock opens.
+                    let (result, ()) = tokio::join!(biased;
+                        async {
+                            if stop {
+                                stop_audio(app.state()).await
+                            } else {
+                                play_audio(app.state(), "unused.wav".into(), 0.6).await
+                            }
+                        },
+                        async { tx.send(()).unwrap(); }
+                    );
+                    assert!(result.is_err()); // Uninitialized test player.
+                });
+            });
+            let responsive = rx.recv_timeout(Duration::from_secs(1));
+            drop(guard);
+            worker.join().unwrap();
+            assert!(
+                responsive.is_ok(),
+                "audio command blocked the async runtime (stop={stop})"
+            );
+        }
+    }
 }

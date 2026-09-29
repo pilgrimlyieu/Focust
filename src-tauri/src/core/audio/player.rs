@@ -2,7 +2,8 @@ use std::fs::File;
 use std::io::{self, BufReader, ErrorKind};
 use std::path::Path;
 
-use rodio::{Decoder, DeviceSinkBuilder, MixerDeviceSink, Player};
+use rodio::mixer::Mixer;
+use rodio::{Decoder, DeviceSinkBuilder, MixerDeviceSink, Player, Source};
 
 #[derive(Debug, thiserror::Error)]
 pub enum PlaybackError {
@@ -34,7 +35,7 @@ pub enum PlaybackError {
 /// Audio player using rodio
 pub struct AudioPlayer {
     /// Device sink (must be kept alive)
-    _sink: MixerDeviceSink,
+    output: MixerDeviceSink,
     /// Current player for audio playback
     player: Player,
     /// Current volume (0.0 to 1.0)
@@ -58,7 +59,7 @@ impl AudioPlayer {
         tracing::info!("Audio player initialized successfully");
 
         Ok(Self {
-            _sink: device_sink,
+            output: device_sink,
             player,
             current_volume: 0.6,
         })
@@ -86,13 +87,6 @@ impl AudioPlayer {
             )));
         }
 
-        // Stop any currently playing audio before starting new playback
-        // This ensures clean state and prevents resource conflicts
-        if !self.player.empty() {
-            tracing::debug!("Stopping current audio before playing new file");
-            self.stop();
-        }
-
         // Open the audio file
         tracing::debug!("Opening audio file: {path}");
         let file = File::open(path).map_err(|e| {
@@ -109,8 +103,7 @@ impl AudioPlayer {
         })?;
 
         // Set volume and append source
-        self.player.set_volume(volume);
-        self.player.append(source);
+        start_playback(&mut self.player, self.output.mixer(), source, volume);
 
         // Player plays automatically after appending
         self.current_volume = volume;
@@ -165,15 +158,105 @@ impl AudioPlayer {
     }
 }
 
+/// Submit decoded audio to the output mixer.
+fn start_playback<S: Source + Send + 'static>(
+    player: &mut Player,
+    mixer: &Mixer,
+    source: S,
+    volume: f32,
+) {
+    // Appending to a stopped Player waits for its old queue to drain. A stalled
+    // device may never drain it, so retire the old player without waiting.
+    player.stop();
+    let (next_player, output) = Player::new();
+    next_player.set_volume(volume);
+    next_player.append(source);
+    // Queue the source before connecting, so the mixer sees its sample rate
+    // rather than the empty queue's default format.
+    mixer.add(output);
+    *player = next_player;
+}
+
 #[cfg(test)]
 #[expect(clippy::float_cmp)]
 mod tests {
-    use super::{AudioPlayer, PlaybackError};
+    use super::{AudioPlayer, PlaybackError, start_playback};
 
     use std::fs::{self, File};
     use std::io::Write;
 
     use tempfile::TempDir;
+
+    #[test]
+    fn audio_replay_does_not_wait_for_stalled_output() {
+        use rodio::{Player, buffer::SamplesBuffer, mixer};
+        use std::sync::mpsc;
+        use std::thread;
+        use std::time::Duration;
+
+        let (mixer, mut output) = mixer::mixer(1.try_into().unwrap(), 44100.try_into().unwrap());
+        let mut player = Player::connect_new(&mixer);
+        let source = || {
+            SamplesBuffer::new(
+                1.try_into().unwrap(),
+                44100.try_into().unwrap(),
+                vec![0.25; 32],
+            )
+        };
+        start_playback(&mut player, &mixer, source(), 0.6);
+        player.stop();
+        // Retain the real output without consuming it: the audio callback cannot
+        // acknowledge stop or drain the previous sound.
+        let (tx, rx) = mpsc::channel();
+        let worker = thread::spawn(move || {
+            start_playback(&mut player, &mixer, source(), 0.3);
+            tx.send(()).unwrap();
+            player
+        });
+        let result = rx.recv_timeout(Duration::from_secs(1));
+        // Resume consumption after observing the result, so even the old
+        // implementation releases its wait and the worker can be joined.
+        for _ in 0..4096 {
+            let _ = output.next();
+        }
+        drop(output);
+        let player = worker.join().unwrap();
+        assert!(
+            result.is_ok(),
+            "replaying audio waited for the stalled output"
+        );
+        assert_eq!(player.volume(), 0.3);
+    }
+
+    #[test]
+    fn audio_replacement_plays_only_the_new_source_at_requested_volume() {
+        use rodio::{Player, buffer::SamplesBuffer, mixer};
+
+        let channels = 1.try_into().unwrap();
+        let rate = 44100.try_into().unwrap();
+        let (mixer, output) = mixer::mixer(channels, rate);
+        let mut player = Player::connect_new(&mixer);
+        start_playback(
+            &mut player,
+            &mixer,
+            SamplesBuffer::new(channels, rate, vec![0.25; 32]),
+            1.0,
+        );
+        // Replace a queued sound without an explicit stop from the caller.
+        start_playback(
+            &mut player,
+            &mixer,
+            SamplesBuffer::new(channels, rate, vec![0.75; 32]),
+            0.5,
+        );
+        // rodio can buffer initial silence when a Player joins the mixer.
+        // Inspect the sound after that padding, including any unwanted old audio.
+        let sound = output
+            .take(4096)
+            .filter(|sample| *sample != 0.0)
+            .collect::<Vec<_>>();
+        assert_eq!(sound, vec![0.375; 32]);
+    }
 
     /// Helper to create a temporary WAV file for testing
     fn create_test_audio_file(dir: &TempDir, name: &str) -> String {
