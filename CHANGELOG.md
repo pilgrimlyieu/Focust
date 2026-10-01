@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 <!-- CHANGELOG_INSERT -->
 
+## 0.4.3 (2026.10.1)
+
+### 🐛 Bug Fixes
+
+- Fixed [AppImage permissions denied error](https://github.com/AppImage/appimage.github.io/pull/4481#issuecomment-5924031348).
+
 ## 0.4.2 (2026.10.1)
 
 ### 🎉 Features
