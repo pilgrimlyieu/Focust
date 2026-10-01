@@ -28,7 +28,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
     "@tailwindcss/vite": "^4.3.3",
-    "@tauri-apps/cli": "^2.11.5",
+    "@tauri-apps/cli": "^2.12.1",
     "@types/bun": "^1.4.2",
     "@vitejs/plugin-vue": "^6.0.9",
     "@vitest/coverage-v8": "5.0.1",
