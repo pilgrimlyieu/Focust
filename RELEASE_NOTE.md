@@ -9,20 +9,16 @@
 
 ## 🎉 Features
 
-- List new features here
+- Added configuration schema support. `config.toml` now includes a schema comment at the top.
 
 ## 🐛 Bug Fixes
 
-- List bug fixes here
+- Fixed a potential hang by avoiding stalled playback queues and isolating blocking commands.
 
 ## 🚀 Improvements
 
-- List improvements here
+- Added a hint for the Windows portable build that system notifications are unavailable because the portable build does not register an application identifier (AppUserModelID).
 
 ## 📝 Documentation
 
-- List documentation changes here
-
-## ⚠️ Breaking Changes
-
-- List breaking changes here (if any)
+- Added [an FAQ entry in QUICKSTART](https://github.com/pilgrimlyieu/Focust/blob/main/docs/QUICKSTART.md#no-notifications-with-the-windows-portable-build) for the Windows portable build giving users a manual workaround.
