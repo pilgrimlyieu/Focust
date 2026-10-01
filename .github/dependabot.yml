@@ -1,8 +1,8 @@
 version: 2
 enable-beta-ecosystems: true
 updates:
-  # Frontend dependencies (Bun)
-  - package-ecosystem: "bun"
+  # Frontend dependencies (npm; bun lockfileVersion 2 is not yet supported by Dependabot's bun updater)
+  - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "monthly"
