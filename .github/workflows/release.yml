@@ -179,7 +179,7 @@ jobs:
           - platform: windows-latest
             target: x86_64-pc-windows-msvc
             os_name: windows
-          - platform: ubuntu-latest
+          - platform: ubuntu-22.04 # AppImage glibc compatibility
             target: x86_64-unknown-linux-gnu
             os_name: linux
           - platform: macos-latest
