@@ -325,6 +325,14 @@ Secrets are encrypted and only exposed to workflows:
 
 ### Common Issues
 
+**Issue**: Linux cache warming reports `E0463: can't find crate` after changing runners
+
+The Rust cache contains compiled dependencies, including host-side procedural macros. Artifacts built on a newer Ubuntu image can be incompatible with an older image's system libraries, even with the same Rust toolchain and target triple. Errors about missing generated proxy types can follow when macros cannot load.
+
+Both workflows include the runner's `ImageOS` environment variable in the Rust cache fingerprint. This separates exact matches and fallback restores by the actual image (for example, `ubuntu22` versus `ubuntu24`), including changes behind `ubuntu-latest`. Keep release builds on `ubuntu-22.04` for AppImage glibc compatibility.
+
+---
+
 **Issue**: Build succeeds but no `.sig` files
 
 **Solution**: 

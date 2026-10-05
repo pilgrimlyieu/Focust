@@ -256,6 +256,8 @@ jobs:
         with:
           workspaces: src-tauri
           shared-key: ${{ matrix.target }}
+          # Separate compiled artifacts by runner image
+          env-vars: ImageOS
 
       - name: Cache Bun downloads
         if: steps.filter.outputs.skip != 'true'
