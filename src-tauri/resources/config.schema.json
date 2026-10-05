@@ -110,6 +110,11 @@
           "default": [],
           "description": "Pause reasons that reset the mini-break counter used for long-break cadence."
         },
+        "resetOnWake": {
+          "type": "boolean",
+          "default": true,
+          "description": "Restart the break interval and mini-break counter when the system wakes from sleep or hibernation, preserving existing pauses."
+        },
         "trayPauseDurationsMinutes": {
           "type": "array",
           "items": {

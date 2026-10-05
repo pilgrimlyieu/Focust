@@ -1,6 +1,6 @@
 use chrono::{DateTime, Duration, Utc};
 use std::{future, pin::Pin, time::Duration as StdDuration};
-use tauri::{AppHandle, Emitter, Runtime};
+use tauri::{AppHandle, Emitter, Manager, Runtime};
 use tokio::sync::{mpsc, watch};
 use tokio::time::{Instant, sleep_until};
 
@@ -9,7 +9,7 @@ use super::break_scheduler::BreakScheduler;
 use super::event_emitter::TauriEventEmitter;
 use super::models::{Command, PauseReason, SchedulerStatus};
 use super::shared_state::{SharedState, create_shared_state};
-use crate::scheduler::SchedulerEvent;
+use crate::{config::SharedConfig, scheduler::SchedulerEvent};
 
 type Timer = Pin<Box<dyn future::Future<Output = ()> + Send>>;
 
@@ -179,6 +179,7 @@ impl SchedulerManager {
 ///
 /// These commands are sent to all schedulers for processing:
 /// - **`UpdateConfig`**: All schedulers recalculate next events
+/// - **`SystemResumed`**: Reset after system wake if enabled in advanced config
 ///
 /// Flow: Command → Forward to all schedulers
 ///
@@ -291,10 +292,8 @@ pub(crate) async fn broadcast_commands<R: Runtime>(
 
                     // === BROADCAST COMMANDS: Forward to All ===
 
-                    Command::UpdateConfig(_) => {
-                        tracing::debug!("Broadcasting UpdateConfig to all schedulers");
-                        let _ = break_cmd_tx.send(cmd.clone()).await;
-                        let _ = attention_cmd_tx.send(cmd).await;
+                    Command::UpdateConfig(_) | Command::SystemResumed => {
+                        broadcast_scheduler_update(cmd, &app_handle, &break_cmd_tx, &attention_cmd_tx).await;
                     }
 
                     // === TARGETED COMMANDS: Route by Event Type ===
@@ -316,6 +315,28 @@ pub(crate) async fn broadcast_commands<R: Runtime>(
             }
         }
     }
+}
+
+/// Forward scheduler updates, respecting the advanced opt-out for system wake.
+async fn broadcast_scheduler_update<R: Runtime>(
+    cmd: Command,
+    app_handle: &AppHandle<R>,
+    break_cmd_tx: &mpsc::Sender<Command>,
+    attention_cmd_tx: &mpsc::Sender<Command>,
+) {
+    if matches!(cmd, Command::SystemResumed)
+        && !app_handle
+            .state::<SharedConfig>()
+            .read()
+            .await
+            .advanced
+            .reset_on_wake
+    {
+        return;
+    }
+    tracing::debug!("Broadcasting {cmd} to all schedulers");
+    let _ = break_cmd_tx.send(cmd.clone()).await;
+    let _ = attention_cmd_tx.send(cmd).await;
 }
 
 /// Handle Pause command: Update `SharedState` and forward if needed

@@ -44,6 +44,10 @@ pub mod utils;
 #[expect(clippy::too_many_lines, clippy::expect_used, clippy::print_stderr)]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Keep the native registration alive in the event-loop closure.
+    // The macOS observer is not Send + Sync, so it cannot be stored with
+    // app.manage() or moved into the background monitor task.
+    let mut wake_monitor = None;
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
@@ -231,15 +235,26 @@ pub fn run() {
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
-        .run(|_app_handle, event| {
-            // Prevent exit when all window destroyed
-            // See: https://github.com/tauri-apps/tauri/issues/13511
-            if let tauri::RunEvent::ExitRequested { api, code, .. } = event {
-                if code.is_none() {
-                    api.prevent_exit();
-                } else {
-                    tracing::info!("Application exit code: {code:?}");
+        .run(move |app_handle, event| {
+            match &event {
+                tauri::RunEvent::Ready => match platform::wake::WakeMonitor::new(app_handle) {
+                    Ok(monitor) => wake_monitor = Some(monitor),
+                    Err(error) => {
+                        tracing::warn!("System wake notifications unavailable: {error:#}");
+                    }
+                },
+                // Clean up on actual exit; ExitRequested may be prevented below.
+                tauri::RunEvent::Exit => drop(wake_monitor.take()),
+                // Prevent exit when all window destroyed
+                // See: https://github.com/tauri-apps/tauri/issues/13511
+                tauri::RunEvent::ExitRequested { api, code, .. } => {
+                    if code.is_none() {
+                        api.prevent_exit();
+                    } else {
+                        tracing::info!("Application exit code: {code:?}");
+                    }
                 }
+                _ => {}
             }
         });
 }

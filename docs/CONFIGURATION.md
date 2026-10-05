@@ -840,6 +840,16 @@ Example:
 resetMiniBreakCounterOnPauseReasons = ["userIdle"]
 ```
 
+### `resetOnWake`
+- **Type**: Boolean
+- **Default**: `true`
+- **Description**: Control whether to close the old break window, restart the break interval, and clear the mini-break count used for long breaks, when the system wakes from sleep or hibernation.
+
+```toml
+[advanced]
+resetOnWake = true
+```
+
 ### `trayPauseDurationsMinutes`
 - **Type**: Array of positive integers
 - **Default**: `[15, 30, 60]`

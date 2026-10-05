@@ -200,6 +200,10 @@ where
             Command::Resume(_reason) => {
                 self.handle_resume_command().await;
             }
+            Command::SystemResumed if !matches!(self.state, AttentionTimerState::Paused(_)) => {
+                // Skip reminders whose calendar time passed while asleep.
+                self.transition_to_calculating().await;
+            }
             Command::UpdateConfig(new_config) => {
                 self.handle_update_config_command(*new_config).await;
             }
@@ -379,6 +383,34 @@ mod tests {
     use crate::core::time::ShortTimes;
     use crate::scheduler::test_helpers::*;
     use chrono::{Timelike, Weekday};
+
+    #[tokio::test]
+    async fn system_wake_discards_overdue_attention_without_resuming_pauses() {
+        let env = manager::create_manager_test_env(TestConfigBuilder::new().build());
+        let mut timer = AttentionTimer::new(
+            env.app_handle.clone(),
+            env.event_emitter.clone(),
+            env.shutdown_tx.subscribe(),
+            env.shared_state.clone(),
+        );
+        timer.state = AttentionTimerState::WaitingForAttention(AttentionInfo {
+            attention_id: AttentionId::new(),
+            attention_time: Utc::now() - Duration::minutes(10),
+        });
+        timer.handle_command(Command::SystemResumed).await;
+        assert!(matches!(timer.state, AttentionTimerState::Idle));
+        assert!(!env.shared_state.read().in_attention_session());
+        assert!(!env.event_emitter.has_event("scheduler-event"));
+
+        timer
+            .handle_command(Command::Pause(PauseReason::Manual))
+            .await;
+        timer.handle_command(Command::SystemResumed).await;
+        assert!(matches!(
+            timer.state,
+            AttentionTimerState::Paused(PauseReason::Manual)
+        ));
+    }
 
     mod get_next_attention_time_tests {
         use super::*;

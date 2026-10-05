@@ -24,6 +24,8 @@ pub struct AdvancedConfig {
     /// Pause reasons that reset the mini-break counter used for long-break cadence.
     #[serde(default)]
     pub reset_mini_break_counter_on_pause_reasons: Vec<PauseReason>,
+    /// Restart the break cycle when the system wakes from sleep or hibernation.
+    pub reset_on_wake: bool,
     /// Pause durations shown in the tray menu, in minutes.
     #[serde(default = "default_tray_pause_durations_minutes")]
     pub tray_pause_durations_minutes: Vec<u32>,
@@ -38,6 +40,7 @@ impl Default for AdvancedConfig {
         Self {
             log_level: LogLevel::default_for_build(),
             reset_mini_break_counter_on_pause_reasons: Vec::new(),
+            reset_on_wake: true,
             tray_pause_durations_minutes: default_tray_pause_durations_minutes(),
         }
     }

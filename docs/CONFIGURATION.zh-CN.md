@@ -752,6 +752,16 @@ logLevel = "debug" # 启用详细调试日志记录
 resetMiniBreakCounterOnPauseReasons = ["userIdle"]
 ```
 
+### `resetOnWake`
+- **类型**：布尔值
+- **默认值**：`true`
+- **说明**：控制系统从睡眠或休眠恢复时，是否关闭旧休息窗口，重新开始休息间隔，并清零用于安排长休息的短休息次数。
+
+```toml
+[advanced]
+resetOnWake = true
+```
+
 ### `trayPauseDurationsMinutes`
 - **类型**：正整数数组
 - **默认值**：`[15, 30, 60]`

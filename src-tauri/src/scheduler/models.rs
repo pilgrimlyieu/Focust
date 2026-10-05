@@ -92,6 +92,8 @@ pub enum Command {
     Resume(PauseReason),
     /// Resume by clearing all user-started pauses (manual and timed manual)
     ResumeUserPauses,
+    /// Recalculate reminders after a system wake, preserving existing pauses.
+    SystemResumed,
     /// Pause reminders for a bounded number of minutes
     PauseForMinutes(u32),
     /// Postpone the current break
@@ -115,6 +117,7 @@ impl Display for Command {
             Command::Pause(reason) => write!(f, "Pause({reason})"),
             Command::Resume(reason) => write!(f, "Resume({reason})"),
             Command::ResumeUserPauses => write!(f, "ResumeUserPauses"),
+            Command::SystemResumed => write!(f, "SystemResumed"),
             Command::PauseForMinutes(minutes) => write!(f, "PauseForMinutes({minutes})"),
             Command::PostponeBreak => write!(f, "PostponeBreak"),
             Command::TriggerEvent(event) => write!(f, "TriggerBreak({event})"),

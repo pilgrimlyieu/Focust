@@ -5,8 +5,6 @@ use std::time::Duration as StdDuration;
 
 use chrono::{DateTime, Datelike, Duration, Local, Utc};
 use futures::future::pending;
-#[cfg(not(test))]
-use tauri::async_runtime::spawn as tauri_spawn;
 use tauri::{AppHandle, Manager, Runtime};
 use tokio::sync::{mpsc, watch};
 use tokio::time::sleep;
@@ -21,7 +19,7 @@ use crate::core::break_kind::BreakKind;
 use crate::core::schedule::ScheduleSettings;
 #[cfg(not(test))]
 use crate::platform::create_prompt_windows;
-use crate::platform::send_break_notification;
+use crate::platform::{close_prompt_windows, send_break_notification};
 use crate::scheduler::event::get_active_schedule;
 
 /// The state of the break scheduler
@@ -248,64 +246,10 @@ where
         }
     }
 
-    /// Close all break windows asynchronously to avoid deadlock
-    ///
-    /// IMPORTANT: This method returns immediately and closes windows in the background.
-    /// This prevents deadlock when called from a command handler that was invoked
-    /// from within a break window (e.g., `postpone_break`, `skip_break`).
-    ///
-    /// The deadlock scenario:
-    /// 1. User clicks "Postpone" button in break window
-    /// 2. Frontend calls `postpone_break` command and waits for response
-    /// 3. Backend tries to close the calling window synchronously
-    /// 4. Window closure needs `WebView` thread, but it's blocked waiting for command response
-    /// 5. Result: deadlock
-    ///
-    /// Solution: Spawn async task to close windows after a small delay,
-    /// allowing the command to return immediately.
-    ///
-    /// # Testing Behavior
-    ///
-    /// In test environment (`#[cfg(test)]`), session cleanup is synchronous because:
-    /// - No real windows exist (window creation is skipped in tests)
-    /// - No deadlock risk since there's no `WebView` thread
-    /// - Tests need immediate session cleanup for assertions
+    /// Request closure of the current break windows and end the scheduler session.
     fn close_break_windows(&self) {
-        #[cfg(test)]
-        {
-            // In tests: synchronous cleanup (no windows, no deadlock risk)
-            self.shared_state.write().end_break_session();
-        }
-
-        #[cfg(not(test))]
-        {
-            // In production: asynchronous cleanup (avoid deadlock)
-            let app_handle = self.app_handle.clone();
-            let shared_state = self.shared_state.clone();
-
-            tracing::debug!("Scheduling asynchronous closure of break windows");
-
-            tauri_spawn(async move {
-                // Small delay to ensure any pending command responses are sent first
-                sleep(StdDuration::from_millis(100)).await;
-
-                tracing::debug!("Closing break windows (async)");
-
-                let windows = app_handle.webview_windows();
-                for (label, window) in windows {
-                    if label.starts_with("break-") {
-                        tracing::debug!("Closing break window: {label}");
-                        let _ = window.close();
-                    }
-                }
-
-                // CRITICAL: Always clean up session state when closing break windows
-                shared_state.write().end_break_session();
-                tracing::debug!(
-                    "Break session ended (windows closed), monitors will resume monitoring"
-                );
-            });
-        }
+        close_prompt_windows(&self.app_handle, "break-");
+        self.shared_state.write().end_break_session();
     }
 
     /// Helper to get schedule property (independent of break state)
@@ -425,6 +369,9 @@ where
             }
             Command::Resume(_reason) => {
                 self.handle_resume_command().await;
+            }
+            Command::SystemResumed => {
+                self.handle_system_resumed_command().await;
             }
             Command::PostponeBreak => {
                 self.handle_postpone_break_command().await;
@@ -729,6 +676,19 @@ where
         }
     }
 
+    /// Restart the break cycle after system wake without clearing pause reasons.
+    async fn handle_system_resumed_command(&mut self) {
+        tracing::info!("System resumed; resetting break cycle");
+        self.update_last_break_time();
+        self.reset_mini_break_counter();
+        self.close_break_windows();
+        if matches!(self.state, BreakSchedulerState::Paused(_)) {
+            self.emit_current_status();
+        } else {
+            self.transition_to_calculating().await;
+        }
+    }
+
     /// Handle `PostponeBreak` command
     async fn handle_postpone_break_command(&mut self) {
         // Get current break info or return early if not in postponable state
@@ -970,6 +930,29 @@ mod tests {
     use crate::scheduler::test_helpers::*;
 
     use chrono::Weekday;
+
+    #[tokio::test]
+    async fn system_wake_restarts_interval_from_now() {
+        use crate::scheduler::test_helpers::state_machine::{
+            create_test_break_scheduler, get_latest_status,
+        };
+
+        let config = TestConfigBuilder::new()
+            .mini_break_interval_s(60)
+            .notification_before_s(0)
+            .build();
+        let (mut scheduler, emitter, _shutdown_tx, _app) = create_test_break_scheduler(config);
+        scheduler.last_break_time = Some(Utc::now() - Duration::seconds(30));
+        scheduler.transition_to_calculating().await;
+        let before = get_latest_status(&emitter).next_event.unwrap();
+        assert!((28..=30).contains(&before.seconds_until));
+
+        scheduler.handle_command(Command::SystemResumed).await;
+
+        let after = get_latest_status(&emitter).next_event.unwrap();
+        assert!((58..=60).contains(&after.seconds_until));
+        assert!(!emitter.has_event("scheduler-event"));
+    }
 
     mod get_active_schedule_tests {
         use super::*;

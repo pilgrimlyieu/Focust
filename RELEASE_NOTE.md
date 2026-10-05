@@ -7,6 +7,22 @@
 
 <!-- Release notes content starts here -->
 
+## 🎉 Features
+
+- List new features here
+
 ## 🐛 Bug Fixes
 
-- Fixed [AppImage permissions denied error](https://github.com/AppImage/appimage.github.io/pull/4481#issuecomment-5924031348).
+- List bug fixes here
+
+## 🚀 Improvements
+
+- List improvements here
+
+## 📝 Documentation
+
+- List documentation changes here
+
+## ⚠️ Breaking Changes
+
+- List breaking changes here (if any)

@@ -22,10 +22,112 @@
 
 use tokio::sync::mpsc;
 
-use crate::scheduler::models::{Command, PauseReason};
+use crate::core::break_kind::BreakKind;
+use crate::scheduler::models::{Command, PauseReason, SchedulerEvent};
 use crate::scheduler::test_helpers::manager::*;
-use crate::scheduler::test_helpers::state_machine::{advance_time_and_yield, get_latest_status};
+use crate::scheduler::test_helpers::state_machine::{
+    advance_time_and_yield, assert_event_emitted, get_latest_status,
+};
 use crate::scheduler::test_helpers::*;
+
+/// Exercise real manager routing, in-progress session cleanup, stale completion,
+/// and the advanced opt-out using the same user-visible sequence.
+#[tokio::test(start_paused = true)]
+async fn system_wake_resets_break_cycle_unless_disabled() {
+    for enabled in [true, false] {
+        let mut config = TestConfigBuilder::new()
+            .mini_break_interval_s(60)
+            .notification_before_s(0)
+            .build();
+        config.advanced.reset_on_wake = enabled;
+        let env = create_manager_test_env(config);
+        let (cmd_tx, cmd_rx) = mpsc::channel(32);
+        spawn_test_manager(&env, cmd_rx).await;
+        advance_time_and_yield(duration_ms(200)).await;
+
+        cmd_tx
+            .send(Command::TriggerBreakNow(BreakKind::Mini))
+            .await
+            .unwrap();
+        advance_time_and_yield(duration_ms(200)).await;
+        let event: SchedulerEvent =
+            serde_json::from_value(assert_event_emitted(&env.event_emitter, "scheduler-event"))
+                .unwrap();
+        cmd_tx.send(Command::PromptFinished(event)).await.unwrap();
+        advance_time_and_yield(duration_ms(200)).await;
+        assert_eq!(get_latest_status(&env.event_emitter).mini_break_counter, 1);
+
+        cmd_tx
+            .send(Command::TriggerBreakNow(BreakKind::Mini))
+            .await
+            .unwrap();
+        advance_time_and_yield(duration_ms(200)).await;
+        let old_event: SchedulerEvent =
+            serde_json::from_value(assert_event_emitted(&env.event_emitter, "scheduler-event"))
+                .unwrap();
+        assert!(env.shared_state.read().in_break_session());
+
+        cmd_tx.send(Command::SystemResumed).await.unwrap();
+        cmd_tx.send(Command::RequestBreakStatus).await.unwrap();
+        advance_time_and_yield(duration_ms(200)).await;
+        let status = get_latest_status(&env.event_emitter);
+        assert_eq!(env.shared_state.read().in_break_session(), !enabled);
+        assert!(!status.paused);
+        if enabled {
+            assert_eq!(status.mini_break_counter, 0);
+            let next = status.next_event.unwrap();
+            assert!(next.kind.is_mini());
+            assert!((58..=60).contains(&next.seconds_until));
+
+            // Closing an old window must not count its late completion as a new break.
+            cmd_tx
+                .send(Command::PromptFinished(old_event))
+                .await
+                .unwrap();
+            cmd_tx.send(Command::RequestBreakStatus).await.unwrap();
+            advance_time_and_yield(duration_ms(200)).await;
+            let after_old_completion = get_latest_status(&env.event_emitter);
+            assert_eq!(after_old_completion.mini_break_counter, 0);
+            assert!(!env.shared_state.read().in_break_session());
+            let next_after = after_old_completion.next_event.unwrap();
+            assert_eq!(next_after.kind, next.kind);
+            assert_eq!(next_after.time, next.time);
+
+            // A repeated wake is safe independently of the stale completion above.
+            cmd_tx.send(Command::SystemResumed).await.unwrap();
+            advance_time_and_yield(duration_ms(200)).await;
+            assert_eq!(get_latest_status(&env.event_emitter).mini_break_counter, 0);
+            assert!(!env.shared_state.read().in_break_session());
+        } else {
+            assert_eq!(status.mini_break_counter, 1);
+            assert!(status.next_event.is_none());
+        }
+        drop(env.shutdown_tx);
+    }
+}
+
+#[tokio::test(start_paused = true)]
+async fn system_wake_preserves_concurrent_pauses_and_deadline() {
+    let env = create_manager_test_env(TestConfigBuilder::new().build());
+    let (cmd_tx, cmd_rx) = mpsc::channel(32);
+    spawn_test_manager(&env, cmd_rx).await;
+    cmd_tx.send(Command::PauseForMinutes(15)).await.unwrap();
+    cmd_tx.send(Command::Pause(PauseReason::Dnd)).await.unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+    let deadline = env.shared_state.read().timed_pause_until();
+    let reasons = env.shared_state.read().pause_reasons();
+    env.event_emitter.clear();
+
+    cmd_tx.send(Command::SystemResumed).await.unwrap();
+    advance_time_and_yield(duration_ms(200)).await;
+    assert_eq!(env.shared_state.read().timed_pause_until(), deadline);
+    assert_eq!(env.shared_state.read().pause_reasons(), reasons);
+    let status = get_latest_status(&env.event_emitter);
+    assert!(status.paused);
+    assert!(status.next_event.is_none());
+    assert!(!env.event_emitter.has_event("scheduler-event"));
+    drop(env.shutdown_tx);
+}
 
 // ============================================================================
 // Multi-Reason Pause Management Tests

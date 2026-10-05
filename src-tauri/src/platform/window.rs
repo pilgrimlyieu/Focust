@@ -124,6 +124,22 @@ pub async fn create_prompt_windows<R: Runtime>(
     Ok(())
 }
 
+/// Requests closure of prompt windows matching a payload ID or kind prefix.
+///
+/// Tauri queues each close request on the event loop; this does not wait for
+/// window destruction. Individual failures are logged so other windows can close.
+pub(crate) fn close_prompt_windows<R: Runtime>(app: &AppHandle<R>, prefix: &str) {
+    tracing::debug!("Closing prompt windows with prefix: {prefix}");
+    for (label, window) in app.webview_windows() {
+        if label.starts_with(prefix) {
+            tracing::debug!("Closing prompt window: {label}");
+            window.close().unwrap_or_else(|e| {
+                tracing::warn!("Failed to close window {label}: {e}");
+            });
+        }
+    }
+}
+
 /// Creates the settings window.
 ///
 /// If the window already exists, shows and focuses it instead of creating a new one.
