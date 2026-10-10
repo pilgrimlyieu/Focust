@@ -19,6 +19,7 @@ import PlayIcon from "@/components/icons/PlayIcon.vue";
 import RefreshIcon from "@/components/icons/RefreshIcon.vue";
 import SettingGear from "@/components/icons/SettingGear.vue";
 import SuggestionBulb from "@/components/icons/SuggestionBulb.vue";
+import UndoIcon from "@/components/icons/UndoIcon.vue";
 import ToastHost from "@/components/ui/ToastHost.vue";
 
 const AdvancedPanel = defineAsyncComponent(
@@ -39,9 +40,11 @@ const GeneralSettingsPanel = defineAsyncComponent(
 const SchedulesPanel = defineAsyncComponent(
   () => import("@/components/settings/SchedulesPanel.vue"),
 );
-const SuggestionsPanel = defineAsyncComponent(
-  () => import("@/components/settings/SuggestionsPanel.vue"),
-);
+const SuggestionsPanel = defineAsyncComponent({
+  loader: () => import("@/components/settings/SuggestionsPanel.vue"),
+  // Let the async wrapper register its resolved name with KeepAlive on first load.
+  suspensible: false,
+});
 
 import { listen } from "@tauri-apps/api/event";
 import AppExclusionIcon from "@/components/icons/AppExclusionIcon.vue";
@@ -81,6 +84,7 @@ const activeTab = ref<TabKey>("general");
 
 const { toasts, show, dismiss } = useToast();
 const isDirty = computed(() => configStore.isDirty);
+const canUndoReset = computed(() => configStore.canUndoReset);
 const isSaving = computed(() => configStore.saving);
 const isLoading = computed(() => configStore.loading);
 
@@ -219,11 +223,14 @@ async function handleSave() {
 }
 
 /**
- * Handle resetting the configuration draft.
+ * Handle resetting or restoring the configuration draft.
  */
 function handleReset() {
-  configStore.resetDraft();
-  show("info", t("general.resetHint"));
+  if (canUndoReset.value) {
+    if (configStore.undoReset()) show("info", t("toast.resetUndone"));
+  } else if (configStore.resetDraft()) {
+    show("info", t("general.resetHint"));
+  }
 }
 
 /**
@@ -378,9 +385,13 @@ defineExpose({
             <span class="hidden sm:inline">{{ t("actions.postpone") }}</span>
           </button>
           <div class="divider divider-horizontal mx-0"></div>
-          <button class="btn btn-sm gap-2 btn-ghost" :disabled="!isDirty" @click="handleReset">
-            <RefreshIcon class-name="h-4 w-4" />
-            <span class="hidden sm:inline">{{ t("actions.reset") }}</span>
+          <button class="btn btn-sm gap-2 btn-ghost" :class="{ 'text-info': canUndoReset }"
+            :disabled="(!isDirty && !canUndoReset) || isSaving || isLoading"
+            :aria-label="t(canUndoReset ? 'actions.undoReset' : 'actions.reset')"
+            :title="t(canUndoReset ? 'actions.undoReset' : 'actions.reset')" @click="handleReset">
+            <UndoIcon v-if="canUndoReset" class-name="h-4 w-4" />
+            <RefreshIcon v-else class-name="h-4 w-4" aria-hidden="true" focusable="false" />
+            <span class="hidden sm:inline">{{ t(canUndoReset ? "actions.undoReset" : "actions.reset") }}</span>
           </button>
           <button class="btn btn-sm gap-2 btn-primary shadow-lg" :disabled="!isDirty || isSaving" @click="handleSave">
             <span v-if="isSaving" class="loading loading-spinner loading-xs" />
@@ -436,16 +447,18 @@ defineExpose({
             <Suspense>
               <template #default>
                 <Transition name="fade" mode="out-in">
-                  <GeneralSettingsPanel v-if="activeTab === 'general'" :key="'general'" :config="configStore.draft"
-                    @notify="handleNotify" />
-                  <SchedulesPanel v-else-if="activeTab === 'schedules'" :key="'schedules'"
-                    :config="configStore.draft" />
-                  <AttentionsPanel v-else-if="activeTab === 'attentions'" :key="'attentions'"
-                    :config="configStore.draft" />
-                  <SuggestionsPanel v-else-if="activeTab === 'suggestions'" :key="'suggestions'" />
-                  <AppExclusionsPanel v-else-if="activeTab === 'exclusions'" :key="'exclusions'" />
-                  <AdvancedPanel v-else-if="activeTab === 'advanced'" :key="'advanced'" @notify="handleNotify" />
-                  <AboutPanel v-else-if="activeTab === 'about'" :key="'about'" @notify="handleNotify" />
+                  <KeepAlive include="SuggestionsPanel">
+                    <GeneralSettingsPanel v-if="activeTab === 'general'" :key="'general'" :config="configStore.draft"
+                      @notify="handleNotify" />
+                    <SchedulesPanel v-else-if="activeTab === 'schedules'" :key="'schedules'"
+                      :config="configStore.draft" />
+                    <AttentionsPanel v-else-if="activeTab === 'attentions'" :key="'attentions'"
+                      :config="configStore.draft" />
+                    <SuggestionsPanel v-else-if="activeTab === 'suggestions'" :key="'suggestions'" />
+                    <AppExclusionsPanel v-else-if="activeTab === 'exclusions'" :key="'exclusions'" />
+                    <AdvancedPanel v-else-if="activeTab === 'advanced'" :key="'advanced'" @notify="handleNotify" />
+                    <AboutPanel v-else-if="activeTab === 'about'" :key="'about'" @notify="handleNotify" />
+                  </KeepAlive>
                 </Transition>
               </template>
               <template #fallback>

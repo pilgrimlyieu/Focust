@@ -54,6 +54,7 @@ const ruRU: LocaleStrings = {
     reset: "Сбросить",
     resume: "Возобновить",
     save: "Сохранить изменения",
+    undoReset: "Отменить сброс",
   },
   advanced: {
     breakWindow: "Окно перерыва",
@@ -201,7 +202,8 @@ const ruRU: LocaleStrings = {
       "Отсрочка сдвигает следующий перерыв на настроенную продолжительность",
     postponeShortcut: "Горячая клавиша отсрочки",
     postponeShortcutHint: "Нажмите для захвата клавиш, например, Ctrl+Shift+P",
-    resetHint: "Сброс отменит все несохраненные изменения",
+    resetHint:
+      "Несохранённые изменения сброшены. Нажмите «Отменить сброс», чтобы восстановить их.",
     running: "Планировщик работает",
     scheduler: "Управление планировщиком",
     secondsRemaining: "{seconds} сек",
@@ -339,6 +341,7 @@ const ruRU: LocaleStrings = {
     noScheduleConfig: "Нет доступной конфигурации расписания",
     openFailed: "Не удалось открыть каталог",
     openUrlFailed: "Не удалось открыть {url}",
+    resetUndone: "Несохранённые изменения восстановлены",
     saved: "Конфигурация сохранена",
     saveFailed: "Не удалось сохранить конфигурацию",
     updateCheckFailed: "Не удалось проверить обновления",

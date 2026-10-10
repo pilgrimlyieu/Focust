@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { defineStore } from "pinia";
-import { computed, ref } from "vue";
+import { computed, ref, shallowRef, watch } from "vue";
 import { type LocaleKey, setI18nLocale } from "@/i18n";
 import type {
   AppConfig,
@@ -47,6 +47,8 @@ export const useConfigStore = defineStore("config", () => {
   const original = ref<AppConfig | null>(null); // Original loaded config
   const draft = ref<AppConfig | null>(null); // Editable draft config
   const error = ref<string | null>(null); // Error message
+  const resetSnapshot = shallowRef<AppConfig | null>(null);
+  const canUndoReset = computed(() => resetSnapshot.value !== null);
 
   /** Check if draft differs from original */
   const isDirty = computed(() => {
@@ -55,6 +57,22 @@ export const useConfigStore = defineStore("config", () => {
     }
     return JSON.stringify(original.value) !== JSON.stringify(draft.value);
   });
+
+  // Invalidate immediately, even if an edit is reverted before the next render.
+  watch(
+    isDirty,
+    (dirty) => {
+      if (dirty) resetSnapshot.value = null;
+    },
+    { flush: "sync" },
+  );
+
+  function restoreDraft(config: AppConfig) {
+    resetSnapshot.value = null;
+    draft.value = safeClone(config);
+    setI18nLocale(config.language);
+    applyTheme(config.themeMode);
+  }
 
   /**
    * Apply theme to DOM
@@ -102,13 +120,12 @@ export const useConfigStore = defineStore("config", () => {
    */
   async function load() {
     loading.value = true;
+    resetSnapshot.value = null;
     error.value = null;
     try {
       const cfg = await invoke<AppConfig>("get_config");
       original.value = safeClone(cfg);
-      draft.value = safeClone(cfg);
-      setI18nLocale(cfg.language);
-      applyTheme(cfg.themeMode);
+      restoreDraft(cfg);
     } catch (err) {
       console.error("Failed to load config", err);
       error.value = getErrorMessage(err);
@@ -124,9 +141,7 @@ export const useConfigStore = defineStore("config", () => {
    */
   function applyConfig(raw: AppConfig) {
     original.value = safeClone(raw);
-    draft.value = safeClone(raw);
-    setI18nLocale(raw.language);
-    applyTheme(raw.themeMode);
+    restoreDraft(raw);
   }
 
   /**
@@ -141,6 +156,7 @@ export const useConfigStore = defineStore("config", () => {
     try {
       await invoke("save_config", { config: draft.value });
       original.value = safeClone(draft.value);
+      resetSnapshot.value = null;
     } catch (err) {
       console.error("Failed to save config", err);
       error.value = getErrorMessage(err);
@@ -154,11 +170,27 @@ export const useConfigStore = defineStore("config", () => {
    * Reset draft to original configuration
    */
   function resetDraft() {
-    if (original.value) {
-      draft.value = safeClone(original.value);
-      setI18nLocale(original.value.language);
-      applyTheme(original.value.themeMode);
-    }
+    if (
+      !original.value ||
+      !draft.value ||
+      !isDirty.value ||
+      saving.value ||
+      loading.value
+    )
+      return false;
+
+    const snapshot = safeClone(draft.value);
+    restoreDraft(original.value);
+    resetSnapshot.value = snapshot;
+    return true;
+  }
+
+  /** Restore the unsaved draft discarded by the most recent reset. */
+  function undoReset() {
+    if (!resetSnapshot.value || saving.value || loading.value) return false;
+
+    restoreDraft(resetSnapshot.value);
+    return true;
   }
 
   /**
@@ -302,6 +334,7 @@ export const useConfigStore = defineStore("config", () => {
     addAttention,
     addSchedule,
     applyConfig,
+    canUndoReset,
     draft,
     duplicateSchedule,
     error,
@@ -317,5 +350,6 @@ export const useConfigStore = defineStore("config", () => {
     saving,
     setLanguage,
     setThemeMode,
+    undoReset,
   };
 });

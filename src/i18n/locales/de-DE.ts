@@ -55,6 +55,7 @@ const deDE: LocaleStrings = {
     reset: "Zurücksetzen",
     resume: "Fortsetzen",
     save: "Änderungen speichern",
+    undoReset: "Zurücksetzen rückgängig",
   },
   advanced: {
     breakWindow: "Pausenfenster",
@@ -207,7 +208,8 @@ const deDE: LocaleStrings = {
     postponeShortcut: "Verschieben-Tastenkombination",
     postponeShortcutHint:
       "Klicken Sie, um Tasten zu erfassen, z.B. Strg+Umschalt+P",
-    resetHint: "Zurücksetzen verwirft alle nicht gespeicherten Änderungen.",
+    resetHint:
+      "Nicht gespeicherte Änderungen verworfen. Mit „Zurücksetzen rückgängig“ können Sie sie wiederherstellen.",
     running: "Planer läuft",
     scheduler: "Planer-Steuerungen",
     secondsRemaining: "{seconds} Sek",
@@ -346,6 +348,7 @@ const deDE: LocaleStrings = {
     noScheduleConfig: "Keine Plankonfiguration verfügbar",
     openFailed: "Verzeichnis öffnen fehlgeschlagen",
     openUrlFailed: "{url} öffnen fehlgeschlagen",
+    resetUndone: "Nicht gespeicherte Änderungen wiederhergestellt",
     saved: "Konfiguration gespeichert",
     saveFailed: "Konfiguration speichern fehlgeschlagen",
     updateCheckFailed: "Nach Updates suchen fehlgeschlagen",

@@ -1,5 +1,6 @@
 import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it } from "vitest";
+import { getI18nLocale } from "@/i18n";
 import { mockInvoke } from "@/test/setup";
 import type { AppConfig as RawAppConfig } from "@/types";
 import {
@@ -293,6 +294,79 @@ describe("useConfigStore", () => {
       store.resetDraft();
 
       expect(store.draft?.language).toBe("en-US");
+    });
+  });
+
+  describe("undoReset", () => {
+    beforeEach(() => {
+      useConfigStore().applyConfig(mockConfig);
+    });
+
+    it("restores an independent unsaved draft, including language and theme", () => {
+      const store = useConfigStore();
+      store.setLanguage("zh-CN");
+      store.setThemeMode("dark");
+      const discardedDraft = store.draft as RawAppConfig;
+      discardedDraft.schedules[0].miniBreaks.theme.fontSize = 36;
+      const expected = structuredClone(discardedDraft);
+
+      expect(store.resetDraft()).toBe(true);
+      expect(store.draft).toEqual(mockConfig);
+      expect(store.canUndoReset).toBe(true);
+      expect(getI18nLocale()).toBe("en-US");
+      expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+      discardedDraft.schedules[0].miniBreaks.theme.fontSize = 99;
+
+      expect(store.undoReset()).toBe(true);
+      expect(store.draft).toEqual(expected);
+      expect(store.original).toEqual(mockConfig);
+      expect(store.isDirty).toBe(true);
+      expect(store.canUndoReset).toBe(false);
+      expect(getI18nLocale()).toBe("zh-CN");
+      expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+      expect(mockInvoke).not.toHaveBeenCalled();
+    });
+
+    it("invalidates undo even when a new edit is reverted in the same tick", () => {
+      const store = useConfigStore();
+      store.setLanguage("zh-CN");
+      store.resetDraft();
+      const draft = store.draft as RawAppConfig;
+      draft.schedules[0].miniBreaks.theme.fontSize = 36;
+      draft.schedules[0].miniBreaks.theme.fontSize = 24;
+
+      expect(store.isDirty).toBe(false);
+      expect(store.canUndoReset).toBe(false);
+      expect(store.undoReset()).toBe(false);
+      expect(store.draft).toEqual(mockConfig);
+    });
+
+    it.each(["load", "applyConfig", "save"] as const)(
+      "invalidates undo when %s replaces the saved baseline, even with identical data",
+      async (action) => {
+        const store = useConfigStore();
+        store.setLanguage("zh-CN");
+        store.resetDraft();
+        mockInvoke.mockResolvedValue(mockConfig);
+        if (action === "applyConfig") store.applyConfig(mockConfig);
+        else await store[action]();
+
+        expect(store.canUndoReset).toBe(false);
+        expect(store.undoReset()).toBe(false);
+        expect(store.draft).toEqual(mockConfig);
+      },
+    );
+
+    it("captures the newly edited draft on the next reset", () => {
+      const store = useConfigStore();
+      store.setLanguage("zh-CN");
+      store.resetDraft();
+      store.undoReset();
+      store.setThemeMode("dark");
+      store.resetDraft();
+      store.undoReset();
+      expect(store.draft?.language).toBe("zh-CN");
+      expect(store.draft?.themeMode).toBe("dark");
     });
   });
 

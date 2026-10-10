@@ -54,6 +54,7 @@ const ptBR: LocaleStrings = {
     reset: "Redefinir",
     resume: "Retomar",
     save: "Salvar alterações",
+    undoReset: "Desfazer redefinição",
   },
   advanced: {
     breakWindow: "Janela de pausa",
@@ -200,7 +201,8 @@ const ptBR: LocaleStrings = {
     postponeShortcut: "Atalho de adiamento",
     postponeShortcutHint:
       "Clique para capturar teclas, por exemplo, Ctrl+Shift+P",
-    resetHint: "Redefinir descartará todas as alterações não salvas",
+    resetHint:
+      "Alterações não salvas descartadas. Use “Desfazer redefinição” para recuperá-las.",
     running: "Agendador em execução",
     scheduler: "Controles do agendador",
     secondsRemaining: "{seconds} seg",
@@ -338,6 +340,7 @@ const ptBR: LocaleStrings = {
     noScheduleConfig: "Não há configuração de agendamento disponível",
     openFailed: "Falha ao abrir diretório",
     openUrlFailed: "Falha ao abrir {url}",
+    resetUndone: "Alterações não salvas restauradas",
     saved: "Configuração salva",
     saveFailed: "Falha ao salvar configuração",
     updateCheckFailed: "Falha ao verificar atualizações",

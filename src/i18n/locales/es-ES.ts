@@ -54,6 +54,7 @@ const esES: LocaleStrings = {
     reset: "Restablecer",
     resume: "Reanudar",
     save: "Guardar cambios",
+    undoReset: "Deshacer restablecimiento",
   },
   advanced: {
     breakWindow: "Ventana de descanso",
@@ -201,7 +202,8 @@ const esES: LocaleStrings = {
       "Posponer retrasa el siguiente descanso por la duración configurada",
     postponeShortcut: "Atajo de posponer",
     postponeShortcutHint: "Haz clic para capturar teclas, p. ej., Ctrl+Shift+P",
-    resetHint: "Restablecer descartará todos los cambios no guardados",
+    resetHint:
+      "Cambios sin guardar descartados. Usa «Deshacer restablecimiento» para recuperarlos.",
     running: "Programador en ejecución",
     scheduler: "Controles del programador",
     secondsRemaining: "{seconds} seg",
@@ -339,6 +341,7 @@ const esES: LocaleStrings = {
     noScheduleConfig: "No hay configuración de horario disponible",
     openFailed: "Falló abrir directorio",
     openUrlFailed: "Falló abrir {url}",
+    resetUndone: "Se han recuperado los cambios sin guardar",
     saved: "Configuración guardada",
     saveFailed: "Falló guardar configuración",
     updateCheckFailed: "Falló buscar actualizaciones",

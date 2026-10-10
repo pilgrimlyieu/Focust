@@ -54,6 +54,7 @@ const jaJP: LocaleStrings = {
     reset: "リセット",
     resume: "再開",
     save: "変更を保存",
+    undoReset: "リセットを取り消す",
   },
   advanced: {
     breakWindow: "休憩ウィンドウ",
@@ -195,7 +196,8 @@ const jaJP: LocaleStrings = {
     postponeHint: "延期は次の休憩を設定された期間だけ後ろにずらします",
     postponeShortcut: "延期ショートカット",
     postponeShortcutHint: "クリックしてキーをキャプチャ、例：Ctrl+Shift+P",
-    resetHint: "リセットは保存されていないすべての変更を破棄します",
+    resetHint:
+      "未保存の変更を破棄しました。「リセットを取り消す」で復元できます。",
     running: "スケジューラー実行中",
     scheduler: "スケジューラーコントロール",
     secondsRemaining: "{seconds}秒",
@@ -330,6 +332,7 @@ const jaJP: LocaleStrings = {
     noScheduleConfig: "利用可能なスケジュール設定がありません",
     openFailed: "ディレクトリを開けませんでした",
     openUrlFailed: "{url}を開けませんでした",
+    resetUndone: "リセット前の未保存の変更を復元しました",
     saved: "設定が保存されました",
     saveFailed: "設定の保存に失敗しました",
     updateCheckFailed: "アップデートの確認に失敗しました",

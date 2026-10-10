@@ -55,6 +55,7 @@ const itIT: LocaleStrings = {
     reset: "Reimposta",
     resume: "Riprendi",
     save: "Salva modifiche",
+    undoReset: "Annulla reimpostazione",
   },
   advanced: {
     breakWindow: "Finestra di pausa",
@@ -206,7 +207,8 @@ const itIT: LocaleStrings = {
     postponeShortcut: "Scorciatoia posticipa",
     postponeShortcutHint:
       "Fai clic per acquisire i tasti, ad es. Ctrl+Maiusc+P",
-    resetHint: "Reimpostare annullerà tutte le modifiche non salvate",
+    resetHint:
+      "Modifiche non salvate scartate. Usa «Annulla reimpostazione» per recuperarle.",
     running: "Scheduler in esecuzione",
     scheduler: "Controlli scheduler",
     secondsRemaining: "{seconds} sec",
@@ -344,6 +346,7 @@ const itIT: LocaleStrings = {
     noScheduleConfig: "Nessuna configurazione di programma disponibile",
     openFailed: "Apertura directory fallita",
     openUrlFailed: "Apertura di {url} fallita",
+    resetUndone: "Modifiche non salvate ripristinate",
     saved: "Configurazione salvata",
     saveFailed: "Salvataggio configurazione fallito",
     updateCheckFailed: "Controllo aggiornamenti fallito",

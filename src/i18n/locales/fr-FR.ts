@@ -55,6 +55,7 @@ const frFR: LocaleStrings = {
     reset: "Réinitialiser",
     resume: "Reprendre",
     save: "Enregistrer les modifications",
+    undoReset: "Annuler la réinitialisation",
   },
   advanced: {
     breakWindow: "Fenêtre de pause",
@@ -209,7 +210,7 @@ const frFR: LocaleStrings = {
     postponeShortcutHint:
       "Cliquez pour capturer les touches, par ex., Ctrl+Maj+P",
     resetHint:
-      "La réinitialisation annulera toutes les modifications non enregistrées",
+      "Modifications non enregistrées abandonnées. Utilisez « Annuler la réinitialisation » pour les récupérer.",
     running: "Planificateur en cours d'exécution",
     scheduler: "Contrôles du planificateur",
     secondsRemaining: "{seconds} sec",
@@ -347,6 +348,7 @@ const frFR: LocaleStrings = {
     noScheduleConfig: "Aucune configuration d'horaire disponible",
     openFailed: "Échec de l'ouverture du répertoire",
     openUrlFailed: "Échec de l'ouverture de {url}",
+    resetUndone: "Modifications non enregistrées restaurées",
     saved: "Configuration enregistrée",
     saveFailed: "Échec de l'enregistrement de la configuration",
     updateCheckFailed: "Échec de la vérification des mises à jour",

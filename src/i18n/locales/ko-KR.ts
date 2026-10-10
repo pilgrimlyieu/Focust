@@ -54,6 +54,7 @@ const koKR: LocaleStrings = {
     reset: "재설정",
     resume: "재개",
     save: "변경 사항 저장",
+    undoReset: "재설정 취소",
   },
   advanced: {
     breakWindow: "휴식 창",
@@ -193,7 +194,8 @@ const koKR: LocaleStrings = {
     postponeHint: "연기는 구성된 기간만큼 다음 휴식을 뒤로 미룹니다",
     postponeShortcut: "연기 단축키",
     postponeShortcutHint: "클릭하여 키 캡처, 예: Ctrl+Shift+P",
-    resetHint: "재설정은 저장되지 않은 모든 변경 사항을 취소합니다",
+    resetHint:
+      "저장하지 않은 변경 사항을 버렸습니다. '재설정 취소'로 복원할 수 있습니다.",
     running: "스케줄러 실행 중",
     scheduler: "스케줄러 제어",
     secondsRemaining: "{seconds}초",
@@ -328,6 +330,7 @@ const koKR: LocaleStrings = {
     noScheduleConfig: "사용 가능한 일정 구성이 없습니다",
     openFailed: "디렉토리 열기 실패",
     openUrlFailed: "{url} 열기 실패",
+    resetUndone: "저장하지 않은 변경 사항을 복원했습니다",
     saved: "구성이 저장되었습니다",
     saveFailed: "구성 저장 실패",
     updateCheckFailed: "업데이트 확인 실패",

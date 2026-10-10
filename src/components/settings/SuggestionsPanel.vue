@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, shallowRef, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import CheckIcon from "@/components/icons/CheckIcon.vue";
 import CloseIcon from "@/components/icons/CloseIcon.vue";
@@ -9,6 +9,8 @@ import ListIcon from "@/components/icons/ListIcon.vue";
 import PlusIcon from "@/components/icons/PlusIcon.vue";
 import RefreshIcon from "@/components/icons/RefreshIcon.vue";
 import SuggestionBulb from "@/components/icons/SuggestionBulb.vue";
+import UndoIcon from "@/components/icons/UndoIcon.vue";
+import { useToast } from "@/composables/useToast";
 import { getI18nLocale } from "@/i18n";
 import {
   createLanguageSuggestions,
@@ -21,6 +23,7 @@ import type { LanguageSuggestions, SuggestionsConfig } from "@/types";
 
 const { t } = useI18n();
 const suggestionsStore = useSuggestionsStore();
+const { show } = useToast();
 
 onMounted(() => {
   if (!suggestionsStore.hasLoaded) {
@@ -46,6 +49,8 @@ const isPersisting = ref(false);
 const saveError = ref(false);
 const savedConfig = ref<SuggestionsConfig | null>(null);
 const draftConfig = ref<SuggestionsConfig | null>(null);
+const resetSnapshot = shallowRef<SuggestionsConfig | null>(null);
+const canUndoReset = computed(() => resetSnapshot.value !== null);
 
 const poolTranslationKeys = {
   long: "suggestions.longBreakSuggestions",
@@ -95,6 +100,10 @@ const hasDraftChanges = computed(
   () =>
     serializeConfig(draftConfig.value) !== serializeConfig(savedConfig.value),
 );
+
+function clearResetSnapshot() {
+  resetSnapshot.value = null;
+}
 
 function cloneLanguageSuggestions(
   languageConfig: Partial<LanguageSuggestions> | null | undefined,
@@ -167,13 +176,18 @@ function setDraftLanguageSuggestions(languageSuggestions: LanguageSuggestions) {
   ensureDraftConfig();
   if (!draftConfig.value) return;
 
+  const next = cloneLanguageSuggestions(languageSuggestions);
+  saveError.value = false;
+  if (JSON.stringify(next) === JSON.stringify(getDraftLanguageSuggestions()))
+    return;
+
+  clearResetSnapshot();
   draftConfig.value = {
     byLanguage: {
       ...draftConfig.value.byLanguage,
-      [currentLanguage.value]: cloneLanguageSuggestions(languageSuggestions),
+      [currentLanguage.value]: next,
     },
   };
-  saveError.value = false;
 }
 
 function setActivePoolSuggestions(suggestions: string[]) {
@@ -192,11 +206,11 @@ function setActivePoolSuggestions(suggestions: string[]) {
   );
 }
 
-function refreshEditorFromDraft() {
+function refreshEditorFromDraft({ preserveNewInput = false } = {}) {
   const suggestions = getActivePoolSuggestions();
   suggestionsList.value = [...suggestions];
   suggestionsText.value = suggestions.join("\n");
-  newSuggestionInput.value = "";
+  if (!preserveNewInput) newSuggestionInput.value = "";
 }
 
 function commitActiveEditorToDraft() {
@@ -214,6 +228,7 @@ watch(
   (config) => {
     if (!config) {
       if (!hasDraftChanges.value) {
+        clearResetSnapshot();
         savedConfig.value = null;
         draftConfig.value = null;
         refreshEditorFromDraft();
@@ -223,6 +238,7 @@ watch(
 
     if (isPersisting.value || hasDraftChanges.value) return;
 
+    clearResetSnapshot();
     savedConfig.value = cloneSuggestionsConfig(config);
     draftConfig.value = cloneSuggestionsConfig(config);
     refreshEditorFromDraft();
@@ -246,6 +262,7 @@ async function saveDraft() {
   saveError.value = false;
   try {
     await suggestionsStore.save(configToSave);
+    clearResetSnapshot();
     const persistedConfig =
       cloneSuggestionsConfig(suggestionsStore.config) ?? configToSave;
     savedConfig.value = cloneSuggestionsConfig(persistedConfig);
@@ -259,12 +276,29 @@ async function saveDraft() {
   }
 }
 
-function resetDraft() {
-  if (!savedConfig.value || isPersisting.value) return;
+function handleReset() {
+  if (isPersisting.value || suggestionsStore.loading) return;
+
+  if (resetSnapshot.value) {
+    const snapshot = resetSnapshot.value;
+    clearResetSnapshot();
+    draftConfig.value = cloneSuggestionsConfig(snapshot);
+    refreshEditorFromDraft({ preserveNewInput: true });
+    saveError.value = false;
+    show("info", t("toast.resetUndone"));
+    return;
+  }
+
+  if (!savedConfig.value || !draftConfig.value || !hasDraftChanges.value)
+    return;
+
+  const snapshot = cloneSuggestionsConfig(draftConfig.value);
 
   draftConfig.value = cloneSuggestionsConfig(savedConfig.value);
   saveError.value = false;
-  refreshEditorFromDraft();
+  refreshEditorFromDraft({ preserveNewInput: true });
+  resetSnapshot.value = snapshot;
+  show("info", t("general.resetHint"));
 }
 
 function selectPool(pool: SuggestionPool) {
@@ -285,6 +319,7 @@ function switchMode(mode: "list" | "bulk") {
 
 function commitListEditor() {
   if (editMode.value !== "list") return;
+  clearResetSnapshot();
   setActivePoolSuggestions(normalizeListSuggestions(suggestionsList.value));
 }
 
@@ -299,6 +334,7 @@ function normalizeListEditor() {
 
 function commitTextEditor() {
   if (editMode.value !== "bulk") return;
+  clearResetSnapshot();
   setActivePoolSuggestions(normalizeTextSuggestions(suggestionsText.value));
 }
 
@@ -366,9 +402,12 @@ function removeSuggestion(index: number) {
           </p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <button class="btn btn-sm btn-ghost gap-2" :disabled="!hasDraftChanges || isPersisting" @click="resetDraft">
-            <RefreshIcon class-name="h-4 w-4" />
-            {{ t("actions.reset") }}
+          <button class="btn btn-sm btn-ghost gap-2" :class="{ 'text-info': canUndoReset }"
+            :disabled="(!hasDraftChanges && !canUndoReset) || isPersisting || suggestionsStore.loading"
+            :aria-label="t(canUndoReset ? 'actions.undoReset' : 'actions.reset')" @click="handleReset">
+            <UndoIcon v-if="canUndoReset" class-name="h-4 w-4" />
+            <RefreshIcon v-else class-name="h-4 w-4" aria-hidden="true" focusable="false" />
+            {{ t(canUndoReset ? "actions.undoReset" : "actions.reset") }}
           </button>
           <button class="btn btn-sm btn-primary gap-2" :disabled="!hasDraftChanges || isPersisting" @click="saveDraft">
             <span v-if="isPersisting" class="loading loading-spinner loading-xs" />
@@ -436,7 +475,7 @@ function removeSuggestion(index: number) {
         <div class="flex flex-col gap-2 sm:flex-row">
           <input v-model="newSuggestionInput" type="text" :placeholder="t('suggestions.addPlaceholder')"
             class="input input-bordered w-full min-w-0 transition-all focus:input-primary sm:flex-1"
-            @keyup.enter="addSuggestion" />
+            @input="clearResetSnapshot" @keyup.enter="addSuggestion" />
           <button class="btn btn-primary w-full gap-2 font-medium shadow-md hover:shadow-lg transition-all sm:w-auto"
             :disabled="!newSuggestionInput.trim()" @click="addSuggestion">
             <PlusIcon class-name="h-5 w-5" />
