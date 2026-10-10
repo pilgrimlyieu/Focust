@@ -187,7 +187,6 @@ impl AudioSettings {
 }
 
 #[cfg(test)]
-#[expect(clippy::float_cmp)]
 mod tests {
     use super::*;
 

@@ -162,7 +162,6 @@ async fn load_advanced_config(config_path: &PathBuf) -> Result<AdvancedConfig> {
 }
 
 #[cfg(test)]
-#[expect(clippy::float_cmp)]
 mod tests {
     use super::*;
 

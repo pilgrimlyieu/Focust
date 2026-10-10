@@ -12,6 +12,7 @@
 //! - **Edge Cases**: Boundary conditions, extreme values
 //! - **Error Scenarios**: Window failures, missing events, system time changes
 
+use serde_json::Value;
 use tokio::sync::mpsc;
 
 use crate::core::break_kind::BreakKind;
@@ -579,7 +580,10 @@ async fn manual_trigger_now_rejected_while_paused() {
         .unwrap();
     advance_time_and_yield(duration_s(1)).await;
 
-    assert!(emitter.get_events_by_name("scheduler-event").is_empty());
+    assert_eq!(
+        emitter.get_events_by_name("scheduler-event"),
+        Vec::<Value>::new()
+    );
 
     drop(cmd_tx);
     drop(shutdown_tx);
@@ -745,7 +749,7 @@ async fn request_status() {
     assert!(emitter.has_event("scheduler-status"));
 
     let events = emitter.get_events_by_name("scheduler-status");
-    assert!(!events.is_empty());
+    assert_ne!(events, Vec::<Value>::new());
 
     // Cleanup
     drop(cmd_tx);

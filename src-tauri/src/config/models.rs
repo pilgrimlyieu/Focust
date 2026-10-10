@@ -158,7 +158,7 @@ mod tests {
         assert!(config.monitor_dnd);
         assert_eq!(config.inactive_s, 300);
         assert!(!config.all_screens);
-        assert!(!config.language.is_empty());
+        assert_ne!(config.language, "");
         assert_eq!(config.postpone_shortcut, "");
         assert_eq!(config.schedules.len(), 1);
         assert_eq!(config.attentions.len(), 0);
@@ -199,6 +199,6 @@ mod tests {
         let config: AdvancedConfig = toml::from_str("trayPauseDurationsMinutes = []")
             .expect("Failed to deserialize advanced config");
 
-        assert!(config.tray_pause_durations_minutes.is_empty());
+        assert_eq!(config.tray_pause_durations_minutes, Vec::<u32>::new());
     }
 }

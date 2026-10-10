@@ -434,11 +434,11 @@ longSuggestions = ["Explicit long"]
             strings(&["Explicit short"])
         );
         assert_eq!(en_suggestions.long_suggestions, strings(&["Legacy long"]));
-        assert!(en_suggestions.suggestions.is_empty());
+        assert_eq!(en_suggestions.suggestions, Vec::<String>::new());
 
         assert_eq!(zh_suggestions.short_suggestions, strings(&["Legacy short"]));
         assert_eq!(zh_suggestions.long_suggestions, strings(&["Explicit long"]));
-        assert!(zh_suggestions.suggestions.is_empty());
+        assert_eq!(zh_suggestions.suggestions, Vec::<String>::new());
     }
 
     #[test]
@@ -464,7 +464,7 @@ longSuggestions = ["Stand up", "Drink water", "Breathe"]
             en_suggestions.long_suggestions,
             strings(&["Stand up", "Drink water", "Breathe"])
         );
-        assert!(en_suggestions.suggestions.is_empty());
+        assert_eq!(en_suggestions.suggestions, Vec::<String>::new());
     }
 
     #[test]
@@ -483,9 +483,9 @@ longSuggestions = ["Walk"]
             .get("en-US")
             .expect("Missing en-US suggestions");
 
-        assert!(en_suggestions.short_suggestions.is_empty());
+        assert_eq!(en_suggestions.short_suggestions, Vec::<String>::new());
         assert_eq!(en_suggestions.long_suggestions, strings(&["Walk"]));
-        assert!(en_suggestions.suggestions.is_empty());
+        assert_eq!(en_suggestions.suggestions, Vec::<String>::new());
     }
 
     #[test]
@@ -522,7 +522,7 @@ longSuggestions = ["Walk"]
             .get("en-US")
             .expect("Missing legacy en-US suggestions");
 
-        assert!(legacy_suggestions.suggestions.is_empty());
+        assert_eq!(legacy_suggestions.suggestions, Vec::<String>::new());
     }
 
     #[test]

@@ -157,7 +157,7 @@ mod tests {
         let exclusion = AppExclusion::default();
         assert_eq!(exclusion.rule, ExclusionRule::Pause);
         assert!(!exclusion.active);
-        assert!(exclusion.processes.is_empty());
+        assert_eq!(exclusion.processes, Vec::<String>::new());
     }
 
     #[test]

@@ -415,7 +415,7 @@ mod tests {
 
         // Initially not paused
         assert!(!state.is_paused());
-        assert!(state.pause_reasons().is_empty());
+        assert_eq!(state.pause_reasons(), Vec::<PauseReason>::new());
 
         // Add first reason -> transition to Paused
         assert!(state.add_pause_reason(PauseReason::UserIdle));
@@ -435,7 +435,7 @@ mod tests {
         // Remove last reason -> transition to Running
         assert!(state.remove_pause_reason(PauseReason::Dnd));
         assert!(!state.is_paused());
-        assert!(state.pause_reasons().is_empty());
+        assert_eq!(state.pause_reasons(), Vec::<PauseReason>::new());
     }
 
     #[test]
@@ -573,7 +573,7 @@ mod tests {
         // Remove last reason - transition to Running
         assert!(state.remove_pause_reason(PauseReason::UserIdle));
         assert!(!state.is_paused());
-        assert!(state.pause_reasons().is_empty());
+        assert_eq!(state.pause_reasons(), Vec::<PauseReason>::new());
     }
 
     #[test]
@@ -634,7 +634,7 @@ mod tests {
 
         // Final state should be consistent
         assert!(!state.is_paused());
-        assert!(state.pause_reasons().is_empty());
+        assert_eq!(state.pause_reasons(), Vec::<PauseReason>::new());
     }
 
     #[test]
@@ -717,7 +717,7 @@ mod tests {
         // Final state should be clean
         assert!(!state.is_paused());
         assert!(!state.in_any_session());
-        assert!(state.pause_reasons().is_empty());
+        assert_eq!(state.pause_reasons(), Vec::<PauseReason>::new());
     }
 
     #[test]
@@ -745,7 +745,7 @@ mod tests {
             assert!(state.is_paused());
             state.remove_pause_reason(*reason);
         }
-        assert!(state.pause_reasons().is_empty());
+        assert_eq!(state.pause_reasons(), Vec::<PauseReason>::new());
         assert!(!state.is_paused());
     }
 }

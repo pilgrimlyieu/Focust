@@ -178,7 +178,6 @@ fn start_playback<S: Source + Send + 'static>(
 }
 
 #[cfg(test)]
-#[expect(clippy::float_cmp)]
 mod tests {
     use super::{AudioPlayer, PlaybackError, start_playback};
 
