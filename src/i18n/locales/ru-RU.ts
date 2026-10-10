@@ -29,7 +29,7 @@ const ruRU: LocaleStrings = {
     projectLicense: "(Лицензия GPL-3.0)",
     releaseNotes: "Примечания к выпуску",
     restartApp: "Перезапустить приложение",
-    starOnGitHub: "⭐ Добавить звезду на GitHub",
+    starOnGitHub: "Добавить звезду на GitHub",
     title: "О Focust",
     updateAvailable: "Доступна новая версия {version}!",
     updateInstalled:
@@ -37,7 +37,7 @@ const ruRU: LocaleStrings = {
     version: "Версия",
     viewLicense: "Просмотреть лицензию",
     zeroVerWarning:
-      "⚠️ Этот проект находится на стадии 0.x. Обновления могут вносить частые изменения.",
+      "Этот проект находится на стадии 0.x. Обновления могут вносить частые изменения.",
   },
   actions: {
     add: "Добавить",

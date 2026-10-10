@@ -3,6 +3,7 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
+import FolderIcon from "@/components/icons/FolderIcon.vue";
 import type { ThemeSettings } from "@/types";
 import {
   convertToImageFolderBackground,
@@ -207,7 +208,10 @@ defineExpose({
         <span class="label-text font-medium">{{ t("theme.imagePath") }}</span>
         <div class="flex gap-2">
           <input v-model="imagePath" type="text" class="input input-bordered flex-1" readonly />
-          <button class="btn btn-outline shrink-0" @click="pickImage">📁 {{ t("audio.browse") }}</button>
+          <button class="btn btn-outline shrink-0 gap-2" @click="pickImage">
+            <FolderIcon class-name="h-4 w-4 shrink-0" aria-hidden="true" focusable="false" />
+            {{ t("audio.browse") }}
+          </button>
         </div>
       </div>
 
@@ -215,7 +219,10 @@ defineExpose({
         <span class="label-text font-medium">{{ t("theme.folderPath") }}</span>
         <div class="flex gap-2">
           <input v-model="folderPath" type="text" class="input input-bordered flex-1" readonly />
-          <button class="btn btn-outline shrink-0" @click="pickFolder">📁 {{ t("audio.browse") }}</button>
+          <button class="btn btn-outline shrink-0 gap-2" @click="pickFolder">
+            <FolderIcon class-name="h-4 w-4 shrink-0" aria-hidden="true" focusable="false" />
+            {{ t("audio.browse") }}
+          </button>
         </div>
         <p class="text-xs opacity-70 pt-1">{{ t("theme.randomImageHint") }}</p>
       </div>

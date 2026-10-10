@@ -3,6 +3,9 @@ import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
+import FolderIcon from "@/components/icons/FolderIcon.vue";
+import PlayIcon from "@/components/icons/PlayIcon.vue";
+import StopIcon from "@/components/icons/StopIcon.vue";
 import type { AudioSettings } from "@/types";
 import {
   convertToBuiltinAudio,
@@ -191,8 +194,9 @@ defineExpose({
         <div class="flex gap-2">
           <input v-model="filePath" type="text" class="input input-bordered flex-1" readonly
             :placeholder="t('audio.noFileSelected')" />
-          <button class="btn btn-outline" @click="pickAudioFile">
-            📁 {{ t("audio.browse") }}
+          <button class="btn btn-outline gap-2" @click="pickAudioFile">
+            <FolderIcon class-name="h-4 w-4 shrink-0" aria-hidden="true" focusable="false" />
+            {{ t("audio.browse") }}
           </button>
         </div>
       </div>
@@ -218,15 +222,14 @@ defineExpose({
 
     <!-- Preview Controls -->
     <div v-if="selectedType !== 'none'" class="flex gap-2 pt-2">
-      <button class="btn btn-sm btn-primary flex-1" :disabled="isPreviewing" @click="playPreview">
-        <span v-if="!isPreviewing">▶️ {{ t("audio.preview") }}</span>
-        <span v-else>
-          <span class="loading loading-spinner loading-xs mr-2"></span>
-          {{ t("audio.playing") }}
-        </span>
+      <button class="btn btn-sm btn-primary flex-1 gap-2" :disabled="isPreviewing" @click="playPreview">
+        <PlayIcon v-if="!isPreviewing" class-name="h-4 w-4 shrink-0" aria-hidden="true" focusable="false" />
+        <span v-else class="loading loading-spinner loading-xs" aria-hidden="true" />
+        {{ isPreviewing ? t("audio.playing") : t("audio.preview") }}
       </button>
-      <button class="btn btn-sm btn-ghost" :disabled="!isPreviewing" @click="stopPreview">
-        ⏹️ {{ t("audio.stop") }}
+      <button class="btn btn-sm btn-ghost gap-2" :disabled="!isPreviewing" @click="stopPreview">
+        <StopIcon class-name="h-4 w-4 shrink-0" />
+        {{ t("audio.stop") }}
       </button>
     </div>
   </div>

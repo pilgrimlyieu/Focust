@@ -228,7 +228,7 @@ function toggleDebugSection() {
     <div v-if="showDebugSection" class="rounded-2xl border border-base-300 bg-base-100/70 p-6 shadow-md">
       <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
         <MonitorIcon class-name="h-5 w-5 text-warning" />
-        🧪 Debug
+        Debug
       </h3>
       <p class="text-sm text-base-content/60 mb-4">
         Manually trigger prompt windows for testing

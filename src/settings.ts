@@ -13,14 +13,14 @@ app.use(i18n);
 
 app.mount("#app");
 
-console.log("📦 App mounted, emitting ready event immediately...");
+console.log("App mounted, emitting ready event immediately...");
 
 setTimeout(async () => {
   try {
-    console.log("📤 Emitting settings-ready event...");
+    console.log("Emitting settings-ready event...");
     await emit("settings-ready");
-    console.log("✅ Settings window ready!");
+    console.log("Settings window ready!");
   } catch (error) {
-    console.error("❌ Failed to emit settings-ready event:", error);
+    console.error("Failed to emit settings-ready event:", error);
   }
 }, 50);

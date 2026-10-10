@@ -30,7 +30,7 @@ const deDE: LocaleStrings = {
     projectLicense: "(GPL-3.0-Lizenz)",
     releaseNotes: "Versionshinweise",
     restartApp: "Anwendung neu starten",
-    starOnGitHub: "⭐ Auf GitHub markieren",
+    starOnGitHub: "Auf GitHub markieren",
     title: "Über Focust",
     updateAvailable: "Neue Version {version} verfügbar!",
     updateInstalled:
@@ -38,7 +38,7 @@ const deDE: LocaleStrings = {
     version: "Version",
     viewLicense: "Lizenz anzeigen",
     zeroVerWarning:
-      "⚠️ Dieses Projekt befindet sich im 0.x-Stadium. Updates können häufige Änderungen einführen.",
+      "Dieses Projekt befindet sich im 0.x-Stadium. Updates können häufige Änderungen einführen.",
   },
   actions: {
     add: "Hinzufügen",

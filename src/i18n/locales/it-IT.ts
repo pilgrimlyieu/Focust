@@ -30,7 +30,7 @@ const itIT: LocaleStrings = {
     projectLicense: "(Licenza GPL-3.0)",
     releaseNotes: "Note di rilascio",
     restartApp: "Riavvia applicazione",
-    starOnGitHub: "⭐ Metti una stella su GitHub",
+    starOnGitHub: "Metti una stella su GitHub",
     title: "Info su Focust",
     updateAvailable: "Nuova versione {version} disponibile!",
     updateInstalled:
@@ -38,7 +38,7 @@ const itIT: LocaleStrings = {
     version: "Versione",
     viewLicense: "Visualizza licenza",
     zeroVerWarning:
-      "⚠️ Questo progetto è in fase 0.x. Gli aggiornamenti possono introdurre modifiche frequenti.",
+      "Questo progetto è in fase 0.x. Gli aggiornamenti possono introdurre modifiche frequenti.",
   },
   actions: {
     add: "Aggiungi",

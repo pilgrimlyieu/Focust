@@ -26,7 +26,7 @@ const enUS = {
     projectLicense: "(GPL-3.0 License)",
     releaseNotes: "Release Notes",
     restartApp: "Restart Application",
-    starOnGitHub: "⭐ Star on GitHub",
+    starOnGitHub: "Star on GitHub",
     title: "About Focust",
     updateAvailable: "New version {version} is available!",
     updateInstalled:
@@ -34,7 +34,7 @@ const enUS = {
     version: "Version",
     viewLicense: "View License",
     zeroVerWarning:
-      "⚠️ This project is in 0.x stage. Updates may introduce frequent changes.",
+      "This project is in 0.x stage. Updates may introduce frequent changes.",
   },
   actions: {
     add: "Add",

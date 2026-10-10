@@ -5,8 +5,10 @@ import DocumentIcon from "@/components/icons/DocumentIcon.vue";
 import InfoIcon from "@/components/icons/InfoIcon.vue";
 import ListIcon from "@/components/icons/ListIcon.vue";
 import PauseCircleIcon from "@/components/icons/PauseCircleIcon.vue";
+import PencilIcon from "@/components/icons/PencilIcon.vue";
 import PlayIcon from "@/components/icons/PlayIcon.vue";
 import PlusIcon from "@/components/icons/PlusIcon.vue";
+import RefreshIcon from "@/components/icons/RefreshIcon.vue";
 import TrashIcon from "@/components/icons/TrashIcon.vue";
 import { useConfigStore } from "@/stores/config";
 import type { AppExclusion, ExclusionRule } from "@/types";
@@ -259,8 +261,9 @@ function toggleRule(index: number) {
                   : t("appExclusions.ruleResume")
                   }}
                 </span>
-                <button class="btn btn-xs btn-ghost" @click="toggleRule(index)" :title="t('appExclusions.toggleRule')">
-                  🔄
+                <button class="btn btn-xs btn-ghost" @click="toggleRule(index)" :title="t('appExclusions.toggleRule')"
+                  :aria-label="t('appExclusions.toggleRule')">
+                  <RefreshIcon class-name="h-3.5 w-3.5" aria-hidden="true" focusable="false" />
                 </button>
               </div>
 
@@ -292,8 +295,8 @@ function toggleRule(index: number) {
             <!-- Action Buttons -->
             <div class="flex gap-1">
               <button v-if="editingIndex !== index" class="btn btn-sm btn-ghost btn-square" @click="startEditing(index)"
-                :title="t('actions.edit')">
-                ✏️
+                :title="t('actions.edit')" :aria-label="t('actions.edit')">
+                <PencilIcon class-name="h-4 w-4" />
               </button>
               <button class="btn btn-sm btn-ghost btn-square text-error" @click="removeExclusion(index)"
                 :title="t('actions.delete')">

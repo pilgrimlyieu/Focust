@@ -9,6 +9,8 @@ import CloseIcon from "@/components/icons/CloseIcon.vue";
 import ExternalLinkIcon from "@/components/icons/ExternalLinkIcon.vue";
 import InfoCircleIcon from "@/components/icons/InfoCircleIcon.vue";
 import RefreshIcon from "@/components/icons/RefreshIcon.vue";
+import StarIcon from "@/components/icons/StarIcon.vue";
+import WarningIcon from "@/components/icons/WarningIcon.vue";
 import type { ToastKind } from "@/composables/useToast";
 
 const emit =
@@ -141,7 +143,7 @@ async function checkForUpdates() {
 
     // Log zero-ver warning if applicable
     if (isZero) {
-      console.log("⚠️ This is a 0.x version - expect frequent changes");
+      console.log("This is a 0.x version - expect frequent changes");
     }
   } catch (err) {
     console.error("Failed to check updates:", err);
@@ -271,8 +273,9 @@ async function exitApp() {
             </div>
 
             <!-- Zero-ver Warning -->
-            <div v-if="isZeroVer(pendingUpdate.version)" class="text-sm opacity-80">
-              {{ t("about.zeroVerWarning") }}
+            <div v-if="isZeroVer(pendingUpdate.version)" class="flex items-start gap-2 text-sm opacity-80">
+              <WarningIcon class-name="h-4 w-4 shrink-0 mt-0.5" />
+              <span>{{ t("about.zeroVerWarning") }}</span>
             </div>
 
             <!-- Release Notes -->
@@ -310,7 +313,7 @@ async function exitApp() {
       <h3 class="text-lg font-bold mb-4">{{ t("about.github") }}</h3>
       <div class="space-x-5">
         <button class="btn btn-outline gap-2 shadow-sm hover:shadow-md transition-all" @click="openLink(GITHUB_REPO)">
-          <ExternalLinkIcon class-name="h-5 w-5" />
+          <StarIcon class-name="h-5 w-5" />
           {{ t("about.starOnGitHub") }}
         </button>
         <button class="btn btn-ghost gap-2 shadow-sm hover:shadow-md transition-all" @click="openLink(LICENSE_URL)">

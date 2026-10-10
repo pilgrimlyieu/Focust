@@ -29,7 +29,7 @@ const jaJP: LocaleStrings = {
     projectLicense: "（GPL-3.0ライセンス）",
     releaseNotes: "リリースノート",
     restartApp: "アプリケーションを再起動",
-    starOnGitHub: "⭐ GitHubでスター",
+    starOnGitHub: "GitHubでスター",
     title: "Focustについて",
     updateAvailable: "新バージョン {version} が利用可能です！",
     updateInstalled:
@@ -37,7 +37,7 @@ const jaJP: LocaleStrings = {
     version: "バージョン",
     viewLicense: "ライセンスを表示",
     zeroVerWarning:
-      "⚠️ このプロジェクトは0.x段階です。アップデートにより頻繁な変更が導入される可能性があります。",
+      "このプロジェクトは0.x段階です。アップデートにより頻繁な変更が導入される可能性があります。",
   },
   actions: {
     add: "追加",

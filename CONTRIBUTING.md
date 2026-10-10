@@ -307,6 +307,17 @@ const MAX_RETRIES = 3;
 // SettingsPanel.vue, BreakWindow.vue
 ```
 
+**UI icons:**
+
+Use SVG components from `src/components/icons/` for built-in UI icons instead of
+emoji characters. Keep translated labels as text, with decorative icons in the
+Vue template. This avoids selecting a host's color-emoji font for application
+controls, which can trigger WebKitGTK font-rendering crashes on some Linux
+AppImages. Mark decorative SVGs `aria-hidden="true"` and `focusable="false"`, and
+give icon-only buttons a translated accessible name. User-provided text may still
+contain emoji; SVG decorations do not replace Linux font and library compatibility
+testing.
+
 **Vue 3 Composition API:**
 ```vue
 <script setup lang="ts">

@@ -30,14 +30,14 @@ const koKR: LocaleStrings = {
     projectLicense: "(GPL-3.0 라이선스)",
     releaseNotes: "릴리스 노트",
     restartApp: "애플리케이션 다시 시작",
-    starOnGitHub: "⭐ GitHub에서 별표 추가",
+    starOnGitHub: "GitHub에서 별표 추가",
     title: "Focust 정보",
     updateAvailable: "새 버전 {version}을(를) 사용할 수 있습니다!",
     updateInstalled: "업데이트 설치 성공! 애플리케이션을 재시작하세요.",
     version: "버전",
     viewLicense: "라이선스 보기",
     zeroVerWarning:
-      "⚠️ 이 프로젝트는 0.x 단계입니다. 업데이트로 인해 빈번한 변경이 발생할 수 있습니다.",
+      "이 프로젝트는 0.x 단계입니다. 업데이트로 인해 빈번한 변경이 발생할 수 있습니다.",
   },
   actions: {
     add: "추가",
