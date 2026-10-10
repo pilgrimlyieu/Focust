@@ -9,20 +9,8 @@
 
 ## 🎉 Features
 
-- List new features here
-
-## 🐛 Bug Fixes
-
-- List bug fixes here
+- Reset break state after system wake from sleep or hibernation by default, and add an advanced option to disable this behavior. (#116)
 
 ## 🚀 Improvements
 
-- List improvements here
-
-## 📝 Documentation
-
-- List documentation changes here
-
-## ⚠️ Breaking Changes
-
-- List breaking changes here (if any)
+- Build AppImage on `ubuntu-22.04` for better glibc compatibility. (https://github.com/AppImage/appimage.github.io/pull/4481#issuecomment-5924457280)

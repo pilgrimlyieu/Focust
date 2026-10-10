@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 <!-- CHANGELOG_INSERT -->
 
+## 0.4.4 (2026.10.10)
+
+### 🎉 Features
+
+- Reset break state after system wake from sleep or hibernation by default, and add an advanced option to disable this behavior. (#116)
+
+### 🚀 Improvements
+
+- Build AppImage on `ubuntu-22.04` for better glibc compatibility. (https://github.com/AppImage/appimage.github.io/pull/4481#issuecomment-5924457280)
+
 ## 0.4.3 (2026.10.1)
 
 ### 🐛 Bug Fixes
