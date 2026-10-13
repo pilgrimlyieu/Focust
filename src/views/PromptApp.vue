@@ -27,7 +27,7 @@ const { t } = useI18n();
 
 const payload = ref<PromptPayload | null>(null);
 const remaining = ref(0);
-const intervalId = ref<number | null>(null);
+let intervalId: number | undefined;
 const isClosing = ref(false);
 const isRendered = ref(false);
 
@@ -37,16 +37,10 @@ const isRendered = ref(false);
  */
 const startTimer = (duration: number) => {
   remaining.value = Math.max(0, duration);
-  if (intervalId.value) {
-    clearInterval(intervalId.value);
-  }
-  intervalId.value = window.setInterval(() => {
-    if (remaining.value > 0) {
-      remaining.value -= 1;
-    } else {
-      clearInterval(intervalId.value ?? undefined);
-      intervalId.value = null;
-      // Auto-finish when timer reaches 0
+  clearInterval(intervalId);
+  intervalId = window.setInterval(() => {
+    remaining.value = Math.max(0, remaining.value - 1);
+    if (remaining.value === 0) {
       void finishPrompt(true);
     }
   }, 1000);
@@ -270,11 +264,8 @@ const finishPrompt = async (isAutoFinish = false) => {
   console.log("[PromptApp] Starting finishPrompt sequence");
   isClosing.value = true;
 
-  if (intervalId.value) {
-    clearInterval(intervalId.value);
-    intervalId.value = null;
-    console.log("[PromptApp] Timer cleared");
-  }
+  clearInterval(intervalId);
+  intervalId = undefined;
 
   if (isAutoFinish) {
     playAudioInPrimaryWindow(payload.value?.audio).catch((err) => {
@@ -460,26 +451,11 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener("keydown", handleKeydown);
-  if (intervalId.value) {
-    clearInterval(intervalId.value);
-  }
+  clearInterval(intervalId);
   stopAudio().catch((err) => {
     console.warn("Failed to stop audio on unmount", err);
   });
   document.title = "Focust";
-});
-
-defineExpose({
-  backgroundStyle,
-  controlsDisabled,
-  elapsed,
-  finishBreak: finishPrompt,
-  formatTime,
-  isAttention,
-  overlayStyle,
-  postponeBreak,
-  progress,
-  t,
 });
 </script>
 
