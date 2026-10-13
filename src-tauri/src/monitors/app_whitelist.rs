@@ -5,7 +5,7 @@
 use std::future::Future;
 use std::pin::Pin;
 
-use sysinfo::{ProcessRefreshKind, System};
+use sysinfo::{ProcessRefreshKind, System, UpdateKind};
 
 use super::{Monitor, MonitorAction, MonitorResult};
 use crate::config::{AppExclusion, ExclusionRule};
@@ -57,7 +57,7 @@ impl AppWhitelistMonitor {
         self.system.refresh_processes_specifics(
             sysinfo::ProcessesToUpdate::All,
             true,
-            ProcessRefreshKind::everything(),
+            ProcessRefreshKind::nothing().with_exe(UpdateKind::OnlyIfNotSet),
         );
 
         // Find the first active exclusion rule
@@ -68,29 +68,18 @@ impl AppWhitelistMonitor {
             return false;
         };
 
-        // Pre-extract and cache process information (lowercase for matching)
-        let cached_processes: Vec<(String, Option<String>)> = self
-            .system
-            .processes()
-            .values()
-            .map(|process| {
-                let name = process.name().to_string_lossy().to_lowercase();
-                let path = process.exe().map(|p| p.to_string_lossy().to_lowercase());
-                (name, path)
-            })
-            .collect();
-
-        // Check if any cached process matches the exclusion patterns
-        let has_matching_process = cached_processes.iter().any(|(name, path)| {
+        // Check each process until a name or executable path matches.
+        let has_matching_process = self.system.processes().values().any(|process| {
+            let name = process.name().to_string_lossy().to_lowercase();
             // Check against process name using lowercase variant
-            if exclusion.matches_lowercase(name) {
+            if exclusion.matches_lowercase(&name) {
                 tracing::debug!("Process '{name}' matched exclusion rule");
                 return true;
             }
 
             // Check against full executable path if available
-            if let Some(path) = path
-                && exclusion.matches_lowercase(path)
+            if let Some(path) = process.exe().map(|p| p.to_string_lossy().to_lowercase())
+                && exclusion.matches_lowercase(&path)
             {
                 tracing::debug!("Process path '{path}' matched exclusion rule");
                 return true;
