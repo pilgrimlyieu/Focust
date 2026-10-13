@@ -19,10 +19,6 @@
     "autostart:default",
     "opener:default",
     "updater:default",
-    "dialog:default",
-    "fs:default",
-    "fs:allow-resource-meta-recursive",
-    "fs:allow-resource-read-recursive",
-    "process:default"
+    "dialog:default"
   ]
 }
