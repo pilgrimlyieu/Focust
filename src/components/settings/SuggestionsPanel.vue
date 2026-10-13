@@ -105,16 +105,6 @@ function clearResetSnapshot() {
   resetSnapshot.value = null;
 }
 
-function cloneLanguageSuggestions(
-  languageConfig: Partial<LanguageSuggestions> | null | undefined,
-): LanguageSuggestions {
-  const normalized = normalizeLanguageSuggestions(languageConfig);
-  return createLanguageSuggestions(
-    normalized.shortSuggestions,
-    normalized.longSuggestions,
-  );
-}
-
 function cloneSuggestionsConfig(
   config: SuggestionsConfig | null | undefined,
 ): SuggestionsConfig | null {
@@ -124,7 +114,7 @@ function cloneSuggestionsConfig(
     byLanguage: Object.fromEntries(
       Object.entries(config.byLanguage).map(([language, languageConfig]) => [
         language,
-        cloneLanguageSuggestions(languageConfig),
+        normalizeLanguageSuggestions(languageConfig),
       ]),
     ),
   };
@@ -154,7 +144,7 @@ function ensureDraftConfig() {
 }
 
 function getDraftLanguageSuggestions(): LanguageSuggestions {
-  return cloneLanguageSuggestions(
+  return normalizeLanguageSuggestions(
     draftConfig.value?.byLanguage[currentLanguage.value],
   );
 }
@@ -176,7 +166,7 @@ function setDraftLanguageSuggestions(languageSuggestions: LanguageSuggestions) {
   ensureDraftConfig();
   if (!draftConfig.value) return;
 
-  const next = cloneLanguageSuggestions(languageSuggestions);
+  const next = normalizeLanguageSuggestions(languageSuggestions);
   saveError.value = false;
   if (JSON.stringify(next) === JSON.stringify(getDraftLanguageSuggestions()))
     return;
