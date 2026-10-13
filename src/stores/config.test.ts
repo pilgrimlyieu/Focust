@@ -1,5 +1,5 @@
 import { createPinia, setActivePinia } from "pinia";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { getI18nLocale } from "@/i18n";
 import { mockInvoke } from "@/test/setup";
 import type { AppConfig as RawAppConfig } from "@/types";
@@ -305,7 +305,7 @@ describe("useConfigStore", () => {
     it("restores an independent unsaved draft, including language and theme", () => {
       const store = useConfigStore();
       store.setLanguage("zh-CN");
-      store.setThemeMode("dark");
+      (store.draft as RawAppConfig).themeMode = "dark";
       const discardedDraft = store.draft as RawAppConfig;
       discardedDraft.schedules[0].miniBreaks.theme.fontSize = 36;
       const expected = structuredClone(discardedDraft);
@@ -362,12 +362,50 @@ describe("useConfigStore", () => {
       store.setLanguage("zh-CN");
       store.resetDraft();
       store.undoReset();
-      store.setThemeMode("dark");
+      (store.draft as RawAppConfig).themeMode = "dark";
       store.resetDraft();
       store.undoReset();
       expect(store.draft?.language).toBe("zh-CN");
       expect(store.draft?.themeMode).toBe("dark");
     });
+  });
+
+  it("follows the system theme only while selected and releases its listener", () => {
+    const media = Object.assign(new EventTarget(), { matches: false });
+    vi.spyOn(window, "matchMedia").mockReturnValue(media as MediaQueryList);
+    const writes = vi.spyOn(document.documentElement, "setAttribute");
+    const store = useConfigStore();
+    onTestFinished(() => {
+      store.$dispose();
+      vi.restoreAllMocks();
+    });
+    store.applyConfig(mockConfig);
+    const draft = store.draft as RawAppConfig;
+
+    media.matches = true;
+    media.dispatchEvent(new Event("change"));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+
+    for (const mode of ["light", "system", "dark", "system"]) {
+      draft.themeMode = mode;
+    }
+    writes.mockClear();
+    media.matches = false;
+    media.dispatchEvent(new Event("change"));
+    expect(writes).toHaveBeenCalledExactlyOnceWith("data-theme", "light");
+
+    draft.themeMode = "light";
+    writes.mockClear();
+    media.matches = true;
+    media.dispatchEvent(new Event("change"));
+    expect(writes).not.toHaveBeenCalled();
+
+    draft.themeMode = "system";
+    store.$dispose();
+    writes.mockClear();
+    media.matches = false;
+    media.dispatchEvent(new Event("change"));
+    expect(writes).not.toHaveBeenCalled();
   });
 
   describe("setLanguage", () => {

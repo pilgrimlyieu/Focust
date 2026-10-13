@@ -27,9 +27,6 @@ export type {
   ScheduleSettings,
 };
 
-/** UI theme mode type */
-export type ThemeMode = "light" | "dark" | "system";
-
 /**
  * Get the next available ID given a list of existing IDs
  * @param {number[]} existing Array of existing IDs
@@ -67,52 +64,30 @@ export const useConfigStore = defineStore("config", () => {
     { flush: "sync" },
   );
 
+  watch(
+    () => draft.value?.themeMode,
+    (mode, _previous, onCleanup) => {
+      if (mode === undefined) return;
+      const media =
+        mode === "system" && typeof window.matchMedia === "function"
+          ? window.matchMedia("(prefers-color-scheme: dark)")
+          : undefined;
+      const applyTheme = () =>
+        document.documentElement.setAttribute(
+          "data-theme",
+          mode === "system" ? (media?.matches ? "dark" : "light") : mode,
+        );
+      applyTheme();
+      media?.addEventListener("change", applyTheme);
+      onCleanup(() => media?.removeEventListener("change", applyTheme));
+    },
+    { flush: "sync" },
+  );
+
   function restoreDraft(config: AppConfig) {
     resetSnapshot.value = null;
     draft.value = safeClone(config);
     setI18nLocale(config.language);
-    applyTheme(config.themeMode);
-  }
-
-  /**
-   * Apply theme to DOM
-   * @param {string} mode Theme mode to apply
-   */
-  function applyTheme(mode: string) {
-    const html = document.documentElement;
-
-    if (mode === "system") {
-      // Check if matchMedia is available
-      if (typeof window.matchMedia === "function") {
-        const prefersDark = window.matchMedia(
-          "(prefers-color-scheme: dark)",
-        ).matches;
-        html.setAttribute("data-theme", prefersDark ? "dark" : "light");
-      } else {
-        // Fallback to light theme
-        html.setAttribute("data-theme", "light");
-      }
-    } else {
-      html.setAttribute("data-theme", mode);
-    }
-  }
-
-  /**
-   * Set the theme mode
-   * @param {ThemeMode} mode Theme mode to set
-   */
-  function setThemeMode(mode: ThemeMode) {
-    if (!draft.value) return;
-
-    draft.value.themeMode = mode;
-    applyTheme(mode);
-
-    // Setup system theme change listener when in system mode
-    if (mode === "system" && typeof window.matchMedia === "function") {
-      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-      const handler = () => applyTheme("system");
-      mediaQuery.addEventListener("change", handler);
-    }
   }
 
   /**
@@ -349,7 +324,6 @@ export const useConfigStore = defineStore("config", () => {
     save,
     saving,
     setLanguage,
-    setThemeMode,
     undoReset,
   };
 });

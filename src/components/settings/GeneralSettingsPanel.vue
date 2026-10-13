@@ -14,7 +14,7 @@ import {
   useDecimalToPercent,
 } from "@/composables/useComputed";
 import { LocaleKey, supportedLocales } from "@/i18n";
-import type { AppConfig, ThemeMode } from "@/stores/config";
+import type { AppConfig } from "@/stores/config";
 import { useConfigStore } from "@/stores/config";
 
 const props = defineProps<{ config: AppConfig }>();
@@ -261,10 +261,7 @@ onMounted(() => {
           <div class="label pb-2">
             <span class="label-text font-medium text-sm">{{ t("general.themeMode") }}</span>
           </div>
-          <select class="select select-bordered focus:select-primary w-full transition-all" :value="config.themeMode"
-            @change="
-              (e: Event) => configStore.setThemeMode((e.target as HTMLSelectElement).value as ThemeMode)
-            ">
+          <select v-model="config.themeMode" class="select select-bordered focus:select-primary w-full transition-all">
             <option value="light">{{ t("general.themeModeLight") }}</option>
             <option value="dark">{{ t("general.themeModeDark") }}</option>
             <option value="system">{{ t("general.themeModeSystem") }}</option>
