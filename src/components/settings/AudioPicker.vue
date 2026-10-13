@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import FolderIcon from "@/components/icons/FolderIcon.vue";
 import PlayIcon from "@/components/icons/PlayIcon.vue";
@@ -77,24 +77,35 @@ const filePath = computed({
 });
 
 const isPreviewing = ref(false);
+let previewTimeout: ReturnType<typeof setTimeout> | undefined;
+let previewRequest = 0;
+
+onBeforeUnmount(() => {
+  previewRequest += 1;
+  clearTimeout(previewTimeout);
+});
 
 /**
  * Stop any ongoing audio preview.
  */
 async function stopPreview() {
+  const request = ++previewRequest;
+  clearTimeout(previewTimeout);
   try {
     await invoke("stop_audio");
   } catch (error) {
     console.error("Failed to stop audio:", error);
   }
-  isPreviewing.value = false;
+  if (request === previewRequest) isPreviewing.value = false;
+  return request;
 }
 
 /**
  * Play a preview of the selected audio.
  */
 async function playPreview() {
-  await stopPreview();
+  const request = await stopPreview();
+  if (request !== previewRequest) return;
   const audio = props.audio;
 
   if (isNoAudio(audio)) {
@@ -119,13 +130,14 @@ async function playPreview() {
       }
     }
 
+    if (request !== previewRequest) return;
     // Auto-stop preview flag after 3 seconds (audio might finish before)
-    setTimeout(() => {
+    previewTimeout = setTimeout(() => {
       isPreviewing.value = false;
     }, 3000);
   } catch (error) {
     console.error("Failed to play audio:", error);
-    isPreviewing.value = false;
+    if (request === previewRequest) isPreviewing.value = false;
   }
 }
 
@@ -141,18 +153,6 @@ async function pickAudioFile() {
     filePath.value = file;
   }
 }
-
-defineExpose({
-  builtinValue,
-  filePath,
-  isPreviewing,
-  pickAudioFile,
-  playPreview,
-  providedOptions,
-  selectedType,
-  stopPreview,
-  t,
-});
 </script>
 
 <template>
