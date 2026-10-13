@@ -215,20 +215,16 @@ pub async fn save_suggestions_internal(
 /// Get suggestions for a specific language and break duration.
 /// Falls back to en-US if language not found.
 #[must_use]
-pub fn get_suggestions_for_break_internal(
-    config: &SuggestionsConfig,
+pub fn get_suggestions_for_break_internal<'a>(
+    config: &'a SuggestionsConfig,
     language: &str,
     break_kind: BreakKind,
-) -> Vec<String> {
-    if let Some(lang_suggestions) = config.by_language.get(language) {
-        return lang_suggestions.for_break(break_kind).to_vec();
-    }
-
-    if let Some(en_suggestions) = config.by_language.get(LANGUAGE_FALLBACK) {
-        return en_suggestions.for_break(break_kind).to_vec();
-    }
-
-    vec![]
+) -> &'a [String] {
+    config
+        .by_language
+        .get(language)
+        .or_else(|| config.by_language.get(LANGUAGE_FALLBACK))
+        .map_or(&[], |suggestions| suggestions.for_break(break_kind))
 }
 
 /// Sample a random suggestion for a specific break duration.
@@ -239,13 +235,9 @@ pub fn sample_suggestion_for_break(
     language: &str,
     break_kind: BreakKind,
 ) -> Option<String> {
-    let suggestions = get_suggestions_for_break_internal(config, language, break_kind);
-    if suggestions.is_empty() {
-        return None;
-    }
-
-    let mut rng = rand::rng();
-    suggestions.choose(&mut rng).cloned()
+    get_suggestions_for_break_internal(config, language, break_kind)
+        .choose(&mut rand::rng())
+        .cloned()
 }
 
 /// Load default suggestions from embedded resource file
