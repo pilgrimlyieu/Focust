@@ -48,6 +48,8 @@ You can quickly open the configuration directory from the settings UI:
 1. Go to **Advanced Options** tab
 2. Click **Open configuration directory**
 
+> **Note:** Focust reads the file once at startup. A missing required field, an invalid enum value, or a table that is not written in full (`theme`, `audio`, `suggestions` and `timeRange` require every required key once the table is present) makes the whole file fail to load: Focust then starts with default settings, and the file is overwritten with those defaults the next time you save from the settings UI. Manual edits made while Focust is running are lost for the same reason. Colour strings and font names are stored as-is and are not validated.
+
 ## Configuration Structure
 
 The configuration file is divided into several main sections:
@@ -74,7 +76,7 @@ enabled = true
 [[appExclusions]]
 active = true
 rule = "pause"
-patterns = ["chrome.exe", "firefox"]
+processes = ["chrome.exe", "firefox"]
 # ...
 ```
 
@@ -111,7 +113,7 @@ patterns = ["chrome.exe", "firefox"]
 ### `language`
 - **Type**: String
 - **Default**: Auto-detected from system locale
-- **Options**: `"en-US"`, `"zh-CN"`
+- **Options**: `"de-DE"`, `"en-US"`, `"es-ES"`, `"fr-FR"`, `"it-IT"`, `"ja-JP"`, `"ko-KR"`, `"pt-BR"`, `"ru-RU"`, `"zh-CN"`
 - **Description**: Interface language. Automatically detected on first run but can be changed manually.
 
 ### `themeMode`
@@ -141,15 +143,10 @@ patterns = ["chrome.exe", "firefox"]
 
 ## Break Schedule Settings
 
-Break Schedules define when and how often breaks occur. You can have multiple schedules with different time ranges and active days.
+Break Schedules define when and how often breaks occur. You can have multiple schedules with different time ranges and active days. Each mini and long break has an internal `id` that the application generates; it can normally be left out and should not be edited manually.
 
 ### Basic Break Schedule Fields
 
-#### `id`
-- **Type**: Integer
-- **Description**: Unique identifier for the schedule, used internally by the application. Should not be modified manually!
-- **Note**: Omitted in this documentation for simplicity.
- 
 #### `name`
 - **Type**: String
 - **Default**: `"Default Schedule"`
@@ -169,7 +166,8 @@ Break Schedules define when and how often breaks occur. You can have multiple sc
 
 #### `timeRange`
 - **Type**: Table
-- **Description**: Defines when this schedule is active during the day. Set both start and end times as "00:00" to represent a full-day schedule.
+- **Default**: `{ start = "00:00:00", end = "00:00:00" }`
+- **Description**: Defines when this schedule is active during the day. Set both start and end times as "00:00" to represent a full-day schedule. Once the table is present, both `start` and `end` are required.
 
 ```toml
 [schedules.timeRange]
@@ -197,9 +195,15 @@ end = "00:00:00"
 
 Mini breaks are short reminders (typically lasting 20 seconds) that occur frequently.
 
+#### `miniBreaks.id`
+- **Type**: Integer
+- **Required**: No
+- **Description**: Internal identifier of this mini break, used to match break events to this entry. Ids must be unique among all `miniBreaks.id` values — with duplicates, the first matching entry is used. The field may be omitted, in which case the application generates a value, but that value is not checked against the ids already in the file, so mixing explicit and omitted ids can produce duplicates.
+
 #### `miniBreaks.enabled`
 - **Type**: Boolean
 - **Default**: `true`
+- **Description**: Whether this mini break is active
 
 #### `miniBreaks.durationS`
 - **Type**: Integer (seconds)
@@ -232,7 +236,7 @@ See [Theme Settings](#theme-settings) section for theme configuration details.
 
 ```toml
 [schedules.miniBreaks.theme]
-background = { solid = "#1f2937" }
+background = { current = "solid", solid = "#1f2937" }
 textColor = "#f8fafc"
 blurRadius = 8
 opacity = 0.9
@@ -247,7 +251,7 @@ See [Audio Settings](#audio-settings) section for audio configuration details.
 ```toml
 [schedules.miniBreaks.audio]
 current = "builtin"
-name = "gentle-bell"
+builtinName = "gentle-bell"
 volume = 0.7
 ```
 
@@ -264,17 +268,25 @@ show = true
 
 Long breaks are extended rest periods (typically 5 minutes) that occur less frequently.
 
+#### `longBreaks.id`
+- **Type**: Integer
+- **Required**: No
+- **Description**: Internal identifier of this long break, used to match break events to this entry. Ids must be unique among all `longBreaks.id` values — with duplicates, the first matching entry is used. The field may be omitted, in which case the application generates a value, but that value is not checked against the ids already in the file, so mixing explicit and omitted ids can produce duplicates.
+
 #### `longBreaks.enabled`
 - **Type**: Boolean
 - **Default**: `true`
+- **Description**: Whether this long break is active
 
 #### `longBreaks.durationS`
 - **Type**: Integer (seconds)
 - **Default**: `300` (5 minutes)
+- **Description**: How long the long break lasts
 
 #### `longBreaks.postponedS`
 - **Type**: Integer (seconds)
 - **Default**: `300` (5 minutes)
+- **Description**: How long to postpone the break when using the postpone function
 
 #### `longBreaks.maxPostponeCount`
 - **Type**: Integer
@@ -284,6 +296,7 @@ Long breaks are extended rest periods (typically 5 minutes) that occur less freq
 #### `longBreaks.strictMode`
 - **Type**: Boolean
 - **Default**: `false`
+- **Description**: When enabled, breaks cannot be skipped or postponed
 
 #### `longBreaks.afterMiniBreaks`
 - **Type**: Integer
@@ -316,7 +329,7 @@ strictMode = false
 intervalS = 1200
 
 [schedules.miniBreaks.theme]
-background = { solid = "#1e293b" }
+background = { current = "solid", solid = "#1e293b" }
 textColor = "#f1f5f9"
 blurRadius = 8
 opacity = 0.9
@@ -325,7 +338,7 @@ fontFamily = "Arial"
 
 [schedules.miniBreaks.audio]
 current = "builtin"
-name = "gentle-bell"
+builtinName = "gentle-bell"
 volume = 0.7
 
 [schedules.miniBreaks.suggestions]
@@ -340,7 +353,7 @@ strictMode = false
 afterMiniBreaks = 4
 
 [schedules.longBreaks.theme]
-background = { imagePath = "/path/to/background.jpg" }
+background = { current = "imagePath", imagePath = "/path/to/background.jpg" }
 textColor = "#ffffff"
 blurRadius = 10
 opacity = 0.85
@@ -349,7 +362,7 @@ fontFamily = "Helvetica"
 
 [schedules.longBreaks.audio]
 current = "filePath"
-path = "/path/to/sound.mp3"
+filePath = "/path/to/sound.mp3"
 volume = 0.8
 
 [schedules.longBreaks.suggestions]
@@ -364,15 +377,22 @@ Attention reminders are time-based notifications that work like alarm clocks. Un
 
 ### Basic Attention Fields
 
+Every field of an attention entry is required in the file; the values listed below are the ones the settings UI uses for newly created reminders. A missing field makes the whole configuration fail to load.
+
+#### `id`
+- **Type**: Integer
+- **Required**: Yes
+- **Description**: Internal identifier of this reminder. Ids must be unique among all attention ids — with duplicates, the first matching entry is used. Should not be modified manually!
+
 #### `name`
 - **Type**: String
 - **Required**: Yes
-- **Description**: Name of the reminder (e.g., "Water Reminder", "Stand Up Alert")
+- **Description**: Name of the reminder (e.g., "Water Reminder", "Stand Up Alert"). New reminders use `"New attention"`.
 
 #### `enabled`
 - **Type**: Boolean
-- **Default**: `true`
-- **Description**: Whether this reminder is active
+- **Required**: Yes
+- **Description**: Whether this reminder is active. New reminders use `true`.
 
 #### `times`
 - **Type**: Array of strings (24-hour time format)
@@ -381,30 +401,35 @@ Attention reminders are time-based notifications that work like alarm clocks. Un
 
 #### `daysOfWeek`
 - **Type**: Array of strings
-- **Default**: `["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]`
+- **Required**: Yes
 - **Options**: `"Mon"`, `"Tue"`, `"Wed"`, `"Thu"`, `"Fri"`, `"Sat"`, `"Sun"`
+- **Description**: Days when this reminder is active. New reminders use all seven days.
 
 #### `title`
 - **Type**: String
-- **Default**: `"Attention"`
-- **Description**: Title shown in the popup window
+- **Required**: Yes
+- **Description**: Title shown in the popup window. New reminders use `"Attention Reminder"`.
 
 #### `message`
 - **Type**: String
 - **Required**: Yes
-- **Description**: The message content to display
+- **Description**: The message content to display. New reminders use `"This is an attention reminder."`.
 
 #### `durationS`
 - **Type**: Integer (seconds)
-- **Default**: `10`
-- **Description**: How long to show the reminder popup
+- **Required**: Yes
+- **Description**: How long to show the reminder popup. New reminders use `5`.
 
-Attention reminders also support theme, audio, and suggestion settings.
+#### `theme`
+- **Type**: Table
+- **Required**: Yes
+- **Description**: Appearance of the reminder window. See [Theme Settings](#theme-settings).
 
 **Example Attentions:**
 ```toml
 # Water reminder
 [[attentions]]
+id = 0
 name = "Hydrate"
 enabled = true
 times = ["10:00", "14:00", "16:00"]
@@ -414,20 +439,16 @@ message = "Stay hydrated! Drink a glass of water."
 durationS = 10
 
 [attentions.theme]
-background = { solid = "#0ea5e9" }
+background = { current = "solid", solid = "#0ea5e9" }
 textColor = "#ffffff"
 blurRadius = 5
 opacity = 0.95
 fontSize = 20
 fontFamily = "Arial"
 
-[attentions.audio]
-current = "builtin"
-name = "notification"
-volume = 0.6
-
 # Stand up reminder
 [[attentions]]
+id = 1
 name = "Stand Up"
 enabled = true
 times = ["11:00", "15:00"]
@@ -437,15 +458,12 @@ message = "Take a moment to stand up and stretch your legs!"
 durationS = 15
 
 [attentions.theme]
-background = { solid = "#10b981" }
+background = { current = "solid", solid = "#10b981" }
 textColor = "#ffffff"
 blurRadius = 5
 opacity = 0.95
 fontSize = 20
 fontFamily = "Arial"
-
-[attentions.audio]
-current = "none"
 ```
 
 ---
@@ -461,7 +479,7 @@ Theme settings control the appearance of break windows.
 **Structure:**
 
 ```toml
-[theme.background]
+[schedules.miniBreaks.theme.background]
 current = "solid"                # Currently active background type
 solid = "#1f2937"                # Preserved even when switched to image
 imagePath = "/path/to/image.jpg" # Preserved even when switched to folder
@@ -472,14 +490,14 @@ imageFolder = "/path/to/images/" # Preserved even when switched to solid
 
 1. **Solid Color** (`current = "solid"`):
    ```toml
-   [theme.background]
+   [schedules.miniBreaks.theme.background]
    current = "solid"
    solid = "#1f2937"
    ```
 
 2. **Single Image** (`current = "imagePath"`):
    ```toml
-   [theme.background]
+   [schedules.miniBreaks.theme.background]
    current = "imagePath"
    imagePath = "/path/to/image.jpg"
    ```
@@ -487,7 +505,7 @@ imageFolder = "/path/to/images/" # Preserved even when switched to solid
 
 3. **Random Image from Folder** (`current = "imageFolder"`):
    ```toml
-   [theme.background]
+   [schedules.miniBreaks.theme.background]
    current = "imageFolder"
    imageFolder = "/path/to/images/"
    ```
@@ -522,44 +540,50 @@ imageFolder = "/path/to/images/" # Preserved even when switched to solid
 
 **Theme Examples:**
 
+Pick one of the following — they cannot be combined in the same file.
+
 ```toml
 # Minimal dark theme
-[theme.background]
-current = "solid"
-solid = "#0f172a"
-
-[theme]
+[schedules.miniBreaks.theme]
 textColor = "#e2e8f0"
 blurRadius = 0
 opacity = 1.0
 fontSize = 20
 fontFamily = "Segoe UI"
 
-# Nature theme with image
-[theme.background]
-current = "imagePath"
-imagePath = "/path/to/forest.jpg"
+[schedules.miniBreaks.theme.background]
+current = "solid"
+solid = "#0f172a"
+```
 
-[theme]
+```toml
+# Nature theme with image
+[schedules.miniBreaks.theme]
 textColor = "#ffffff"
 blurRadius = 12
 opacity = 0.75
 fontSize = 28
 fontFamily = "Georgia"
 
-# Vibrant theme with preserved settings
-[theme.background]
-current = "solid"
-solid = "#7c3aed"
-imagePath = "/path/to/sunset.jpg" # Preserved
-imageFolder = "C:\\Wallpapers"    # Preserved
+[schedules.miniBreaks.theme.background]
+current = "imagePath"
+imagePath = "/path/to/forest.jpg"
+```
 
-[theme]
+```toml
+# Vibrant theme with preserved settings
+[schedules.miniBreaks.theme]
 textColor = "#fef3c7"
 blurRadius = 0
 opacity = 0.95
 fontSize = 26
 fontFamily = "Tahoma"
+
+[schedules.miniBreaks.theme.background]
+current = "solid"
+solid = "#7c3aed"
+imagePath = "/path/to/sunset.jpg" # Preserved
+imageFolder = "C:\\Wallpapers"    # Preserved
 ```
 
 ---
@@ -573,7 +597,7 @@ Audio settings control sound playback during breaks.
 **Structure**:
 
 ```toml
-[audio]
+[schedules.miniBreaks.audio]
 current = "builtin"              # Currently active audio type
 builtinName = "gentle-bell"      # Preserved even when switched to filePath
 filePath = "/path/to/custom.mp3" # Preserved even when switched to builtin
@@ -609,20 +633,26 @@ volume = 0.6
 
 **Audio Examples:**
 
+Pick one of the following — they cannot be combined in the same file.
+
 ```toml
 # No sound
-[audio]
+[schedules.miniBreaks.audio]
 current = "none"
 volume = 0.6
+```
 
+```toml
 # Built-in sound
-[audio]
+[schedules.miniBreaks.audio]
 current = "builtin"
 builtinName = "gentle-bell"
 volume = 0.7
+```
 
+```toml
 # Custom audio file
-[audio]
+[schedules.miniBreaks.audio]
 current = "filePath"
 filePath = "C:\\Users\\YourName\\Music\\zen-bell.mp3"
 volume = 0.8
@@ -684,7 +714,9 @@ You can add your own suggestions under the appropriate language section. Mini br
 
 ## Application Exclusions Settings
 
-Application exclusions allow you to automatically pause or resume the scheduler based on which applications are running. This is useful for preventing break interruptions during presentations, video calls, or when using specific applications.
+Application exclusions let you control when reminders are paused based on which applications are running. This is useful for preventing break interruptions during presentations, video calls, or when using specific applications.
+
+Rules are checked every 10 seconds, and only the **first active rule** is evaluated — later rules are ignored. Rule changes apply after the next app restart. Checks are skipped while a break or reminder window is showing, and an exclusion pause is not cleared by the UI's Resume action.
 
 ### `appExclusions`
 - **Type**: Array of objects
@@ -699,27 +731,30 @@ Each exclusion rule has the following structure:
 [[appExclusions]]
 active = true
 rule = "pause"  # or "resume"
-patterns = ["chrome.exe", "firefox"]
+processes = ["chrome.exe", "firefox"]
 ```
 
 #### `active`
 - **Type**: Boolean
-- **Default**: `true`
+- **Default**: `false`
 - **Description**: Whether this exclusion rule is active
 
 #### `rule`
 - **Type**: String enum
-- **Options**: `"pause"`, `"resume"`
-- **Description**: Action to take when a matching process is detected
-  - `"pause"`: Pause the scheduler when any of the patterns match
-  - `"resume"`: Resume the scheduler when any of the patterns match (if previously paused by exclusions)
+- **Default**: `"pause"`
+- **Options**: `"pause"`, `"resume"` (lowercase only)
+- **Description**: What happens while the listed processes are running
+  - `"pause"`: Pause reminders while any of the processes in `processes` is running
+  - `"resume"`: Pause reminders while none of the processes in `processes` is running, i.e. reminders only run while at least one of them is running
 
-#### `patterns`
+#### `processes`
 - **Type**: Array of strings
-- **Description**: List of process name patterns to match. Matching is case-insensitive and uses substring matching.
+- **Default**: `[]` (empty array)
+- **Description**: List of process names or paths to match. Matching is case-insensitive and uses substring matching against the process name and its full executable path.
   - Can be process names (e.g., `"chrome.exe"`, `"firefox"`)
   - Can be partial names (e.g., `"chrome"` matches `"chrome.exe"`)
   - Can be full paths (e.g., `"C:\\Program Files\\App\\app.exe"`)
+  - A rule with an empty list never matches: with `rule = "pause"` it does nothing, but with `rule = "resume"` reminders stay paused permanently
 
 ### Example Configurations
 
@@ -728,28 +763,23 @@ patterns = ["chrome.exe", "firefox"]
 [[appExclusions]]
 active = true
 rule = "pause"
-patterns = ["POWERPNT.EXE", "Keynote", "impress"]  # PowerPoint, Keynote, LibreOffice Impress
+processes = ["POWERPNT.EXE", "Keynote", "impress"]  # PowerPoint, Keynote, LibreOffice Impress
 ```
 
 **Pause during video calls:**
 ```toml
 [[appExclusions]]
 active = true
-rule = "Pause"
-patterns = ["zoom.exe", "Teams.exe", "Slack.exe", "Discord.exe"]
+rule = "pause"
+processes = ["zoom.exe", "Teams.exe", "Slack.exe", "Discord.exe"]
 ```
 
-**Resume when using IDEs (override previous pauses):**
+**Reminders only while an editor is running:**
 ```toml
 [[appExclusions]]
 active = true
-rule = "pause"
-patterns = ["chrome.exe", "firefox.exe"]  # Pause during browsing
-
-[[appExclusions]]
-active = true
 rule = "resume"
-patterns = ["code.exe", "idea64.exe", "pycharm64.exe"]  # Resume when coding
+processes = ["code.exe", "idea64.exe", "pycharm64.exe"]
 ```
 
 **Multi-platform example:**
@@ -757,7 +787,7 @@ patterns = ["code.exe", "idea64.exe", "pycharm64.exe"]  # Resume when coding
 [[appExclusions]]
 active = true
 rule = "pause"
-patterns = [
+processes = [
     # Windows
     "POWERPNT.EXE", "chrome.exe", "firefox.exe",
     # macOS
@@ -786,25 +816,13 @@ windowSize = 0.8
 
 [[appExclusions]]
 active = true
-rule = "Pause"
-patterns = ["POWERPNT.EXE", "zoom.exe", "Teams.exe"]
+rule = "pause"
+processes = ["POWERPNT.EXE", "zoom.exe", "Teams.exe"]
 
 [[appExclusions]]
 active = true
-rule = "Resume"
-patterns = ["code.exe", "idea64.exe"]
-```
-
-**Example:**
-```toml
-autostart = false
-monitorDnd = true
-inactiveS = 300
-allScreens = false
-language = "en-US"
-themeMode = "system"
-postponeShortcut = "Ctrl+Shift+P"
-windowSize = 0.8
+rule = "resume"
+processes = ["code.exe", "idea64.exe"]
 ```
 
 ---
@@ -814,9 +832,10 @@ windowSize = 0.8
 Advanced settings are intended for users who want to fine-tune the application's behavior beyond standard options. These settings are not exposed in the user interface and must be edited directly in the configuration file. All advanced settings are grouped under the `[advanced]` table.
 
 Advanced settings have a weaker compatibility guarantee than normal settings. Future incompatible changes will be surfaced in the settings interface to notify you of an update, but these options remain intended for manual configuration rather than regular UI workflows.
+
 ### `logLevel`
 - **Type**: String enum
-- **Default**: `"info"`
+- **Default**: `"info"` in release builds, `"trace"` in debug builds
 - **Options**: `"trace"`, `"debug"`, `"info"`, `"warn"`, `"error"`
 - **Description**: Sets the verbosity of application logging. Higher levels provide more detailed logs, useful for troubleshooting.
 
@@ -853,7 +872,7 @@ resetOnWake = true
 ### `trayPauseDurationsMinutes`
 - **Type**: Array of positive integers
 - **Default**: `[15, 30, 60]`
-- **Description**: Controls the timed pause durations shown in the system tray menu, in minutes. Selecting one pauses both break and attention reminders until the duration expires. Entries are sorted ascending and deduplicated, and non-positive values are ignored. Set this to an empty array (`[]`) to hide the timed pause submenu. Requires application restart to update the tray menu after editing.
+- **Description**: Controls the timed pause durations shown in the system tray menu, in minutes. Selecting one pauses both break and attention reminders until the duration expires. Entries are sorted ascending and deduplicated, and `0` entries are ignored; negative values are invalid and make the whole configuration fail to load. Set this to an empty array (`[]`) to hide the timed pause submenu. Requires application restart to update the tray menu after editing.
 
 Example:
 
@@ -915,6 +934,7 @@ fontSize = 24
 fontFamily = "Arial"
 
 [schedules.miniBreaks.theme.background]
+current = "solid"
 solid = "#1f2937"
 
 [schedules.miniBreaks.audio]
@@ -941,6 +961,7 @@ fontSize = 24
 fontFamily = "Arial"
 
 [schedules.longBreaks.theme.background]
+current = "solid"
 solid = "#1f2937"
 
 [schedules.longBreaks.audio]
@@ -982,7 +1003,7 @@ strictMode = false
 intervalS = 1200  # 20 min
 
 [schedules.miniBreaks.theme]
-background = { imagePath = "/home/user/wallpapers/calm-lake.jpg" }
+background = { current = "imagePath", imagePath = "/home/user/wallpapers/calm-lake.jpg" }
 textColor = "#e0f2fe"
 blurRadius = 10
 opacity = 0.85
@@ -991,7 +1012,7 @@ fontFamily = "Helvetica"
 
 [schedules.miniBreaks.audio]
 current = "builtin"
-name = "gentle-bell"
+builtinName = "gentle-bell"
 volume = 0.6
 
 [schedules.miniBreaks.suggestions]
@@ -1006,7 +1027,7 @@ strictMode = true
 afterMiniBreaks = 3
 
 [schedules.longBreaks.theme]
-background = { imagePath = "/home/user/wallpapers/mountain.jpg" }
+background = { current = "imagePath", imagePath = "/home/user/wallpapers/mountain.jpg" }
 textColor = "#ffffff"
 blurRadius = 15
 opacity = 0.8
@@ -1015,7 +1036,7 @@ fontFamily = "Georgia"
 
 [schedules.longBreaks.audio]
 current = "filePath"
-path = "/home/user/sounds/meditation-bell.mp3"
+filePath = "/home/user/sounds/meditation-bell.mp3"
 volume = 0.7
 
 [schedules.longBreaks.suggestions]
@@ -1041,7 +1062,7 @@ strictMode = false
 intervalS = 1800  # 30 min
 
 [schedules.miniBreaks.theme]
-background = { Solid = "#1e3a8a" }
+background = { current = "solid", solid = "#1e3a8a" }
 textColor = "#dbeafe"
 blurRadius = 5
 opacity = 0.9
@@ -1050,7 +1071,7 @@ fontFamily = "Arial"
 
 [schedules.miniBreaks.audio]
 current = "builtin"
-name = "soft-gong"
+builtinName = "soft-gong"
 volume = 0.5
 
 [schedules.miniBreaks.suggestions]
@@ -1061,6 +1082,7 @@ enabled = false
 
 # Hydration reminder
 [[attentions]]
+id = 0
 name = "Drink Water"
 enabled = true
 times = ["10:00", "14:00", "16:00", "20:00"]
@@ -1070,20 +1092,16 @@ message = "Remember to drink water! Stay hydrated throughout the day."
 durationS = 10
 
 [attentions.theme]
-background = { solid = "#0ea5e9" }
+background = { current = "solid", solid = "#0ea5e9" }
 textColor = "#ffffff"
 blurRadius = 5
 opacity = 0.95
 fontSize = 20
 fontFamily = "Arial"
 
-[attentions.audio]
-current = "builtin"
-name = "notification"
-volume = 0.5
-
 # Eye exercise reminder
 [[attentions]]
+id = 1
 name = "Eye Exercise"
 enabled = true
 times = ["11:00", "15:00", "19:00"]
@@ -1093,17 +1111,12 @@ message = "Look at something 20 feet away for 20 seconds (20-20-20 rule)"
 durationS = 25
 
 [attentions.theme]
-background = { solid = "#10b981" }
+background = { current = "solid", solid = "#10b981" }
 textColor = "#ffffff"
 blurRadius = 5
 opacity = 0.95
 fontSize = 22
 fontFamily = "Arial"
-
-[attentions.audio]
-current = "builtin"
-name = "bright-notification"
-volume = 0.6
 ```
 
 ---

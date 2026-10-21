@@ -48,6 +48,8 @@ Focust 将其配置存储在特定于平台的位置：
 1. 转到**高级选项**选项卡
 2. 点击**打开配置目录**
 
+> **注意**：Focust 只在启动时读取一次配置文件。缺少必填字段、非法的枚举取值，或没有写全的表（`theme`、`audio`、`suggestions`、`timeRange` 一旦出现就必须写全所有必填键）都会导致整份文件加载失败：此时 Focust 以默认设置启动，并在你下次从设置界面保存时用这些默认值覆盖该文件。Focust 运行期间手动修改文件也会因同样的原因丢失。颜色字符串与字体名称会原样保存，不做校验。
+
 ## 配置结构
 
 配置文件分为几个主要部分：
@@ -74,7 +76,7 @@ enabled = true
 [[appExclusions]]
 active = true
 rule = "pause"
-patterns = ["chrome.exe", "firefox"]
+processes = ["chrome.exe", "firefox"]
 # ...
 ```
 
@@ -111,7 +113,7 @@ patterns = ["chrome.exe", "firefox"]
 ### `language`
 - **类型**：字符串
 - **默认值**：从系统区域设置自动检测
-- **选项**：`"en-US"`, `"zh-CN"`
+- **选项**：`"de-DE"`, `"en-US"`, `"es-ES"`, `"fr-FR"`, `"it-IT"`, `"ja-JP"`, `"ko-KR"`, `"pt-BR"`, `"ru-RU"`, `"zh-CN"`
 - **说明**：界面语言。首次运行时自动检测，但可以手动更改。
 
 ### `themeMode`
@@ -141,14 +143,9 @@ patterns = ["chrome.exe", "firefox"]
 
 ## 休息计划设置
 
-休息计划定义何时以及多久发生一次休息。您可以拥有多个具有不同时间范围和活动日期的休息计划。
+休息计划定义何时以及多久发生一次休息。您可以拥有多个具有不同时间范围和活动日期的休息计划。每种短休息、长休息都有一个由应用生成的内部 `id`，通常可以省略，也不应手动修改。
 
 ### 基本休息计划字段
-
-#### `id`
-- **类型**：整数
-- **说明**：休息计划的唯一标识符，由应用程序内部使用，不应手动更改！
-- **注意**：本篇示例中省略此字段。
 
 #### `name`
 - **类型**：字符串
@@ -169,7 +166,8 @@ patterns = ["chrome.exe", "firefox"]
 
 #### `timeRange`
 - **类型**：表
-- **说明**：定义此休息计划在一天中何时活动。将开始和结束时间都设置为「00:00」以表示全天休息计划。
+- **默认值**：`{ start = "00:00:00", end = "00:00:00" }`
+- **说明**：定义此休息计划在一天中何时活动。将开始和结束时间都设置为「00:00」以表示全天休息计划。该表一旦出现，`start` 与 `end` 均为必填。
 
 ```toml
 [schedules.timeRange]
@@ -197,9 +195,15 @@ end = "00:00:00"
 
 短休息是频繁发生的短提醒（通常持续时间为 20 秒）。
 
+#### `miniBreaks.id`
+- **类型**：整数
+- **必需**：否
+- **说明**：此短休息的内部标识符，应用程序用它把休息事件对应到本条目。必须在所有 `miniBreaks.id` 中唯一 —— 若出现重复，只有第一个匹配的条目会生效。该字段可以省略，此时由应用程序生成一个值，但生成时不会与文件中已有的 id 比对，因此显式填写与省略混用时可能产生重复。
+
 #### `miniBreaks.enabled`
 - **类型**：布尔值
 - **默认值**：`true`
+- **说明**：此短休息是否活动
 
 #### `miniBreaks.durationS`
 - **类型**：整数（秒）
@@ -232,7 +236,7 @@ end = "00:00:00"
 
 ```toml
 [schedules.miniBreaks.theme]
-background = { solid = "#1f2937" }
+background = { current = "solid", solid = "#1f2937" }
 textColor = "#f8fafc"
 blurRadius = 8
 opacity = 0.9
@@ -247,7 +251,7 @@ fontFamily = "Arial"
 ```toml
 [schedules.miniBreaks.audio]
 current = "builtin"
-name = "gentle-bell"
+builtinName = "gentle-bell"
 volume = 0.7
 ```
 
@@ -264,25 +268,35 @@ show = true
 
 长休息是较少发生的延长休息时段（通常为 5 分钟）。
 
+#### `longBreaks.id`
+- **类型**：整数
+- **必需**：否
+- **说明**：此长休息的内部标识符，应用程序用它把休息事件对应到本条目。必须在所有 `longBreaks.id` 中唯一 —— 若出现重复，只有第一个匹配的条目会生效。该字段可以省略，此时由应用程序生成一个值，但生成时不会与文件中已有的 id 比对，因此显式填写与省略混用时可能产生重复。
+
 #### `longBreaks.enabled`
 - **类型**：布尔值
 - **默认值**：`true`
+- **说明**：此长休息是否活动
 
 #### `longBreaks.durationS`
 - **类型**：整数（秒）
 - **默认值**：`300`（5 分钟）
+- **说明**：长休息持续多长时间
 
 #### `longBreaks.postponedS`
 - **类型**：整数（秒）
 - **默认值**：`300`（5 分钟）
+- **说明**：使用推迟功能时推迟休息多长时间
 
 #### `longBreaks.maxPostponeCount`
 - **类型**：整数
 - **默认值**：`2`
+- **说明**：一次长休息允许推迟的最大次数
 
 #### `longBreaks.strictMode`
 - **类型**：布尔值
 - **默认值**：`false`
+- **说明**：启用时，休息不能被跳过或推迟
 
 #### `longBreaks.afterMiniBreaks`
 - **类型**：整数
@@ -315,7 +329,7 @@ strictMode = false
 intervalS = 1200
 
 [schedules.miniBreaks.theme]
-background = { solid = "#1e293b" }
+background = { current = "solid", solid = "#1e293b" }
 textColor = "#f1f5f9"
 blurRadius = 8
 opacity = 0.9
@@ -324,7 +338,7 @@ fontFamily = "Arial"
 
 [schedules.miniBreaks.audio]
 current = "builtin"
-name = "gentle-bell"
+builtinName = "gentle-bell"
 volume = 0.7
 
 [schedules.miniBreaks.suggestions]
@@ -339,7 +353,7 @@ strictMode = false
 afterMiniBreaks = 4
 
 [schedules.longBreaks.theme]
-background = { imagePath = "/path/to/background.jpg" }
+background = { current = "imagePath", imagePath = "/path/to/background.jpg" }
 textColor = "#ffffff"
 blurRadius = 10
 opacity = 0.85
@@ -348,7 +362,7 @@ fontFamily = "Helvetica"
 
 [schedules.longBreaks.audio]
 current = "filePath"
-path = "/path/to/sound.mp3"
+filePath = "/path/to/sound.mp3"
 volume = 0.8
 
 [schedules.longBreaks.suggestions]
@@ -363,15 +377,22 @@ show = true
 
 ### 基本注意字段
 
+注意项的每个字段在文件中都是必填的；下面列出的取值是设置界面新建提醒时使用的值。缺少字段会导致整份配置加载失败。
+
+#### `id`
+- **类型**：整数
+- **必需**：是
+- **说明**：此提醒的内部标识符。必须在所有注意项的 id 中唯一 —— 若出现重复，只有第一个匹配的条目会生效。不应手动更改！
+
 #### `name`
 - **类型**：字符串
 - **必需**：是
-- **说明**：提醒的名称（例如，「喝水提醒」「站立提醒」）
+- **说明**：提醒的名称（例如，「喝水提醒」「站立提醒」）。新建提醒使用 `"New attention"`。
 
 #### `enabled`
 - **类型**：布尔值
-- **默认值**：`true`
-- **说明**：此提醒是否活动
+- **必需**：是
+- **说明**：此提醒是否活动。新建提醒使用 `true`。
 
 #### `times`
 - **类型**：字符串数组（24 小时时间格式）
@@ -380,30 +401,35 @@ show = true
 
 #### `daysOfWeek`
 - **类型**：字符串数组
-- **默认值**：`["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]`
+- **必需**：是
 - **选项**：`"Mon"`, `"Tue"`, `"Wed"`, `"Thu"`, `"Fri"`, `"Sat"`, `"Sun"`
+- **说明**：此提醒活动的日期。新建提醒使用全部七天。
 
 #### `title`
 - **类型**：字符串
-- **默认值**：`"Attention"`
-- **说明**：弹出窗口中显示的标题
+- **必需**：是
+- **说明**：弹出窗口中显示的标题。新建提醒使用 `"Attention Reminder"`。
 
 #### `message`
 - **类型**：字符串
 - **必需**：是
-- **说明**：要显示的消息内容
+- **说明**：要显示的消息内容。新建提醒使用 `"This is an attention reminder."`。
 
 #### `durationS`
 - **类型**：整数（秒）
-- **默认值**：`10`
-- **说明**：显示提醒弹出窗口多长时间
+- **必需**：是
+- **说明**：显示提醒弹出窗口多长时间。新建提醒使用 `5`。
 
-注意提醒也支持主题、音频和建议设置。
+#### `theme`
+- **类型**：表
+- **必需**：是
+- **说明**：提醒窗口的外观，参见[主题设置](#主题设置)。
 
 **注意示例：**
 ```toml
 # 喝水提醒
 [[attentions]]
+id = 0
 name = "补水"
 enabled = true
 times = ["10:00", "14:00", "16:00"]
@@ -413,20 +439,16 @@ message = "保持水分充足！喝一杯水。"
 durationS = 10
 
 [attentions.theme]
-background = { solid = "#0ea5e9" }
+background = { current = "solid", solid = "#0ea5e9" }
 textColor = "#ffffff"
 blurRadius = 5
 opacity = 0.95
 fontSize = 20
 fontFamily = "Arial"
 
-[attentions.audio]
-current = "builtin"
-name = "notification"
-volume = 0.6
-
 # 站立提醒
 [[attentions]]
+id = 1
 name = "站起来"
 enabled = true
 times = ["11:00", "15:00"]
@@ -436,15 +458,12 @@ message = "花点时间站起来并伸展您的腿！"
 durationS = 15
 
 [attentions.theme]
-background = { solid = "#10b981" }
+background = { current = "solid", solid = "#10b981" }
 textColor = "#ffffff"
 blurRadius = 5
 opacity = 0.95
 fontSize = 20
 fontFamily = "Arial"
-
-[attentions.audio]
-current = "none"
 ```
 
 ---
@@ -460,7 +479,7 @@ current = "none"
 **结构：**
 
 ```toml
-[theme.background]
+[schedules.miniBreaks.theme.background]
 current = "solid"                # 当前活跃的背景类型
 solid = "#1f2937"                # 即使切换到图片也会保留
 imagePath = "/path/to/image.jpg" # 即使切换到文件夹也会保留
@@ -471,14 +490,14 @@ imageFolder = "/path/to/images/" # 即使切换到纯色也会保留
 
 1. **纯色**（`current = "solid"`）：
    ```toml
-   [theme.background]
+   [schedules.miniBreaks.theme.background]
    current = "solid"
    solid = "#1f2937"
    ```
 
 2. **单张图片**（`current = "imagePath"`）：
    ```toml
-   [theme.background]
+   [schedules.miniBreaks.theme.background]
    current = "imagePath"
    imagePath = "/path/to/image.jpg"
    ```
@@ -486,7 +505,7 @@ imageFolder = "/path/to/images/" # 即使切换到纯色也会保留
 
 3. **文件夹中的随机图片**（`current = "imageFolder"`）：
    ```toml
-   [theme.background]
+   [schedules.miniBreaks.theme.background]
    current = "imageFolder"
    imageFolder = "/path/to/images/"
    ```
@@ -521,44 +540,50 @@ imageFolder = "/path/to/images/" # 即使切换到纯色也会保留
 
 **主题示例：**
 
+以下示例任选其一，不能合并到同一文件中。
+
 ```toml
 # 简约深色主题
-[theme.background]
-current = "solid"
-solid = "#0f172a"
-
-[theme]
+[schedules.miniBreaks.theme]
 textColor = "#e2e8f0"
 blurRadius = 0
 opacity = 1.0
 fontSize = 20
 fontFamily = "Segoe UI"
 
-# 带图片的自然主题
-[theme.background]
-current = "imagePath"
-imagePath = "/path/to/forest.jpg"
+[schedules.miniBreaks.theme.background]
+current = "solid"
+solid = "#0f172a"
+```
 
-[theme]
+```toml
+# 带图片的自然主题
+[schedules.miniBreaks.theme]
 textColor = "#ffffff"
 blurRadius = 12
 opacity = 0.75
 fontSize = 28
 fontFamily = "Georgia"
 
-# 充满活力的主题并保留设置
-[theme.background]
-current = "solid"
-solid = "#7c3aed"
-imagePath = "/path/to/sunset.jpg" # 保留
-imageFolder = "C:\\Wallpapers"    # 保留
+[schedules.miniBreaks.theme.background]
+current = "imagePath"
+imagePath = "/path/to/forest.jpg"
+```
 
-[theme]
+```toml
+# 充满活力的主题并保留设置
+[schedules.miniBreaks.theme]
 textColor = "#fef3c7"
 blurRadius = 0
 opacity = 0.95
 fontSize = 26
 fontFamily = "Tahoma"
+
+[schedules.miniBreaks.theme.background]
+current = "solid"
+solid = "#7c3aed"
+imagePath = "/path/to/sunset.jpg" # 保留
+imageFolder = "C:\\Wallpapers"    # 保留
 ```
 
 ---
@@ -572,7 +597,7 @@ fontFamily = "Tahoma"
 **结构：**
 
 ```toml
-[audio]
+[schedules.miniBreaks.audio]
 current = "builtin"              # 当前活跃的音频类型
 builtinName = "gentle-bell"      # 即使切换到 filePath 也会保留
 filePath = "/path/to/custom.mp3" # 即使切换到 builtin 也会保留
@@ -608,20 +633,26 @@ volume = 0.6
 
 **音频示例：**
 
+以下示例任选其一，不能合并到同一文件中。
+
 ```toml
 # 无音频
-[audio]
+[schedules.miniBreaks.audio]
 current = "none"
 volume = 0.6
+```
 
+```toml
 # 内置声音
-[audio]
+[schedules.miniBreaks.audio]
 current = "builtin"
 builtinName = "gentle-bell"
 volume = 0.7
+```
 
+```toml
 # 自定义声音文件
-[audio]
+[schedules.miniBreaks.audio]
 current = "filePath"
 filePath = "C:\\Users\\YourName\\Music\\zen-bell.mp3"
 volume = 0.8
@@ -636,13 +667,14 @@ volume = 0.8
 ### `show`
 - **类型**：布尔值
 - **默认值**：`true`
-- **说明**：在休息期间是否显示建议
+- **说明**：在每次休息期间随机显示一条建议
 
-**建议示例：**
+**建议配置：**
 
-建议存储在单独的 TOML 文件中：`suggestions.toml`
+建议存储在单独的 TOML 文件中，与主配置文件位于同一目录：
+- `suggestions.toml`
 
-**结构：**
+**建议文件格式：**
 ```toml
 [byLanguage.en-US]
 suggestions = [] # 旧版兼容占位；不会作为公共池使用。
@@ -681,7 +713,9 @@ longSuggestions = [
 
 ## 应用程序排除设置
 
-应用程序排除功能允许您根据正在运行的应用程序自动暂停或恢复调度器。这对于在演示、视频通话或使用特定应用程序时防止休息中断非常有用。
+应用程序排除功能允许您根据正在运行的应用程序控制提醒的暂停。这对于在演示、视频通话或使用特定应用程序时防止休息中断非常有用。
+
+规则每 10 秒检查一次，并且只有**第一条启用的规则**会被求值 —— 其后的规则会被忽略。规则修改需要重启应用后生效。休息或提醒窗口显示期间不会检查，且排除导致的暂停不会被界面上的“继续”操作清除。
 
 ### `appExclusions`
 - **类型**：对象数组
@@ -696,28 +730,100 @@ longSuggestions = [
 [[appExclusions]]
 active = true
 rule = "pause"  # 或 "resume"
-patterns = ["chrome.exe", "firefox"]
+processes = ["chrome.exe", "firefox"]
 ```
 
 #### `active`
 - **类型**：布尔值
-- **默认值**：`true`
+- **默认值**：`false`
 - **说明**：此排除规则是否活动
 
 #### `rule`
 - **类型**：字符串枚举
-- **选项**：`"pause"`、`"resume"`
-- **说明**：检测到匹配进程时采取的操作
-  - `"Pause"`：当任何模式匹配时暂停调度器
-  - `"Resume"`：当任何模式匹配时恢复调度器（如果之前被排除规则暂停）
+- **默认值**：`"pause"`
+- **选项**：`"pause"`、`"resume"`（仅小写）
+- **说明**：列出的进程运行时会发生什么
+  - `"pause"`：当 `processes` 中任一进程正在运行时暂停提醒
+  - `"resume"`：当 `processes` 中没有进程正在运行时暂停提醒，即只有至少一个在运行时才提醒
 
-#### `patterns`
+#### `processes`
 - **类型**：字符串数组
-- **说明**：要匹配的进程名称模式列表。匹配不区分大小写，使用子串匹配。
+- **默认值**：`[]`（空数组）
+- **说明**：要匹配的进程名称或路径列表。匹配不区分大小写，对进程名及其完整可执行文件路径使用子串匹配。
   - 可以是进程名称（例如 `"chrome.exe"`、`"firefox"`）
   - 可以是部分名称（例如 `"chrome"` 匹配 `"chrome.exe"`）
   - 可以是完整路径（例如 `"C:\\Program Files\\App\\app.exe"`）
-  
+  - 列表为空的规则永不匹配：`rule = "pause"` 时不起作用，但 `rule = "resume"` 时提醒会一直保持暂停
+
+### 配置示例
+
+**演示期间暂停：**
+```toml
+[[appExclusions]]
+active = true
+rule = "pause"
+processes = ["POWERPNT.EXE", "Keynote", "impress"]  # PowerPoint、Keynote、LibreOffice Impress
+```
+
+**视频通话期间暂停：**
+```toml
+[[appExclusions]]
+active = true
+rule = "pause"
+processes = ["zoom.exe", "Teams.exe", "Slack.exe", "Discord.exe"]
+```
+
+**仅在编辑器运行时提醒：**
+```toml
+[[appExclusions]]
+active = true
+rule = "resume"
+processes = ["code.exe", "idea64.exe", "pycharm64.exe"]
+```
+
+**跨平台示例：**
+```toml
+[[appExclusions]]
+active = true
+rule = "pause"
+processes = [
+    # Windows
+    "POWERPNT.EXE", "chrome.exe", "firefox.exe",
+    # macOS
+    "Keynote", "Google Chrome", "Firefox",
+    # Linux
+    "chrome", "firefox", "libreoffice"
+]
+```
+
+### 平台特定说明
+
+- **Windows**：进程名称通常包含 `.exe` 扩展名（例如 `"chrome.exe"`）
+- **macOS**：应用程序名称匹配 `.app` 名称，不含扩展名（例如 `"Google Chrome"`）
+- **Linux**：进程名称通常为小写，不含扩展名（例如 `"chrome"`、`"firefox"`）
+
+**示例：**
+```toml
+autostart = false
+monitorDnd = true
+inactiveS = 300
+allScreens = false
+language = "zh-CN"
+themeMode = "system"
+postponeShortcut = "Ctrl+Shift+P"
+windowSize = 0.8
+
+[[appExclusions]]
+active = true
+rule = "pause"
+processes = ["POWERPNT.EXE", "zoom.exe", "Teams.exe"]
+
+[[appExclusions]]
+active = true
+rule = "resume"
+processes = ["code.exe", "idea64.exe"]
+```
+
 ---
 
 ## 高级设置
@@ -728,9 +834,9 @@ patterns = ["chrome.exe", "firefox"]
 
 ### `logLevel`
 - **类型**：字符串枚举
-- **默认值**：`"info"`
+- **默认值**：发布版为 `"info"`，调试版为 `"trace"`
 - **选项**：`"trace"`、`"debug"`、`"info"`、`"warn"`、`"error"`
-- **说明**：日志记录的详细程度
+- **说明**：日志记录的详细程度。级别越高，日志越详细，便于排查问题。
 
 示例：
 
@@ -765,101 +871,13 @@ resetOnWake = true
 ### `trayPauseDurationsMinutes`
 - **类型**：正整数数组
 - **默认值**：`[15, 30, 60]`
-- **说明**：控制系统托盘菜单中显示的定时暂停时长，单位为分钟。选择某个时长后，休息提醒和定时提醒都会暂停，直到该时长结束。列表会自动升序排序并去重，非正数会被忽略。设置为空数组（`[]`）可以隐藏定时暂停子菜单。编辑后需要重启应用才会更新托盘菜单。
+- **说明**：控制系统托盘菜单中显示的定时暂停时长，单位为分钟。选择某个时长后，休息提醒和定时提醒都会暂停，直到该时长结束。列表会自动升序排序并去重，`0` 会被忽略；负数无效，会导致整份配置加载失败。设置为空数组（`[]`）可以隐藏定时暂停子菜单。编辑后需要重启应用才会更新托盘菜单。
 
 示例：
 
 ```toml
 [advanced]
 trayPauseDurationsMinutes = [15, 30, 60]
-```
-
----
-
-### 配置示例
-
-**演示期间暂停：**
-```toml
-[[appExclusions]]
-active = true
-rule = "pause"
-patterns = ["POWERPNT.EXE", "Keynote", "impress"]  # PowerPoint、Keynote、LibreOffice Impress
-```
-
-**视频通话期间暂停：**
-```toml
-[[appExclusions]]
-active = true
-rule = "pause"
-patterns = ["zoom.exe", "Teams.exe", "Slack.exe", "Discord.exe"]
-```
-
-**使用 IDE 时恢复（覆盖先前的暂停）：**
-```toml
-[[appExclusions]]
-active = true
-rule = "pause"
-patterns = ["chrome.exe", "firefox.exe"]  # 浏览时暂停
-
-[[appExclusions]]
-active = true
-rule = "resume"
-patterns = ["code.exe", "idea64.exe", "pycharm64.exe"]  # 编码时恢复
-```
-
-**跨平台示例：**
-```toml
-[[appExclusions]]
-active = true
-rule = "pause"
-patterns = [
-    # Windows
-    "POWERPNT.EXE", "chrome.exe", "firefox.exe",
-    # macOS
-    "Keynote", "Google Chrome", "Firefox",
-    # Linux
-    "chrome", "firefox", "libreoffice"
-]
-```
-
-### 平台特定说明
-
-- **Windows**：进程名称通常包含 `.exe` 扩展名（例如 `"chrome.exe"`）
-- **macOS**：应用程序名称匹配 `.app` 名称，不含扩展名（例如 `"Google Chrome"`）
-- **Linux**：进程名称通常为小写，不含扩展名（例如 `"chrome"`、`"firefox"`）
-
-**示例：**
-```toml
-autostart = false
-monitorDnd = true
-inactiveS = 300
-allScreens = false
-language = "zh-CN"
-themeMode = "system"
-postponeShortcut = "Ctrl+Shift+P"
-windowSize = 0.8
-
-[[appExclusions]]
-active = true
-rule = "pause"
-patterns = ["POWERPNT.EXE", "zoom.exe", "Teams.exe"]
-
-[[appExclusions]]
-active = true
-rule = "resume"
-patterns = ["code.exe", "idea64.exe"]
-```
-
-**示例：**
-```toml
-autostart = false
-monitorDnd = true
-inactiveS = 300
-allScreens = false
-language = "zh-CN"
-themeMode = "system"
-postponeShortcut = "Ctrl+Shift+P"
-windowSize = 0.8
 ```
 
 ---
@@ -915,6 +933,7 @@ fontSize = 24
 fontFamily = "Arial"
 
 [schedules.miniBreaks.theme.background]
+current = "solid"
 solid = "#1f2937"
 
 [schedules.miniBreaks.audio]
@@ -941,6 +960,7 @@ fontSize = 24
 fontFamily = "Arial"
 
 [schedules.longBreaks.theme.background]
+current = "solid"
 solid = "#1f2937"
 
 [schedules.longBreaks.audio]
@@ -982,7 +1002,7 @@ strictMode = false
 intervalS = 1200 # 20 分钟
 
 [schedules.miniBreaks.theme]
-background = { imagePath = "/home/user/wallpapers/calm-lake.jpg" }
+background = { current = "imagePath", imagePath = "/home/user/wallpapers/calm-lake.jpg" }
 textColor = "#e0f2fe"
 blurRadius = 10
 opacity = 0.85
@@ -991,7 +1011,7 @@ fontFamily = "Helvetica"
 
 [schedules.miniBreaks.audio]
 current = "builtin"
-name = "gentle-bell"
+builtinName = "gentle-bell"
 volume = 0.6
 
 [schedules.miniBreaks.suggestions]
@@ -1006,7 +1026,7 @@ strictMode = true
 afterMiniBreaks = 3
 
 [schedules.longBreaks.theme]
-background = { imagePath = "/home/user/wallpapers/mountain.jpg" }
+background = { current = "imagePath", imagePath = "/home/user/wallpapers/mountain.jpg" }
 textColor = "#ffffff"
 blurRadius = 15
 opacity = 0.8
@@ -1015,7 +1035,7 @@ fontFamily = "Georgia"
 
 [schedules.longBreaks.audio]
 current = "filePath"
-path = "/home/user/sounds/meditation-bell.mp3"
+filePath = "/home/user/sounds/meditation-bell.mp3"
 volume = 0.7
 
 [schedules.longBreaks.suggestions]
@@ -1041,7 +1061,7 @@ strictMode = false
 intervalS = 1800  # 30 分钟
 
 [schedules.miniBreaks.theme]
-background = { Solid = "#1e3a8a" }
+background = { current = "solid", solid = "#1e3a8a" }
 textColor = "#dbeafe"
 blurRadius = 5
 opacity = 0.9
@@ -1050,7 +1070,7 @@ fontFamily = "Arial"
 
 [schedules.miniBreaks.audio]
 current = "builtin"
-name = "soft-gong"
+builtinName = "soft-gong"
 volume = 0.5
 
 [schedules.miniBreaks.suggestions]
@@ -1061,6 +1081,7 @@ enabled = false
 
 # 喝水提醒
 [[attentions]]
+id = 0
 name = "Drink Water"
 enabled = true
 times = ["10:00", "14:00", "16:00", "20:00"]
@@ -1070,20 +1091,16 @@ message = "Remember to drink water! Stay hydrated throughout the day."
 durationS = 10
 
 [attentions.theme]
-background = { solid = "#0ea5e9" }
+background = { current = "solid", solid = "#0ea5e9" }
 textColor = "#ffffff"
 blurRadius = 5
 opacity = 0.95
 fontSize = 20
 fontFamily = "Arial"
 
-[attentions.audio]
-current = "builtin"
-name = "notification"
-volume = 0.5
-
 # 眼保健操提醒
 [[attentions]]
+id = 1
 name = "Eye Exercise"
 enabled = true
 times = ["11:00", "15:00", "19:00"]
@@ -1093,17 +1110,12 @@ message = "Look at something 20 feet away for 20 seconds (20-20-20 rule)"
 durationS = 25
 
 [attentions.theme]
-background = { solid = "#10b981" }
+background = { current = "solid", solid = "#10b981" }
 textColor = "#ffffff"
 blurRadius = 5
 opacity = 0.95
 fontSize = 22
 fontFamily = "Arial"
-
-[attentions.audio]
-current = "builtin"
-name = "bright-notification"
-volume = 0.6
 ```
 
 ---
