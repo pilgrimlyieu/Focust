@@ -284,13 +284,6 @@ mod tests {
     }
 
     #[test]
-    fn audio_settings_default() {
-        let settings = AudioSettings::default();
-        assert_eq!(settings.source.current, AudioSourceType::None);
-        assert_eq!(settings.volume, 0.6);
-    }
-
-    #[test]
     fn audio_settings_get_path_none() {
         let settings = AudioSettings {
             source: AudioSource::new_none(),

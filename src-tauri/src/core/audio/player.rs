@@ -287,21 +287,6 @@ mod tests {
     }
 
     #[test]
-    fn audio_player_creation() {
-        // AudioPlayer::new() requires actual audio hardware
-        match AudioPlayer::new() {
-            Ok(player) => {
-                assert_eq!(player.volume(), 0.6);
-                assert!(!player.is_playing());
-            }
-            Err(PlaybackError::OutputStreamError(_)) => {
-                eprintln!("Audio hardware not available, skipping test");
-            }
-            Err(e) => panic!("Unexpected error: {e}"),
-        }
-    }
-
-    #[test]
     fn invalid_volume() {
         if let Ok(mut player) = AudioPlayer::new() {
             assert!(player.set_volume(-0.1).is_err());

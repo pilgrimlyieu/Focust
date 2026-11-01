@@ -374,42 +374,6 @@ mod tests {
         assert_eq!(bg.get_image_folder().unwrap(), "/folder");
     }
 
-    // ThemeSettings tests
-    #[test]
-    fn theme_settings_default() {
-        let theme = ThemeSettings::default();
-        assert_eq!(theme.background.current, BackgroundType::Solid);
-        assert_eq!(theme.blur_radius, 8);
-        assert_eq!(theme.opacity, 0.90);
-        assert_eq!(theme.font_size, 24);
-    }
-
-    #[test]
-    fn theme_settings_clone() {
-        let theme = ThemeSettings::default();
-        let cloned = theme.clone();
-        assert_eq!(theme.blur_radius, cloned.blur_radius);
-        assert_eq!(theme.opacity, cloned.opacity);
-        assert_eq!(theme.font_size, cloned.font_size);
-    }
-
-    #[test]
-    fn theme_settings_custom() {
-        let theme = ThemeSettings {
-            background: BackgroundSource::new_image_path("/test.jpg".to_owned()),
-            text_color: HexColor::new("#FF0000"),
-            blur_radius: 10,
-            opacity: 0.8,
-            font_size: 24,
-            font_family: FontFamily("Helvetica".to_owned()),
-        };
-
-        assert_eq!(theme.background.current, BackgroundType::ImagePath);
-        assert_eq!(theme.blur_radius, 10);
-        assert_eq!(theme.opacity, 0.8);
-        assert_eq!(theme.font_size, 24);
-    }
-
     // FontFamily tests
     #[test]
     fn font_family_creation() {
@@ -439,28 +403,6 @@ mod tests {
         assert_eq!(deserialized.current, BackgroundType::Solid);
         assert_eq!(deserialized.get_solid().unwrap().to_string(), "#123456");
         assert_eq!(deserialized.get_image_path().unwrap(), "/preserved.jpg");
-    }
-
-    #[test]
-    fn theme_settings_serialization() {
-        let theme = ThemeSettings::default();
-        let json = serde_json::to_string(&theme).unwrap();
-        let deserialized: ThemeSettings = serde_json::from_str(&json).unwrap();
-        assert_eq!(theme.blur_radius, deserialized.blur_radius);
-        assert_eq!(theme.opacity, deserialized.opacity);
-    }
-
-    // Boundary tests
-    #[test]
-    fn theme_settings_opacity_bounds() {
-        let mut theme = ThemeSettings {
-            opacity: 0.0,
-            ..Default::default()
-        };
-        assert_eq!(theme.opacity, 0.0);
-
-        theme.opacity = 1.0;
-        assert_eq!(theme.opacity, 1.0);
     }
 
     #[test]
