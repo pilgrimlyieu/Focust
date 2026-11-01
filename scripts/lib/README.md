@@ -8,12 +8,12 @@ Shared utilities for Tauri project automation scripts.
 
 Centralized configuration values:
 
-| Export                | Description                                                                                                       |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `PATHS`               | File paths (`PACKAGE_JSON`, `TAURI_CONFIG`, `CHANGELOG`, etc.)                                                    |
-| `MARKERS`             | Content markers (changelog insert point, release note separator)                                                  |
-| `VCS`                 | VCS settings: `DEFAULT_VCS` (manual config / "auto"), `DEFAULT_BRANCH`, `COMMIT_MESSAGE_TEMPLATE`, `TAG_TEMPLATE` |
-| `SIGNING_KEY_*`       | Signing key path defaults                                                                                         |
+| Export          | Description                                                                                                       |
+| --------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `PATHS`         | File paths (`PACKAGE_JSON`, `TAURI_CONFIG`, `CHANGELOG`, etc.)                                                    |
+| `MARKERS`       | Content markers (changelog insert point, release note separator)                                                  |
+| `VCS`           | VCS settings: `DEFAULT_VCS` (manual config / "auto"), `DEFAULT_BRANCH`, `COMMIT_MESSAGE_TEMPLATE`, `TAG_TEMPLATE` |
+| `SIGNING_KEY_*` | Signing key path defaults                                                                                         |
 
 ### release-hooks.ts
 
