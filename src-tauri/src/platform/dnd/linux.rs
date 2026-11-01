@@ -13,6 +13,7 @@
 //! All D-Bus implementations are event-driven for zero-polling performance.
 
 use std::env;
+use std::future;
 use std::future::Future;
 use std::process::Stdio;
 use std::sync::Arc;
@@ -133,17 +134,16 @@ impl LinuxDndMonitor {
     /// # Errors
     ///
     /// This function does not return errors in normal operation.
-    #[expect(clippy::unused_async, reason = "for consistency with other platforms")]
-    pub async fn stop(&mut self) -> Result<()> {
+    pub fn stop(&mut self) -> impl Future<Output = Result<()>> {
         if !self.is_monitoring.load(Ordering::Acquire) {
             tracing::debug!("Linux DND monitoring is not running");
-            return Ok(());
+            return future::ready(Ok(()));
         }
 
         tracing::info!("Stopping Linux DND monitoring");
         // TODO: Cancel the spawned tasks properly instead of just setting the flag.
         self.is_monitoring.store(false, Ordering::Release);
-        Ok(())
+        future::ready(Ok(()))
     }
 
     /// Gets the current DND state.
