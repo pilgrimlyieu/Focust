@@ -25,21 +25,21 @@
     "vue-i18n": "^11.4.16"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.14",
+    "@biomejs/biome": "2.6.3",
     "@tailwindcss/vite": "^4.3.3",
-    "@tauri-apps/cli": "^2.12.1",
-    "@types/bun": "^1.4.2",
-    "@vitejs/plugin-vue": "^6.0.9",
-    "@vitest/coverage-v8": "5.0.1",
-    "@vitest/ui": "^5.0.1",
+    "@tauri-apps/cli": "^2.12.4",
+    "@types/bun": "^1.4.4",
+    "@vitejs/plugin-vue": "^6.0.10",
+    "@vitest/coverage-v8": "5.0.5",
+    "@vitest/ui": "^5.0.5",
     "@vue/test-utils": "^2.5.1",
-    "daisyui": "^5.7.44",
-    "jsdom": "^30.1.1",
+    "daisyui": "^5.7.50",
+    "jsdom": "^30.1.3",
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
     "vite": "^8.3.5",
     "vite-plugin-vue-devtools": "^8.2.1",
-    "vitest": "^5.0.1",
-    "vue-tsc": "^3.3.11"
+    "vitest": "^5.0.5",
+    "vue-tsc": "^3.3.13"
   }
 }
