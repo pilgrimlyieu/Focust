@@ -6,21 +6,18 @@
 use tauri::State;
 
 use crate::core::payload::{PromptPayload, PromptPayloadStore};
+use crate::utils::InfallibleCommandResult;
 
 /// Stores a prompt payload in the backend.
 ///
 /// The payload is associated with a unique ID for later retrieval when
 /// displaying the break prompt window.
-///
-/// # Errors
-///
-/// This function does not return errors in normal operation.
 #[tauri::command]
 pub async fn store_prompt_payload(
     state: State<'_, PromptPayloadStore>,
     payload: PromptPayload,
     payload_id: String,
-) -> Result<(), String> {
+) -> InfallibleCommandResult<()> {
     state.store(payload_id, payload).await;
     Ok(())
 }
@@ -44,15 +41,11 @@ pub async fn get_prompt_payload(
 /// Removes a prompt payload from the backend (cleanup).
 ///
 /// Called after a break window is closed to free up memory.
-///
-/// # Errors
-///
-/// This function does not return errors in normal operation.
 #[tauri::command]
 pub async fn remove_prompt_payload(
     payload_id: String,
     state: State<'_, PromptPayloadStore>,
-) -> Result<(), String> {
+) -> InfallibleCommandResult<()> {
     state.remove(&payload_id).await;
     Ok(())
 }

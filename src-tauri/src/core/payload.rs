@@ -124,17 +124,3 @@ impl PromptPayloadStore {
         tracing::debug!("Cleared all prompt payloads");
     }
 }
-
-/// Stores a prompt payload (non-command version for internal use).
-///
-/// # Errors
-///
-/// This function does not return errors in normal operation.
-pub async fn store_payload_internal(
-    store: &PromptPayloadStore,
-    payload: PromptPayload,
-    payload_id: String,
-) -> Result<(), String> {
-    store.store(payload_id, payload).await;
-    Ok(())
-}

@@ -65,11 +65,7 @@ impl DndMonitor {
 
     /// Initialize the platform DND monitor
     async fn initialize(&mut self) -> Result<(), String> {
-        let mut monitor = PlatformDndMonitor::new().map_err(|e| {
-            tracing::warn!("Failed to create DND monitor: {e}");
-            self.available = false;
-            format!("Platform DND monitor creation failed: {e}")
-        })?;
+        let Ok(mut monitor) = PlatformDndMonitor::new();
 
         let (tx, rx) = mpsc::channel(16);
 

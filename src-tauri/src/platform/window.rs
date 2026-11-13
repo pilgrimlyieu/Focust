@@ -16,7 +16,6 @@ use tokio::time;
 
 use crate::core::{
     break_kind::BreakKind,
-    payload::store_payload_internal,
     suggestions::{SharedSuggestions, sample_suggestion_for_break},
     theme::BackgroundType,
 };
@@ -72,9 +71,9 @@ pub async fn create_prompt_windows<R: Runtime>(
 
         // Store payload for frontend retrieval
         let payload_store = app.state::<PromptPayloadStore>();
-        store_payload_internal(&payload_store, payload.clone(), payload_id.clone())
-            .await
-            .map_err(|e| format!("Failed to store prompt payload: {e}"))?;
+        payload_store
+            .store(payload_id.clone(), payload.clone())
+            .await;
 
         let window_size = config_guard.window_size;
         let all_screens = config_guard.all_screens;

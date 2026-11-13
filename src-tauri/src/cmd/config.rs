@@ -18,15 +18,14 @@ use crate::{
     config::{self, AppConfig, SharedConfig},
     platform::register_shortcuts,
     scheduler::Command,
+    utils::InfallibleCommandResult,
 };
 
 /// Retrieves the current application configuration.
-///
-/// # Errors
-///
-/// This function does not return errors in normal operation.
 #[tauri::command]
-pub async fn get_config(config_state: State<'_, SharedConfig>) -> Result<AppConfig, String> {
+pub async fn get_config(
+    config_state: State<'_, SharedConfig>,
+) -> InfallibleCommandResult<AppConfig> {
     Ok(config_state.read().await.clone())
 }
 

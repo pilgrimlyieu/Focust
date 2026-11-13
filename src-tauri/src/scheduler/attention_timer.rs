@@ -325,13 +325,13 @@ pub(crate) fn get_next_attention_time(
     let now_date = now.date_naive();
     let now_time = now.time();
 
-    let to_utc = |dt_local: DateTime<Local>| -> Option<DateTime<Utc>> {
+    let to_utc = |dt_local: DateTime<Local>| -> DateTime<Utc> {
         tracing::debug!(
             "Found potential attention '{}' time: {} (local)",
             attention.name,
             dt_local.to_rfc2822()
         );
-        Some(dt_local.with_timezone(&Utc))
+        dt_local.with_timezone(&Utc)
     };
 
     let build_datetime = |date: NaiveDate, time: NaiveTime| -> Option<DateTime<Local>> {
@@ -355,7 +355,7 @@ pub(crate) fn get_next_attention_time(
         && let Some(next_time_today) = attention.times.earliest_after(&now_time)
         && let Some(dt_local) = build_datetime(now_date, next_time_today)
     {
-        return to_utc(dt_local);
+        return Some(to_utc(dt_local));
     }
 
     // Check next 7 days
@@ -365,7 +365,7 @@ pub(crate) fn get_next_attention_time(
             && let Some(first_time) = attention.times.first()
             && let Some(dt_local) = build_datetime(next_date, first_time)
         {
-            return to_utc(dt_local);
+            return Some(to_utc(dt_local));
         }
     }
     tracing::error!(

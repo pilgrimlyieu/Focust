@@ -4,6 +4,7 @@
 //! status from system preferences. While not as efficient as event-driven
 //! monitoring, it uses adaptive polling to minimize CPU usage.
 
+use std::future::{self, Future};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration as StdDuration;
@@ -24,11 +25,8 @@ pub struct MacosDndMonitor {
 
 impl MacosDndMonitor {
     /// Creates a new macOS DND monitor.
-    ///
-    /// # Errors
-    ///
-    /// This function does not return errors in normal operation.
-    pub fn new() -> Result<Self> {
+    #[must_use]
+    pub fn new() -> Result<Self, !> {
         Ok(Self {
             is_monitoring: Arc::new(AtomicBool::new(false)),
             last_state: Arc::new(AtomicBool::new(false)),
@@ -38,11 +36,7 @@ impl MacosDndMonitor {
     /// Starts monitoring Focus Mode status.
     ///
     /// Uses polling to periodically check the Focus Mode state.
-    ///
-    /// # Errors
-    ///
-    /// This function does not return errors in normal operation.
-    pub async fn start(&mut self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
+    pub async fn start(&mut self, sender: mpsc::Sender<DndEvent>) -> Result<(), !> {
         if self.is_monitoring.load(Ordering::Acquire) {
             tracing::debug!("macOS DND monitoring is already running");
             return Ok(());
@@ -66,13 +60,7 @@ impl MacosDndMonitor {
         // Start polling loop
         let last_state = self.last_state.clone();
 
-        tokio::spawn(async move {
-            poll_focus_mode(sender, last_state)
-                .await
-                .unwrap_or_else(|e| {
-                    tracing::error!("macOS Focus Mode polling terminated with error: {e}");
-                });
-        });
+        tokio::spawn(poll_focus_mode(sender, last_state));
 
         self.is_monitoring.store(true, Ordering::Release);
         tracing::info!("macOS DND monitoring started successfully");
@@ -80,18 +68,14 @@ impl MacosDndMonitor {
     }
 
     /// Stops monitoring Focus Mode status.
-    ///
-    /// # Errors
-    ///
-    /// This function does not return errors in normal operation.
-    pub async fn stop(&mut self) -> Result<()> {
+    pub fn stop(&mut self) -> impl Future<Output = Result<(), !>> {
         if !self.is_monitoring.load(Ordering::Acquire) {
-            return Ok(());
+            return future::ready(Ok(()));
         }
 
         tracing::info!("Stopping macOS DND monitoring");
         self.is_monitoring.store(false, Ordering::Release);
-        Ok(())
+        future::ready(Ok(()))
     }
 
     /// Gets the current Focus Mode status.
@@ -144,11 +128,7 @@ async fn check_focus_mode_status() -> Result<bool> {
 // ============================================================================
 
 /// Poll Focus Mode status with optional adaptive interval
-#[expect(clippy::unnecessary_wraps)]
-async fn poll_focus_mode(
-    sender: mpsc::Sender<DndEvent>,
-    last_state: Arc<AtomicBool>,
-) -> Result<()> {
+async fn poll_focus_mode(sender: mpsc::Sender<DndEvent>, last_state: Arc<AtomicBool>) {
     let mut current_interval = INTERVAL_SECS;
     loop {
         time::sleep(StdDuration::from_secs(current_interval)).await;
@@ -188,6 +168,4 @@ async fn poll_focus_mode(
             }
         }
     }
-
-    Ok(())
 }

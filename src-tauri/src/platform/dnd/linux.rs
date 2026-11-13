@@ -55,11 +55,8 @@ enum DesktopEnvironment {
 
 impl LinuxDndMonitor {
     /// Creates a new Linux DND monitor.
-    ///
-    /// # Errors
-    ///
-    /// This function does not return errors in normal operation.
-    pub fn new() -> Result<Self> {
+    #[must_use]
+    pub fn new() -> Result<Self, !> {
         let desktop_env = detect_desktop_environment();
         tracing::info!("Detected desktop environment: {desktop_env:?}");
 
@@ -74,10 +71,8 @@ impl LinuxDndMonitor {
     ///
     /// # Errors
     ///
-    /// Returns an error if:
-    /// - Connecting to the D-Bus session fails
-    /// - Setting up property change monitoring fails
-    /// - The desktop environment is unsupported
+    /// Returns an error if the desktop environment is unsupported.
+    /// Monitoring setup and polling errors are logged by the spawned tasks.
     pub async fn start(&mut self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
         if self.is_monitoring.load(Ordering::Acquire) {
             tracing::debug!("Linux DND monitoring is already running");
@@ -100,11 +95,11 @@ impl LinuxDndMonitor {
         self.last_state.store(initial_state, Ordering::Relaxed);
 
         // Start monitoring based on desktop environment
-        let monitor_result = match self.desktop_env {
+        match self.desktop_env {
             DesktopEnvironment::Kde => self.monitor_kde(sender.clone()),
             DesktopEnvironment::Xfce => self.monitor_xfce(sender.clone()),
             DesktopEnvironment::Gnome | DesktopEnvironment::Unity => {
-                self.monitor_gnome(sender.clone())
+                self.monitor_gnome(sender.clone());
             }
             DesktopEnvironment::Cinnamon => self.monitor_cinnamon(sender.clone()),
             DesktopEnvironment::Mate => self.monitor_mate(sender.clone()),
@@ -113,28 +108,15 @@ impl LinuxDndMonitor {
                 tracing::warn!("Unknown desktop environment, DND monitoring not supported");
                 return Err(anyhow::anyhow!("Unsupported desktop environment"));
             }
-        };
-
-        match monitor_result {
-            Ok(()) => {
-                self.is_monitoring.store(true, Ordering::Release);
-                tracing::info!("Linux DND monitoring started successfully");
-                Ok(())
-            }
-            Err(e) => {
-                tracing::error!("Failed to start Linux DND monitoring: {e}");
-                self.is_monitoring.store(false, Ordering::Release);
-                Err(e).context("Linux DND monitor failed to start")
-            }
         }
+
+        self.is_monitoring.store(true, Ordering::Release);
+        tracing::info!("Linux DND monitoring started successfully");
+        Ok(())
     }
 
     /// Stops monitoring DND state.
-    ///
-    /// # Errors
-    ///
-    /// This function does not return errors in normal operation.
-    pub fn stop(&mut self) -> impl Future<Output = Result<()>> {
+    pub fn stop(&mut self) -> impl Future<Output = Result<(), !>> {
         if !self.is_monitoring.load(Ordering::Acquire) {
             tracing::debug!("Linux DND monitoring is not running");
             return future::ready(Ok(()));
@@ -168,8 +150,7 @@ impl LinuxDndMonitor {
     // ========================================================================
 
     /// Monitor KDE Plasma DND via D-Bus
-    #[expect(clippy::unnecessary_wraps)]
-    fn monitor_kde(&self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
+    fn monitor_kde(&self, sender: mpsc::Sender<DndEvent>) {
         let last_state = self.last_state.clone();
 
         tokio::spawn(async move {
@@ -179,29 +160,20 @@ impl LinuxDndMonitor {
                     tracing::error!("KDE D-Bus monitoring error: {e}");
                 });
         });
-
-        Ok(())
     }
 
     /// Monitor XFCE DND via D-Bus
-    #[expect(clippy::unnecessary_wraps)]
-    fn monitor_xfce(&self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
+    fn monitor_xfce(&self, sender: mpsc::Sender<DndEvent>) {
         let last_state = self.last_state.clone();
 
         tokio::spawn(async move {
-            monitor_xfce_dbus(sender, last_state)
-                .await
-                .unwrap_or_else(|e| {
-                    tracing::error!("XFCE D-Bus monitoring error: {e}");
-                });
+            let Err(error) = monitor_xfce_dbus(sender, last_state).await;
+            tracing::error!("XFCE D-Bus monitoring error: {error}");
         });
-
-        Ok(())
     }
 
     /// Monitor GNOME DND via dconf watch
-    #[expect(clippy::unnecessary_wraps)]
-    fn monitor_gnome(&self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
+    fn monitor_gnome(&self, sender: mpsc::Sender<DndEvent>) {
         let last_state = self.last_state.clone();
 
         tokio::spawn(async move {
@@ -211,13 +183,10 @@ impl LinuxDndMonitor {
                     tracing::error!("GNOME dconf monitoring error: {e}");
                 });
         });
-
-        Ok(())
     }
 
     /// Monitor Cinnamon DND via dconf watch
-    #[expect(clippy::unnecessary_wraps)]
-    fn monitor_cinnamon(&self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
+    fn monitor_cinnamon(&self, sender: mpsc::Sender<DndEvent>) {
         let last_state = self.last_state.clone();
 
         tokio::spawn(async move {
@@ -227,13 +196,10 @@ impl LinuxDndMonitor {
                     tracing::error!("Cinnamon dconf monitoring error: {e}");
                 });
         });
-
-        Ok(())
     }
 
     /// Monitor MATE DND via dconf watch
-    #[expect(clippy::unnecessary_wraps)]
-    fn monitor_mate(&self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
+    fn monitor_mate(&self, sender: mpsc::Sender<DndEvent>) {
         let last_state = self.last_state.clone();
 
         tokio::spawn(async move {
@@ -243,24 +209,16 @@ impl LinuxDndMonitor {
                     tracing::error!("MATE dconf monitoring error: {e}");
                 });
         });
-
-        Ok(())
     }
 
     /// Monitor `LXQt` DND via config file polling (fallback)
-    #[expect(clippy::unnecessary_wraps)]
-    fn monitor_lxqt(&self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
+    fn monitor_lxqt(&self, sender: mpsc::Sender<DndEvent>) {
         let last_state = self.last_state.clone();
 
         tokio::spawn(async move {
-            poll_lxqt_config(sender, last_state)
-                .await
-                .unwrap_or_else(|e| {
-                    tracing::error!("LXQt config polling error: {e}");
-                });
+            let Err(error) = poll_lxqt_config(sender, last_state).await;
+            tracing::error!("LXQt config polling error: {error}");
         });
-
-        Ok(())
     }
 }
 
@@ -436,7 +394,7 @@ async fn monitor_kde_dbus(
 async fn monitor_xfce_dbus(
     sender: mpsc::Sender<DndEvent>,
     last_state: Arc<AtomicBool>,
-) -> Result<()> {
+) -> Result<!> {
     // Similar to KDE, monitor Xfconf PropertyChanged signals
     // Implementation details omitted for brevity
     tracing::info!("XFCE D-Bus monitoring not yet fully implemented, falling back to polling");
@@ -559,16 +517,18 @@ async fn monitor_mate_dconf(
 async fn poll_lxqt_config(
     sender: mpsc::Sender<DndEvent>,
     last_state: Arc<AtomicBool>,
-) -> Result<()> {
+) -> Result<!> {
     poll_dnd_state(sender, last_state, check_lxqt_dnd).await
 }
 
 /// Generic polling helper
+///
+/// Runs until sending a state change fails; it never completes successfully.
 async fn poll_dnd_state<F, Fut>(
     sender: mpsc::Sender<DndEvent>,
     last_state: Arc<AtomicBool>,
     check_fn: F,
-) -> Result<()>
+) -> Result<!>
 where
     F: Fn() -> Fut,
     Fut: Future<Output = Result<bool>>,

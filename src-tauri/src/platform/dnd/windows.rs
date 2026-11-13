@@ -79,11 +79,8 @@ pub struct WindowsDndMonitor {
 
 impl WindowsDndMonitor {
     /// Creates a new Windows DND monitor.
-    ///
-    /// # Errors
-    ///
-    /// This function does not return errors in normal operation.
-    pub fn new() -> Result<Self> {
+    #[must_use]
+    pub fn new() -> Result<Self, !> {
         Ok(Self {
             is_monitoring: Arc::new(AtomicBool::new(false)),
             last_state: Arc::new(AtomicBool::new(false)),
@@ -129,11 +126,7 @@ impl WindowsDndMonitor {
     }
 
     /// Stops monitoring Focus Assist state.
-    ///
-    /// # Errors
-    ///
-    /// This function does not return errors in normal operation.
-    pub async fn stop(&mut self) -> Result<()> {
+    pub async fn stop(&mut self) -> Result<(), !> {
         if !self.is_monitoring.load(Ordering::Acquire) {
             return Ok(());
         }
@@ -152,10 +145,8 @@ impl WindowsDndMonitor {
 
     /// Gets the current Focus Assist state.
     ///
-    /// # Errors
-    ///
-    /// This function does not return errors in normal operation.
-    pub fn is_enabled(&self) -> impl Future<Output = Result<bool>> {
+    /// Query failures use the existing disabled-state fallback.
+    pub fn is_enabled(&self) -> impl Future<Output = Result<bool, !>> {
         future::ready(Ok(query_focus_assist_state()))
     }
 }

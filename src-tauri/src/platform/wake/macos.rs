@@ -16,11 +16,12 @@ pub(crate) struct WakeMonitor {
 }
 
 impl WakeMonitor {
+    #[must_use]
     #[expect(
         clippy::unnecessary_wraps,
         reason = "Common constructor across desktop platforms"
     )]
-    pub(crate) fn new(app: &AppHandle) -> Result<Self> {
+    pub(crate) fn new(app: &AppHandle) -> Result<Self, !> {
         let app = app.clone();
         let center = NSWorkspace::sharedWorkspace().notificationCenter();
         let callback = RcBlock::new(move |_: NonNull<NSNotification>| {

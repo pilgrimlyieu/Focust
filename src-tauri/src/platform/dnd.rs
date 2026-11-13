@@ -41,11 +41,8 @@ pub struct DndMonitor {
 
 impl DndMonitor {
     /// Creates a new DND monitor.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if initializing the platform-specific monitor fails.
-    pub fn new() -> Result<Self> {
+    #[must_use]
+    pub fn new() -> Result<Self, !> {
         #[cfg(target_os = "windows")]
         let platform = windows::WindowsDndMonitor::new()?;
 
@@ -67,15 +64,19 @@ impl DndMonitor {
     ///
     /// Returns an error if starting the platform-specific monitor fails.
     pub async fn start(&mut self, sender: mpsc::Sender<DndEvent>) -> Result<()> {
-        self.platform.start(sender).await
+        #[cfg(target_os = "macos")]
+        {
+            let Ok(()) = self.platform.start(sender).await;
+            Ok(())
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            self.platform.start(sender).await
+        }
     }
 
     /// Stops monitoring DND status.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if stopping the platform-specific monitor fails.
-    pub async fn stop(&mut self) -> Result<()> {
+    pub async fn stop(&mut self) -> Result<(), !> {
         self.platform.stop().await
     }
 
@@ -87,6 +88,14 @@ impl DndMonitor {
     ///
     /// Returns an error if querying the DND status fails.
     pub async fn is_enabled(&self) -> Result<bool> {
-        self.platform.is_enabled().await
+        #[cfg(windows)]
+        {
+            let Ok(enabled) = self.platform.is_enabled().await;
+            Ok(enabled)
+        }
+        #[cfg(not(windows))]
+        {
+            self.platform.is_enabled().await
+        }
     }
 }

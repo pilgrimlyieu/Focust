@@ -7,12 +7,37 @@ use std::error;
 ///
 /// - **Library code**: Use typed errors with `thiserror`
 /// - **Application code**: Use `anyhow::Result` for convenience
-/// - **Tauri commands**: Always return `Result<T, String>` (required by Tauri)
+/// - **Tauri commands**: Use `Result<T, String>` for fallible commands and
+///   `InfallibleCommandResult<T>` for commands that cannot fail
 /// - **Conversions**: Use `IntoTauriError` trait to convert at boundaries
 use std::io;
 use std::path::PathBuf;
 
+use serde::{Serialize, Serializer};
 use thiserror::Error;
+
+/// Uninhabited error adapter for infallible Tauri commands.
+///
+/// Async commands borrowing `State` must return `Result`, with serializable
+/// errors. Serde's stable features do not yet implement `Serialize` for `!`.
+///
+/// TODO: Once Serde implements `Serialize` for `!` without its `unstable`
+/// feature, change `InfallibleCommandResult<T>` to `Result<T, !>` and remove
+/// this wrapper, its manual `Serialize` implementation, and its re-export.
+#[derive(Debug)]
+pub struct InfallibleCommandError(pub !);
+
+impl Serialize for InfallibleCommandError {
+    fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        self.0
+    }
+}
+
+/// Result for Tauri command implementations that cannot fail.
+pub type InfallibleCommandResult<T> = Result<T, InfallibleCommandError>;
 
 /// Main error type for Focust library operations
 #[derive(Error, Debug)]

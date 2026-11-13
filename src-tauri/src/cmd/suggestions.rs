@@ -6,16 +6,13 @@
 use tauri::{AppHandle, State, command};
 
 use crate::core::suggestions::{SharedSuggestions, SuggestionsConfig, save_suggestions_internal};
+use crate::utils::InfallibleCommandResult;
 
 /// Retrieves the suggestions configuration.
-///
-/// # Errors
-///
-/// This function does not return errors in normal operation.
 #[command]
 pub async fn get_suggestions(
     state: State<'_, SharedSuggestions>,
-) -> Result<SuggestionsConfig, String> {
+) -> InfallibleCommandResult<SuggestionsConfig> {
     let suggestions = state.read().await;
     Ok(suggestions.clone())
 }

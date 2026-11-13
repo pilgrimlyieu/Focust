@@ -9,16 +9,16 @@ use zbus::{Connection, Proxy};
 pub(crate) struct WakeMonitor(JoinHandle<()>);
 
 impl WakeMonitor {
+    #[must_use]
     #[expect(
         clippy::unnecessary_wraps,
         reason = "Common constructor across desktop platforms"
     )]
-    pub(crate) fn new(app: &AppHandle) -> Result<Self> {
+    pub(crate) fn new(app: &AppHandle) -> Result<Self, !> {
         let app = app.clone();
         Ok(Self(spawn(async move {
-            if let Err(error) = watch_resume(&app).await {
-                tracing::warn!("System wake notifications unavailable: {error:#}");
-            }
+            let Err(error) = watch_resume(&app).await;
+            tracing::warn!("System wake notifications unavailable: {error:#}");
         })))
     }
 }
@@ -29,7 +29,7 @@ impl Drop for WakeMonitor {
     }
 }
 
-async fn watch_resume(app: &AppHandle) -> Result<()> {
+async fn watch_resume(app: &AppHandle) -> Result<!> {
     let connection = Connection::system()
         .await
         .context("Cannot connect to system D-Bus")?;
