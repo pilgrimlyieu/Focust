@@ -9,6 +9,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration as StdDuration;
 
 use anyhow::{Context, Result};
+use tokio::process::Command;
 use tokio::sync::mpsc;
 use tokio::time;
 
@@ -116,8 +117,8 @@ impl MacosDndMonitor {
 /// Returns an error if:
 /// - Executing the `defaults` command fails
 async fn check_focus_mode_status() -> Result<bool> {
-    let output = tokio::process::Command::new("defaults")
-        .args(&[
+    let output = Command::new("defaults")
+        .args([
             "read",
             "com.apple.controlcenter",
             "NSStatusItem Visible FocusModes",

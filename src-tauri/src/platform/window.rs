@@ -382,12 +382,10 @@ fn resolve_background(source: &BackgroundSource) -> ResolvedBackground {
     match source.current {
         BackgroundType::Solid => source
             .get_solid()
-            .map(|color| ResolvedBackground::new_solid(color.to_string()))
-            .unwrap_or_default(),
+            .map_or_default(|color| ResolvedBackground::new_solid(color.to_string())),
         BackgroundType::ImagePath => source
             .get_image_path()
-            .map(|path| ResolvedBackground::new_image(path.to_owned()))
-            .unwrap_or_default(),
+            .map_or_default(|path| ResolvedBackground::new_image(path.to_owned())),
         BackgroundType::ImageFolder => source
             .get_image_folder()
             .and_then(|folder| {
